@@ -1,0 +1,15 @@
+screen 1096 2560
+keep level 4
+restart
+wait 2.5
+deck 0
+wait 0.25
+shot d0
+wait 0.35
+shot d1
+wait 0.17
+shot d2
+wait 0.5
+shot d3
+wait 0.5
+shot d4

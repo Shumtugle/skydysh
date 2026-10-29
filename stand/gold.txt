@@ -1,0 +1,22 @@
+# The golden hammer in hand: five tries lost at this building already, the badge gold. One
+# golden throw and the building flies to pieces whatever it hits; then the panel, and the
+# next building.
+screen 1096 2560
+keep level 3
+keep fails 5
+keep gifts 2
+restart
+skip
+wait 2.6
+shot g0_gold
+down 137 420
+wait 1.0
+up 137 420
+wait 0.6
+shot g1_scatter
+wait 2.0
+shot g2_down
+wait 3.0
+shot g3_console
+wait 3.0
+shot g4_next
