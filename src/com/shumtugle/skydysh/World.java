@@ -12,7 +12,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.1";     // shown on screen; keep in step with versionName
+    static final String VERSION = "0.2";     // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -40,6 +40,7 @@ final class World {
     // the time the street keeps: it stands still while the room between rounds is closed over it
     float sceneTime;
     float frameMs;                           // how long the last frame took, set by the shell
+    float drawScale;                         // drawn pixels to a frame pixel, set by the shell
     private final Game game;                  // the building on the plinth, and the hammer
     private Ink hudInk, roomInk;
     private final People people = new People(20, 0x5EE7L, 1.2f);   // up and down the street, and right by the eye
@@ -190,6 +191,12 @@ final class World {
             hudInk.fresh = false;
         }
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
+        // while the engine is young: how long a frame takes, in milliseconds, and how finely it is drawn
+        if (frameMs > 0f) {
+            int qs = Math.round(drawScale * 100f);
+            String meter = Math.round(frameMs) + " " + (qs / 100) + "." + (qs % 100 < 10 ? "0" : "") + (qs % 100);
+            PixelFont.draw(f, meter, 3, h - 10, 1, 0x88FFFFFF);
+        }
     }
 
     /** The number on the plate of the level being played, eased while one turns into the next, for the light. */

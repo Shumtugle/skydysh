@@ -41,18 +41,19 @@ function program(gl, vs, fs) {
   return p;
 }
 
-async function render(canvas, frame, flatImage, scale, shaderDir, hudImage) {
+async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
   const W = frame.w, H = frame.h;
   canvas.width = W * scale;
   canvas.height = H * scale;
   const gl = canvas.getContext('webgl2', { antialias: false, preserveDrawingBuffer: true });
   if (!gl) throw new Error('no webgl2');
   const src = {};
-  for (const n of ['box.vert', 'box.frag', 'shadow.vert', 'shadow.frag', 'full.vert', 'sky.frag', 'blit.frag'])
+  for (const n of ['box.vert', 'box.frag', 'shadow.vert', 'shadow.frag', 'full.vert', 'sky.frag', 'ink.frag', 'blit.frag'])
     src[n] = await text(shaderDir + n);
   const boxP = program(gl, src['box.vert'], src['box.frag']);
   const shadowP = program(gl, src['shadow.vert'], src['shadow.frag']);
   const skyP = program(gl, src['full.vert'], src['sky.frag']);
+  const inkP = program(gl, src['full.vert'], src['ink.frag']);
   const blitP = program(gl, src['full.vert'], src['blit.frag']);
   // the same shader, built for balls
   const sphere = t => t.replace('\n', '\n#define SPHERE\n');
@@ -103,8 +104,10 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage) {
   gl.drawBuffers([gl.NONE]);
   gl.readBuffer(gl.NONE);
 
-  // the drawn scene, at the screen's size: colour with what each pixel belongs to, and depth
-  const SW = canvas.width, SH = canvas.height;
+  // the drawn scene, at the drawing size (q drawn pixels to a frame pixel, as the phone settles
+  // on): colour with what each pixel belongs to, and depth
+  q = Math.max(1, Math.min(q || 2, scale));
+  const SW = Math.round(W * q), SH = Math.round(H * q), DS = SW / W;
   const sceneTex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, sceneTex);
   gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, SW, SH);
@@ -119,6 +122,15 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage) {
   gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFb);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, sceneTex, 0);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthTex, 0);
+  // the print: grade, dots and ink at the drawing size, scaled up smoothly
+  const printTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, printTex);
+  gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, SW, SH);
+  for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR],
+    [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+  const printFb = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, printFb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, printTex, 0);
 
   // the flat layer: row by row from the top, as the phone uploads it
   const flatTex = gl.createTexture();
@@ -181,7 +193,7 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage) {
     gl.uniform1f(u(p, 'uNight'), frame.night || 0);
   };
 
-  // 2. the sky, then the boxes, at the screen's size
+  // 2. the sky, then the boxes, at the drawing size
   gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFb);
   gl.viewport(0, 0, SW, SH);
   gl.clearColor(0, 0, 0, 0);
@@ -192,8 +204,8 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage) {
   gl.uniform3fv(u(skyP, 'uUp'), frame.up);
   gl.uniform3fv(u(skyP, 'uAhead'), frame.ahead);
   gl.uniform2f(u(skyP, 'uFrame'), SW, SH);
-  gl.uniform1f(u(skyP, 'uFocal'), frame.focal * scale);
-  gl.uniform1f(u(skyP, 'uScale'), scale);
+  gl.uniform1f(u(skyP, 'uFocal'), frame.focal * DS);
+  gl.uniform1f(u(skyP, 'uScale'), DS);
   gl.uniform3fv(u(skyP, 'uTop'), frame.skyTop);
   gl.uniform3fv(u(skyP, 'uHorizon'), frame.skyHorizon);
   gl.uniform3fv(u(skyP, 'uGlow'), frame.skyGlow);
@@ -228,34 +240,55 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage) {
     gl.uniform1f(u(ballP, 'uClear'), 0);
   }
 
-  // 3. onto the screen
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  // 3. the print: grade, dots and ink, at the drawing size
+  gl.bindFramebuffer(gl.FRAMEBUFFER, printFb);
   gl.viewport(0, 0, SW, SH);
   gl.disable(gl.DEPTH_TEST);
-  gl.useProgram(blitP);
+  gl.useProgram(inkP);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, sceneTex);
-  gl.uniform1i(u(blitP, 'uScene'), 0);
+  gl.uniform1i(u(inkP, 'uScene'), 0);
+  gl.activeTexture(gl.TEXTURE3);
+  gl.bindTexture(gl.TEXTURE_2D, depthTex);
+  gl.uniform1i(u(inkP, 'uDepth'), 3);
+  gl.uniform3fv(u(inkP, 'uGrade'), frame.grade || [1, 1, 0]);
+  gl.uniform1f(u(inkP, 'uScale'), DS);
+  gl.uniform1f(u(inkP, 'uNight'), frame.night || 0);
+  gl.bindVertexArray(empty);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  // 4. onto the screen: the print scaled up, the layers and the aim over it
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.useProgram(blitP);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, printTex);
+  gl.uniform1i(u(blitP, 'uPrint'), 0);
   gl.activeTexture(gl.TEXTURE1);
   gl.bindTexture(gl.TEXTURE_2D, flatTex);
   gl.uniform1i(u(blitP, 'uFlat'), 1);
   gl.activeTexture(gl.TEXTURE2);
   gl.bindTexture(gl.TEXTURE_2D, hudTex);
   gl.uniform1i(u(blitP, 'uHud'), 2);
-  gl.activeTexture(gl.TEXTURE3);
-  gl.bindTexture(gl.TEXTURE_2D, depthTex);
-  gl.uniform1i(u(blitP, 'uDepth'), 3);
   gl.uniform1f(u(blitP, 'uHudRows'), hudImage ? (frame.hudRows || 0) : 0);
-  gl.uniform3fv(u(blitP, 'uGrade'), frame.grade || [1, 1, 0]);
   gl.uniform2f(u(blitP, 'uFrameSize'), W, H);
+  gl.uniform2f(u(blitP, 'uScreen'), canvas.width, canvas.height);
   gl.uniform1f(u(blitP, 'uScale'), scale);
-  gl.uniform1f(u(blitP, 'uNight'), frame.night || 0);
   gl.uniform1f(u(blitP, 'uTime'), frame.time || 0);
   gl.uniform4fv(u(blitP, 'uRing'), frame.ring || [0, 0, 0, 0]);
   gl.uniform3fv(u(blitP, 'uFinger'), frame.finger || [0, 0, 0]);
   const tn = frame.trailN || 0;
   gl.uniform1i(u(blitP, 'uTrailN'), tn);
-  if (tn > 0) gl.uniform3fv(u(blitP, 'uTrail'), new Float32Array(frame.trail.slice(0, tn * 3)));
+  if (tn > 0) {
+    const t = frame.trail.slice(0, tn * 3);
+    gl.uniform3fv(u(blitP, 'uTrail'), new Float32Array(t));
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (let i = 0; i < tn; i++) {
+      x0 = Math.min(x0, t[i * 3]); y0 = Math.min(y0, t[i * 3 + 1]);
+      x1 = Math.max(x1, t[i * 3]); y1 = Math.max(y1, t[i * 3 + 1]);
+    }
+    gl.uniform4f(u(blitP, 'uTrailBox'), x0, y0, x1, y1);
+  }
   gl.bindVertexArray(empty);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
   gl.finish();

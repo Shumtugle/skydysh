@@ -18,6 +18,10 @@ final class Stage extends GLSurfaceView implements GLSurfaceView.Renderer {
     private final Gfx gfx = new Gfx();
     private int screenW = 1, screenH = 1;
     private long last;
+    // how many drawn pixels make a frame pixel: starts at two, steps down while frames come
+    // slow, back up while they come quick, so the phone draws as finely as it keeps up with
+    private float q = 2f;
+    private float slowFor, quickFor;
 
     // touches waiting for the GL thread: kind, x, y in frame pixels
     private final float[] pending = new float[3 * 64];
@@ -93,9 +97,19 @@ final class Stage extends GLSurfaceView implements GLSurfaceView.Renderer {
             pendingCount = 0;
         }
         world.update(dt);
+        world.drawScale = q;
         world.draw(list);
-        gfx.draw(list, screenW, screenH);
+        gfx.draw(list, screenW, screenH, q);
         // how long a frame takes, frame to frame, shown in the corner while the engine is young
         world.frameMs = world.frameMs * 0.95f + dt * 1000f * 0.05f;
+        slowFor = world.frameMs > 20f ? slowFor + dt : 0f;
+        quickFor = world.frameMs < 13f ? quickFor + dt : 0f;
+        if (slowFor > 1f && q > 1.25f) {
+            q = Math.max(1.25f, q - 0.25f);
+            slowFor = 0f;
+        } else if (quickFor > 4f && q < 3f) {
+            q = Math.min(3f, q + 0.25f);
+            quickFor = 0f;
+        }
     }
 }

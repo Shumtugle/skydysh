@@ -23,9 +23,9 @@ final class Gfx {
     private static final int SHADOW_SIZE = 2048;
     private static final float[] CUBE = cube();
 
-    private int boxP, shadowP, skyP, blitP, ballP, ballShadowP;
+    private int boxP, shadowP, skyP, inkP, blitP, ballP, ballShadowP;
     private int vao, empty, cubeBuf, instBuf, ballVao, ballBuf;
-    private int shadowTex, shadowFb, sceneTex, sceneFb, depthTex, flatTex, hudTex, hudW, hudH;
+    private int shadowTex, shadowFb, sceneTex, sceneFb, depthTex, printTex, printFb, flatTex, hudTex, hudW, hudH;
     private int frameW, frameH, drawW, drawH;
     private FloatBuffer inst, ballInst;
     private IntBuffer flat, hudBuf;
@@ -39,6 +39,7 @@ final class Gfx {
         boxP = program(read(assets, "box.vert"), read(assets, "box.frag"));
         shadowP = program(read(assets, "shadow.vert"), read(assets, "shadow.frag"));
         skyP = program(read(assets, "full.vert"), read(assets, "sky.frag"));
+        inkP = program(read(assets, "full.vert"), read(assets, "ink.frag"));
         blitP = program(read(assets, "full.vert"), read(assets, "blit.frag"));
         ballP = program(sphere(read(assets, "box.vert")), sphere(read(assets, "box.frag")));
         ballShadowP = program(sphere(read(assets, "shadow.vert")), sphere(read(assets, "shadow.frag")));
@@ -98,13 +99,16 @@ final class Gfx {
         GLES30.glBindVertexArray(0);
     }
 
-    /** The drawn scene at the screen's size, and the flat layer at the frame's. */
+    /**
+     * The drawn scene and its print at the size it is drawn at (a few times the frame, well under
+     * the screen), and the flat layer at the frame's.
+     */
     private void size(int w, int h, int sw, int sh) {
         int[] ids = new int[1];
         if (sw != drawW || sh != drawH) {
             if (drawW != 0) {
-                GLES30.glDeleteTextures(2, new int[]{sceneTex, depthTex}, 0);
-                GLES30.glDeleteFramebuffers(1, new int[]{sceneFb}, 0);
+                GLES30.glDeleteTextures(3, new int[]{sceneTex, depthTex, printTex}, 0);
+                GLES30.glDeleteFramebuffers(2, new int[]{sceneFb, printFb}, 0);
             }
             drawW = sw;
             drawH = sh;
@@ -123,6 +127,16 @@ final class Gfx {
             GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, sceneFb);
             GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, sceneTex, 0);
             GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_DEPTH_ATTACHMENT, GLES30.GL_TEXTURE_2D, depthTex, 0);
+            // the print: scaled up to the screen smoothly
+            GLES30.glGenTextures(1, ids, 0);
+            printTex = ids[0];
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, printTex);
+            GLES30.glTexStorage2D(GLES30.GL_TEXTURE_2D, 1, GLES30.GL_RGBA8, sw, sh);
+            params(GLES30.GL_LINEAR);
+            GLES30.glGenFramebuffers(1, ids, 0);
+            printFb = ids[0];
+            GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, printFb);
+            GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, printTex, 0);
             GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
         }
         if (w == frameW && h == frameH) return;
@@ -138,8 +152,16 @@ final class Gfx {
         swizzled = new int[w * h];
     }
 
-    void draw(DrawList d, int screenW, int screenH) {
-        size(d.w, d.h, screenW, screenH);
+    /**
+     * Draws a frame. {@code q} is how many drawn pixels make a frame pixel: the scene, its ink
+     * and its dots are drawn at that size and then scaled up to the screen.
+     */
+    void draw(DrawList d, int screenW, int screenH, float q) {
+        float screenScale = screenW / (float) d.w;
+        q = Math.max(1f, Math.min(q, screenScale));
+        int sceneW = Math.max(1, Math.round(d.w * q)), sceneH = Math.max(1, Math.round(d.h * q));
+        float scale = sceneW / (float) d.w;
+        size(d.w, d.h, sceneW, sceneH);
         int n = d.count;
         if (inst == null || inst.capacity() < n * DrawList.STRIDE) inst = floats(Math.max(n, 256) * DrawList.STRIDE * 2);
         inst.clear();
@@ -229,10 +251,9 @@ final class Gfx {
             GLES30.glDrawArraysInstanced(GLES30.GL_TRIANGLES, 0, 36, nb);
         }
 
-        // 2. the sky, then the boxes, at the screen's size
-        float scale = screenW / (float) d.w;
+        // 2. the sky, then the boxes, at the drawing size
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, sceneFb);
-        GLES30.glViewport(0, 0, screenW, screenH);
+        GLES30.glViewport(0, 0, sceneW, sceneH);
         GLES30.glClearColor(0f, 0f, 0f, 0f);
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
         GLES30.glDisable(GLES30.GL_DEPTH_TEST);
@@ -240,7 +261,7 @@ final class Gfx {
         GLES30.glUniform3fv(u(skyP, "uRight"), 1, d.right, 0);
         GLES30.glUniform3fv(u(skyP, "uUp"), 1, d.up, 0);
         GLES30.glUniform3fv(u(skyP, "uAhead"), 1, d.ahead, 0);
-        GLES30.glUniform2f(u(skyP, "uFrame"), screenW, screenH);
+        GLES30.glUniform2f(u(skyP, "uFrame"), sceneW, sceneH);
         GLES30.glUniform1f(u(skyP, "uFocal"), d.focal * scale);
         GLES30.glUniform1f(u(skyP, "uScale"), scale);
         GLES30.glUniform3fv(u(skyP, "uTop"), 1, d.skyTop, 0);
@@ -276,33 +297,56 @@ final class Gfx {
             GLES30.glUniform1f(u(ballP, "uClear"), 0f);
         }
 
-        // 3. onto the screen
-        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
-        GLES30.glViewport(0, 0, screenW, screenH);
+        // 3. the print: grade, dots and ink, at the drawing size
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, printFb);
+        GLES30.glViewport(0, 0, sceneW, sceneH);
         GLES30.glDisable(GLES30.GL_DEPTH_TEST);
-        GLES30.glUseProgram(blitP);
+        GLES30.glUseProgram(inkP);
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, sceneTex);
-        GLES30.glUniform1i(u(blitP, "uScene"), 0);
+        GLES30.glUniform1i(u(inkP, "uScene"), 0);
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE3);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, depthTex);
+        GLES30.glUniform1i(u(inkP, "uDepth"), 3);
+        GLES30.glUniform3fv(u(inkP, "uGrade"), 1, d.grade, 0);
+        GLES30.glUniform1f(u(inkP, "uScale"), scale);
+        GLES30.glUniform1f(u(inkP, "uNight"), d.night);
+        GLES30.glBindVertexArray(empty);
+        GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, 3);
+
+        // 4. onto the screen: the print scaled up, the layers and the aim over it
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
+        GLES30.glViewport(0, 0, screenW, screenH);
+        GLES30.glUseProgram(blitP);
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, printTex);
+        GLES30.glUniform1i(u(blitP, "uPrint"), 0);
         GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, flatTex);
         GLES30.glUniform1i(u(blitP, "uFlat"), 1);
         GLES30.glActiveTexture(GLES30.GL_TEXTURE2);
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, hudTex);
         GLES30.glUniform1i(u(blitP, "uHud"), 2);
-        GLES30.glActiveTexture(GLES30.GL_TEXTURE3);
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, depthTex);
-        GLES30.glUniform1i(u(blitP, "uDepth"), 3);
         GLES30.glUniform1f(u(blitP, "uHudRows"), hudTex != 0 ? d.hudRows : 0f);
-        GLES30.glUniform3fv(u(blitP, "uGrade"), 1, d.grade, 0);
         GLES30.glUniform2f(u(blitP, "uFrameSize"), d.w, d.h);
-        GLES30.glUniform1f(u(blitP, "uScale"), scale);
-        GLES30.glUniform1f(u(blitP, "uNight"), d.night);
+        GLES30.glUniform2f(u(blitP, "uScreen"), screenW, screenH);
+        GLES30.glUniform1f(u(blitP, "uScale"), screenScale);
         GLES30.glUniform1f(u(blitP, "uTime"), d.time);
         GLES30.glUniform4fv(u(blitP, "uRing"), 1, d.ring, 0);
         GLES30.glUniform3fv(u(blitP, "uFinger"), 1, d.finger, 0);
         GLES30.glUniform1i(u(blitP, "uTrailN"), d.trailN);
-        if (d.trailN > 0) GLES30.glUniform3fv(u(blitP, "uTrail"), d.trailN, d.trail, 0);
+        if (d.trailN > 0) {
+            GLES30.glUniform3fv(u(blitP, "uTrail"), d.trailN, d.trail, 0);
+            float x0 = Float.MAX_VALUE, y0 = Float.MAX_VALUE, x1 = -Float.MAX_VALUE, y1 = -Float.MAX_VALUE;
+            for (int i = 0; i < d.trailN; i++) {
+                float x = d.trail[i * 3], y = d.trail[i * 3 + 1];
+                x0 = Math.min(x0, x);
+                y0 = Math.min(y0, y);
+                x1 = Math.max(x1, x);
+                y1 = Math.max(y1, y);
+            }
+            GLES30.glUniform4f(u(blitP, "uTrailBox"), x0, y0, x1, y1);
+        }
         GLES30.glBindVertexArray(empty);
         GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, 3);
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);

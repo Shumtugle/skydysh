@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2
+
+- Drawn at the size the phone keeps up with, not at the screen's: the street, its ink and its
+  dots are drawn at two pixels to a frame pixel and scaled up smoothly; the aim, the corner and
+  the paper grain stay at the screen's own size.
+- The drawing size settles by itself: down a step while frames come slow, back up (to three) while
+  they come quick.
+- The aim and the trail are worked out only near where they are, not over the whole screen.
+- A small meter in the lower left corner while the engine is young: how long a frame takes, in
+  milliseconds, and the drawing size.
+
 ## 0.1
 
 - The first build: the summer street alone, levels 1 to 101, then round again from the 2nd.
