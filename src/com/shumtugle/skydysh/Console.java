@@ -476,8 +476,34 @@ final class Console {
         y = restY + (y - restY) * e;
         // (x, y) is where the striking end comes down: the head is up and to the right of it
         float angle = 158f - tilt, len = 205f;
-        Hammer.strikeAt(g, (x + 3f) * Q, (y + 6f) * Q, len * Q, handKind, NAVY & 0xFFFFFF, 0.25f, angle);
-        Hammer.strikeAt(g, x * Q, y * Q, len * Q, handKind, -2, 1f, angle);
+        if (hammerKind != handKind || hammerInk == null) {
+            // drawn once, lying flat, with its shade; turned into place every frame after
+            hammerKind = handKind;
+            hammerInk = flatHammer(len * Q, handKind, -2, hammerAt);
+            hammerShade = flatHammer(len * Q, handKind, NAVY & 0xFFFFFF, shadeAt);
+        }
+        g.blitTurned(hammerShade, shadeAt[0], shadeAt[1], (x + 3f) * Q, (y + 6f) * Q, angle, 0.25f);
+        g.blitTurned(hammerInk, hammerAt[0], hammerAt[1], x * Q, y * Q, angle, 1f);
+    }
+
+    private Ink hammerInk, hammerShade;
+    private int hammerKind = -99;
+    private final float[] hammerAt = new float[2], shadeAt = new float[2];
+
+    /**
+     * The hammer drawn lying flat (handle to the right) and cut out; {@code strike} gets where on
+     * the cut the far end of its striking cap is, the point it is placed by.
+     */
+    private static Ink flatHammer(float length, int kind, int one, float[] strike) {
+        int side = Math.round(length * 2.4f);
+        Ink big = new Ink(side, side);
+        float cx = side * 0.5f, cy = side * 0.5f;
+        Hammer.strikeAt(big, cx, cy, length, kind, one, 1f, 0f);
+        int[] at = new int[2];
+        Ink cut = big.crop(at);
+        strike[0] = cx - at[0];
+        strike[1] = cy - at[1];
+        return cut;
     }
 
     // which segments light for each digit: a top, b upper right, c lower right, d bottom, e lower left, f upper left, g middle

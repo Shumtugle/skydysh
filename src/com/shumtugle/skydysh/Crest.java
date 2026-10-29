@@ -140,10 +140,31 @@ final class Crest {
             float u = !left && burnt[i] >= 0f ? Math.min(1f, burnt[i] / 0.45f) : 1f;
             // spent: it sinks a little and greys, and comes back up to its place as slate
             float dip = left ? 0f : (float) Math.sin(u * Math.PI) * 3f * K;
-            int fill = left ? YELLOW : Px.mix(YELLOW, SLATE, u);
-            int lit = left ? YELLOW_LIT : Px.mix(YELLOW_LIT, SLATE, u);
-            star(cx, cy + dip, STAR_R * K, fill, lit);
+            // two stars drawn once, yellow and slate; a spent one turns from the one to the other
+            if (starYellow == null) {
+                starYellow = starSprite(YELLOW, YELLOW_LIT);
+                starSlate = starSprite(SLATE, SLATE);
+            }
+            float half = starYellow.w * 0.5f;
+            if (left || u < 1f) {
+                if (!left) ink.blit(starSlate, cx - half, cy + dip - half, 1f);
+                ink.blit(starYellow, cx - half, cy + dip - half, left ? 1f : 1f - u);
+            } else ink.blit(starSlate, cx - half, cy + dip - half, 1f);
         }
+    }
+
+    private Ink starYellow, starSlate;
+
+    /** One star on a layer of its own, its middle in the layer's middle. */
+    private Ink starSprite(int fill, int lit) {
+        float ro = STAR_R * K;
+        int side = (int) Math.ceil(2f * (ro + 1.9f * K) + 6f);
+        Ink keep = ink;
+        ink = new Ink(side, side);
+        star(side * 0.5f, side * 0.5f, ro, fill, lit);
+        Ink out = ink;
+        ink = keep;
+        return out;
     }
 
     /** A five-pointed star, its points a little rounded: a thick ink edge, the fill, a lighter half toward the light. */
@@ -176,19 +197,11 @@ final class Crest {
             across *= 1f + jolt;
             down *= 1f - jolt;
         }
+        // the face with its number, drawn once for each number, then laid down squashed
+        Ink face = badgeFace(shown, goldOn);
+        float e = 1.9f * K, pad = e + 3f;
         g.squash(mx, my, across, down);
-        float r = 7f * K, e = 1.9f * K;
-        g.box(mx - hw - e, my - hh - e, mx + hw + e, my + hh + e, r + e, NAVY, NAVY, 1f, 1f);
-        int face = goldOn ? GOLD : CREAM;
-        g.box(mx - hw, my - hh, mx + hw, my + hh, r, face, face, 1f, 1f);
-        String lv = String.valueOf(shown);
-        float th = 15f * K;
-        float tw = Ink.digitsWidth(lv, th);
-        // wide numbers drawn a little narrower, to fit
-        float fit = Math.min(1f, (BADGE_W - 6f) * K / tw);
-        g.unsquash();
-        g.squash(mx, my, across * fit, down);
-        g.digits(lv, mx - tw * 0.5f, my - th * 0.5f, th, NAVY, NAVY, 0.4f * K, 1f);
+        g.blit(face, mx - hw - pad, my - hh - pad, 1f);
         g.unsquash();
         // the attempts lost here, as pips under it; the newest flashes as it comes
         for (int s = 0; s < TRIES - 1 && s < failsShown; s++) {
@@ -197,6 +210,32 @@ final class Crest {
             g.disc(px, py, 2.2f * K, NAVY, 1f, 1f);
             g.disc(px, py, 1.4f * K, fresh && ((int) (failFlash * 8f) & 1) == 0 ? 0xFFFFFFFF : ORANGE, 1f, 1f);
         }
+    }
+
+    private final java.util.HashMap<Integer, Ink> faces = new java.util.HashMap<Integer, Ink>();
+
+    /** The badge's face with a number on it, on a layer of its own, its edge included. */
+    private Ink badgeFace(int shown, boolean gold) {
+        int key = shown * 2 + (gold ? 1 : 0);
+        Ink face = faces.get(key);
+        if (face != null) return face;
+        if (faces.size() > 6) faces.clear();
+        float hw = BADGE_W * 0.5f * K, hh = BADGE_H * 0.5f * K, r = 7f * K, e = 1.9f * K, pad = e + 3f;
+        Ink g = new Ink((int) Math.ceil(2f * (hw + pad)), (int) Math.ceil(2f * (hh + pad)));
+        float mx = hw + pad, my = hh + pad;
+        g.box(mx - hw - e, my - hh - e, mx + hw + e, my + hh + e, r + e, NAVY, NAVY, 1f, 1f);
+        int fc = gold ? GOLD : CREAM;
+        g.box(mx - hw, my - hh, mx + hw, my + hh, r, fc, fc, 1f, 1f);
+        String lv = String.valueOf(shown);
+        float th = 15f * K;
+        float tw = Ink.digitsWidth(lv, th);
+        // wide numbers drawn a little narrower, to fit
+        float fit = Math.min(1f, (BADGE_W - 6f) * K / tw);
+        g.squash(mx, my, fit, 1f);
+        g.digits(lv, mx - tw * 0.5f, my - th * 0.5f, th, NAVY, NAVY, 0.4f * K, 1f);
+        g.unsquash();
+        faces.put(key, g);
+        return g;
     }
 
     // ---- the heavy hammers ----

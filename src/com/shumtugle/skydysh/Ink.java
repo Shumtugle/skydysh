@@ -144,6 +144,76 @@ final class Ink {
         used = true;
     }
 
+    /**
+     * Another layer laid over this one turned: its point (sx, sy) put on (x, y) here, the layer
+     * turned so many degrees counterclockwise about it, smoothly sampled. Turning a drawing made
+     * once costs a lookup a pixel; drawing it afresh at every angle costs its every shape.
+     */
+    void blitTurned(Ink src, float sx, float sy, float x, float y, float degrees, float cover) {
+        if (cover <= 0.003f) return;
+        int k = Math.min(256, Math.round(cover * 256f));
+        double an = Math.toRadians(degrees);
+        float c = (float) Math.cos(an), sn = (float) Math.sin(an);
+        // the box it lands in: its corners turned
+        float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
+        for (int i = 0; i < 4; i++) {
+            float vx = ((i & 1) == 0 ? 0f : src.w) - sx, vy = ((i & 2) == 0 ? 0f : src.h) - sy;
+            float qx = x + c * vx + sn * vy, qy = y - sn * vx + c * vy;
+            minX = Math.min(minX, qx);
+            minY = Math.min(minY, qy);
+            maxX = Math.max(maxX, qx);
+            maxY = Math.max(maxY, qy);
+        }
+        int px0 = Math.max(0, (int) Math.floor(minX)), px1 = Math.min(w - 1, (int) Math.ceil(maxX));
+        int py0 = Math.max(0, (int) Math.floor(minY)), py1 = Math.min(h - 1, (int) Math.ceil(maxY));
+        for (int py = py0; py <= py1; py++) {
+            float vy = py + 0.5f - y;
+            for (int px = px0; px <= px1; px++) {
+                float vx = px + 0.5f - x;
+                float ux = c * vx - sn * vy + sx - 0.5f, uy = sn * vx + c * vy + sy - 0.5f;
+                int ix = (int) Math.floor(ux), iy = (int) Math.floor(uy);
+                if (ix < -1 || iy < -1 || ix >= src.w || iy >= src.h) continue;
+                float fx = ux - ix, fy = uy - iy;
+                int c00 = src.at(ix, iy), c10 = src.at(ix + 1, iy), c01 = src.at(ix, iy + 1), c11 = src.at(ix + 1, iy + 1);
+                if ((c00 | c10 | c01 | c11) == 0) continue;
+                int w00 = (int) ((1f - fx) * (1f - fy) * 256f), w10 = (int) (fx * (1f - fy) * 256f),
+                        w01 = (int) ((1f - fx) * fy * 256f), w11 = 256 - w00 - w10 - w01;
+                int ca = ((c00 >>> 24) * w00 + (c10 >>> 24) * w10 + (c01 >>> 24) * w01 + (c11 >>> 24) * w11) >> 8;
+                if (ca <= 0) continue;
+                int cr = (((c00 >> 16) & 0xFF) * w00 + ((c10 >> 16) & 0xFF) * w10 + ((c01 >> 16) & 0xFF) * w01 + ((c11 >> 16) & 0xFF) * w11) >> 8;
+                int cg = (((c00 >> 8) & 0xFF) * w00 + ((c10 >> 8) & 0xFF) * w10 + ((c01 >> 8) & 0xFF) * w01 + ((c11 >> 8) & 0xFF) * w11) >> 8;
+                int cb = ((c00 & 0xFF) * w00 + (c10 & 0xFF) * w10 + (c01 & 0xFF) * w01 + (c11 & 0xFF) * w11) >> 8;
+                put(py * w + px, (Math.min(255, ca) << 24) | (Math.min(255, cr) << 16) | (Math.min(255, cg) << 8) | Math.min(255, cb), k);
+            }
+        }
+        used = true;
+    }
+
+    /**
+     * The part of this layer that was drawn on, cut out as a layer of its own; {@code at} gets
+     * the cut's top left here.
+     */
+    Ink crop(int[] at) {
+        int x0 = w, y0 = h, x1 = -1, y1 = -1;
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                if (a[y * w + x] != 0) {
+                    if (x < x0) x0 = x;
+                    if (x > x1) x1 = x;
+                    if (y < y0) y0 = y;
+                    if (y > y1) y1 = y;
+                }
+        if (x1 < 0) {
+            at[0] = at[1] = 0;
+            return new Ink(1, 1);
+        }
+        Ink out = new Ink(x1 - x0 + 1, y1 - y0 + 1);
+        for (int y = y0; y <= y1; y++) System.arraycopy(a, y * w + x0, out.a, (y - y0) * out.w, out.w);
+        at[0] = x0;
+        at[1] = y0;
+        return out;
+    }
+
     /** A premultiplied colour laid over a pixel, scaled by k out of 256. */
     private void put(int i, int c, int k) {
         int sa = (c >>> 24) * k >> 8;

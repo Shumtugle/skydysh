@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3
+
+- The corner no longer draws itself afresh while it moves: the two stars (yellow and slate) and
+  each badge face are drawn once and then only laid down; a spent star fades from the one to
+  the other, a jolted badge is the same face squashed.
+- The hammer on the panel is drawn once lying flat, with its shade, and turned into place every
+  frame instead of being drawn part by part twice a frame.
+- On the desktop stand a frame's own work drops from about 12 ms to 1 to 2 while a building
+  falls, and from 13 to 19 ms to 2 to 7 while the panel is closed.
+
 ## 0.2
 
 - Drawn at the size the phone keeps up with, not at the screen's: the street, its ink and its
