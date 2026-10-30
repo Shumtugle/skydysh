@@ -7,12 +7,13 @@ package com.shumtugle.skydysh;
  * Coordinates of touches are frame pixels, W across.
  *
  * A southern town by the sea on a summer evening, its streets grown without end as they are
- * come to (see City), and Freedie running through it (see Runner), after her double on fire
- * (see Chase).
+ * come to (see City), its cars going about it (see Cars) and its people out for the evening
+ * (see Walkers), and Freedie running through it (see Runner), after her double on fire (see
+ * Chase).
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.5";     // shown on screen; keep in step with versionName
+    static final String VERSION = "0.6";     // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -38,6 +39,8 @@ final class World {
     final City city = new City(0x5EE7L);
     final Runner runner = new Runner();
     final Chase chase = new Chase();
+    final Cars cars = new Cars();
+    final Walkers walkers = new Walkers();
     private int caughtSeen;
     private final float[] at = new float[2];
     private final Fliers fliers = new Fliers();                     // far off in the sky, seldom
@@ -60,8 +63,10 @@ final class World {
 
     void update(float dt) {
         time += dt;
-        runner.update(dt, city);
-        chase.update(dt, runner, city);
+        runner.update(dt, city, cars, walkers);
+        chase.update(dt, runner, city, cars);
+        cars.update(dt, runner, chase);
+        walkers.update(dt, runner, chase);
         if (chase.caught != caughtSeen) {
             caughtSeen = chase.caught;
             host.buzz(60);
@@ -129,7 +134,10 @@ final class World {
         d.hudRows = 0;
         d.camera(r.eyeX, r.eyeY, r.eyeZ, r.eyeYaw, r.eyePitch, W * 1.6f, 0.1f, 500f);
         fliers.strokes(d);
-        city.draw(d, r.eyeX, r.eyeZ, (float) Math.sin(r.eyeYaw), (float) Math.cos(r.eyeYaw));
+        float ex = (float) Math.sin(r.eyeYaw), ez = (float) Math.cos(r.eyeYaw);
+        city.draw(d, r.eyeX, r.eyeZ, ex, ez);
+        cars.draw(d, r.eyeX, r.eyeZ, ex, ez);
+        walkers.draw(d, r.eyeX, r.eyeZ, ex, ez);
         r.draw(d);
         chase.draw(d);
         chaseFlat(d, f);

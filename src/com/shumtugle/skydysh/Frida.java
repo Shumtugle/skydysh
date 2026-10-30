@@ -237,8 +237,9 @@ final class Frida {
     }
 
     /**
-     * The same; on fire, every block burns as it is: the dark ones smoulder deep red, the
-     * light ones glow orange to yellow, lit from within, the eyes white hot.
+     * The same; on fire, every block burns through as it is: the dark ones low, red at heart,
+     * the light ones hot, gold to white at heart, every one crusted dark at its edges; the eyes
+     * white hot.
      */
     static void draw(DrawList d, float x, float y, float z, float yaw, float size, String motion, float t, boolean fire) {
         if (moves == null) return;
@@ -269,18 +270,18 @@ final class Frida {
             if (fire) {
                 int own = COL[i];
                 float lum = (0.3f * ((own >> 16) & 0xFF) + 0.59f * ((own >> 8) & 0xFF) + 0.11f * (own & 0xFF)) / 255f;
-                // a flicker of its own, part by part
-                float fl = 0.9f + 0.1f * (float) Math.sin(t * 17f + i * 2.3f);
+                // how hot the block burns: the dark ones low, the light ones high, each flickering on its own
+                float hot = lum < 0.25f ? 0.4f + lum * 0.4f : 0.56f + (lum - 0.25f) * 0.5f;
+                hot += 0.06f * (float) Math.sin(t * 13f + i * 2.3f);
                 if (own == EYES) {
                     col = 0xFFFBE8;
                     mat = DrawList.GLOW;
-                } else if (lum < 0.25f) {
-                    col = Street.scale(0x7A1A0C, fl);
-                    mat = DrawList.PLAIN;
-                } else {
-                    col = Street.scale(Street.mix(0xF0581C, 0xFFD45A, Math.min(1f, (lum - 0.25f) * 1.6f)), fl);
-                    mat = DrawList.GLOW;
+                    d.box(wx, y + py, wz, HALF[i * 3] * size, HALF[i * 3 + 1] * size, HALF[i * 3 + 2] * size, rot, col, mat);
+                    continue;
                 }
+                d.box(wx, y + py, wz, HALF[i * 3] * size, HALF[i * 3 + 1] * size, HALF[i * 3 + 2] * size, rot, own,
+                        DrawList.material(DrawList.FIRE, Math.round(Math.max(0f, Math.min(0.99f, hot)) * 250f)));
+                continue;
             }
             d.box(wx, y + py, wz, HALF[i * 3] * size, HALF[i * 3 + 1] * size, HALF[i * 3 + 2] * size, rot, col, mat);
         }

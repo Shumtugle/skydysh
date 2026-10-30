@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.6
+
+- The town comes alive. Cars go about the streets on the right of the road, on at the
+  crossings or turning now and then, never back; they slow for a turn, keep back from the car
+  ahead and stop short of anyone in the road. They come from out of sight and go out of it.
+- Cars parked along the curbs, the way their side of the road goes, never near a crossing;
+  drawn lean, and only near.
+- People out for the evening on the pavements, each going round a block one way or the
+  other; someone running at them makes them stop and step aside. Shirts, trousers, shorts or
+  skirts, hats and bags; now and then a child.
+- The runner and her double are stopped by cars and people as by houses.
+- The double on fire burns through instead of giving off sparks: every block hot at its
+  heart and crusted dark at its edges, the dark ones low and red, the light ones gold, the heat
+  running up her in waves, the eyes white hot. Her warm light falls on the street, the cars,
+  the houses and the people round her, and a glow is printed round her where nothing nearer
+  stands, its dots in hot orange.
+- Stand scenes for the town and for the double close up.
+
 ## 0.5
 
 - A chase, to try: her double on fire runs off through the town ahead of her. She keeps to

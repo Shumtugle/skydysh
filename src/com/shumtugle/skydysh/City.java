@@ -15,6 +15,7 @@ import java.util.Random;
  * y up, the road at y = 0.
  */
 final class City {
+    static final float PARKED = 3.3f;            // a parked car's middle, from the road's middle
     static final float CELL = 64f;
     // across a street from its middle: the asphalt, the curb, the pavement up to the house fronts
     static final float ROAD = 4.05f, CURB = 4.3f, FRONT = 7f;
@@ -36,6 +37,8 @@ final class City {
         final DrawList boxes = new DrawList();
         // the small things (palms, lamp posts, chimneys): drawn only near
         final DrawList detail = new DrawList();
+        // the parked cars: nearer still
+        final DrawList parked = new DrawList();
         // x0, z0, x1, z1 for each
         float[] walls = new float[64];
         int wallN;
@@ -89,6 +92,7 @@ final class City {
                 Cell c = cell(i, j);
                 d.append(c.boxes);
                 if (dist < CELL * 1.6f) d.append(c.detail);
+                if (dist < CELL * 1.2f) d.append(c.parked);
             }
         if (cells.size() > (2 * REACH + 3) * (2 * REACH + 3)) {
             java.util.Iterator<Cell> it = cells.values().iterator();
@@ -181,6 +185,7 @@ final class City {
         if (sq) plaza(c, rnd, x0, z0);
         else block(c, rnd, x0, z0, i, j);
         lamps(c, x0, z0);
+        parked(c, rnd, x0, z0);
         if (palmy(i, j)) {
             // down the street along the west edge, on both its pavements
             for (float z = z0 + 10f; z < z0 + CELL - 6f; z += 12f)
@@ -259,6 +264,30 @@ final class City {
         d.box(mx, WALK_TOP + 0.55f, mz, 2.8f, 0.06f, 2.8f, null, 0x2D6990, DrawList.SEA);
         d.box(mx, WALK_TOP + 1.1f, mz, 0.35f, 0.6f, 0.35f, null, 0xE2D4BA, DrawList.STONE);
         c.wall(mx - 3.2f, mz - 3.2f, mx + 3.2f, mz + 3.2f);
+    }
+
+    /**
+     * Cars left along the curbs of the two streets the cell owns, each the way its side of the
+     * road goes, now and then a gap; none near the crossings.
+     */
+    private void parked(Cell c, Random rnd, float x0, float z0) {
+        float off = PARKED;
+        for (float t = 13f; t < CELL - 13f; t += 5.6f)
+            for (int s = -1; s <= 1; s += 2) {
+                if (rnd.nextInt(10) < 7) continue;
+                int paint = Cars.PAINT[rnd.nextInt(Cars.PAINT.length)];
+                // the street running north: on its east side they face north, on its west side south
+                if (rnd.nextBoolean()) {
+                    float x = x0 + s * off, z = z0 + t;
+                    Cars.car(c.parked, x, z, s > 0 ? 0f : (float) Math.PI, paint, true);
+                    c.wall(x - 0.95f, z - 2.3f, x + 0.95f, z + 2.3f);
+                } else {
+                    // the street running east: on its south side they face east, on its north side west
+                    float x = x0 + t, z = z0 + s * off;
+                    Cars.car(c.parked, x, z, s < 0 ? (float) (Math.PI / 2) : (float) (-Math.PI / 2), paint, true);
+                    c.wall(x - 2.3f, z - 0.95f, x + 2.3f, z + 0.95f);
+                }
+            }
     }
 
     /** Lamp posts along the curbs of the block, every so often. */

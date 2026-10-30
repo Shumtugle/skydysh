@@ -15,7 +15,7 @@ release, each seen on the stand before the phone.
   edge of the frame pointing to the next gate.
 - A speed trap: a point on a street where the speed run through it is what counts.
 - Races against rivals: runners of their own, kept apart from the people and traffic about.
-- People on the pavements and cars on the roads again, as the town's own life.
+- More life about the town: people crossing at the crossings, cars that hoot and swerve.
 - A car: parked at a curb, run up to and got into; left where it was got out of. The car's own
   feel: mass, grip, how it takes a corner. The finger to lead it as it leads her; whether it
   needs a pedal of its own is to be tried.

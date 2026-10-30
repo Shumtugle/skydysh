@@ -24,6 +24,8 @@ final class DrawList {
     // drawn as balls, but round only about their own x: a rod with flat ends (a handle), and the
     // hammer's head, the same with its band of scallops
     static final int ROD = 28, HEAD = 29;
+    // a burning block: hot at its heart, crusted at its edges; its seed says how hot (0 to 250)
+    static final int FIRE = 30;
     // per box: middle (3), half sizes (3), the turn as three columns (9), color (3), material (1)
     static final int STRIDE = 19;
 
@@ -53,6 +55,9 @@ final class DrawList {
     static final int TRAIL_MAX = 32;
     final float[] trail = new float[TRAIL_MAX * 3];
     int trailN;
+    // something burning: its light on what is near (x, y, z, strength; 0, none), and the glow
+    // printed round it (middle x, y and reach, frame pixels; strength; how far off, meters)
+    final float[] fire = new float[4], halo = new float[5];
 
     /** A dot of a flight, in frame pixels. */
     void dot(float x, float y, int kind) {
@@ -96,6 +101,8 @@ final class DrawList {
         trailN = 0;
         ring[3] = 0f;
         finger[2] = 0f;
+        fire[3] = 0f;
+        halo[3] = 0f;
     }
 
     /**
@@ -150,6 +157,7 @@ final class DrawList {
     /** Where a point lands in the frame, in frame pixels; false behind the eye. */
     boolean project(float x, float y, float z, float[] out) {
         float[] m = viewProj;
+        if (out.length > 2) out[2] = m[3] * x + m[7] * y + m[11] * z + m[15];
         float cx = m[0] * x + m[4] * y + m[8] * z + m[12];
         float cy = m[1] * x + m[5] * y + m[9] * z + m[13];
         float cw = m[3] * x + m[7] * y + m[11] * z + m[15];
@@ -278,6 +286,8 @@ final class DrawList {
         arr(s, "grade", grade);
         arr(s, "ring", ring);
         arr(s, "finger", finger);
+        arr(s, "fire", fire);
+        arr(s, "halo", halo);
         s.append(",\"trailN\":").append(trailN);
         arr(s, "trail", trail);
         s.append(",\"flyN\":").append(flyN).append(",\"fly\":[");

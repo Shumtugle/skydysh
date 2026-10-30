@@ -12,6 +12,11 @@ uniform sampler2D uDepth;   // and its depth
 uniform vec3 uGrade;        // the hour's grade: contrast, saturation, warmth
 uniform float uScale;       // drawn pixels to a frame pixel
 uniform float uNight;
+// a glow round something burning: its middle and reach across (frame pixels; it reaches half as
+// far again up and down), how strong (0, none), and how far off it is (meters): only what is as
+// far or farther takes it, so nothing nearer is lit and no wall shows it through
+uniform vec4 uHalo;
+uniform float uHaloDepth;
 
 out vec4 outColor;
 
@@ -58,6 +63,17 @@ void main() {
         scene = clamp((scene - 0.45) * uGrade.x + 0.45, 0.0, 1.0);
         scene *= vec3(1.0 + 0.05 * uGrade.z, 1.0 + 0.01 * uGrade.z, 1.0 - 0.07 * uGrade.z);
     }
+    // the glow round what burns: a warm light laid over, as a print in fluorescent orange
+    float glow = 0.0;
+    if (uHalo.w > 0.0) {
+        vec2 fp = vec2(gl_FragCoord.x, float(textureSize(uScene, 0).y) - gl_FragCoord.y) / uScale;
+        vec2 q = (fp - uHalo.xy) / vec2(uHalo.z, uHalo.z * 1.5);
+        float r2 = dot(q, q);
+        if (r2 < 4.0 && lin(texelFetch(uDepth, px, 0).r) > uHaloDepth - 1.5) {
+            glow = exp(-r2 * 1.3) * smoothstep(0.08, 0.5, r2) * uHalo.w;
+            scene = 1.0 - (1.0 - scene) * (1.0 - vec3(1.0, 0.5, 0.14) * glow * 0.6);
+        }
+    }
     // the halftone: dots on a screen turned at 45 degrees, larger the darker the colour
     float cell = max(2.5, uScale * 1.7);
     vec2 g = mat2(0.7071, -0.7071, 0.7071, 0.7071) * gl_FragCoord.xy / cell;
@@ -66,7 +82,9 @@ void main() {
     float amount = clamp((0.78 - L) * 0.85, 0.06, 0.55);
     float rr = sqrt(amount) * 0.42;
     float dotk = clamp((rr - dd) * cell + 0.5, 0.0, 1.0);
-    scene = mix(scene, scene * vec3(0.8, 0.82, 0.9), dotk * 0.55);
+    // (in the glow the dots are printed hot, not dark)
+    vec3 dotInk = mix(scene * vec3(0.8, 0.82, 0.9), vec3(1.0, 0.56, 0.16), min(1.0, glow * 1.6));
+    scene = mix(scene, dotInk, dotk * (0.55 + 0.3 * min(1.0, glow * 1.6)));
     // the ink
     int reach = max(1, int(floor(uScale * 0.75 + 0.5)));
     float ink = edge(px, reach);

@@ -1,7 +1,8 @@
 # Skydysh
 
 A game for Android: races through an open town, a southern seaside town on a summer evening,
-its streets grown from a seed without end as they are come to. For now on foot: a giant of
+its streets grown from a seed without end as they are come to, cars going about them and
+people out on the pavements. For now on foot: a giant of
 brick and stone in a maid's dress runs, turns, jumps and slides through it; a car, a boat and
 a plane are to come.
 

@@ -4,7 +4,7 @@ package com.shumtugle.skydysh;
  * Freedie on foot, and the eye that follows her: she runs while a finger is on the glass and
  * slows to a stop when it lifts; the finger leads her, as it led the aim: moved sideways, she
  * turns by as much as it moved, wherever it lies on the glass; flicked up, she jumps; flicked
- * down, she slides. Houses, lamp posts and palms stop her; the curb is a step she takes in her
+ * down, she slides. Houses, lamp posts, palms, cars and people stop her; the curb is a step she takes in her
  * stride.
  *
  * Her heading is the way she runs, in the eye's own terms (0 along +z, growing toward +x); the
@@ -76,7 +76,7 @@ final class Runner {
         stateAt = clock;
     }
 
-    void update(float dt, City city) {
+    void update(float dt, City city, Cars cars, Walkers walkers) {
         clock += dt;
         if (holding) speed += (TOP_SPEED - speed) * Math.min(1f, dt * PICK_UP);
         else speed = Math.max(0f, speed - BRAKE * dt);
@@ -92,7 +92,7 @@ final class Runner {
         x += fx * speed * dt;
         z += fz * speed * dt;
         float[] p = {x, z};
-        if (city.push(p, RADIUS)) {
+        if (city.push(p, RADIUS) | cars.push(p, RADIUS) | walkers.push(p, RADIUS)) {
             // ran into something: what was across her way is lost
             float mx = (p[0] - x), mz = (p[1] - z), m = (float) Math.sqrt(mx * mx + mz * mz);
             if (m > 1e-4f) {

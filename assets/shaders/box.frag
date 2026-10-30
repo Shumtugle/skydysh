@@ -29,7 +29,8 @@ uniform float uFogStart;
 uniform float uFogScale;
 uniform float uTime;          // seconds, for what moves on its own
 uniform float uNight;         // how far into the night: windows lit
-uniform float uClear;         // the see-through pass: only clear plastic is drawn, over what is there
+uniform float uClear;
+uniform vec4 uFire;           // something burning: where, and how bright its light on what is near (0, none)         // the see-through pass: only clear plastic is drawn, over what is there
 
 out vec4 outColor;
 
@@ -37,7 +38,7 @@ const float PLAIN = 0.0, GRAIN = 1.0, STONE = 2.0, ASPHALT = 3.0, WOOD = 4.0, PA
 const float FACADE = 8.0, FROND = 9.0, TRUNK = 10.0, ROAD = 11.0, GLASS = 12.0, GLOW = 13.0, SEA = 14.0, RAIL = 15.0;
 const float PROMENADE = 16.0, AWNING = 17.0, SQUARE = 18.0, LANE = 19.0;
 const float POLISHED = 20.0, RUBBER = 21.0, MATTE = 26.0, CLEAR = 27.0;
-const float ROD = 28.0, HEAD = 29.0;
+const float ROD = 28.0, HEAD = 29.0, FIRE = 30.0;
 
 const vec3 INK = vec3(0.137, 0.165, 0.290);
 
@@ -173,6 +174,27 @@ vec3 road(float across, float along, float hw, vec3 base) {
     if (ax > hw - 0.3 && ax < hw - 0.17) c = rgb(0xE9DCC2);
     else if (ax >= hw - 0.17) c = base * 0.9;
     return c;
+}
+
+/** The warm light thrown by what burns on what is near it, falling off within some nine meters. */
+vec3 fireLight(vec3 p, vec3 n) {
+    if (uFire.w <= 0.0) return vec3(0.0);
+    vec3 d = uFire.xyz - p;
+    float r = length(d);
+    float fall = max(0.0, 1.0 - r / 9.0);
+    float face = 0.25 + 0.75 * max(dot(n, d / max(r, 1e-3)), 0.0);
+    return vec3(1.0, 0.42, 0.1) * uFire.w * fall * fall * face;
+}
+
+/** Heat as colour: black-red crust, red, orange, gold, white. */
+vec3 heat(float h) {
+    h = clamp(h, 0.0, 1.0);
+    vec3 c0 = vec3(0.24, 0.02, 0.01), c1 = vec3(0.82, 0.08, 0.02), c2 = vec3(1.0, 0.36, 0.03),
+         c3 = vec3(1.0, 0.66, 0.06), c4 = vec3(1.0, 0.9, 0.5);
+    if (h < 0.3) return mix(c0, c1, h / 0.3);
+    if (h < 0.55) return mix(c1, c2, (h - 0.3) / 0.25);
+    if (h < 0.8) return mix(c2, c3, (h - 0.55) / 0.25);
+    return mix(c3, c4, (h - 0.8) / 0.2);
 }
 
 #ifdef SPHERE
@@ -314,6 +336,7 @@ void sphere(float mat) {
     }
     float sh = shadowAt(uLight * vec4(world + n * 0.04, 1.0));
     vec3 c = toon(base, n, max(dot(n, uSun), 0.0) * sh);
+    c += base * fireLight(world, n);
     // a flat spot of shine, cut clean, where the sun glances off it
     if (!hole && mat != MATTE) {
         float sp = dot(n, normalize(uSun + v));
@@ -351,6 +374,19 @@ void main() {
     if (mat == GLOW) {
         // lit from inside: no sun, no shade, only the haze
         outColor = vec4(haze(min(base * 1.25, vec3(1.0)), vWorld), ident(vColor, mat, face));
+        return;
+    }
+    if (mat == FIRE) {
+        // burning through: each block hot at its heart, crusted dark at its edges, the heat
+        // running up it in waves; the seed is how hot the block is
+        float h = float(seed) / 250.0;
+        vec2 e = abs(uv) / max(ext, vec2(1e-3));
+        float rim = max(e.x, e.y);
+        float core = 1.0 - smoothstep(0.35, 0.92, rim);
+        float wave = sin(vWorld.y * 6.0 - uTime * 9.0 + sin(vWorld.x * 2.3 + vWorld.z * 1.9) * 2.0);
+        float tip = vFace.y > 0.5 ? 0.12 : 0.0;
+        float t = h - 0.42 + core * 0.48 + wave * 0.08 + tip;
+        outColor = vec4(haze(heat(t), vWorld), ident(vColor, mat, face));
         return;
     }
     if (mat == ROAD) {
@@ -405,6 +441,7 @@ void main() {
     // leaves let the light through: lit from either side
     float light = leaf > 0.0 ? (0.4 + 0.6 * abs(ndl)) * sh : max(ndl, 0.0) * sh;
     vec3 c = toon(albedo, n, light);
+    c += albedo * fireLight(vWorld, n);
     if (glass > 0.0 && glass < 1.5 && mat == GLASS) {
         // glass: the sky's teal in it, a pale streak across
         float s = uv.x + uv.y * 0.7;

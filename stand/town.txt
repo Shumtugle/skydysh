@@ -1,0 +1,16 @@
+# The town alive: the cars about the streets, the parked ones along the curbs, people on the
+# pavements; she walks a while, then runs, among them.
+screen 1096 2560
+wait 6
+shot t0_stand
+down 137 600
+wait 1.0
+shot t1_walk
+wait 4
+shot t2_run
+drag 137 600 152 600 0.2
+down 152 600
+wait 2
+shot t3_half
+wait 3
+shot t4_on

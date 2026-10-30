@@ -32,7 +32,7 @@ final class Chase {
     /** The distance to the runner, as last worked out. */
     float apart;
 
-    void update(float dt, Runner r, City city) {
+    void update(float dt, Runner r, City city, Cars cars) {
         clock += dt;
         float dx = r.x - x, dz = r.z - z;
         apart = (float) Math.sqrt(dx * dx + dz * dz);
@@ -88,6 +88,7 @@ final class Chase {
         z += (float) Math.cos(heading) * speed * dt;
         float[] p = {x, z};
         city.push(p, 0.55f);
+        cars.push(p, 0.55f);
         x = p[0];
         z = p[1];
         y += (city.ground(x, z) - y) * Math.min(1f, dt * 18f);
@@ -131,15 +132,26 @@ final class Chase {
         return stride * (speed > 6f ? 0.6667f : speed > 2.4f ? 0.9333f : 1.3333f);
     }
 
+    private final float[] at = new float[3];
+
+    /**
+     * She burns: her light on the street and the houses round her, and, where the eye can see
+     * her, a glow printed round her over the frame.
+     */
     void draw(DrawList d) {
         Frida.draw(d, x, y, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), true);
-        // flames off her shoulders and head, rising and dying away
-        for (int k = 0; k < 8; k++) {
-            float ph = (clock * 1.7f + k / 8f) % 1f;
-            float ox = (float) Math.sin(k * 2.1f) * 0.35f, oz = (float) Math.cos(k * 1.7f) * 0.25f;
-            float s = 0.13f * (1f - ph);
-            int c = Street.mix(0xFFE27A, 0xE8401A, ph);
-            d.box(x + ox, y + 2.1f + ph * 1.4f, z + oz, s, s * 1.4f, s, null, c, DrawList.GLOW);
+        float flick = 0.92f + 0.08f * (float) Math.sin(clock * 11f) * (float) Math.sin(clock * 4.3f + 1f);
+        d.fire[0] = x;
+        d.fire[1] = y + 1.6f;
+        d.fire[2] = z;
+        d.fire[3] = 1.3f * flick;
+        if (d.project(x, y + 1.45f, z, at)) {
+            d.halo[0] = at[0];
+            d.halo[1] = at[1];
+            d.halo[2] = d.focal * 1.0f / Math.max(1f, at[2]);
+            d.halo[4] = at[2];
+            // fainter far off, as the haze takes her
+            d.halo[3] = flick * Math.max(0f, Math.min(1f, 1.2f - at[2] / 120f));
         }
     }
 }

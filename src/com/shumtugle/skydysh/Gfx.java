@@ -311,6 +311,8 @@ final class Gfx {
         GLES30.glUniform3fv(u(inkP, "uGrade"), 1, d.grade, 0);
         GLES30.glUniform1f(u(inkP, "uScale"), scale);
         GLES30.glUniform1f(u(inkP, "uNight"), d.night);
+        GLES30.glUniform4fv(u(inkP, "uHalo"), 1, d.halo, 0);
+        GLES30.glUniform1f(u(inkP, "uHaloDepth"), d.halo[4]);
         GLES30.glBindVertexArray(empty);
         GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, 3);
 
@@ -371,6 +373,7 @@ final class Gfx {
         GLES30.glUniform1f(u(p, "uFogScale"), d.fogScale);
         GLES30.glUniform1f(u(p, "uTime"), d.time);
         GLES30.glUniform1f(u(p, "uNight"), d.night);
+        GLES30.glUniform4fv(u(p, "uFire"), 1, d.fire, 0);
     }
 
     // ---- helpers ----

@@ -191,6 +191,7 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
     gl.uniform1f(u(p, 'uFogScale'), frame.fogScale);
     gl.uniform1f(u(p, 'uTime'), frame.time || 0);
     gl.uniform1f(u(p, 'uNight'), frame.night || 0);
+    gl.uniform4fv(u(p, 'uFire'), frame.fire || [0, 0, 0, 0]);
   };
 
   // 2. the sky, then the boxes, at the drawing size
@@ -254,6 +255,9 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
   gl.uniform3fv(u(inkP, 'uGrade'), frame.grade || [1, 1, 0]);
   gl.uniform1f(u(inkP, 'uScale'), DS);
   gl.uniform1f(u(inkP, 'uNight'), frame.night || 0);
+  const halo = frame.halo || [0, 0, 0, 0, 0];
+  gl.uniform4fv(u(inkP, 'uHalo'), halo.slice(0, 4));
+  gl.uniform1f(u(inkP, 'uHaloDepth'), halo[4] || 0);
   gl.bindVertexArray(empty);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 
