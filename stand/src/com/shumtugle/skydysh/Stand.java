@@ -197,6 +197,52 @@ public final class Stand implements World.Host {
             // plane SECONDS: a plane high up that has flown so long, its trail behind it
             world.standFliers(2, f(p[1]));
             step();
+        } else if (c.equals("chasebot")) {
+            // chasebot SECONDS [SHOTEVERY PREFIX]: a finger that runs after her the way a player
+            // would, turning toward her by sideways moves of its own, never more than a hand's
+            // width a frame
+            float secs = f(p[1]), every = p.length > 2 ? f(p[2]) : 0f;
+            String prefix = p.length > 3 ? p[3] : "b";
+            float fx = World.W * 0.5f, fy = 600f, next = every;
+            world.touch(World.DOWN, fx, fy);
+            int n = Math.round(secs / DT), k = 0;
+            // the way she went, dropped behind her as she runs; the finger follows it, crumb by crumb
+            java.util.ArrayDeque<float[]> crumbs = new java.util.ArrayDeque<float[]>();
+            float dropAt = 0f;
+            for (int i = 0; i < n; i++) {
+                Runner r = world.runner;
+                Chase ch = world.chase;
+                if (i * DT >= dropAt) {
+                    crumbs.add(new float[]{ch.x, ch.z});
+                    dropAt += 0.25f;
+                }
+                while (crumbs.size() > 1) {
+                    float[] c0 = crumbs.peek();
+                    float ddx = c0[0] - r.x, ddz = c0[1] - r.z;
+                    if (ddx * ddx + ddz * ddz < 16f) crumbs.poll();
+                    else break;
+                }
+                float[] goal = ch.apart < 12f || crumbs.isEmpty() ? new float[]{ch.x, ch.z} : crumbs.peek();
+                float want = (float) Math.atan2(goal[0] - r.x, goal[1] - r.z);
+                float dd = want - r.heading;
+                while (dd > Math.PI) dd -= 2f * (float) Math.PI;
+                while (dd < -Math.PI) dd += 2f * (float) Math.PI;
+                float px = Math.max(-6f, Math.min(6f, dd / (float) (Math.PI / 2) * Runner.QUARTER));
+                fx += px;
+                if (fx < 20f || fx > World.W - 20f) {
+                    // the edge of the glass: lift and put the finger back in the middle
+                    world.touch(World.UP, fx, fy);
+                    fx = World.W * 0.5f;
+                    world.touch(World.DOWN, fx, fy);
+                }
+                world.touch(World.MOVE, fx, fy);
+                step();
+                if (every > 0f && i * DT >= next) {
+                    shot(prefix + (k++));
+                    next += every;
+                }
+            }
+            world.touch(World.UP, fx, fy);
         } else if (c.equals("shot")) {
             shot(p[1]);
         } else {

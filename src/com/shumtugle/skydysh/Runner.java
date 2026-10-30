@@ -17,7 +17,7 @@ final class Runner {
     // the finger: frame pixels moved sideways for a quarter turn; how far and how fast a flick goes
     static final float QUARTER = 110f, FLICK_PX = 26f, FLICK_S = 0.16f;
     // the eye: so far behind her, so high, looking so far ahead of her
-    static final float BACK = 6f, HIGH = 2.9f, AHEAD = 16f, LOOK_UP = 2.4f;
+    static final float BACK = 6f, HIGH = 3.4f, AHEAD = 16f, LOOK_UP = 2.4f;
 
     float x = -1.9f, z = 6f, y, vy;
     float heading;                  // radians: 0 runs along +z

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5
+
+- A chase, to try: her double on fire runs off through the town ahead of her. She keeps to
+  the streets, on the right of the road, and at each crossing goes on or turns as it falls out;
+  near, she bolts; far ahead, she lets the chase come up; left far behind, she folds her arms
+  and waits. Caught, she is jolted, counted, and breaks loose for a few seconds.
+- Over the frame: how far off she is, in meters, at the top; how many times she was caught, in
+  the corner; a burning mark at the edge of the frame the way she is, when she is out of sight.
+  The phone buzzes at a catch.
+- The figure can be drawn on fire: the dark blocks smoulder, the light ones glow from within;
+  flames rise off her shoulders.
+- The eye a little higher behind the runner, to see over her.
+- The dispatcher's panel kept in the code for later, unused.
+- A plan of what is to come, in PLAN.md.
+
 ## 0.4
 
 - The game turns into races through an open town; the throwing game is gone: the plinth,

@@ -8,6 +8,11 @@ a plane are to come.
 A finger on the glass makes her run; moved sideways, it turns her by as much as it moved;
 flicked up, she jumps; flicked down, she slides; lifted, she slows to a stop.
 
+For now, to try: a chase. Her double, on fire, runs off through the streets; the number at the
+top is how far off she is, the one in the corner how many times she was caught.
+
+What is to come is in `PLAN.md`.
+
 ## How it is made
 
 - Java 8 and the platform alone; no build system, no libraries.

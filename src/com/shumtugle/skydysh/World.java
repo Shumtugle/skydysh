@@ -7,11 +7,12 @@ package com.shumtugle.skydysh;
  * Coordinates of touches are frame pixels, W across.
  *
  * A southern town by the sea on a summer evening, its streets grown without end as they are
- * come to (see City), and Freedie running through it (see Runner).
+ * come to (see City), and Freedie running through it (see Runner), after her double on fire
+ * (see Chase).
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.4";     // shown on screen; keep in step with versionName
+    static final String VERSION = "0.5";     // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -36,6 +37,9 @@ final class World {
     float drawScale;                         // drawn pixels to a frame pixel, set by the shell
     final City city = new City(0x5EE7L);
     final Runner runner = new Runner();
+    final Chase chase = new Chase();
+    private int caughtSeen;
+    private final float[] at = new float[2];
     private final Fliers fliers = new Fliers();                     // far off in the sky, seldom
     private Px flatPx;
 
@@ -57,6 +61,11 @@ final class World {
     void update(float dt) {
         time += dt;
         runner.update(dt, city);
+        chase.update(dt, runner, city);
+        if (chase.caught != caughtSeen) {
+            caughtSeen = chase.caught;
+            host.buzz(60);
+        }
         fliers.update(dt, true);
     }
 
@@ -69,6 +78,37 @@ final class World {
     void standFliers(int what, float seconds) {
         if (what == 1) fliers.standFlock();
         else fliers.standPlane(seconds);
+    }
+
+    /**
+     * Over the frame: how far off she is, in meters, at the top; how many times she was caught,
+     * in the corner; and when she is out of sight, a burning mark at the edge the way she is.
+     */
+    private void chaseFlat(DrawList d, Px f) {
+        int fire = 0xFFF0581C, ink = 0xFF232A4A, cream = 0xFFF4E8D2;
+        String m = String.valueOf(Math.round(chase.apart));
+        int sc = 3, tw = PixelFont.width(m, sc);
+        PixelFont.draw(f, m, (W - tw) / 2 + 1, 15, sc, ink);
+        PixelFont.draw(f, m, (W - tw) / 2, 14, sc, cream);
+        String c = String.valueOf(chase.caught);
+        PixelFont.draw(f, c, 9, 15, 2, ink);
+        PixelFont.draw(f, c, 8, 14, 2, fire);
+        boolean seen = d.project(chase.x, chase.y + 1.5f, chase.z, at)
+                && at[0] > 6 && at[0] < W - 6 && at[1] > 30 && at[1] < h - 6;
+        if (!seen) {
+            // the way to her, from the middle of the frame, cut at its edge
+            float ax = (float) Math.sin(runner.eyeYaw), az = (float) Math.cos(runner.eyeYaw);
+            float vx = chase.x - runner.x, vz = chase.z - runner.z;
+            float across = vx * az - vz * ax, along = vx * ax + vz * az;
+            float ang = (float) Math.atan2(across, along);
+            float ex = (float) Math.sin(ang), ey = -(float) Math.cos(ang);
+            float cx = W * 0.5f, cy = h * 0.5f, k = Math.min((W * 0.5f - 12f) / Math.max(1e-3f, Math.abs(ex)),
+                    (h * 0.5f - 34f) / Math.max(1e-3f, Math.abs(ey)));
+            float px = cx + ex * k, py = cy + ey * k;
+            f.disc(px, py, 7.5f, ink);
+            f.disc(px, py, 6f, fire);
+            f.disc(px + ex * 2f, py + ey * 2f, 2.5f, 0xFFFFD45A);
+        }
     }
 
     void draw(DrawList d) {
@@ -91,6 +131,8 @@ final class World {
         fliers.strokes(d);
         city.draw(d, r.eyeX, r.eyeZ, (float) Math.sin(r.eyeYaw), (float) Math.cos(r.eyeYaw));
         r.draw(d);
+        chase.draw(d);
+        chaseFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         // while the engine is young: how long a frame takes, in milliseconds, and how finely it is drawn
         if (frameMs > 0f) {

@@ -1,0 +1,28 @@
+# Plan
+
+Races through an open town: on foot, then by car, by boat and by plane. One new thing a
+release, each seen on the stand before the phone.
+
+## Done
+
+- 0.4 The open town, grown from a seed a cell at a time; the runner on foot: a finger runs
+  her, sideways turns her, a flick up jumps, a flick down slides.
+- 0.5 A chase: her double on fire runs off through the streets, and is to be caught.
+
+## Next
+
+- The race against the clock: gates at crossings strung into a course, a clock, a mark at the
+  edge of the frame pointing to the next gate.
+- A speed trap: a point on a street where the speed run through it is what counts.
+- Races against rivals: runners of their own, kept apart from the people and traffic about.
+- People on the pavements and cars on the roads again, as the town's own life.
+- A car: parked at a curb, run up to and got into; left where it was got out of. The car's own
+  feel: mass, grip, how it takes a corner. The finger to lead it as it leads her; whether it
+  needs a pedal of its own is to be tried.
+- The sea along one side of the town, a promenade, canals; a boat.
+- Roofs to land on; a plane.
+- The dispatcher's room between races (the panel with the clock, the set and the keys) is
+  kept in the code, unused for now, for the moment a race ends.
+- A start and a finish to every race; what is won and kept.
+- Sound: steps, breath, the fire.
+- The project's page, with the game working in the browser.

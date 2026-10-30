@@ -233,6 +233,14 @@ final class Frida {
 
     /** Draws her at (x, y, z), turned about the upright by yaw (0: facing -z), size times the skeleton, in a motion at a time. */
     static void draw(DrawList d, float x, float y, float z, float yaw, float size, String motion, float t) {
+        draw(d, x, y, z, yaw, size, motion, t, false);
+    }
+
+    /**
+     * The same; on fire, every block burns as it is: the dark ones smoulder deep red, the
+     * light ones glow orange to yellow, lit from within, the eyes white hot.
+     */
+    static void draw(DrawList d, float x, float y, float z, float yaw, float size, String motion, float t, boolean fire) {
         if (moves == null) return;
         int c = moves.motion(motion);
         if (c < 0) c = 0;
@@ -257,7 +265,24 @@ final class Frida {
             rot[6] = -sy * r00 + cy * r20; rot[7] = -sy * r01 + cy * r21; rot[8] = -sy * r02 + cy * r22;
             float wx = x + cy * px + sy * pz, wz = z - sy * px + cy * pz;
             int col = COL[i] == EYES ? Street.mix(0x2A1C14, EYES, eyes) : COL[i];
-            d.box(wx, y + py, wz, HALF[i * 3] * size, HALF[i * 3 + 1] * size, HALF[i * 3 + 2] * size, rot, col, MAT[i]);
+            int mat = MAT[i];
+            if (fire) {
+                int own = COL[i];
+                float lum = (0.3f * ((own >> 16) & 0xFF) + 0.59f * ((own >> 8) & 0xFF) + 0.11f * (own & 0xFF)) / 255f;
+                // a flicker of its own, part by part
+                float fl = 0.9f + 0.1f * (float) Math.sin(t * 17f + i * 2.3f);
+                if (own == EYES) {
+                    col = 0xFFFBE8;
+                    mat = DrawList.GLOW;
+                } else if (lum < 0.25f) {
+                    col = Street.scale(0x7A1A0C, fl);
+                    mat = DrawList.PLAIN;
+                } else {
+                    col = Street.scale(Street.mix(0xF0581C, 0xFFD45A, Math.min(1f, (lum - 0.25f) * 1.6f)), fl);
+                    mat = DrawList.GLOW;
+                }
+            }
+            d.box(wx, y + py, wz, HALF[i * 3] * size, HALF[i * 3 + 1] * size, HALF[i * 3 + 2] * size, rot, col, mat);
         }
     }
 }
