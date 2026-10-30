@@ -8,6 +8,8 @@ release, each seen on the stand before the phone.
 - 0.4 The open town, grown from a seed a cell at a time; the runner on foot: a finger runs
   her, sideways turns her, a flick up jumps, a flick down slides.
 - 0.5 A chase: her double on fire runs off through the streets, and is to be caught.
+- 0.6 The town alive: cars about the streets and parked along the curbs, people on the
+  pavements; the double burns through, her light and glow on all round her.
 
 ## Next
 
