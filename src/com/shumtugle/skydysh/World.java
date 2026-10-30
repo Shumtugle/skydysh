@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.6";     // shown on screen; keep in step with versionName
+    static final String VERSION = "0.7";     // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -41,7 +41,7 @@ final class World {
     final Chase chase = new Chase();
     final Cars cars = new Cars();
     final Walkers walkers = new Walkers();
-    private int caughtSeen;
+    private int caughtSeen, struckSeen;
     private final float[] at = new float[2];
     private final Fliers fliers = new Fliers();                     // far off in the sky, seldom
     private Px flatPx;
@@ -70,6 +70,10 @@ final class World {
         if (chase.caught != caughtSeen) {
             caughtSeen = chase.caught;
             host.buzz(60);
+        }
+        if (chase.struck != struckSeen) {
+            struckSeen = chase.struck;
+            host.buzz(30);
         }
         fliers.update(dt, true);
     }

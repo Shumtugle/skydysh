@@ -10,6 +10,8 @@ release, each seen on the stand before the phone.
 - 0.5 A chase: her double on fire runs off through the streets, and is to be caught.
 - 0.6 The town alive: cars about the streets and parked along the curbs, people on the
   pavements; the double burns through, her light and glow on all round her.
+- 0.7 The cars run into the double: she is flung, falls, lies and gets up again; a moment to
+  catch her.
 
 ## Next
 

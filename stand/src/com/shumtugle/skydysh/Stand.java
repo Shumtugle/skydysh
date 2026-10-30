@@ -236,13 +236,34 @@ public final class Stand implements World.Host {
                     world.touch(World.DOWN, fx, fy);
                 }
                 world.touch(World.MOVE, fx, fy);
+                int was = world.chase.struck;
                 step();
+                if (world.chase.struck != was)
+                    System.out.println(String.format("%7.2fs  struck by a car, %.0f m off", time, world.chase.apart));
                 if (every > 0f && i * DT >= next) {
                     shot(prefix + (k++));
                     next += every;
                 }
             }
             world.touch(World.UP, fx, fy);
+        } else if (c.equals("carbehind")) {
+            // carbehind METERS SPEED SECONDS EVERY PREFIX: a car put behind her in her lane and
+            // driven on at SPEED until it strikes her; the scene run on so long, shot so often
+            world.cars.standBehind(world.chase, f(p[1]));
+            float rush = f(p[2]), secs = f(p[3]), every = f(p[4]), next = 0f;
+            int was = world.chase.struck, n = Math.round(secs / DT), k = 0;
+            for (int i = 0; i < n; i++) {
+                if (world.chase.struck == was) world.cars.speed[0] = rush;
+                step();
+                if (world.chase.struck != was && next == 0f) {
+                    System.out.println(String.format("%7.2fs  struck by a car, %.0f m off", time, world.chase.apart));
+                    next = 0.001f;
+                }
+                if (next > 0f && (next += DT) >= every) {
+                    shot(p[5] + (k++));
+                    next = 0.001f;
+                }
+            }
         } else if (c.equals("shot")) {
             shot(p[1]);
         } else {

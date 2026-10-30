@@ -1,0 +1,8 @@
+# The double struck by a car: the runner after her a little, then lets her go; a car comes on
+# behind her in her lane, runs into her; she is thrown, falls, lies and gets up again.
+screen 1096 2560
+wait 0.4
+down 137 600
+wait 1.6
+up 137 600
+carbehind 6 15 5 0.25 k

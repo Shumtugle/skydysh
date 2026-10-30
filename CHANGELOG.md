@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7
+
+- The cars no longer stop for the double on fire, and she runs in their lane. Struck by one,
+  she is flung the way it was going and off to the side, toward the curb, falls on her back,
+  lies a while and gets up again; the car jolts to a stop and stands a moment, and while she
+  is down the cars slow for her. Caught lying there, she counts all the same, and gets up to
+  break loose. The phone gives a short buzz at the blow.
+- A stand scene for it: a car run into her from behind.
+
 ## 0.6
 
 - The town comes alive. Cars go about the streets on the right of the road, on at the

@@ -5,7 +5,8 @@ import java.util.Random;
 /**
  * The town's traffic: small sedans on the right of the road, going on or turning at the
  * crossings as it falls out, never turning back; slowing for a turn, for a car ahead and for
- * anyone in the road before them. They come from out of sight round the runner and go out of
+ * the runner in the road before them. Not for her double on fire: they run into her, stop short
+ * a while, and then go round her, slowing, while she lies there. They come from out of sight round the runner and go out of
  * it behind her, and are put back somewhere else round her.
  *
  * Also the sedan itself, for any car anywhere: the parked ones along the curbs are built with
@@ -23,6 +24,7 @@ final class Cars {
     private final int[] ti = new int[MOST], tj = new int[MOST], di = new int[MOST], dj = new int[MOST];
     private final int[] ni = new int[MOST], nj = new int[MOST], paint = new int[MOST];
     private final boolean[] live = new boolean[MOST];
+    private final float[] halt = new float[MOST];       // stopped short after striking her, seconds left
 
     void update(float dt, Runner r, Chase ch) {
         for (int c = 0; c < MOST; c++) {
@@ -58,7 +60,11 @@ final class Cars {
             }
             // someone in the road ahead: stop short of them
             want = Math.min(want, clear(c, fx, fz, r.x, r.z));
-            want = Math.min(want, clear(c, fx, fz, ch.x, ch.z));
+            if (ch.down()) want = Math.min(want, clear(c, fx, fz, ch.x, ch.z));
+            if (halt[c] > 0f) {
+                halt[c] -= dt;
+                want = 0f;
+            }
             float rate = want < speed[c] ? 9f : 2.5f;
             speed[c] += Math.max(-rate * dt, Math.min(rate * dt, want - speed[c]));
             float aim = (float) Math.atan2(ex, ez), d = aim - heading[c];
@@ -100,12 +106,42 @@ final class Cars {
             tj[c] = cj + b;
             heading[c] = (float) Math.atan2(a, b);
             speed[c] = CRUISE;
+            halt[c] = 0f;
             paint[c] = PAINT[rnd.nextInt(PAINT.length)];
             choose(c);
             live[c] = true;
             return;
         }
         live[c] = false;
+    }
+
+    /** For the desktop stand: car 0 put behind her in her lane, so far back, coming on at speed. */
+    void standBehind(Chase ch, float back) {
+        int a = Math.round((float) Math.sin(ch.heading)), b = Math.round((float) Math.cos(ch.heading));
+        if (a != 0) b = 0;
+        float px = ch.x - a * back, pz = ch.z - b * back;
+        int ri = Math.round(ch.x / City.CELL), rj = Math.round(ch.z / City.CELL);
+        // on the street she is on, in its right lane, to the next crossing that way
+        if (a != 0) {
+            pz = rj * City.CELL - a * LANE;
+            ti[0] = City.index(px) + (a > 0 ? 1 : 0);
+            tj[0] = rj;
+        } else {
+            px = ri * City.CELL + b * LANE;
+            ti[0] = ri;
+            tj[0] = City.index(pz) + (b > 0 ? 1 : 0);
+        }
+        x[0] = px;
+        z[0] = pz;
+        di[0] = a;
+        dj[0] = b;
+        ni[0] = a;
+        nj[0] = b;
+        heading[0] = (float) Math.atan2(a, b);
+        speed[0] = CRUISE;
+        halt[0] = 0f;
+        paint[0] = PAINT[1];
+        live[0] = true;
     }
 
     /** What car c does at the crossing after the one it is going to: on, mostly; left or right now and then. */
@@ -120,6 +156,31 @@ final class Cars {
             ni[c] = dj[c];
             nj[c] = -di[c];
         }
+    }
+
+    /**
+     * The car, if any, running into a round body of radius rr at (px, pz): touching it at its
+     * nose or its side, and coming at it fast enough to knock it down; -1 if none.
+     */
+    int striking(float px, float pz, float rr) {
+        for (int c = 0; c < MOST; c++) {
+            if (!live[c] || speed[c] < 2.5f) continue;
+            float fx = (float) Math.sin(heading[c]), fz = (float) Math.cos(heading[c]);
+            for (int e = -1; e <= 1; e += 2) {
+                float cx = x[c] + fx * e * 1.2f, cz = z[c] + fz * e * 1.2f;
+                float dx = px - cx, dz = pz - cz, m = rr + 1.15f;
+                if (dx * dx + dz * dz >= m * m) continue;
+                // coming at her: she is ahead of the car's middle, not behind it
+                if ((px - x[c]) * fx + (pz - z[c]) * fz > 0.6f) return c;
+            }
+        }
+        return -1;
+    }
+
+    /** Car c has struck someone: it jolts to a stop and stands a moment. */
+    void struck(int c) {
+        speed[c] *= 0.25f;
+        halt[c] = 1.4f;
     }
 
     /**
