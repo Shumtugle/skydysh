@@ -1635,6 +1635,7 @@ final class Game implements Physics.Listener {
 
     /** The hammer: held low on the right, drawn back by the wind-up; or wherever it is now. */
     private void hammer(DrawList d) {
+        if (World.noHammer) return;
         if (hs == HAND) {
             float bob = (float) Math.sin(clock * 1.7f) * 0.008f;
             // held upright, head up and to the left, tilted toward the street

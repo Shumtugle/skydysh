@@ -204,6 +204,17 @@ public final class Stand implements World.Host {
             // deck VERDICT: the panel at once, as after a round (0 felled at one throw, 1 at a few, 2 at many, 3 the stars ran out)
             world.standDeck(Integer.parseInt(p[1]));
             step();
+        } else if (c.equals("frida")) {
+            // frida X Z YAW MOTION [OFFSET]: a preview of her on the street
+            int i = World.previewN++;
+            World.preview[i * 5] = f(p[1]);
+            World.preview[i * 5 + 1] = f(p[2]);
+            World.preview[i * 5 + 2] = (float) Math.toRadians(f(p[3]));
+            World.preview[i * 5 + 3] = 0f;
+            World.preview[i * 5 + 4] = p.length > 5 ? f(p[5]) : 0f;
+            World.previewMotion[i] = p[4];
+        } else if (c.equals("nohammer")) {
+            World.noHammer = true;
         } else if (c.equals("shot")) {
             shot(p[1]);
         } else {

@@ -1,0 +1,7 @@
+screen 1096 2560
+skip
+nohammer
+wait 2.4
+frida -1.9 5.6 172 jump_air 0.15
+wait 0.1
+shot r2_jump

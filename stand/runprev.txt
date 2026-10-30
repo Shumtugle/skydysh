@@ -1,0 +1,7 @@
+screen 1096 2560
+skip
+nohammer
+wait 2.4
+frida -1.9 5.2 172 sprint 0.2
+wait 0.3
+shot r1_sprint

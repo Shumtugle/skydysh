@@ -39,6 +39,11 @@ final class World {
     float time;
     // the time the street keeps: it stands still while the room between rounds is closed over it
     float sceneTime;
+    // a preview on the stand: Frida where it puts her, x z yaw since offset, in a motion
+    static final float[] preview = new float[40];
+    static final String[] previewMotion = new String[8];
+    static int previewN;
+    static boolean noHammer;
     float frameMs;                           // how long the last frame took, set by the shell
     float drawScale;                         // drawn pixels to a frame pixel, set by the shell
     private final Game game;                  // the building on the plinth, and the hammer
@@ -60,6 +65,8 @@ final class World {
     World(Host host) {
         this.host = host;
         game = new Game(host, host.loadInt("level"));
+        byte[] mv = host.asset("moves.bin");
+        if (mv != null) Frida.use(Moves.read(mv));
         game.traffic = traffic;
         game.solid = solid;
         people.solid = solid;
@@ -174,6 +181,8 @@ final class World {
         if (d.night > 0f) lamps(d);
         traffic.draw(d);
         people.draw(d, sceneTime, CAM_X, CAM_Y, CAM_Z);
+        for (int i = 0; i < previewN; i++)
+            Frida.draw(d, preview[i * 5], 0f, preview[i * 5 + 1], preview[i * 5 + 2], 1.3f, previewMotion[i], sceneTime - preview[i * 5 + 3] + preview[i * 5 + 4]);
         game.draw(d);
         // the flat layer: the aim, the version in the corner
         game.flat(f);
