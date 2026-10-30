@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.4
+
+- The game turns into races through an open town; the throwing game is gone: the plinth,
+  the hammer, the stars and the badge, the panel between rounds.
+- The town grows without end from a seed, a cell of 64 m at a time, only where the runner is:
+  a grid of streets with their crossings, curbs and pavements, blocks of old seaside houses
+  round all four sides, now and then a square with palms and a basin; some streets have
+  palms down both pavements; lamp posts along the curbs. Cells out of sight are not drawn, and
+  the small things only near.
+- Roads are painted in their own frame, so they can run either way.
+- The runner: the giant from the earlier game, on her skeleton, running through it. A finger
+  down: she runs, up to 10 m/s; moved sideways: she turns by as much as it moved; flicked up:
+  she jumps; flicked down: she slides; lifted: she slows to a stop. Houses, lamp posts and
+  palms stop her; the curb is a step.
+- The eye follows behind her and a little above, turning after her a moment late, kept out
+  of the walls.
+- The sun higher, from the left and behind, its depth map laid round where she is heading.
+
 ## 0.3
 
 - The corner no longer draws itself afresh while it moves: the two stars (yellow and slate) and

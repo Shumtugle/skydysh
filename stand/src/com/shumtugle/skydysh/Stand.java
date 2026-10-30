@@ -189,9 +189,6 @@ public final class Stand implements World.Host {
             step();
         } else if (c.equals("skip")) {
             // nothing to skip: the game opens on the street
-        } else if (c.equals("tear")) {
-            // every mattress torn, every suitcase burst open
-            world.standTear();
         } else if (c.equals("birds")) {
             // a flock across the far end of the street now
             world.standFliers(1, 0f);
@@ -199,10 +196,6 @@ public final class Stand implements World.Host {
         } else if (c.equals("plane")) {
             // plane SECONDS: a plane high up that has flown so long, its trail behind it
             world.standFliers(2, f(p[1]));
-            step();
-        } else if (c.equals("deck")) {
-            // deck VERDICT: the panel at once, as after a round (0 felled at one throw, 1 at a few, 2 at many, 3 the stars ran out)
-            world.standDeck(Integer.parseInt(p[1]));
             step();
         } else if (c.equals("shot")) {
             shot(p[1]);

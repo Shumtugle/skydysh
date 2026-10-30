@@ -40,6 +40,11 @@ final class Daylight {
 
     /** The light of the street for the level with this number on its plate. */
     static void light(DrawList d, float plate) {
+        light(d, plate, -1f, 42f);
+    }
+
+    /** The same, the sun's depth map laid round (cx, cz) on the ground. */
+    static void light(DrawList d, float plate, float cx, float cz) {
         int i = 0;
         while (i < AT.length - 2 && plate >= AT[i + 1]) i++;
         float u = Math.max(0f, Math.min(1f, (plate - AT[i]) / (AT[i + 1] - AT[i])));
@@ -55,7 +60,7 @@ final class Daylight {
         }
         double e = Math.toRadians(elev), t = Math.toRadians(turn);
         float dx = (float) (Math.cos(e) * Math.sin(t)), dy = (float) Math.sin(e), dz = (float) (Math.cos(e) * Math.cos(t));
-        d.sun(dx, dy, dz, -1f, 4f, 42f, 100f, 36f, 140f);
+        d.sun(dx, dy, dz, cx, 4f, cz, 100f, 36f, 140f);
         float[] sc = new float[3];
         DrawList.rgb(sc, mix(SUN, i, u));
         float sk = lerp(SUN_K, i, u) * k;

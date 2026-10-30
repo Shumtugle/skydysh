@@ -162,13 +162,16 @@ vec3 facade(float u, float v, vec3 base, int seed, out float glass) {
     return wall;
 }
 
-/** The street's asphalt with its paint: the middle dashes, the edges. */
-vec3 road(vec2 p, vec3 base) {
-    float x = p.x, z = p.y, ax = abs(x);
+/**
+ * A stretch of asphalt with its paint, in the stretch's own frame: across it (0 the middle,
+ * half its width at the curbs) and along it; the middle dashes, the lines along the edges.
+ */
+vec3 road(float across, float along, float hw, vec3 base) {
+    float ax = abs(across);
     vec3 c = base;
-    if (ax < 0.09 && z > 5.4 && mod(z, 6.0) < 2.6) c = rgb(0xF0E6D2);
-    if (ax > 3.75 && ax < 3.88) c = rgb(0xE9DCC2);
-    else if (ax >= 3.88) c = base * 0.9;
+    if (ax < 0.09 && mod(along, 6.0) < 2.6) c = rgb(0xF0E6D2);
+    if (ax > hw - 0.3 && ax < hw - 0.17) c = rgb(0xE9DCC2);
+    else if (ax >= hw - 0.17) c = base * 0.9;
     return c;
 }
 
@@ -351,7 +354,8 @@ void main() {
         return;
     }
     if (mat == ROAD) {
-        base = road(vWorld.xz, vColor);
+        // the long way of the stretch is the way it runs; dashes counted from the world, so stretches meet in step
+        base = vHalf.x > vHalf.z ? road(vLocal.z, vWorld.x, vHalf.z, vColor) : road(vLocal.x, vWorld.z, vHalf.x, vColor);
     } else if (mat == WOOD) {
         // planks along the longer way, every other a shade apart
         float across = ext.x > ext.y ? uv.y : uv.x;
