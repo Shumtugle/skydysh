@@ -1,6 +1,7 @@
 # The chase: she starts ahead down the first street; a finger runs after her as a player would,
 # turning toward her; shots every few seconds, through her turns, the catches and her breaking loose.
 screen 1096 2560
+golemahead
 wait 0.4
 shot c0_start
 chasebot 40 4 c

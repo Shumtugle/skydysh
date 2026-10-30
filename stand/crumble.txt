@@ -1,0 +1,17 @@
+# One of the hunt caught close up: the runner after it until it is caught, then stopping over
+# it while it goes out, falls apart, and its stones cool and sink into the road.
+screen 1096 2560
+golemahead
+wait 0.4
+chasebot 90 0 x once
+shot u0
+wait 0.3
+shot u1
+wait 0.5
+shot u2
+wait 1.0
+shot u3
+wait 2.0
+shot u4
+wait 5.0
+shot u5

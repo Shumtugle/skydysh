@@ -213,6 +213,43 @@ final class Frida {
 
     private static final float[] rot = new float[9];
 
+    // when set, draw() keeps each block where it is instead of drawing it (see capture)
+    private static float[] capPos, capRot, capHalf;
+    private static int[] capCol;
+    private static int capN;
+
+    /**
+     * Each of her blocks as draw() would put it, kept: its middle into pos (3 a block), its turn
+     * into turn (9), its half sizes into half (3), its own color into color. The count kept.
+     */
+    static int capture(float x, float y, float z, float yaw, float size, String motion, float t,
+                       float[] pos, float[] turn, float[] half, int[] color) {
+        capPos = pos;
+        capRot = turn;
+        capHalf = half;
+        capCol = color;
+        capN = 0;
+        draw(null, x, y, z, yaw, size, motion, t, false);
+        capPos = null;
+        return capN;
+    }
+
+    /** How hot one of her blocks burns, by its own color: the dark ones low, the light ones high. */
+    static float hot(int own) {
+        float lum = (0.3f * ((own >> 16) & 0xFF) + 0.59f * ((own >> 8) & 0xFF) + 0.11f * (own & 0xFF)) / 255f;
+        return lum < 0.25f ? 0.4f + lum * 0.4f : 0.56f + (lum - 0.25f) * 0.5f;
+    }
+
+    /** One of her blocks gone cold: a stone grey as dark as the block was. */
+    static int cold(int own) {
+        float lum = (0.3f * ((own >> 16) & 0xFF) + 0.59f * ((own >> 8) & 0xFF) + 0.11f * (own & 0xFF)) / 255f;
+        return Street.mix(0x34302D, 0x8E877F, Math.min(1f, lum * 1.15f));
+    }
+
+    static int blocks() {
+        return n;
+    }
+
     /** Where one of her bones is in the world, in a motion at a time, standing and turned as draw() puts her. */
     static void place(String boneName, float x, float y, float z, float yaw, float size, String motion, float t, float[] out) {
         if (moves == null) return;
@@ -265,13 +302,23 @@ final class Frida {
             rot[3] = r10; rot[4] = r11; rot[5] = r12;
             rot[6] = -sy * r00 + cy * r20; rot[7] = -sy * r01 + cy * r21; rot[8] = -sy * r02 + cy * r22;
             float wx = x + cy * px + sy * pz, wz = z - sy * px + cy * pz;
+            if (capPos != null) {
+                capPos[capN * 3] = wx;
+                capPos[capN * 3 + 1] = y + py;
+                capPos[capN * 3 + 2] = wz;
+                System.arraycopy(rot, 0, capRot, capN * 9, 9);
+                capHalf[capN * 3] = HALF[i * 3] * size;
+                capHalf[capN * 3 + 1] = HALF[i * 3 + 1] * size;
+                capHalf[capN * 3 + 2] = HALF[i * 3 + 2] * size;
+                capCol[capN++] = COL[i];
+                continue;
+            }
             int col = COL[i] == EYES ? Street.mix(0x2A1C14, EYES, eyes) : COL[i];
             int mat = MAT[i];
             if (fire) {
                 int own = COL[i];
-                float lum = (0.3f * ((own >> 16) & 0xFF) + 0.59f * ((own >> 8) & 0xFF) + 0.11f * (own & 0xFF)) / 255f;
                 // how hot the block burns: the dark ones low, the light ones high, each flickering on its own
-                float hot = lum < 0.25f ? 0.4f + lum * 0.4f : 0.56f + (lum - 0.25f) * 0.5f;
+                float hot = hot(own);
                 hot += 0.06f * (float) Math.sin(t * 13f + i * 2.3f);
                 if (own == EYES) {
                     col = 0xFFFBE8;

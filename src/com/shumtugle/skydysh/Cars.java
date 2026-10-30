@@ -5,8 +5,8 @@ import java.util.Random;
 /**
  * The town's traffic: small sedans on the right of the road, going on or turning at the
  * crossings as it falls out, never turning back; slowing for a turn, for a car ahead and for
- * the runner in the road before them. Not for her double on fire: they run into her, stop short
- * a while, and then go round her, slowing, while she lies there. They come from out of sight round the runner and go out of
+ * the runner in the road before them. Not for a golem on the run: they run into it, stop short
+ * a while, and wait while it lies there or stands in the road. They come from out of sight round the runner and go out of
  * it behind her, and are put back somewhere else round her.
  *
  * Also the sedan itself, for any car anywhere: the parked ones along the curbs are built with
@@ -26,7 +26,7 @@ final class Cars {
     private final boolean[] live = new boolean[MOST];
     private final float[] halt = new float[MOST];       // stopped short after striking her, seconds left
 
-    void update(float dt, Runner r, Chase ch) {
+    void update(float dt, Runner r, Chase[] golems) {
         for (int c = 0; c < MOST; c++) {
             float rx = x[c] - r.x, rz = z[c] - r.z;
             if (!live[c] || rx * rx + rz * rz > GONE * GONE) {
@@ -60,7 +60,7 @@ final class Cars {
             }
             // someone in the road ahead: stop short of them
             want = Math.min(want, clear(c, fx, fz, r.x, r.z));
-            if (ch.down()) want = Math.min(want, clear(c, fx, fz, ch.x, ch.z));
+            for (Chase g : golems) if (g.down()) want = Math.min(want, clear(c, fx, fz, g.x, g.z));
             if (halt[c] > 0f) {
                 halt[c] -= dt;
                 want = 0f;

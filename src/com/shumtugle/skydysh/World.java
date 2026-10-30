@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.7";     // shown on screen; keep in step with versionName
+    static final String VERSION = "0.8";     // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -38,7 +38,8 @@ final class World {
     float drawScale;                         // drawn pixels to a frame pixel, set by the shell
     final City city = new City(0x5EE7L);
     final Runner runner = new Runner();
-    final Chase chase = new Chase();
+    final Mission mission = new Mission(0x60E3L);
+    Chase chase;                             // the nearest of them still loose
     final Cars cars = new Cars();
     final Walkers walkers = new Walkers();
     private int caughtSeen, struckSeen;
@@ -50,6 +51,8 @@ final class World {
         this.host = host;
         byte[] moves = host.asset("moves.bin");
         if (moves != null) Frida.use(Moves.read(moves));
+        mission.start(0f, 0f);
+        chase = mission.target(null);
     }
 
     void resize(int screenW, int screenH) {
@@ -64,15 +67,23 @@ final class World {
     void update(float dt) {
         time += dt;
         runner.update(dt, city, cars, walkers);
-        chase.update(dt, runner, city, cars);
-        cars.update(dt, runner, chase);
+        int round = mission.round;
+        mission.update(dt, runner, city, cars);
+        chase = mission.target(chase);
+        cars.update(dt, runner, mission.golems);
         walkers.update(dt, runner, chase);
-        if (chase.caught != caughtSeen) {
-            caughtSeen = chase.caught;
-            host.buzz(60);
+        int caught = mission.caught(), struck = 0;
+        for (Chase g : mission.golems) struck += g.struck;
+        if (round != mission.round) {
+            caughtSeen = 0;
+            struckSeen = struck;
         }
-        if (chase.struck != struckSeen) {
-            struckSeen = chase.struck;
+        if (caught != caughtSeen) {
+            caughtSeen = caught;
+            host.buzz(caught == Mission.FIVE ? 160 : 60);
+        }
+        if (struck != struckSeen) {
+            struckSeen = struck;
             host.buzz(30);
         }
         fliers.update(dt, true);
@@ -90,34 +101,58 @@ final class World {
     }
 
     /**
-     * Over the frame: how far off she is, in meters, at the top; how many times she was caught,
-     * in the corner; and when she is out of sight, a burning mark at the edge the way she is.
+     * Over the frame: how many of the five are caught, in the corner; the clock in the other;
+     * how far off the nearest one still loose is, in meters, at the top; and for every one out
+     * of sight a burning mark at the edge the way it is, smaller the further. When the last is
+     * caught, the count and the time large in the middle.
      */
     private void chaseFlat(DrawList d, Px f) {
         int fire = 0xFFF0581C, ink = 0xFF232A4A, cream = 0xFFF4E8D2;
+        int got = mission.caught();
+        String c = got + "/" + Mission.FIVE;
+        shadowed(f, c, 8, 14, 2, fire, ink);
+        String clock = clock(mission.over() ? mission.doneAt : mission.clock);
+        shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        if (mission.over()) {
+            int tw = PixelFont.width(c, 6);
+            shadowed(f, c, (W - tw) / 2, h / 2 - 60, 6, fire, ink);
+            tw = PixelFont.width(clock, 4);
+            shadowed(f, clock, (W - tw) / 2, h / 2, 4, cream, ink);
+            return;
+        }
         String m = String.valueOf(Math.round(chase.apart));
-        int sc = 3, tw = PixelFont.width(m, sc);
-        PixelFont.draw(f, m, (W - tw) / 2 + 1, 15, sc, ink);
-        PixelFont.draw(f, m, (W - tw) / 2, 14, sc, cream);
-        String c = String.valueOf(chase.caught);
-        PixelFont.draw(f, c, 9, 15, 2, ink);
-        PixelFont.draw(f, c, 8, 14, 2, fire);
-        boolean seen = d.project(chase.x, chase.y + 1.5f, chase.z, at)
-                && at[0] > 6 && at[0] < W - 6 && at[1] > 30 && at[1] < h - 6;
-        if (!seen) {
-            // the way to her, from the middle of the frame, cut at its edge
+        int tw = PixelFont.width(m, 3);
+        shadowed(f, m, (W - tw) / 2, 14, 3, cream, ink);
+        for (Chase g : mission.golems) {
+            if (g.done()) continue;
+            boolean seen = d.project(g.x, g.y + 1.5f, g.z, at)
+                    && at[0] > 6 && at[0] < W - 6 && at[1] > 30 && at[1] < h - 6;
+            if (seen) continue;
+            // the way to it, from the middle of the frame, cut at its edge
             float ax = (float) Math.sin(runner.eyeYaw), az = (float) Math.cos(runner.eyeYaw);
-            float vx = chase.x - runner.x, vz = chase.z - runner.z;
+            float vx = g.x - runner.x, vz = g.z - runner.z;
             float across = vx * az - vz * ax, along = vx * ax + vz * az;
             float ang = (float) Math.atan2(across, along);
             float ex = (float) Math.sin(ang), ey = -(float) Math.cos(ang);
             float cx = W * 0.5f, cy = h * 0.5f, k = Math.min((W * 0.5f - 12f) / Math.max(1e-3f, Math.abs(ex)),
                     (h * 0.5f - 34f) / Math.max(1e-3f, Math.abs(ey)));
             float px = cx + ex * k, py = cy + ey * k;
-            f.disc(px, py, 7.5f, ink);
-            f.disc(px, py, 6f, fire);
-            f.disc(px + ex * 2f, py + ey * 2f, 2.5f, 0xFFFFD45A);
+            float rr = 3.5f + 2.5f * Math.max(0f, Math.min(1f, 1f - (g.apart - 40f) / 360f));
+            f.disc(px, py, rr + 1.5f, ink);
+            f.disc(px, py, rr, fire);
+            f.disc(px + ex * rr * 0.33f, py + ey * rr * 0.33f, rr * 0.42f, 0xFFFFD45A);
         }
+    }
+
+    private static void shadowed(Px f, String s, int x, int y, int scale, int color, int shadow) {
+        PixelFont.draw(f, s, x + 1, y + 1, scale, shadow);
+        PixelFont.draw(f, s, x, y, scale, color);
+    }
+
+    /** Seconds as minutes and seconds, m:ss. */
+    private static String clock(float seconds) {
+        int s = (int) seconds;
+        return (s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60);
     }
 
     void draw(DrawList d) {
@@ -143,7 +178,14 @@ final class World {
         cars.draw(d, r.eyeX, r.eyeZ, ex, ez);
         walkers.draw(d, r.eyeX, r.eyeZ, ex, ez);
         r.draw(d);
-        chase.draw(d);
+        // the one nearest that still burns gives off light and glow; the others only burn
+        Chase lit = null;
+        for (Chase g : mission.golems) if (g.burning() && (lit == null || g.apart < lit.apart)) lit = g;
+        for (Chase g : mission.golems) {
+            float gx = g.x - r.eyeX, gz = g.z - r.eyeZ;
+            if (gx * ex + gz * ez < -6f || gx * gx + gz * gz > 200f * 200f) continue;
+            g.draw(d, g == lit);
+        }
         chaseFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         // while the engine is young: how long a frame takes, in milliseconds, and how finely it is drawn

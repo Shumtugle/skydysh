@@ -12,6 +12,8 @@ release, each seen on the stand before the phone.
   pavements; the double burns through, her light and glow on all round her.
 - 0.7 The cars run into the double: she is flung, falls, lies and gets up again; a moment to
   catch her.
+- 0.8 The first mission: five golems loose about the town, to be found, run down and caught;
+  caught, each falls apart for good.
 
 ## Next
 

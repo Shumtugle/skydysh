@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.8
+
+- The first mission, to try: five golems on fire that should not be are loose in the town,
+  each waiting with its arms folded on a pavement of its own, round the start one a way round
+  the compass, from 150 to 420 meters off. Come within 50 meters of one and it runs; left far
+  behind, it stops and waits again.
+- Caught, a golem is done with for good: it goes out where it stands and falls apart, its
+  blocks flying off it still burning, going out to a dark crust, lying on the road as cold
+  stone, and at last sinking into it.
+- Over the frame: how many of the five are caught, the clock, how far off the nearest still
+  loose is, and a burning mark at the edge of the frame for every one out of sight, smaller
+  the further. The last one caught, the count and the time large in the middle; ten seconds
+  on, five more are let loose round wherever she is. The phone buzzes long at the last.
+- Only the nearest golem still burning gives off light and glow; the others only burn.
+- Cars stop for a golem that stands in the road.
+- Stand: the bot goes after the nearest one, along the streets while it is far and on its
+  trail once it runs, keeping to its side of the road and stepping aside when held up; scenes
+  for the whole hunt and for one falling apart close up.
+
 ## 0.7
 
 - The cars no longer stop for the double on fire, and she runs in their lane. Struck by one,

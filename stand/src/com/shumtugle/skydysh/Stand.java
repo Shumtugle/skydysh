@@ -198,7 +198,7 @@ public final class Stand implements World.Host {
             world.standFliers(2, f(p[1]));
             step();
         } else if (c.equals("chasebot")) {
-            // chasebot SECONDS [SHOTEVERY PREFIX]: a finger that runs after her the way a player
+            // chasebot SECONDS [SHOTEVERY PREFIX [once]]: a finger that runs after the nearest golem as a player
             // would, turning toward her by sideways moves of its own, never more than a hand's
             // width a frame
             float secs = f(p[1]), every = p.length > 2 ? f(p[2]) : 0f;
@@ -209,9 +209,24 @@ public final class Stand implements World.Host {
             // the way she went, dropped behind her as she runs; the finger follows it, crumb by crumb
             java.util.ArrayDeque<float[]> crumbs = new java.util.ArrayDeque<float[]>();
             float dropAt = 0f;
+            Chase after = null;
+            int caughtWas = world.mission.caught();
+            int wi = 0, wj = 0;
+            boolean routing = false;
+            float stuck = 0f, dodge = 0f, firstAt = -1f, lastAt = -1f;
+            int nextAfter = 0;
+            // chasebot ... once: the finger lifted as soon as one is caught
+            boolean once = p.length > 4 && p[4].equals("once");
+            boolean endShot = false;
             for (int i = 0; i < n; i++) {
                 Runner r = world.runner;
                 Chase ch = world.chase;
+                if (ch != after) {
+                    // another one to go after: its trail, not the last one's
+                    crumbs.clear();
+                    after = ch;
+                    routing = false;
+                }
                 if (i * DT >= dropAt) {
                     crumbs.add(new float[]{ch.x, ch.z});
                     dropAt += 0.25f;
@@ -222,7 +237,46 @@ public final class Stand implements World.Host {
                     if (ddx * ddx + ddz * ddz < 16f) crumbs.poll();
                     else break;
                 }
-                float[] goal = ch.apart < 12f || crumbs.isEmpty() ? new float[]{ch.x, ch.z} : crumbs.peek();
+                float[] goal;
+                if (ch.apart > 60f && !ch.done()) {
+                    // far off: along the streets, crossing to crossing, the longer way first
+                    if (!routing) {
+                        wi = Math.round(r.x / City.CELL);
+                        wj = Math.round(r.z / City.CELL);
+                        routing = true;
+                    }
+                    float gx = wi * City.CELL, gz = wj * City.CELL;
+                    if ((gx - r.x) * (gx - r.x) + (gz - r.z) * (gz - r.z) < 36f) {
+                        int ti = Math.round(ch.x / City.CELL), tj = Math.round(ch.z / City.CELL);
+                        if (Math.abs(ti - wi) >= Math.abs(tj - wj)) wi += Integer.signum(ti - wi);
+                        else wj += Integer.signum(tj - wj);
+                    }
+                    // down its own side of the street, as the traffic goes, clear of the parked cars
+                    gx = wi * City.CELL;
+                    gz = wj * City.CELL;
+                    if (Math.abs(gx - r.x) > Math.abs(gz - r.z)) {
+                        float sx = Math.signum(gx - r.x);
+                        goal = new float[]{r.x + Math.max(-10f, Math.min(10f, gx - r.x)), gz - sx * 1.6f};
+                    } else {
+                        float sz = Math.signum(gz - r.z);
+                        goal = new float[]{gx + sz * 1.6f, r.z + Math.max(-10f, Math.min(10f, gz - r.z))};
+                    }
+                    crumbs.clear();
+                } else {
+                    routing = false;
+                    goal = ch.apart < 12f || crumbs.isEmpty() ? new float[]{ch.x, ch.z} : crumbs.peek();
+                }
+                // held up (a car, a lamp post): a step aside to the right for a moment
+                stuck = r.speed < 1f ? stuck + DT : 0f;
+                if (stuck > 0.6f) {
+                    dodge = 1.2f;
+                    stuck = 0f;
+                }
+                if (dodge > 0f) {
+                    dodge -= DT;
+                    goal = new float[]{r.x + (float) Math.cos(r.heading) * 4f + (float) Math.sin(r.heading),
+                            r.z - (float) Math.sin(r.heading) * 4f + (float) Math.cos(r.heading)};
+                }
                 float want = (float) Math.atan2(goal[0] - r.x, goal[1] - r.z);
                 float dd = want - r.heading;
                 while (dd > Math.PI) dd -= 2f * (float) Math.PI;
@@ -238,14 +292,40 @@ public final class Stand implements World.Host {
                 world.touch(World.MOVE, fx, fy);
                 int was = world.chase.struck;
                 step();
+                int got = world.mission.caught();
                 if (world.chase.struck != was)
                     System.out.println(String.format("%7.2fs  struck by a car, %.0f m off", time, world.chase.apart));
+                if (got != caughtWas && once) {
+                    caughtWas = got;
+                    break;
+                }
+                if (got != caughtWas) {
+                    System.out.println(String.format("%7.2fs  caught %d of %d (clock %.1f)", time, got, Mission.FIVE, world.mission.clock));
+                    if (got == 1) firstAt = time;
+                    if (got == Mission.FIVE) lastAt = time;
+                }
+                // the first one caught looked at as it falls apart, and the end of the hunt
+                float[] after1 = {0.1f, 0.4f, 1.0f, 2.2f, 5f};
+                if (firstAt >= 0f && nextAfter < after1.length && time - firstAt >= after1[nextAfter])
+                    shot(prefix + "c" + nextAfter++);
+                if (lastAt >= 0f && !endShot && time - lastAt >= 1.5f) {
+                    shot(prefix + "end");
+                    endShot = true;
+                }
+                caughtWas = got;
+                if (System.getenv("HUNTLOG") != null && i % 300 == 0)
+                    System.out.println(String.format("%7.2fs  target %.0f m, state %d, speed %.1f, runner %.1f %s at %.1f %.1f wp %d %d h %.2f",
+                            time, world.chase.apart, world.chase.state, world.chase.speed, world.runner.speed, routing ? "routing" : "trail", world.runner.x, world.runner.z, wi, wj, world.runner.heading));
                 if (every > 0f && i * DT >= next) {
                     shot(prefix + (k++));
                     next += every;
                 }
             }
             world.touch(World.UP, fx, fy);
+        } else if (c.equals("golemahead")) {
+            // the nearest golem put running down the street ahead of the start, as the chase once began
+            world.chase.standAhead();
+            step();
         } else if (c.equals("carbehind")) {
             // carbehind METERS SPEED SECONDS EVERY PREFIX: a car put behind her in her lane and
             // driven on at SPEED until it strikes her; the scene run on so long, shot so often

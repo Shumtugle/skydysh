@@ -14,6 +14,9 @@ import java.util.Random;
  * The cars do not stop for her: she runs in their lane. Struck by one, she is thrown the way it
  * was going, falls on her back and lies a while; then she gets up and runs on. Caught lying
  * there, she is counted all the same, gets up and breaks loose.
+ *
+ * One of a hunt (see Mission) is caught for good: she goes out on the spot, falls apart, and
+ * her blocks lie cooling to stone on the road a while and sink into it.
  */
 final class Chase {
     static final float SIZE = 1.3f;
@@ -24,7 +27,9 @@ final class Chase {
     // struck: the fall begun past its first stagger and played faster; lying; getting up again
     static final float FALL_FROM = 0.5f, FALL_PACE = 1.5f, FALL_END = 1.25f, LIE = 1.6f, RISE_PACE = 1.3f;
 
-    static final int FLEE = 0, JOLTED = 1, LOOSE = 2, WAITING = 3, DOWN = 4, RISING = 5;
+    static final int FLEE = 0, JOLTED = 1, LOOSE = 2, WAITING = 3, DOWN = 4, RISING = 5, STONE = 6;
+    static final float SIDE = 5.4f;            // where one of a hunt waits: on the pavement
+    static final float COOL = 1.4f, LIES = 7f, SINKS = 2f;
 
     float x = LANE, z = 34f, y, heading, speed;
     int state = FLEE;
@@ -35,8 +40,57 @@ final class Chase {
     private boolean caughtDown;
     // the crossing she runs to, and the way she is going (one of the four, as cell steps)
     private int ti = 0, tj = 1, di = 0, dj = 1;
-    private final Random rnd = new Random(0xF1AEL);
+    private final Random rnd;
     private float stride;
+    // caught for good: she falls apart
+    private final boolean forGood;
+    private float[] bp, bv, bt, bh, axis, spin, turned;
+    private int[] bc;
+    private int bn;
+    private float floor;
+    private static final float[] turnNow = new float[9];
+
+    /** The chase as it was first tried: she starts down the street ahead, already running. */
+    Chase() {
+        rnd = new Random(0xF1AEL);
+        forGood = false;
+    }
+
+    /**
+     * One of a hunt: waiting on the pavement half way along the block past crossing (ci, cj) the
+     * way dir goes (0 +x, 1 -x, 2 +z, 3 -z), arms folded, until the runner comes near.
+     */
+    Chase(long seed, int ci, int cj, int dir) {
+        rnd = new Random(seed);
+        forGood = true;
+        di = dir == 0 ? 1 : dir == 1 ? -1 : 0;
+        dj = dir == 2 ? 1 : dir == 3 ? -1 : 0;
+        float half = City.CELL * 0.5f;
+        x = ci * City.CELL + di * half + dj * SIDE;
+        z = cj * City.CELL + dj * half - di * SIDE;
+        ti = ci + di;
+        tj = cj + dj;
+        heading = (float) Math.atan2(di, dj);
+        state = WAITING;
+    }
+
+    /** Caught for good and fallen apart. */
+    boolean done() {
+        return state == STONE;
+    }
+
+    /** For the desktop stand: as the chase first was, running down the street ahead of the start. */
+    void standAhead() {
+        x = LANE;
+        z = 34f;
+        ti = 0;
+        tj = 1;
+        di = 0;
+        dj = 1;
+        heading = 0f;
+        speed = RUN;
+        state = FLEE;
+    }
 
     /** The distance to the runner, as last worked out. */
     float apart;
@@ -45,6 +99,10 @@ final class Chase {
         clock += dt;
         float dx = r.x - x, dz = r.z - z;
         apart = (float) Math.sqrt(dx * dx + dz * dz);
+        if (state == STONE) {
+            rubble(dt);
+            return;
+        }
         float want;
         switch (state) {
             case JOLTED:
@@ -64,6 +122,10 @@ final class Chase {
                 if (apart < REACH && !caughtDown) {
                     caught++;
                     caughtDown = true;
+                    if (forGood) {
+                        crumble(r, city);
+                        return;
+                    }
                 }
                 if (caughtDown || clock - stateAt > (FALL_END - FALL_FROM) / FALL_PACE + LIE) set(RISING);
                 break;
@@ -77,6 +139,10 @@ final class Chase {
             default:
                 if (apart < REACH) {
                     caught++;
+                    if (forGood) {
+                        crumble(r, city);
+                        return;
+                    }
                     set(JOLTED);
                     want = 0f;
                 } else if (apart > WAIT) {
@@ -173,9 +239,75 @@ final class Chase {
         if ((tx - x) * di + (tz - z) * dj < 0f) turn();
     }
 
-    /** Whether she is on the ground or getting up: the cars stop for her then. */
+    /** Whether she is on the ground or getting up, or stands still: the cars stop for her then. */
     boolean down() {
-        return state == DOWN || state == RISING || state == JOLTED;
+        return state == DOWN || state == RISING || state == JOLTED || (state != STONE && speed < 1.5f);
+    }
+
+    /**
+     * Caught for good: she goes out where she is, every block flying off her a little, the
+     * runner's push in it, and turning as it goes.
+     */
+    private void crumble(Runner r, City city) {
+        int most = Frida.blocks();
+        if (bp == null || bp.length < most * 3) {
+            bp = new float[most * 3];
+            bv = new float[most * 3];
+            bh = new float[most * 3];
+            bt = new float[most * 9];
+            turned = new float[most * 9];
+            axis = new float[most * 3];
+            spin = new float[most * 2];
+            bc = new int[most];
+        }
+        bn = Frida.capture(x, y + lift, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), bp, bt, bh, bc);
+        float px = x - r.x, pz = z - r.z, pl = Math.max(0.1f, (float) Math.sqrt(px * px + pz * pz));
+        px /= pl;
+        pz /= pl;
+        for (int i = 0; i < bn; i++) {
+            float ox = bp[i * 3] - x, oz = bp[i * 3 + 2] - z, ol = Math.max(0.1f, (float) Math.sqrt(ox * ox + oz * oz));
+            float out = 0.8f + rnd.nextFloat() * 1.6f;
+            bv[i * 3] = ox / ol * out + px * 1.6f + (rnd.nextFloat() - 0.5f);
+            bv[i * 3 + 1] = 0.8f + rnd.nextFloat() * 2.6f;
+            bv[i * 3 + 2] = oz / ol * out + pz * 1.6f + (rnd.nextFloat() - 0.5f);
+            float ax = rnd.nextFloat() - 0.5f, ay = rnd.nextFloat() - 0.5f, az = rnd.nextFloat() - 0.5f;
+            float al = Math.max(1e-3f, (float) Math.sqrt(ax * ax + ay * ay + az * az));
+            axis[i * 3] = ax / al;
+            axis[i * 3 + 1] = ay / al;
+            axis[i * 3 + 2] = az / al;
+            spin[i * 2] = 0f;
+            spin[i * 2 + 1] = 2f + rnd.nextFloat() * 6f;
+        }
+        floor = city.ground(x, z);
+        speed = 0f;
+        set(STONE);
+    }
+
+    /** Her blocks falling, bouncing a little and coming to rest on the ground. */
+    private void rubble(float dt) {
+        for (int i = 0; i < bn; i++) {
+            float h = Math.min(bh[i * 3], Math.min(bh[i * 3 + 1], bh[i * 3 + 2]));
+            bv[i * 3 + 1] -= 20f * dt;
+            for (int k = 0; k < 3; k++) bp[i * 3 + k] += bv[i * 3 + k] * dt;
+            spin[i * 2] += spin[i * 2 + 1] * dt;
+            if (bp[i * 3 + 1] - h < floor) {
+                bp[i * 3 + 1] = floor + h;
+                if (bv[i * 3 + 1] < 0f) bv[i * 3 + 1] *= -0.25f;
+                bv[i * 3] *= 0.55f;
+                bv[i * 3 + 2] *= 0.55f;
+                spin[i * 2 + 1] *= 0.45f;
+            }
+        }
+    }
+
+    /** Whether she still burns: loose, or caught a moment ago and not yet gone out. */
+    boolean burning() {
+        return state != STONE || clock - stateAt < COOL;
+    }
+
+    /** Whether her stones are still to be seen. */
+    private boolean lying() {
+        return clock - stateAt < LIES + SINKS;
     }
 
     private void set(int s) {
@@ -226,7 +358,17 @@ final class Chase {
      * her, a glow printed round her over the frame.
      */
     void draw(DrawList d) {
+        draw(d, true);
+    }
+
+    /** The same; lit, her light and glow on all round her (only one of a hunt is, the nearest). */
+    void draw(DrawList d, boolean lit) {
+        if (state == STONE) {
+            if (lying()) stones(d, lit);
+            return;
+        }
         Frida.draw(d, x, y + lift, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), true);
+        if (!lit) return;
         float flick = 0.92f + 0.08f * (float) Math.sin(clock * 11f) * (float) Math.sin(clock * 4.3f + 1f);
         d.fire[0] = x;
         d.fire[1] = y + 1.6f;
@@ -239,6 +381,46 @@ final class Chase {
             d.halo[4] = at[2];
             // fainter far off, as the haze takes her
             d.halo[3] = flick * Math.max(0f, Math.min(1f, 1.2f - at[2] / 120f));
+        }
+    }
+
+    /**
+     * Her blocks where they fell: still burning for a moment, going out to a dark crust, then
+     * cold stone; at the last sinking into the ground.
+     */
+    private void stones(DrawList d, boolean lit) {
+        float k = clock - stateAt, cool = Math.max(0f, 1f - k / COOL);
+        float sink = Math.max(0f, k - LIES) / SINKS;
+        for (int i = 0; i < bn; i++) {
+            // the block's turn as it fell: about its own axis, so far
+            float a = spin[i * 2], c = (float) Math.cos(a), s = (float) Math.sin(a), t = 1f - c;
+            float ux = axis[i * 3], uy = axis[i * 3 + 1], uz = axis[i * 3 + 2];
+            float r00 = t * ux * ux + c, r01 = t * ux * uy - s * uz, r02 = t * ux * uz + s * uy;
+            float r10 = t * ux * uy + s * uz, r11 = t * uy * uy + c, r12 = t * uy * uz - s * ux;
+            float r20 = t * ux * uz - s * uy, r21 = t * uy * uz + s * ux, r22 = t * uz * uz + c;
+            int o = i * 9;
+            for (int col = 0; col < 3; col++) {
+                float m0 = bt[o + col], m1 = bt[o + 3 + col], m2 = bt[o + 6 + col];
+                turnNow[col] = r00 * m0 + r01 * m1 + r02 * m2;
+                turnNow[3 + col] = r10 * m0 + r11 * m1 + r12 * m2;
+                turnNow[6 + col] = r20 * m0 + r21 * m1 + r22 * m2;
+            }
+            float hy = bh[i * 3 + 1];
+            float py = bp[i * 3 + 1] - sink * (hy * 2f + 0.3f);
+            int own = bc[i];
+            if (cool > 0f) {
+                float hot = Frida.hot(own) * cool - (1f - cool) * 0.35f;
+                d.box(bp[i * 3], py, bp[i * 3 + 2], bh[i * 3], hy, bh[i * 3 + 2], turnNow, own,
+                        DrawList.material(DrawList.FIRE, Math.round(Math.max(0f, Math.min(0.99f, hot)) * 250f)));
+            } else {
+                d.box(bp[i * 3], py, bp[i * 3 + 2], bh[i * 3], hy, bh[i * 3 + 2], turnNow, Frida.cold(own), DrawList.STONE);
+            }
+        }
+        if (lit && cool > 0f) {
+            d.fire[0] = x;
+            d.fire[1] = y + 0.8f;
+            d.fire[2] = z;
+            d.fire[3] = 1.3f * cool;
         }
     }
 }
