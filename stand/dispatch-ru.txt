@@ -1,0 +1,35 @@
+# In Russian. The room in her head: the walls closing round the street, the briefing typed on the screen
+# over what she sees, a touch to type the rest, a touch: her mallet knocks the red key, the walls
+# draw back and the street goes on; then the report.
+screen 1096 2560
+lang ru
+down 137 600
+wait 2
+up 137 600
+wait 0.6
+dispatch
+wait 0.2
+shot d0
+wait 0.4
+shot d1
+wait 1.5
+shot d2
+down 137 300
+up 137 300
+wait 0.3
+shot d3
+down 137 300
+up 137 300
+wait 0.18
+shot d4a
+wait 0.17
+shot d4b
+wait 0.25
+shot d4c
+wait 0.3
+shot d4
+wait 0.5
+shot d5
+dispatch done
+wait 3
+shot d7

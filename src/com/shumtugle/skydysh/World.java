@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.17";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.18";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -27,6 +27,8 @@ final class World {
         int loadInt(String key);
         /** A file shipped with the game, or null. */
         byte[] asset(String name);
+        /** The language the game is to speak, by its two-letter code. */
+        String language();
         /** A note written down: kept as a plain text by this name, in a folder of its own. */
         void journal(String name, String text);
     }
@@ -57,6 +59,7 @@ final class World {
         this.host = host;
         byte[] moves = host.asset("moves.bin");
         if (moves != null) Frida.use(Moves.read(moves));
+        Lang.use(host, host.language());
         mission.start(0f, 0f);
         chase = mission.target(null);
         opening = new Opening(host);

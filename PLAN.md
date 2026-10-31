@@ -24,6 +24,7 @@ release, each seen on the stand before the phone.
 - 0.15 The dispatcher's room: the briefing on the set before a mission, the report after it.
 - 0.16 The golem runs on when reached and the mallet catches it up; all a little quicker.
 - 0.17 The dispatcher's room is her head: walls of her brick round the street seen through her eyes.
+- 0.18 Russian, by the phone's language or the game's own.
 
 ## Next
 

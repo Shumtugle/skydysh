@@ -1,8 +1,12 @@
 package com.shumtugle.skydysh;
 
-/** A 5x7 bitmap font drawn into a Px: uppercase Latin, digits and a few signs. Plain Java, no platform classes. */
+/**
+ * A 5x7 bitmap font drawn into a Px: uppercase Latin, digits and a few signs, and uppercase
+ * Cyrillic (the letters shaped as Latin ones are drawn with those). Plain Java, no platform classes.
+ */
 final class PixelFont {
-    private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:.'-/!?,%+";
+    private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:.'-/!?,%+"
+            + "\u0411\u0413\u0414\u0416\u0417\u0418\u0419\u041B\u041F\u0423\u0424\u0426\u0427\u0428\u0429\u042A\u042B\u042C\u042D\u042E\u042F\u0401";
     private static final String[] GLYPHS = {
         ".###.#...##...#######...##...##...#", // A
         "####.#...##...#####.#...##...#####.", // B
@@ -50,9 +54,33 @@ final class PixelFont {
         "....................##....#...#....", // ,
         "##..###..#...#...#...#...#..###..##", // %
         ".......#....#..#####..#....#.......", // +
+        "######....#....####.#...##...#####.", // U+0411
+        "######....#....#....#....#....#....", // U+0413
+        ".###..#.#..#.#..#.#..#.#.######...#", // U+0414
+        "#.#.##.#.#.###...#...###.#.#.##.#.#", // U+0416
+        ".###.#...#....#..##.....##...#.###.", // U+0417
+        "#...##...##..###.#.###..##...##...#", // U+0418
+        ".#.#...#..#...##..###.#.###..##...#", // U+0419
+        "..###.#..#.#..#.#..#.#..##...##...#", // U+041B
+        "######...##...##...##...##...##...#", // U+041F
+        "#...##...##...#.####....##...#.###.", // U+0423
+        "..#...###.#.#.##.#.#.###...#....#..", // U+0424
+        "#..#.#..#.#..#.#..#.#..#.#####....#", // U+0426
+        "#...##...##...#.####....#....#....#", // U+0427
+        "#.#.##.#.##.#.##.#.##.#.##.#.######", // U+0428
+        "#.#.##.#.##.#.##.#.##.#.######....#", // U+0429
+        "##....#....#....###..#..#.#..#.###.", // U+042A
+        "#...##...##...###..##.#.##.#.###..#", // U+042B
+        "#....#....#....####.#...##...#####.", // U+042C
+        ".###.#...#....#.####....##...#.###.", // U+042D
+        "#..#.#.#.##.#.####.##.#.##.#.##..#.", // U+042E
+        ".#####...##...#.####..#.#.#..##...#", // U+042F
+        ".#.#.######....####.#....#....#####", // U+0401
     };
-    private static final long[] MASK = new long[128];
-    private static final int[] LEFT = new int[128], RIGHT = new int[128];
+    // up to the end of the Cyrillic letters
+    private static final int SPAN = 0x0460;
+    private static final long[] MASK = new long[SPAN];
+    private static final int[] LEFT = new int[SPAN], RIGHT = new int[SPAN];
 
     static {
         for (int i = 0; i < CHARS.length(); i++) {
@@ -80,10 +108,20 @@ final class PixelFont {
         return (MASK[norm(c)] & (1L << (row * 5 + col))) != 0;
     }
 
+    // the Cyrillic capitals drawn as the Latin ones they look like, in pairs
+    private static final String SAME = "\u0410A\u0412B\u0415E\u041AK\u041CM\u041DH\u041EO\u0420P\u0421C\u0422T\u0425X";
+
     private static char norm(char c) {
         if (c >= 'a' && c <= 'z') return (char) (c - 32);
+        if (c >= '\u0430' && c <= '\u044F') c = (char) (c - 32);     // Cyrillic small to capital
+        if (c == '\u0451') c = '\u0401';
         if (c == '\u2019') return '\'';
-        return c < 128 ? c : '?';
+        if (c == '\u2014' || c == '\u2013') return '-';
+        if (c >= '\u0400') {
+            int k = SAME.indexOf(c);
+            if (k >= 0 && (k & 1) == 0) return SAME.charAt(k + 1);
+        }
+        return c < SPAN && (c < 128 || MASK[c] != 0) ? c : '?';
     }
 
     private static boolean narrow(char c) {

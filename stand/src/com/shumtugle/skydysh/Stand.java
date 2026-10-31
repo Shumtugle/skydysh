@@ -90,6 +90,13 @@ public final class Stand implements World.Host {
         }
     }
 
+    private String lang = "en";
+
+    @Override
+    public String language() {
+        return lang;
+    }
+
     @Override
     public byte[] asset(String name) {
         try {
@@ -195,6 +202,10 @@ public final class Stand implements World.Host {
         } else if (c.equals("back")) {
             world.touch(World.BACK, 0f, 0f);
             step();
+        } else if (c.equals("lang")) {
+            // lang CODE: the game speaks this language from now on
+            lang = p[1];
+            Lang.use(this, lang);
         } else if (c.equals("dispatch")) {
             // dispatch [done]: the dispatcher's room now, with the briefing, or the report
             world.standDispatch(p.length > 1 && p[1].equals("done"));

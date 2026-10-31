@@ -131,6 +131,12 @@ public final class MainActivity extends Activity implements World.Host {
     }
 
     @Override
+    public String language() {
+        // the game's own language when one is chosen for it alone, else the phone's
+        return getResources().getConfiguration().getLocales().get(0).getLanguage();
+    }
+
+    @Override
     public byte[] asset(String name) {
         try (java.io.InputStream in = getAssets().open(name)) {
             java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();

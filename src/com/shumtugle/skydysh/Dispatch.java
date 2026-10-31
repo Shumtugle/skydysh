@@ -55,19 +55,12 @@ final class Dispatch {
 
     /** What the screen says before a mission. */
     static String[] briefing(int round) {
-        if (round <= 1)
-            return new String[]{"DISPATCH - MISSION 1", "", "AT SUNSET FIVE GOLEMS", "BROKE OUT OF THE FOUNDRY.",
-                    "THEIR PLATES ARE FORGED.", "FORGED PLATES BURN:", "THE GOLEMS BURN WITH THEM", "AND SO WILL THE TOWN.", "",
-                    "THEY HIDE ABOUT THE STREETS.", "FIND THEM. RUN THEM DOWN.", "KNOCK EVERY PLATE OFF.", "",
-                    "TOUCH TO GO"};
-        return new String[]{"DISPATCH - MISSION " + round, "", "FIVE MORE HAVE BROKEN OUT", "WITH FORGED PLATES.", "",
-                "FIND THEM. RUN THEM DOWN.", "KNOCK EVERY PLATE OFF.", "", "TOUCH TO GO"};
+        return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
     /** What the screen says when a mission is done. */
     static String[] report(int round, String time) {
-        return new String[]{"DISPATCH - MISSION " + round, "", "ALL FIVE PLATES ARE IN.", "THE TOWN IS SAFE",
-                "FOR TONIGHT.", "", "TIME  " + time, "", "MORE ARE LOOSE.", "", "TOUCH TO GO ON"};
+        return Lang.lines("report", round, time);
     }
 
     /** A touch: the rest typed at once, or, all typed, the mallet onto the key. */

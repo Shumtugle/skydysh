@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.18
+
+- Russian: the dispatches typed in her head are in Russian when the phone speaks it, or when
+  Russian is chosen for the game alone (in the system's settings for the app, on newer phones).
+- The pixel font draws the Cyrillic capitals; the ones shaped as Latin letters are drawn with
+  those.
+- The game's words live in one place, English kept in the code, every other language in a file
+  of its own among the assets (`assets/lang/ru.txt`).
+- Stand: `lang ru` makes the game speak Russian from then on.
+
 ## 0.17
 
 - The dispatcher's room is her head. She is a golem too; where the forged golems have a plate on
