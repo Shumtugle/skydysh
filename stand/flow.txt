@@ -1,0 +1,14 @@
+# The way into the game: the opening, the room with the first briefing, a touch to type it all,
+# a touch into the glass, the street.
+screen 1096 2560
+opening
+wait 6.6
+shot w0
+wait 2.5
+shot w1
+down 137 300
+up 137 300
+down 137 300
+up 137 300
+wait 1.0
+shot w2

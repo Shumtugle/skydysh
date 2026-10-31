@@ -5,18 +5,17 @@ import java.util.Random;
 /**
  * A hunt: five golems that should not be are loose in the town, each waiting somewhere on a
  * pavement of its own, far apart, round where the runner starts. Come near one and it runs;
- * caught, it is done with for good. The clock runs until the last of them is caught; a while
- * after, five more are let loose round wherever she is then.
+ * caught, it is done with for good. The clock runs until the last of them is caught; then the
+ * dispatcher's room has the say (see Dispatch), and the next five are let loose from there.
  */
 final class Mission {
     static final int FIVE = 5;
-    static final float NEAREST = 150f, STEP = 55f, SPREAD = 50f, AGAIN = 10f;
+    static final float NEAREST = 150f, STEP = 55f, SPREAD = 50f;
 
     final Chase[] golems = new Chase[FIVE];
     float clock, doneAt = -1f;
     int round;
     private final Random rnd;
-    private float since;
 
     Mission(long seed) {
         rnd = new Random(seed);
@@ -27,7 +26,6 @@ final class Mission {
         round++;
         clock = 0f;
         doneAt = -1f;
-        since = 0f;
         float turn = rnd.nextFloat() * 6.2832f;
         for (int k = 0; k < FIVE; k++) {
             float a = turn + (k + 0.3f + rnd.nextFloat() * 0.4f) * 6.2832f / FIVE;
@@ -42,7 +40,6 @@ final class Mission {
         if (doneAt < 0f) clock += dt;
         for (Chase g : golems) g.update(dt, r, city, cars);
         if (doneAt < 0f && caught() == FIVE) doneAt = clock;
-        if (doneAt >= 0f && (since += dt) > AGAIN) start(r.x, r.z);
     }
 
     int caught() {

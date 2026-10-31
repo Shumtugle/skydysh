@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.15
+
+- The dispatcher's room, made anew in the new look: a room high over the town, the sea in its
+  window at evening; on a wooden desk an old television, a panel of keys before it, a clock on
+  the set with the real time, papers, a pencil, a mug; a lamp's warm light.
+- Before a mission the dispatch is typed out on the glass of the set, ticking as it types: five
+  golems broke out of the foundry at sunset with forged plates; forged plates burn, the golems
+  burn with them and so will the town; they hide about the streets; find them, run them down,
+  knock every plate off. A touch types the rest at once; another, and the eye goes into the
+  glass and the mission begins in the street.
+- The opening ends in the room, the eye coming out of the white glass of the set.
+- When the last of the five is caught, three seconds on the eye comes back out of the glass into
+  the room: the set reports the mission done and its time; a touch, and the next five are loose.
+- The old flat panel stays in the code, unused.
+- Stand: `dispatch` opens the room on the briefing, `dispatch done` on the report.
+
 ## 0.14
 
 - An opening, some six and a half seconds, at every start. The eye comes down out of the sky

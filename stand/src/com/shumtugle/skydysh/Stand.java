@@ -195,6 +195,9 @@ public final class Stand implements World.Host {
         } else if (c.equals("back")) {
             world.touch(World.BACK, 0f, 0f);
             step();
+        } else if (c.equals("dispatch")) {
+            // dispatch [done]: the dispatcher's room now, with the briefing, or the report
+            world.standDispatch(p.length > 1 && p[1].equals("done"));
         } else if (c.equals("opening")) {
             // the opening played from its start
             world.startOpening();

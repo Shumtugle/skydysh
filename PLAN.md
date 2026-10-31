@@ -21,6 +21,7 @@ release, each seen on the stand before the phone.
 - 0.12 Run down to the end: within reach, she stops and throws her mallet of planks and iron.
 - 0.13 A new look: early-2000s town realism in place of print; worked surfaces, soft light, haze.
 - 0.14 The opening: down to the square, the dark, the blow into the glass, the name in gold.
+- 0.15 The dispatcher's room: the briefing on the set before a mission, the report after it.
 
 ## Next
 
@@ -38,8 +39,7 @@ release, each seen on the stand before the phone.
   needs a pedal of its own is to be tried.
 - The sea along one side of the town, a promenade, canals; a boat.
 - Roofs to land on; a plane.
-- The dispatcher's room between races (the panel with the clock, the set and the keys) is
-  kept in the code, unused for now, for the moment a race ends.
+- The room's keys and its set to do more: a choice of missions, the best times kept.
 - A start and a finish to every race; what is won and kept.
 - Sound: steps, breath, the fire.
 - The project's page, with the game working in the browser.

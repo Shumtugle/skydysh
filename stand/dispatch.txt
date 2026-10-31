@@ -1,0 +1,25 @@
+# The dispatcher's room: coming out of the glass, the briefing typed on the set, a touch to
+# type the rest, a touch to go into the glass and out into the street; then the report.
+screen 1096 2560
+dispatch
+wait 0.35
+shot d0
+wait 0.6
+shot d1
+wait 1.5
+shot d2
+down 137 300
+up 137 300
+wait 0.3
+shot d3
+down 137 300
+up 137 300
+wait 0.4
+shot d4
+wait 0.45
+shot d5
+dispatch done
+wait 1.5
+shot d6
+wait 3
+shot d7

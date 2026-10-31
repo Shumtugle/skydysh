@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.14";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.15";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -42,6 +42,9 @@ final class World {
     Chase chase;                             // the nearest of them still loose
     final Toss toss = new Toss();            // her hammer
     private Opening opening;                 // what the game opens with, while it plays
+    private Dispatch dispatch;               // the dispatcher's room, while she is in it
+    private float overFor;                   // how long since the last of the five was caught
+    static final float BACK_TO_ROOM = 3f;
     private float whiteOut;                  // the white of the opening going off the game, seconds left
     final Cars cars = new Cars();
     final Walkers walkers = new Walkers();
@@ -62,7 +65,15 @@ final class World {
     /** The opening done with at once (the desktop stand, for scenes of the game itself). */
     void skipOpening() {
         opening = null;
+        dispatch = null;
         Frida.eyes = 1f;
+    }
+
+    /** The dispatcher's room now, with the briefing or (done) the report (the desktop stand). */
+    void standDispatch(boolean done) {
+        opening = null;
+        Frida.eyes = 1f;
+        dispatch = new Dispatch(host, done ? Dispatch.report(mission.round, clock(mission.doneAt)) : Dispatch.briefing(mission.round), true);
     }
 
     /** The opening from its start (the desktop stand). */
@@ -80,6 +91,10 @@ final class World {
             if (type == DOWN) opening.skip();
             return;
         }
+        if (dispatch != null) {
+            if (type == DOWN) dispatch.touch();
+            return;
+        }
         runner.touch(type, x, y);
     }
 
@@ -88,10 +103,30 @@ final class World {
         if (opening != null) {
             opening.update(dt);
             if (opening.done) {
+                // out of the white into the dispatcher's room, the first mission on its set
                 opening = null;
                 Frida.eyes = 1f;
+                dispatch = new Dispatch(host, Dispatch.briefing(mission.round), true);
+            }
+            return;
+        }
+        if (dispatch != null) {
+            dispatch.update(dt);
+            if (dispatch.done()) {
+                // through the glass into the street: the mission begins (the next one, after a report)
+                dispatch = null;
+                if (mission.over()) {
+                    mission.start(runner.x, runner.z);
+                    chase = mission.target(null);
+                }
+                overFor = 0f;
                 whiteOut = WHITE_OUT;
             }
+            return;
+        }
+        if (mission.over() && (overFor += dt) > BACK_TO_ROOM) {
+            dispatch = new Dispatch(host, Dispatch.report(mission.round, clock(mission.doneAt)), true);
+            overFor = 0f;
             return;
         }
         whiteOut = Math.max(0f, whiteOut - dt);
@@ -233,11 +268,12 @@ final class World {
     void draw(DrawList d) {
         d.begin(W, h);
         d.time = time;
-        if (opening != null) {
+        if (opening != null || dispatch != null) {
             java.util.Arrays.fill(d.flat, 0);
             if (flatPx == null || flatPx.a != d.flat) flatPx = new Px(d.w, d.h, d.flat);
             d.hudRows = 0;
-            opening.draw(d, flatPx, h);
+            if (opening != null) opening.draw(d, flatPx, h);
+            else dispatch.draw(d, flatPx, h);
             return;
         }
         Runner r = runner;

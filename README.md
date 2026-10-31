@@ -8,7 +8,9 @@ brick and stone in a maid's dress runs, turns, jumps and slides through it; a ca
 a plane are to come.
 
 It opens, at every start, with a flight down onto a square by the sea, where she stands with a
-golden mallet and brings it down into the glass of the screen; a touch skips it.
+golden mallet and brings it down into the glass of the screen; a touch skips it. Then the
+dispatcher's room: what is to be done is typed out on an old television, and a touch goes into
+its glass and out into the street; when it is done, back to the room for the report.
 
 A finger on the glass makes her run; moved sideways, it turns her by as much as it moved;
 flicked up, she jumps; flicked down, she slides; lifted, she slows to a stop.
