@@ -507,7 +507,7 @@ final class City implements Ground {
 
     /**
      * A lift: in the front at u (along the row), the front at v facing side, a door of dark glass
-     * in a stone frame, a green lamp over it, and the same at the back, on the yard; on the roof
+     * in a stone frame, a green light over it, and the same at the back, on the yard; on the roof
      * the hut it comes up into, its door facing in, away from the street.
      */
     private static void lift(Cell c, DrawList d, float u, float fv, boolean alongX, int side, float height, int tint) {
@@ -524,18 +524,14 @@ final class City implements Ground {
         c.wall(x0, z0, x0 + 2f * (alongX ? HUT_HALF : HUT_DEEP), z0 + 2f * (alongX ? HUT_DEEP : HUT_HALF), top + HUT_HIGH + 0.16f);
     }
 
-    /** A lift's door in a wall at v facing side: dark glass in a stone frame, a green lamp over it. */
+    /** A lift's door in a wall at v facing side: dark glass in a stone frame, a green light over it. */
     private static void liftDoor(DrawList d, float u, float fv, boolean alongX, int side) {
         float out = fv + side * 0.06f;
         boxUV(d, u, DOOR_HIGH * 0.5f + WALK_TOP, out, DOOR_HALF + 0.22f, DOOR_HIGH * 0.5f + 0.15f, 0.07f, alongX, 0xD8CDB8, DrawList.STONE);
         boxUV(d, u, DOOR_HIGH * 0.5f + WALK_TOP, out + side * 0.03f, DOOR_HALF, DOOR_HIGH * 0.5f, 0.06f, alongX, 0x1D2730, DrawList.PLAIN);
         boxUV(d, u, DOOR_HIGH * 0.5f + WALK_TOP, out + side * 0.05f, 0.03f, DOOR_HIGH * 0.5f, 0.05f, alongX, 0x9AA3A8, DrawList.PLAIN);
-        // the lamp: a pale green pane with an arrow up in it
-        float ly = WALK_TOP + DOOR_HIGH + 0.75f;
-        boxUV(d, u, ly, out + side * 0.04f, 0.36f, 0.3f, 0.05f, alongX, LIFT_LIGHT, DrawList.GLOW);
-        boxUV(d, u, ly - 0.08f, out + side * 0.09f, 0.04f, 0.13f, 0.01f, alongX, 0x1D3A32, DrawList.PLAIN);
-        for (int k = 0; k < 3; k++)
-            boxUV(d, u, ly + 0.17f - k * 0.06f, out + side * 0.09f, 0.04f + k * 0.055f, 0.03f, 0.01f, alongX, 0x1D3A32, DrawList.PLAIN);
+        // a slim green light along the top of the frame (the sign over the door is the game's own, see World)
+        boxUV(d, u, WALK_TOP + DOOR_HIGH + 0.24f, out + side * 0.04f, DOOR_HALF, 0.04f, 0.05f, alongX, LIFT_LIGHT, DrawList.GLOW);
     }
 
     /** A box placed by u along a row and v across it, so wide, high and deep. */
@@ -676,7 +672,7 @@ final class City implements Ground {
                     float nx = c.houses[o + 5], nz = c.houses[o + 6], top = c.houses[o + 4];
                     float half = Math.abs(nx) * c.houses[o + 2] + Math.abs(nz) * c.houses[o + 3];
                     float fx = c.houses[o] + nx * (half + 0.25f), fz = c.houses[o + 1] + nz * (half + 0.25f);
-                    if (near(fx, fz, x, z, reach)) n = mark(out, n, fx, WALK_TOP + 4.3f, fz, nx, nz, MARK_STREET_LIFT);
+                    if (near(fx, fz, x, z, reach)) n = mark(out, n, fx, WALK_TOP + 3.5f, fz, nx, nz, MARK_STREET_LIFT);
                     lift(c.houses, o, l);
                     float hx = l[8] + nx * 0.45f, hz = l[9] + nz * 0.45f;
                     if (near(hx, hz, x, z, reach)) n = mark(out, n, hx, top + HUT_HIGH + 0.8f, hz, -nx, -nz, MARK_HUT);

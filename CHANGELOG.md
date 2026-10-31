@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.30
+
+- The signs do what they say. Touch one and she goes by herself: a fire escape's ladder, she
+  runs to its foot and climbs; an arrow up at a ladder between roofs, the same; the lift's over
+  a front door, she goes to it, in, across the hall into the cabin and up to the roof; the lift's
+  over a hut on a roof, she goes to it, down, across the hall and out at the front. The sign she
+  is on her way to flickers. A finger on the glass anywhere else takes her back at once.
+- The lifts' front doors no longer carry a lamp with an arrow of their own as well as the sign:
+  a slim green light along the top of the frame, and the sign over it.
+- Fixed: a ladder taken while she was on her way to it by herself left her still on her way,
+  and put somewhere else she ran back toward it.
+- Stand: `tapsign lift|ladder|up`, `errand SECONDS EVERY PREFIX`, `atlift METERS`,
+  `onhut [METERS]`; scene `errands.txt`.
+
 ## 0.29
 
 - Buttons and signs over the frame, all of one make: round panes of dark glass, half

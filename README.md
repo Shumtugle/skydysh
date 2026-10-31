@@ -26,7 +26,8 @@ its hall, made from the house's seed, and in its side wall the lift, which is ca
 takes her up and lets her out on the roof by itself. On the roof, by the hut's door, a button
 shows; pressed, the lift takes her down and the cabin opens onto the hall again. Signs of glass
 hang over the ways in and up near her: the lifts' doors, the fire escapes, the ladders from roof
-to roof. A button high on the left pauses the game. She stands on
+to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
+out) by the lift. A button high on the left pauses the game. She stands on
 whatever she comes down on, the roofs too. When a mission is done the game keeps where it is.
 
 For now, to try: a hunt. Five golems on fire that should not be are loose in the town, each

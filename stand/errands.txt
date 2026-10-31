@@ -1,0 +1,21 @@
+# Errands: a sign touched, she goes where it says by herself. Up a fire escape: its sign tapped
+# from across the street, she runs to its foot and climbs. Up by a lift: its sign over the door
+# tapped from the road, she goes to it, in, across the hall into the cabin and up. Down by a
+# lift: on a roof, the sign over its hut tapped, she goes to it, down, across the hall and out.
+screen 1096 2560
+ladder street 9
+wait 0.3
+shot e0
+tapsign ladder
+errand 6 1.5 ea
+mission 2
+atlift 5
+wait 0.3
+shot e1
+tapsign lift
+errand 24 2 eb
+onhut 4
+wait 0.3
+shot e2
+tapsign lift
+errand 22 2 ec

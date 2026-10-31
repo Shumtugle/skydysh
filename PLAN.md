@@ -42,6 +42,7 @@ release, each seen on the stand before the phone.
   car; squares with fountains or gardens, trees, benches, pots and ivy along the streets.
 - 0.29 Buttons and signs of glass over the frame, sixteen of them; pause; the lift's button;
   signs over the ways in and up.
+- 0.30 The signs touched send her where they say: up a ladder, up or down by a lift.
 
 ## Next
 

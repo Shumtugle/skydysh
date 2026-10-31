@@ -536,6 +536,32 @@ public final class Stand implements World.Host {
             System.out.println(String.format("%7.2fs  a ladder at %.1f %.1f, from %.1f to %.1f m, facing %.0f %.0f", time,
                     best[0], best[1], best[2], best[3], best[4], best[5]));
             step();
+        } else if (c.equals("tapsign")) {
+            // tapsign lift|ladder|up: a tap on the nearest sign of the kind on the glass, told
+            int which = p[1].equals("ladder") ? Badges.LADDER : p[1].equals("up") ? Badges.UP : Badges.LIFT;
+            float[] at = new float[2];
+            if (world.signOnGlass(which, at)) {
+                System.out.println(String.format("%7.2fs  tap on the %s sign at %.0f %.0f", time, p[1], at[0], at[1]));
+                world.touch(World.DOWN, at[0], at[1]);
+                step();
+                world.touch(World.UP, at[0], at[1]);
+                step();
+            } else System.out.println(String.format("%7.2fs  no %s sign on the glass", time, p[1]));
+        } else if (c.equals("errand")) {
+            // errand SECONDS EVERY PREFIX: no finger while she goes by herself, shot so often, her place told
+            float secs = f(p[1]), every = f(p[2]), next = 0f;
+            int n = Math.round(secs / DT), k = 0;
+            for (int i = 0; i < n; i++) {
+                step();
+                if (every > 0f && i * DT >= next) {
+                    shot(p[3] + (k++));
+                    next += every;
+                }
+            }
+            Runner r = world.runner;
+            System.out.println(String.format("%7.2fs  her %.1f %.1f %.1f, %s, %s%s", time, r.x, r.y, r.z,
+                    world.indoors != null ? "indoors" : "out of doors", world.onErrand() ? "on her errand" : "errand done",
+                    r.climbing() ? ", climbing" : ""));
         } else if (c.equals("badges")) {
             // badges FROM|off: the buttons and signs from so far in the sheet, a dozen in a grid; off, as in play
             world.showAll = !p[1].equals("off");
@@ -596,9 +622,19 @@ public final class Stand implements World.Host {
             System.out.println(String.format("%7.2fs  her %.1f %.1f %.1f, eye %.1f %.1f %.1f, %s", time, r.x, r.y, r.z,
                     r.eyeX, r.eyeY, r.eyeZ, world.indoors != null ? "indoors" : "out of doors") + (r.inAir() ? ", beats left " + r.beatsLeft() + (r.gliding ? ", gliding" : "") : ""));
         } else if (c.equals("onhut")) {
-            // onhut: her on the roof of the lift's house nearest the folder, standing at its hut's door
+            // onhut [METERS]: her on the roof of the lift's house nearest the folder, standing at its
+            // hut's door, or so far back from it, facing it
             float[] l = doorNearFolder();
-            world.runner.put(l[8], l[5], l[9], (float) Math.atan2(l[2], l[3]));
+            float back = p.length > 1 ? f(p[1]) : 0f;
+            world.runner.put(l[8] - l[2] * back, l[5], l[9] - l[3] * back, (float) Math.atan2(l[2], l[3]));
+            world.runner.recenter();
+            step();
+        } else if (c.equals("atlift")) {
+            // atlift METERS: her in the street so far out from the door of the lift's house nearest the folder, facing it
+            float[] l = doorNearFolder();
+            float back = f(p[1]);
+            world.runner.put(l[0] + l[2] * back, City.WALK_TOP, l[1] + l[3] * back, (float) Math.atan2(-l[2], -l[3]));
+            world.runner.recenter();
             step();
         } else if (c.equals("walk")) {
             // walk SECONDS EVERY PREFIX: indoors, a finger that goes where the place says to (to the

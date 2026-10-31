@@ -91,8 +91,64 @@ final class Runner {
         holding = false;
     }
 
+    // led where a sign says (see World): to (leadX, leadZ) at a run slowing to a walk, there
+    // stopped and turned to leadH; a finger on the glass takes her back
+    private boolean led, arrived;
+    private float leadX, leadZ, leadH, leadStuck;
+
+    /** Led by herself to (tx, tz), to stop there facing h. */
+    void lead(float tx, float tz, float h) {
+        led = true;
+        arrived = false;
+        leadX = tx;
+        leadZ = tz;
+        leadH = h;
+        leadStuck = 0f;
+    }
+
+    void stopLead() {
+        led = false;
+    }
+
+    /** Whether she is on her way somewhere by herself. */
+    boolean led() {
+        return led;
+    }
+
+    /** Whether she has got where she was led since this was last asked; asked, it is forgotten. */
+    boolean arrived() {
+        boolean a = arrived;
+        arrived = false;
+        return a;
+    }
+
+    /** On her way where she was led: turned toward it, slowing as she comes; there, turned as she was told. */
+    private void guide(float dt) {
+        float dx = leadX - x, dz = leadZ - z, d = (float) Math.sqrt(dx * dx + dz * dz);
+        float want = d < 0.3f ? leadH : (float) Math.atan2(dx, dz);
+        float a = want - heading;
+        while (a > Math.PI) a -= 2f * (float) Math.PI;
+        while (a < -Math.PI) a += 2f * (float) Math.PI;
+        heading += Math.max(-6f * dt, Math.min(6f * dt, a));
+        if (d < 0.3f) {
+            speed = Math.max(0f, speed - 30f * dt);
+            if (speed < 0.2f && Math.abs(a) < 0.15f) {
+                led = false;
+                arrived = true;
+            }
+            return;
+        }
+        // facing away, she turns before she runs
+        float top = Math.min(TOP_SPEED * 0.7f, 0.9f + d * 2.2f) * Math.max(0.2f, (float) Math.cos(Math.min(1.5f, Math.abs(a))));
+        speed += (top - speed) * Math.min(1f, dt * 4f);
+        // held up by something on the way: she gives it up
+        leadStuck = speed < 0.6f && Math.abs(a) < 0.5f ? leadStuck + dt : 0f;
+        if (leadStuck > 1.5f) led = false;
+    }
+
     void touch(int type, float fx, float fy) {
         if (auto || held) return;
+        if (type == World.DOWN) led = false;
         if (type == World.DOWN) {
             holding = true;
             lastX = fx;
@@ -199,12 +255,14 @@ final class Runner {
         gliding = false;
         placed = false;
         auto = false;
+        led = false;
         tapped = false;
         beats = 0;
     }
 
     /** Onto a ladder: standing at (fx, fz) before its wall (facing nx, nz), up from bottom to top. */
     void climb(float fx, float fz, float bottom, float top, float nx, float nz) {
+        led = false;
         state = CLIMB;
         stateAt = clock;
         x = fx;
@@ -309,6 +367,8 @@ final class Runner {
             heading += Math.max(-10f * dt, Math.min(10f * dt, d));
         } else if (auto) {
             steer(dt);
+        } else if (led && state != AIR && state != SLIDE) {
+            guide(dt);
         } else if (holding || clock - upAt < GRACE) speed += (TOP_SPEED - speed) * Math.min(1f, dt * PICK_UP);
         else if (state != AIR) speed = Math.max(0f, speed - BRAKE * dt);
         if (state == SLIDE) {

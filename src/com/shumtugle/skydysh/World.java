@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.29";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.30";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -187,6 +187,16 @@ final class World {
             runner.touch(UP, x, y);
             return;
         }
+        // a sign: she goes where it says by herself
+        if (type == DOWN && indoors == null) {
+            int sgn = signAt(x, y);
+            if (sgn >= 0) {
+                errand(sgn);
+                buttonHeld = true;
+                return;
+            }
+        }
+        if (type == DOWN) errand = NO_ERRAND;
         // the button down by the lift on a roof: pressed, the finger is the button's till it is lifted
         if (type == DOWN && liftOffer && onLiftButton(x, y)) {
             liftPressed = true;
@@ -251,6 +261,7 @@ final class World {
         whiteOut = Math.max(0f, whiteOut - dt);
         ladders(dt);
         doors(dt);
+        errands(dt);
         // a beat of the arms (a flick, between frames): the air through them
         if (runner.beatsLeft() < beatsWere) host.sound(Synth.WHOOSH, 0.5f, 0.8f);
         if (swapT < 0f) runner.update(dt, city, cars, walkers);
@@ -458,7 +469,12 @@ final class World {
 
     // ---- signs at the ways in and up: over a lift's doors, a fire escape's foot, a ladder up a wall ----
     private final float[] marks = new float[6 * 64], markAt = new float[3];
-    private final float[] signs = new float[5 * 16];
+    // the signs found this frame: on screen x, y, size, which, how much shown; and where in the
+    // world, the way its wall faces, its kind
+    private final float[] signs = new float[10 * 16];
+    // the signs drawn last frame, to be touched: the same ten floats each
+    private final float[] shown = new float[10 * DrawList.BADGE_MAX];
+    private int shownN;
     static final float SIGN_FAR = 34f;       // seen no farther off than this
 
     /**
@@ -486,25 +502,151 @@ final class World {
             float bob = 0.08f * (float) Math.sin(time * 2.2f + x * 0.7f + z * 0.3f);
             if (!d.project(x, y + bob, z, markAt) || markAt[2] < 1f) continue;
             if (markAt[0] < -20f || markAt[0] > W + 20f || markAt[1] < -20f || markAt[1] > h + 20f) continue;
-            int s = k * 5;
+            int s = k * 10;
             signs[s] = markAt[0];
             signs[s + 1] = markAt[1];
             signs[s + 2] = Math.max(7f, Math.min(18f, W * 1.6f * 0.75f / markAt[2]));
             signs[s + 3] = kind == City.MARK_ROOF_LADDER ? Badges.UP : kind == City.MARK_ESCAPE ? Badges.LADDER : Badges.LIFT;
-            signs[s + 4] = shown * 0.9f + dist * 1e-4f;
+            signs[s + 4] = shown;
+            signs[s + 5] = x;
+            signs[s + 6] = z;
+            signs[s + 7] = nx;
+            signs[s + 8] = nz;
+            signs[s + 9] = kind;
             k++;
         }
-        // the nearest first, as many as there is room for beside the buttons
+        // the nearest first, as many as there is room for beside the buttons; kept for the finger
+        shownN = 0;
         for (int a = 0; a < k && d.badgeN < DrawList.BADGE_MAX - 3; a++) {
             int best = -1;
             float bs = -1f;
-            for (int b2 = 0; b2 < k; b2++) if (signs[b2 * 5 + 2] > bs) {
-                bs = signs[b2 * 5 + 2];
+            for (int b2 = 0; b2 < k; b2++) if (signs[b2 * 10 + 2] > bs) {
+                bs = signs[b2 * 10 + 2];
                 best = b2;
             }
-            int s = best * 5;
-            d.badge(signs[s], signs[s + 1], signs[s + 2], (int) signs[s + 3], signs[s + 4], 0f);
+            int s = best * 10;
+            boolean mine = errand != NO_ERRAND && Math.abs(signs[s + 5] - errandX) < 0.1f && Math.abs(signs[s + 6] - errandZ) < 0.1f;
+            d.badge(signs[s], signs[s + 1], signs[s + 2], (int) signs[s + 3], signs[s + 4] * 0.9f,
+                    mine ? 0.6f + 0.4f * (float) Math.sin(time * 8f) : 0f);
+            System.arraycopy(signs, s, shown, shownN++ * 10, 10);
             signs[s + 2] = -2f;
+        }
+    }
+
+    // ---- errands: a sign touched, she goes where it says by herself ----
+    static final int NO_ERRAND = 0, ERRAND_CLIMB = 1, ERRAND_UP = 2, ERRAND_DOWN = 3;
+    private int errand;
+    private float errandX, errandZ, errandFor;
+    private final float[] errandLadder = new float[6], way = new float[2];
+
+    /** For the desktop stand: where on the glass the nearest sign of a kind was drawn (x, y); false if none was. */
+    boolean signOnGlass(int which, float[] out) {
+        for (int i = 0; i < shownN; i++)
+            if ((int) shown[i * 10 + 3] == which) {
+                out[0] = shown[i * 10];
+                out[1] = shown[i * 10 + 1];
+                return true;
+            }
+        return false;
+    }
+
+    /** Whether she is on an errand a sign sent her on. */
+    boolean onErrand() {
+        return errand != NO_ERRAND;
+    }
+
+    /** The sign drawn last frame under a finger at (x, y), as its place in shown; -1 if none. */
+    private int signAt(float x, float y) {
+        int best = -1;
+        float bd = 1e9f;
+        for (int i = 0; i < shownN; i++) {
+            int o = i * 10;
+            float reach = Math.max(shown[o + 2], 14f) + 4f, dx = x - shown[o], dy = y - shown[o + 1], dd = dx * dx + dy * dy;
+            if (dd < reach * reach && dd < bd) {
+                bd = dd;
+                best = i;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * A sign touched: up a ladder (to its foot and up it), up by a lift (to its door, in, across
+     * the hall into the cabin, and up), down by a lift (to the hut's door, in, down, across the
+     * hall and out at the front).
+     */
+    private void errand(int i) {
+        Runner r = runner;
+        int o = i * 10;
+        float mx = shown[o + 5], mz = shown[o + 6], nx = shown[o + 7], nz = shown[o + 8];
+        int kind = (int) shown[o + 9];
+        float facing = (float) Math.atan2(-nx, -nz);
+        errandX = mx;
+        errandZ = mz;
+        errandFor = 0f;
+        if (kind == City.MARK_ESCAPE || kind == City.MARK_ROOF_LADDER) {
+            // the sign hangs 0.6 off the wall, the foot is 0.55 off it
+            float fx = mx - nx * 0.05f, fz = mz - nz * 0.05f;
+            if (!city.ladderNear(fx, fz, r.y, 1f, errandLadder)) return;
+            r.lead(errandLadder[0], errandLadder[1], facing);
+            errand = ERRAND_CLIMB;
+        } else if (kind == City.MARK_STREET_LIFT) {
+            liftArmed = true;
+            r.lead(mx + nx * 0.45f, mz + nz * 0.45f, facing);
+            errand = ERRAND_UP;
+        } else {
+            liftArmed = true;
+            r.lead(mx + nx * 0.45f, mz + nz * 0.45f, facing);
+            errand = ERRAND_DOWN;
+        }
+        host.buzz(20);
+    }
+
+    /** The errand going on: led on indoors, the ladder taken at its foot, the button pressed at the hut; done or given up, none. */
+    private void errands(float dt) {
+        if (errand == NO_ERRAND) return;
+        Runner r = runner;
+        errandFor += dt;
+        boolean arrived = r.arrived();
+        if (errandFor > 45f || swapT >= 0f) {
+            if (errandFor > 45f) errand = NO_ERRAND;
+            return;
+        }
+        switch (errand) {
+            case ERRAND_CLIMB:
+                if (r.climbing()) {
+                    errand = NO_ERRAND;
+                    r.stopLead();
+                }
+                else if (arrived) {
+                    float[] l = errandLadder;
+                    r.climb(l[0], l[1], l[2], l[3], l[4], l[5]);
+                    host.sound(Synth.CLANG, 0.25f, 1.5f);
+                    errand = NO_ERRAND;
+                } else if (!r.led()) errand = NO_ERRAND;
+                break;
+            case ERRAND_UP:
+                if (indoors != null) {
+                    if (!r.held) {
+                        indoors.goal(r, way);
+                        r.lead(way[0], way[1], (float) Math.atan2(way[0] - r.x, way[1] - r.z));
+                    }
+                } else if (r.y > 2f) {
+                    errand = NO_ERRAND;
+                    r.stopLead();
+                } else if (!r.led() && !arrived && errandFor > 1f && liftWait <= 0f) errand = NO_ERRAND;
+                break;
+            default:
+                if (indoors != null) {
+                    if (!r.held) {
+                        indoors.goal(r, way);
+                        r.lead(way[0], way[1], (float) Math.atan2(way[0] - r.x, way[1] - r.z));
+                    }
+                } else if (r.y < 1f) {
+                    errand = NO_ERRAND;
+                    r.stopLead();
+                } else if (liftOffer && !r.led()) liftPressed = true;
+                else if (!r.led() && !liftOffer) errand = NO_ERRAND;
         }
     }
 
