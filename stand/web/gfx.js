@@ -41,6 +41,96 @@ function program(gl, vs, fs) {
   return p;
 }
 
+// the people's meshes (folk.bin, see FolkPack) into one buffer of corners and one of indices, and
+// their shared picture into a texture; null if the game has none
+async function meshes(gl, dir) {
+  const r = await fetch(dir + 'folk.bin');
+  if (!r.ok) return null;
+  const b = await r.arrayBuffer(), v = new DataView(b);
+  if (String.fromCharCode(v.getUint8(0), v.getUint8(1), v.getUint8(2), v.getUint8(3)) !== 'FOLK') return null;
+  const n = v.getInt32(8, true);
+  let o = 20;
+  const models = [];
+  let corners = 0, indices = 0;
+  for (let m = 0; m < n; m++) {
+    const V = v.getInt32(o + 8, true), I = v.getInt32(o + 12, true);
+    o += 16;
+    models.push({ V, I, at: o });
+    o += V * 40 + I * 2;
+    corners += V;
+    indices += I;
+  }
+  const verts = new ArrayBuffer(corners * 40), vv = new DataView(verts), idx = new Uint16Array(indices);
+  const first = [], count = [];
+  let base = 0, at = 0;
+  for (const md of models) {
+    for (let c = 0; c < md.V; c++) {
+      for (let k = 0; k < 8; k++) vv.setFloat32(((base + c) * 40) + k * 4, v.getFloat32(md.at + (c * 8 + k) * 4, true), true);
+      for (let k = 0; k < 4; k++) {
+        vv.setUint8((base + c) * 40 + 32 + k, v.getUint8(md.at + md.V * 32 + c * 4 + k));
+        vv.setUint8((base + c) * 40 + 36 + k, v.getUint8(md.at + md.V * 36 + c * 4 + k));
+      }
+    }
+    first.push(at);
+    count.push(md.I);
+    for (let i = 0; i < md.I; i++) idx[at + i] = v.getUint16(md.at + md.V * 40 + i * 2, true) + base;
+    base += md.V;
+    at += md.I;
+  }
+  const vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
+  for (const [loc, size, type, norm, off] of [[0, 3, gl.FLOAT, false, 0], [1, 3, gl.FLOAT, false, 12], [2, 2, gl.FLOAT, false, 24],
+    [3, 4, gl.UNSIGNED_BYTE, false, 32], [4, 4, gl.UNSIGNED_BYTE, true, 36]]) {
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, size, type, norm, 40, off);
+  }
+  const ib = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idx, gl.STATIC_DRAW);
+  gl.bindVertexArray(null);
+  const img = new Image();
+  img.src = dir + 'folk.png';
+  await img.decode();
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, img);
+  gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return { vao, first, count, tex };
+}
+
+// the people of the frame, one draw each, with program p (in use and made ready)
+function people(gl, p, frame, folk) {
+  if (!folk || !frame.folkN) return;
+  const u = n => gl.getUniformLocation(p, n), f = frame.folk, PERSON = 6 + 23 * 7;
+  gl.bindVertexArray(folk.vao);
+  for (let i = 0; i < frame.folkN; i++) {
+    const o = i * PERSON, m = f[o] | 0;
+    if (m < 0 || m >= folk.first.length) continue;
+    const q = new Float32Array(23 * 4), t = new Float32Array(23 * 3);
+    for (let b = 0; b < 23; b++) {
+      const k = o + 6 + b * 7;
+      q.set(f.slice(k, k + 4), b * 4);
+      t.set(f.slice(k + 4, k + 7), b * 3);
+    }
+    gl.uniform4fv(u('uBoneQ'), q);
+    gl.uniform3fv(u('uBoneT'), t);
+    gl.uniform4f(u('uPlace'), f[o + 1], f[o + 2], f[o + 3], f[o + 4]);
+    gl.uniform1f(u('uSize'), f[o + 5]);
+    const id = u('uIdent');
+    if (id) gl.uniform1f(id, (1 + ((i * 37 + m * 11) % 254)) / 255);
+    gl.drawElements(gl.TRIANGLES, folk.count[m], gl.UNSIGNED_SHORT, folk.first[m] * 2);
+  }
+  gl.bindVertexArray(null);
+}
+
 async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
   const W = frame.w, H = frame.h;
   canvas.width = W * scale;
@@ -48,7 +138,8 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
   const gl = canvas.getContext('webgl2', { antialias: false, preserveDrawingBuffer: true });
   if (!gl) throw new Error('no webgl2');
   const src = {};
-  for (const n of ['box.vert', 'box.frag', 'shadow.vert', 'shadow.frag', 'full.vert', 'sky.frag', 'ink.frag', 'blit.frag'])
+  for (const n of ['box.vert', 'box.frag', 'shadow.vert', 'shadow.frag', 'full.vert', 'sky.frag', 'ink.frag', 'blit.frag',
+    'mesh.vert', 'mesh.frag', 'meshshadow.frag'])
     src[n] = await text(shaderDir + n);
   const boxP = program(gl, src['box.vert'], src['box.frag']);
   const shadowP = program(gl, src['shadow.vert'], src['shadow.frag']);
@@ -59,6 +150,10 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
   const sphere = t => t.replace('\n', '\n#define SPHERE\n');
   const ballP = program(gl, sphere(src['box.vert']), sphere(src['box.frag']));
   const ballShadowP = program(gl, sphere(src['shadow.vert']), sphere(src['shadow.frag']));
+  const meshP = program(gl, src['mesh.vert'], src['mesh.frag']);
+  const meshShadowP = program(gl, src['mesh.vert'].replace('\n', '\n#define SHADOW\n'), src['meshshadow.frag']);
+  // the town's people as meshes, when the frame has any and the game has them (next to the shaders)
+  const folk = (frame.folkN || 0) > 0 ? await meshes(gl, shaderDir + '../') : null;
 
   // the cube and the instances: the boxes, and the balls apart
   const cube = gl.createBuffer();
@@ -172,6 +267,11 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
     gl.bindVertexArray(ballVao);
     gl.drawArraysInstanced(gl.TRIANGLES, 0, 36, nb);
   }
+  if (folk) {
+    gl.useProgram(meshShadowP);
+    gl.uniformMatrix4fv(u(meshShadowP, 'uLight'), false, frame.lightProj);
+    people(gl, meshShadowP, frame, folk);
+  }
 
   const lit = p => {
     gl.useProgram(p);
@@ -226,6 +326,14 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
   lit(boxP);
   gl.bindVertexArray(vao);
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 36, frame.count);
+  if (folk) {
+    lit(meshP);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, folk.tex);
+    gl.uniform1i(u(meshP, 'uPicture'), 1);
+    gl.activeTexture(gl.TEXTURE0);
+    people(gl, meshP, frame, folk);
+  }
   if (nb > 0) {
     lit(ballP);
     gl.uniform1f(u(ballP, 'uClear'), 0);

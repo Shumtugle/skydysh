@@ -45,11 +45,15 @@ What is to come is in `PLAN.md`.
 - The game lives in plain Java: rules, the town, what stands where. Each frame it fills a
   draw list: the eye, the sun, the sky and every box and ball in the scene. The runner's
   figure is blocks riding on the bones of a humanoid skeleton whose motions are in
-  `assets/moves.bin` (see `CREDITS`).
+  `assets/moves.bin` (see `CREDITS`). The townspeople are textured meshes on the same
+  skeleton, when the game has them: they are an asset of their own (`assets/folk.bin` and
+  `assets/folk.png`), not part of these sources and not under their license; without them the
+  game draws simple figures of its own instead.
 - The phone draws that list with OpenGL ES 3: the sun's depth map; the sky and the boxes at a
   few pixels to a frame pixel, each material its own worked surface made in the shader, lit by a
   low sun and the sky with soft shadows; then a finishing pass (a soft bloom, the hour's grade,
-  the glow of fire) and onto the screen. The shaders are in `assets/shaders`.
+  the glow of fire) and onto the screen. Meshes go beside the boxes, moved by their bones on the
+  graphics chip. The shaders are in `assets/shaders`.
 - The desktop stand (`stand/`) plays scenes against the same Java and writes each frame's
   draw list; `stand/web/index.html` draws it with the same shaders in a browser.
 

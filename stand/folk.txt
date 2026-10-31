@@ -1,0 +1,12 @@
+# The town's people as meshes, four at a time in a row on the pavement, the eye before them:
+# standing, and walking
+screen 1096 2560
+wait 0.5
+folkrow 0 idle 0
+shot p0
+folkrow 4 walk 0.3
+shot p1
+folkrow 18 idle 0.5
+shot p2
+folkrow 35 walk 0.6
+shot p3

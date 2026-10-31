@@ -85,6 +85,27 @@ final class DrawList {
 
     int[] flat;                                // the flat layer, ARGB, w * h; clear where the scene shows
 
+    // people drawn as meshes (see FolkPack): each so many floats, the pose of its bones among them
+    float[] folk = new float[FolkPack.PERSON * 16];
+    int folkN;
+
+    /** Room for one more person; its floats start at folkAt(). Null if the list is full. */
+    float[] person() {
+        if (folkN >= 96) return null;
+        if ((folkN + 1) * FolkPack.PERSON > folk.length) {
+            float[] more = new float[folk.length * 2];
+            System.arraycopy(folk, 0, more, 0, folk.length);
+            folk = more;
+        }
+        folkN++;
+        return folk;
+    }
+
+    /** Where the last person's floats start. */
+    int folkAt() {
+        return (folkN - 1) * FolkPack.PERSON;
+    }
+
     // what flies far off in the sky, as strokes the sky draws with itself: per stroke its ends
     // in frame pixels (x0, y0, x1, y1), then its width and cover at each end; a dark one (a bird)
     // has its first width negative, the rest are white (a plane, its trail)
@@ -107,6 +128,7 @@ final class DrawList {
         ballCount = 0;
         flyN = 0;
         trailN = 0;
+        folkN = 0;
         ring[3] = 0f;
         finger[2] = 0f;
         fire[3] = 0f;
@@ -306,6 +328,12 @@ final class DrawList {
         for (int i = 0; i < flyN * 8; i++) {
             if (i > 0) s.append(',');
             s.append(fly[i]);
+        }
+        s.append(']');
+        s.append(",\"folkN\":").append(folkN).append(",\"folk\":[");
+        for (int i = 0; i < folkN * FolkPack.PERSON; i++) {
+            if (i > 0) s.append(',');
+            s.append(folk[i]);
         }
         s.append(']');
         s.append(",\"count\":").append(count).append(",\"boxes\":[");

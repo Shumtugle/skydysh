@@ -7,7 +7,8 @@ import java.util.Random;
  * along the middle of the pavement. Someone running at them makes them stop and step aside
  * toward the houses. Like the traffic, they come and go out of sight round the runner.
  *
- * A person is round parts, walking: the stride swings the legs, the arms against them.
+ * A person is one of the town's meshes when the game has them (see FolkPack), walking with the
+ * skeleton's own walk; otherwise round parts, the stride swinging the legs, the arms against them.
  */
 final class Walkers {
     private static final int[] SKINS = {0xE9BC98, 0xD69F7A, 0xB98058, 0x7E5236, 0xF0CDAE};
@@ -24,7 +25,7 @@ final class Walkers {
 
     private final Random rnd = new Random(0x5EE7L);
     private final int[] bi = new int[MOST], bj = new int[MOST], top = new int[MOST], legs = new int[MOST],
-            skin = new int[MOST], hair = new int[MOST], kind = new int[MOST];
+            skin = new int[MOST], hair = new int[MOST], kind = new int[MOST], model = new int[MOST];
     private final float[] u = new float[MOST], v = new float[MOST], dir = new float[MOST], ph = new float[MOST],
             size = new float[MOST], aside = new float[MOST];
     final float[] x = new float[MOST], z = new float[MOST], yaw = new float[MOST];
@@ -115,10 +116,25 @@ final class Walkers {
             longHair[i] = kind[i] == SKIRT || rnd.nextInt(5) == 0;
             hat[i] = rnd.nextInt(4) == 0;
             bag[i] = rnd.nextInt(3) == 0;
+            model[i] = pick();
             live[i] = true;
             return;
         }
         live[i] = false;
+    }
+
+    /** Which of the town's meshes a newcomer is: now and then the police, very seldom the dancer. */
+    private int pick() {
+        FolkPack t = FolkPack.town;
+        if (t == null) return 0;
+        int roll = rnd.nextInt(100);
+        boolean police = roll < 6, dancer = roll == 99;
+        for (int tries = 0; tries < 64; tries++) {
+            int m = rnd.nextInt(t.count), k = t.kind[m];
+            boolean isPolice = k == FolkPack.POLICEMAN || k == FolkPack.POLICEWOMAN, isDancer = k == FolkPack.DANCER;
+            if (isPolice == police && isDancer == dancer) return m;
+        }
+        return rnd.nextInt(t.count);
     }
 
     /** Pushes a round body of radius rr out of anyone it went into; true if it touched someone. */
@@ -158,7 +174,17 @@ final class Walkers {
     private float px, py, pz, c, sn, s;
     private final float[] rot = new float[9], a = new float[3], b = new float[3];
 
+    // a walk's metres a second of the skeleton's own motion, and how far its time runs per metre
+    private static final float WALK_TIME = 0.952f / 3.2f;
+
     private void person(DrawList d, float x, float y, float z, float yaw, float phase, int i, boolean still) {
+        if (FolkPack.town != null && Frida.ready()) {
+            // the skeleton faces -z at no turn: turned half round, they walk the way they are headed
+            float t = phase * WALK_TIME;
+            FolkPack.person(d, model[i] % FolkPack.town.count, x, y, z, yaw + (float) Math.PI, 1f,
+                    still ? "idle" : "walk", still ? t * 0.3f : t);
+            return;
+        }
         px = x;
         py = y;
         pz = z;

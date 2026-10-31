@@ -49,6 +49,11 @@ final class Frida {
         build();
     }
 
+    /** The skeleton and its motions, as given; null until then. */
+    static Moves moves() {
+        return moves;
+    }
+
     static boolean ready() {
         return moves != null;
     }

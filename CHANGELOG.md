@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.25
+
+- The townspeople are people now: textured meshes of natural build, on the same skeleton as
+  the heroine and moving with her motions (they walk the pavements with its walk, and stand
+  with its idle when someone runs at them). Now and then a pair of police in blue go by.
+- The renderer draws meshes as a third kind of thing beside boxes and balls: each person's
+  corners moved by up to four bones on the graphics chip, lit as the boxes are, in the sun's
+  shadows and casting their own, inked round their edges. The same on the desktop stand.
+- The people are an asset of their own, not part of these sources (`assets/folk.bin`,
+  `assets/folk.png`, kept out of the repository). Without it the game builds and runs with the
+  old figures.
+- Stand: `folkrow FIRST MOTION T` (four of the town's people in a row on the pavement, the eye
+  before them); scenes `folk.txt`, `streetfolk.txt`.
+
 ## 0.24
 
 - Fixed: a house at a corner of its block backs onto the end of the row across, but it had a

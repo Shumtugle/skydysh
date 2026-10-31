@@ -3,3 +3,5 @@ out/
 *.keystore
 *.jks
 HANDOFF.md
+assets/folk.bin
+assets/folk.png

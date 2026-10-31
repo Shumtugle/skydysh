@@ -502,6 +502,13 @@ public final class Stand implements World.Host {
                     }
             r.put(best[0] + best[2] * 0.6f, City.WALK_TOP, best[1] + best[3] * 0.6f, (float) Math.atan2(-best[2], -best[3]) + 1.5708f);
             step();
+        } else if (c.equals("folkrow")) {
+            if (p[1].equals("off")) rowFirst = -1;
+            else {
+                rowFirst = Integer.parseInt(p[1]);
+                rowMotion = p.length > 2 ? p[2] : "idle";
+                rowT = p.length > 3 ? f(p[3]) : 0f;
+            }
         } else if (c.equals("where")) {
             // where: her place, the eye's, and whether she is indoors, told
             Runner r = world.runner;
@@ -778,8 +785,25 @@ public final class Stand implements World.Host {
         bdown = false;
     }
 
+    // folkrow FIRST MOTION T: the shots from now on look at four of the town's people in a row
+    // on the pavement beside the start (models FIRST on), in a motion at a time; folkrow off
+    private int rowFirst = -1;
+    private String rowMotion = "idle";
+    private float rowT;
+
+    private void folkRow(DrawList d) {
+        float px = 5.6f, z0 = 20f, step = 0.95f;
+        int n = 4;
+        for (int k = 0; k < n; k++) {
+            int m = (rowFirst + k) % Math.max(1, FolkPack.town == null ? 1 : FolkPack.town.count);
+            FolkPack.person(d, m, px, City.WALK_TOP, z0 + k * step, (float) Math.PI * 0.5f - 0.35f, 1f, rowMotion, rowT + k * 0.2f);
+        }
+        d.camera(px - 4.2f, 1.35f, z0 + (n - 1) * step * 0.5f, (float) Math.PI * 0.5f, -0.06f, World.W * 1.25f, 0.03f, 300f);
+    }
+
     private void shot(String name) throws IOException {
         world.draw(list);
+        if (rowFirst >= 0) folkRow(list);
         Files.write(new File(out, name + ".json").toPath(), list.json().getBytes(StandardCharsets.UTF_8));
         BufferedImage img = new BufferedImage(list.w, list.h, BufferedImage.TYPE_INT_ARGB);
         img.setRGB(0, 0, list.w, list.h, list.flat, 0, list.w);

@@ -1,0 +1,15 @@
+# The town with its people: standing a while for them to come by, then a run along the street
+screen 1096 2560
+wait 25
+shot s0
+down 137 600
+wait 3
+up 137 600
+wait 1.5
+shot s1
+turn 1.5708
+down 137 600
+wait 2.5
+up 137 600
+wait 1
+shot s2

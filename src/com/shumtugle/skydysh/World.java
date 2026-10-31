@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.24";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.25";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -64,6 +64,7 @@ final class World {
         this.host = host;
         byte[] moves = host.asset("moves.bin");
         if (moves != null) Frida.use(Moves.read(moves));
+        if (FolkPack.town == null) FolkPack.town = FolkPack.read(host.asset("folk.bin"));
         Lang.use(host, host.language());
         // where the last game left off: the mission to play next, and what has been won
         int next = host.loadInt(SAVE_MISSION);

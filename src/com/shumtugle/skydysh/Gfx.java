@@ -23,7 +23,12 @@ final class Gfx {
     private static final int SHADOW_SIZE = 2048;
     private static final float[] CUBE = cube();
 
-    private int boxP, shadowP, skyP, inkP, blitP, ballP, ballShadowP;
+    private int boxP, shadowP, skyP, inkP, blitP, ballP, ballShadowP, meshP, meshShadowP;
+    // the town's people as meshes, when the game has them: one buffer of corners for all, one of
+    // indices, where each model's run starts and how long it is; their shared picture
+    private int meshVao, meshBuf, meshIdx, pictureTex;
+    private int[] meshFirst, meshCount;
+    private final float[] boneQ = new float[FolkPack.BONES * 4], boneT = new float[FolkPack.BONES * 3];
     private int vao, empty, cubeBuf, instBuf, ballVao, ballBuf;
     private int shadowTex, shadowFb, sceneTex, sceneFb, depthTex, printTex, printFb, flatTex, hudTex, hudW, hudH;
     private int frameW, frameH, drawW, drawH;
@@ -43,6 +48,9 @@ final class Gfx {
         blitP = program(read(assets, "full.vert"), read(assets, "blit.frag"));
         ballP = program(sphere(read(assets, "box.vert")), sphere(read(assets, "box.frag")));
         ballShadowP = program(sphere(read(assets, "shadow.vert")), sphere(read(assets, "shadow.frag")));
+        meshP = program(read(assets, "mesh.vert"), read(assets, "mesh.frag"));
+        meshShadowP = program(define(read(assets, "mesh.vert"), "SHADOW"), read(assets, "meshshadow.frag"));
+        meshes(assets);
         int[] ids = new int[3];
         GLES30.glGenVertexArrays(3, ids, 0);
         vao = ids[0];
@@ -250,6 +258,11 @@ final class Gfx {
             GLES30.glBindVertexArray(ballVao);
             GLES30.glDrawArraysInstanced(GLES30.GL_TRIANGLES, 0, 36, nb);
         }
+        if (meshFirst != null && d.folkN > 0) {
+            GLES30.glUseProgram(meshShadowP);
+            GLES30.glUniformMatrix4fv(u(meshShadowP, "uLight"), 1, false, d.lightProj, 0);
+            people(meshShadowP, d);
+        }
 
         // 2. the sky, then the boxes, at the drawing size
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, sceneFb);
@@ -279,6 +292,14 @@ final class Gfx {
         lit(boxP, d);
         GLES30.glBindVertexArray(vao);
         GLES30.glDrawArraysInstanced(GLES30.GL_TRIANGLES, 0, 36, n);
+        if (meshFirst != null && d.folkN > 0) {
+            lit(meshP, d);
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, pictureTex);
+            GLES30.glUniform1i(u(meshP, "uPicture"), 1);
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+            people(meshP, d);
+        }
         if (nb > 0) {
             lit(ballP, d);
             GLES30.glUniform1f(u(ballP, "uClear"), 0f);
@@ -356,6 +377,117 @@ final class Gfx {
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
     }
 
+    /** The town's people into buffers, and their picture into a texture; nothing if the game has none. */
+    private void meshes(AssetManager assets) {
+        meshFirst = null;
+        FolkPack pack;
+        android.graphics.Bitmap picture;
+        try (InputStream in = assets.open("folk.bin")) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buf = new byte[65536];
+            int k;
+            while ((k = in.read(buf)) > 0) out.write(buf, 0, k);
+            pack = FolkPack.read(out.toByteArray());
+        } catch (IOException e) {
+            return;
+        }
+        try (InputStream in = assets.open("folk.png")) {
+            picture = android.graphics.BitmapFactory.decodeStream(in);
+        } catch (IOException e) {
+            return;
+        }
+        if (pack == null || picture == null) return;
+        int corners = 0, indices = 0;
+        for (int m = 0; m < pack.count; m++) {
+            corners += pack.corners[m];
+            indices += pack.indices[m];
+        }
+        if (corners > 65535) return;
+        // a corner: place, normal, uv (8 floats), then its bones and weights (4 bytes each)
+        ByteBuffer v = ByteBuffer.allocateDirect(corners * 40).order(ByteOrder.nativeOrder());
+        ByteBuffer ix = ByteBuffer.allocateDirect(indices * 2).order(ByteOrder.nativeOrder());
+        meshFirst = new int[pack.count];
+        meshCount = new int[pack.count];
+        int base = 0, at = 0;
+        for (int m = 0; m < pack.count; m++) {
+            float[] vd = pack.vertex[m];
+            for (int c = 0; c < pack.corners[m]; c++) {
+                for (int k = 0; k < 8; k++) v.putFloat(vd[c * 8 + k]);
+                v.put(pack.bones[m], c * 4, 4);
+                v.put(pack.weights[m], c * 4, 4);
+            }
+            meshFirst[m] = at;
+            meshCount[m] = pack.indices[m];
+            for (short i : pack.index[m]) ix.putShort((short) ((i & 0xFFFF) + base));
+            base += pack.corners[m];
+            at += pack.indices[m];
+        }
+        v.position(0);
+        ix.position(0);
+        int[] ids = new int[2];
+        GLES30.glGenVertexArrays(1, ids, 0);
+        meshVao = ids[0];
+        GLES30.glGenBuffers(2, ids, 0);
+        meshBuf = ids[0];
+        meshIdx = ids[1];
+        GLES30.glBindVertexArray(meshVao);
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, meshBuf);
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, corners * 40, v, GLES30.GL_STATIC_DRAW);
+        GLES30.glEnableVertexAttribArray(0);
+        GLES30.glVertexAttribPointer(0, 3, GLES30.GL_FLOAT, false, 40, 0);
+        GLES30.glEnableVertexAttribArray(1);
+        GLES30.glVertexAttribPointer(1, 3, GLES30.GL_FLOAT, false, 40, 12);
+        GLES30.glEnableVertexAttribArray(2);
+        GLES30.glVertexAttribPointer(2, 2, GLES30.GL_FLOAT, false, 40, 24);
+        GLES30.glEnableVertexAttribArray(3);
+        GLES30.glVertexAttribPointer(3, 4, GLES30.GL_UNSIGNED_BYTE, false, 40, 32);
+        GLES30.glEnableVertexAttribArray(4);
+        GLES30.glVertexAttribPointer(4, 4, GLES30.GL_UNSIGNED_BYTE, true, 40, 36);
+        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, meshIdx);
+        GLES30.glBufferData(GLES30.GL_ELEMENT_ARRAY_BUFFER, indices * 2, ix, GLES30.GL_STATIC_DRAW);
+        GLES30.glBindVertexArray(0);
+        int[] t = new int[1];
+        GLES30.glGenTextures(1, t, 0);
+        pictureTex = t[0];
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, pictureTex);
+        android.opengl.GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, picture, 0);
+        picture.recycle();
+        GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR_MIPMAP_LINEAR);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
+    }
+
+    /** The people of the list, one draw each, with program p (already in use and made ready). */
+    private void people(int p, DrawList d) {
+        if (meshFirst == null || d.folkN == 0) return;
+        int locQ = u(p, "uBoneQ"), locT = u(p, "uBoneT"), locPlace = u(p, "uPlace"), locSize = u(p, "uSize"), locId = u(p, "uIdent");
+        GLES30.glBindVertexArray(meshVao);
+        float[] f = d.folk;
+        for (int i = 0; i < d.folkN; i++) {
+            int o = i * FolkPack.PERSON, m = (int) f[o];
+            if (m < 0 || m >= meshFirst.length) continue;
+            for (int b = 0; b < FolkPack.BONES; b++) {
+                int k = o + 6 + b * 7;
+                boneQ[b * 4] = f[k];
+                boneQ[b * 4 + 1] = f[k + 1];
+                boneQ[b * 4 + 2] = f[k + 2];
+                boneQ[b * 4 + 3] = f[k + 3];
+                boneT[b * 3] = f[k + 4];
+                boneT[b * 3 + 1] = f[k + 5];
+                boneT[b * 3 + 2] = f[k + 6];
+            }
+            GLES30.glUniform4fv(locQ, FolkPack.BONES, boneQ, 0);
+            GLES30.glUniform3fv(locT, FolkPack.BONES, boneT, 0);
+            GLES30.glUniform4f(locPlace, f[o + 1], f[o + 2], f[o + 3], f[o + 4]);
+            GLES30.glUniform1f(locSize, f[o + 5]);
+            if (locId >= 0) GLES30.glUniform1f(locId, (1f + ((i * 37 + m * 11) % 254)) / 255f);
+            GLES30.glDrawElements(GLES30.GL_TRIANGLES, meshCount[m], GLES30.GL_UNSIGNED_SHORT, meshFirst[m] * 2);
+        }
+        GLES30.glBindVertexArray(0);
+    }
+
     /** A program that draws lit boxes, made ready: the eye, the sun and its depth map, the haze. */
     private void lit(int p, DrawList d) {
         GLES30.glUseProgram(p);
@@ -381,6 +513,12 @@ final class Gfx {
     }
 
     // ---- helpers ----
+
+    /** The same shader with a word defined after its first line. */
+    private static String define(String src, String word) {
+        int eol = src.indexOf('\n');
+        return src.substring(0, eol + 1) + "#define " + word + "\n" + src.substring(eol + 1);
+    }
 
     /** The same shader, built for balls. */
     private static String sphere(String src) {

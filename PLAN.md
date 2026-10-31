@@ -33,14 +33,14 @@ release, each seen on the stand before the phone.
   that calls, opens, rides and lets her out by itself.
 - 0.23 A game that begins with the folder no longer stops at once.
 - 0.24 No back door into a wall; out of a door, straight back in; the eye rises at a wall.
+- 0.25 The townspeople as textured meshes on the heroine's skeleton; meshes in the renderer.
 
 ## Next
 
 - More plans indoors, of the same parts, for other missions: a stairwell, offices, a garage,
   a hotel's lobby; a mission that starts or ends indoors.
 
-- The new look carried on: people of natural build with simple faces and big folds in their
-  clothes; cars in the manner of the eighties, angular saloons, long coupes and open tops, a
+- The new look carried on: cars in the manner of the eighties, angular saloons, long coupes and open tops, a
   little chrome; balconies, signs and lights of the evening, pink and blue.
 
 - The race against the clock: gates at crossings strung into a course, a clock, a mark at the
