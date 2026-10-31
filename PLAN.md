@@ -32,6 +32,7 @@ release, each seen on the stand before the phone.
 - 0.22 Indoors: places made from a seed; a house's hall, front door to yard door, with a lift
   that calls, opens, rides and lets her out by itself.
 - 0.23 A game that begins with the folder no longer stops at once.
+- 0.24 No back door into a wall; out of a door, straight back in; the eye rises at a wall.
 
 ## Next
 

@@ -383,6 +383,7 @@ final class Runner {
         // back from her along the way she looks, as far as nothing is in the way
         float r = in ? 0.3f : 0.4f, feet = y + high - 1f;
         float[] p = {x, z};
+        float free = 0f;
         for (float t = EYE_STEP; ; t += EYE_STEP) {
             float tt = Math.min(t, back), qx = x - fx * tt, qz = z - fz * tt;
             eyeTry[0] = qx;
@@ -392,19 +393,25 @@ final class Runner {
             if (mx * mx + mz * mz > 0.04f * 0.04f && tt > EYE_STEP) break;
             p[0] = eyeTry[0];
             p[1] = eyeTry[1];
+            free = tt;
             if (tt >= back) break;
         }
         g.keepEye(p);
         eyeX = p[0];
         eyeZ = p[1];
-        eyeY = Math.min(y + high, g.ceiling(eyeX, eyeZ) - 0.25f);
-        float ahead = in ? AHEAD_IN : AHEAD;
+        // with her back to a wall the eye has no room behind her: it rises and looks down on her
+        // instead, as far as a ceiling lets it
+        float short_ = Math.max(0f, Math.min(back, NEAR_BACK) - free) / NEAR_BACK;
+        eyeY = Math.min(y + high + short_ * RISE, g.ceiling(eyeX, eyeZ) - 0.25f);
+        float ahead = (in ? AHEAD_IN : AHEAD) * (1f - 0.85f * short_);
         float tx = x + fx * ahead, tz = z + fz * ahead, ty = y + (in ? LOOK_UP_IN : LOOK_UP);
         float dx = tx - eyeX, dz = tz - eyeZ;
         eyePitch = (float) Math.atan2(ty - eyeY, Math.sqrt(dx * dx + dz * dz));
     }
 
     private static final float EYE_STEP = 0.3f;
+    // the eye with less room behind her than this rises so much higher at most (none at all)
+    static final float NEAR_BACK = 2.4f, RISE = 4.5f;
     private final float[] eyeTry = new float[2];
 
     /** Where one of her bones is now, into out (x, y, z). */

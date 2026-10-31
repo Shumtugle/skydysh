@@ -470,6 +470,43 @@ public final class Stand implements World.Host {
             if (down) world.touch(World.UP, fx, fy);
             System.out.println(String.format("%7.2fs  fuzz done, mission %d, her %.0f %.1f %.0f", time, world.mission.round,
                     world.runner.x, world.runner.y, world.runner.z));
+        } else if (c.equals("doorlog")) {
+            // doorlog SECONDS: the lift door nearest her told every tenth of a second (how far, which)
+            int n = Math.round(f(p[1]) / DT);
+            float[] l = new float[11], h = new float[8];
+            for (int i = 0; i < n; i++) {
+                step();
+                if (i % 6 != 0) continue;
+                Runner r = world.runner;
+                boolean near = world.city.liftNear(r.x, r.z, r.y, 3f, l, h);
+                System.out.println(String.format("%7.2fs  her %.2f %.2f %.2f h %.2f v %.2f air %b near %b door %.2f %.2f back %.0f face %.0f %.0f %s",
+                        time, r.x, r.y, r.z, r.heading, r.speed, r.inAir(), near, l[0], l[1], l[10], l[2], l[3], world.indoors != null ? "IN" : ""));
+            }
+        } else if (c.equals("yardhouse")) {
+            // yardhouse: her standing at the front door of the nearest house with a lift whose back looks on its yard
+            Runner r = world.runner;
+            float[] h = new float[8], l = new float[10], best = null;
+            float bd = 1e9f;
+            int ci = City.index(r.x), cj = City.index(r.z);
+            for (int j = cj - 2; j <= cj + 2; j++)
+                for (int i = ci - 2; i <= ci + 2; i++)
+                    for (int k = 0; k < world.city.houses(i, j); k++) {
+                        world.city.house(i, j, k, h);
+                        if (h[7] == 0f || !world.city.backClear(h, 0)) continue;
+                        City.lift(h, 0, l);
+                        float dd = (l[0] - r.x) * (l[0] - r.x) + (l[1] - r.z) * (l[1] - r.z);
+                        if (dd < bd) {
+                            bd = dd;
+                            best = l.clone();
+                        }
+                    }
+            r.put(best[0] + best[2] * 0.6f, City.WALK_TOP, best[1] + best[3] * 0.6f, (float) Math.atan2(-best[2], -best[3]) + 1.5708f);
+            step();
+        } else if (c.equals("where")) {
+            // where: her place, the eye's, and whether she is indoors, told
+            Runner r = world.runner;
+            System.out.println(String.format("%7.2fs  her %.1f %.1f %.1f, eye %.1f %.1f %.1f, %s", time, r.x, r.y, r.z,
+                    r.eyeX, r.eyeY, r.eyeZ, world.indoors != null ? "indoors" : "out of doors"));
         } else if (c.equals("onhut")) {
             // onhut: her on the roof of the lift's house nearest the folder, standing at its hut's door
             float[] l = doorNearFolder();

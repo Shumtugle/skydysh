@@ -38,6 +38,8 @@ final class Indoors implements Ground {
     final int side;
     final float liftV;
     final int floors;
+    /** Whether there is a door at the back, on the yard. */
+    boolean backDoor = true;
     // what it is made of: the frame of the lift's doors, its lamps, the cabin's walls
     int frameColor = 0xB9A27A, cabColor = 0x7A5236, lampLit = 0xFFB347;
     float frameMat = DrawList.GOLD;
@@ -239,7 +241,7 @@ final class Indoors implements Ground {
         float u = u(r.x, r.z), v = v(r.x, r.z);
         // the glass doors: open while she is near them; through one, she is out
         front = toward(front, near(u, v, 0f, WALL) < DOORS_NEAR, dt * 2.5f);
-        back = toward(back, near(u, v, 0f, deep - WALL) < DOORS_NEAR, dt * 2.5f);
+        back = backDoor ? toward(back, near(u, v, 0f, deep - WALL) < DOORS_NEAR, dt * 2.5f) : 0f;
         int out = NONE;
         if (front > 0.85f && v < WALL * 0.3f) out = OUT_FRONT;
         if (back > 0.85f && v > deep - WALL * 0.3f) out = OUT_BACK;
@@ -332,7 +334,7 @@ final class Indoors implements Ground {
         solidN = fixedN;
         float top = FLOOR + HALL_HIGH;
         if (front < 0.85f) solid(-DOOR_HALF, 0f, DOOR_HALF, WALL, top);
-        if (back < 0.85f) solid(-DOOR_HALF, deep - WALL, DOOR_HALF, deep, top);
+        if (backDoor && back < 0.85f) solid(-DOOR_HALF, deep - WALL, DOOR_HALF, deep, top);
         float wu = side * half, wu1 = side * (half + WALL);
         if (doors < 0.85f) solid(Math.min(wu, wu1), liftV - LIFT_HALF, Math.max(wu, wu1), liftV + LIFT_HALF, top);
     }
@@ -397,7 +399,7 @@ final class Indoors implements Ground {
         d.append(still);
         float top = FLOOR;
         // the glass doors: two leaves each, sliding apart
-        for (int k = 0; k < 2; k++) {
+        for (int k = 0; k < (backDoor ? 2 : 1); k++) {
             float open = k == 0 ? front : back, v = k == 0 ? WALL * 0.5f : deep - WALL * 0.5f;
             float slide = open * DOOR_HALF * 0.92f;
             for (int s = -1; s <= 1; s += 2) {

@@ -21,10 +21,10 @@ final class Rooms {
 
     /**
      * The hall of a house (as City keeps it: middle x, z; half sizes x, z; roof top; the way its
-     * front faces, x, z; whether it has a lift), from the front door through to the yard, with
-     * its lift in one side wall.
+     * front faces, x, z; whether it has a lift), from the front door through to the yard (or,
+     * when the back looks on no yard, shut at the back), with its lift in one side wall.
      */
-    static Indoors hall(float[] house, long seed) {
+    static Indoors hall(float[] house, long seed, boolean backDoor) {
         Random rnd = new Random(seed);
         float cx = house[0], cz = house[1], hx = house[2], hz = house[3], top = house[4], nx = house[5], nz = house[6];
         float halfN = Math.abs(nx) * hx + Math.abs(nz) * hz;
@@ -34,6 +34,7 @@ final class Rooms {
         float liftV = deep * 0.5f + (rnd.nextFloat() - 0.5f) * 1.6f;
         int floors = Math.max(2, Math.round((top - 0.5f) / 3.3f) - 1);
         Indoors in = new Indoors(cx + nx * halfN, cz + nz * halfN, nx, nz, half, deep, side, liftV, floors);
+        in.backDoor = backDoor;
         boolean chrome = rnd.nextInt(3) == 0;
         if (chrome) {
             in.frameColor = 0xAEB4B6;
@@ -75,8 +76,12 @@ final class Rooms {
         in.box(d, uc, (over + f + h) * 0.5f, in.liftV, w * 0.5f, (f + h - over) * 0.5f, lh, wall, DrawList.PLAIN);
         in.solid(Math.min(u0, u1), 0f, Math.max(u0, u1), a, tall);
         in.solid(Math.min(u0, u1), b, Math.max(u0, u1), deep, tall);
-        // the front and the back, each with its doorway in the middle
-        for (int k = 0; k < 2; k++) {
+        // the front and the back, each with its doorway in the middle (the back walled up when it has none)
+        if (!in.backDoor) {
+            in.box(d, 0f, mid, deep - w * 0.5f, half + w, h * 0.5f, w * 0.5f, wall, DrawList.PLAIN);
+            in.solid(-(half + w), deep - w, half + w, deep, tall);
+        }
+        for (int k = 0; k < (in.backDoor ? 2 : 1); k++) {
             float v = k == 0 ? w * 0.5f : deep - w * 0.5f;
             float hw = (half + w - dh) * 0.5f, cu = dh + hw;
             for (int e = -1; e <= 1; e += 2) {
@@ -102,8 +107,9 @@ final class Rooms {
         panel(in, s * (half - 0.02f), b, deep - w, true, f, ph, low, lowMat);
         for (int e = -1; e <= 1; e += 2) {
             panel(in, w + 0.02f, e * dh, e * half, false, f, ph, low, lowMat);
-            panel(in, deep - w - 0.02f, e * dh, e * half, false, f, ph, low, lowMat);
+            if (in.backDoor) panel(in, deep - w - 0.02f, e * dh, e * half, false, f, ph, low, lowMat);
         }
+        if (!in.backDoor) panel(in, deep - w - 0.02f, -half, half, false, f, ph, low, lowMat);
         // the lift's doors in a frame of brass (or steel)
         float fu = s * (half - 0.03f);
         for (int e = -1; e <= 1; e += 2)

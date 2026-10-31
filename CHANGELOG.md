@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.24
+
+- Fixed: a house at a corner of its block backs onto the end of the row across, but it had a
+  back door all the same. Out of it, she was put into the gap by that wall, in a yard shut in
+  on every side, and the place before the door was inside the other house, out of reach: no
+  way back. Such a house has no back door now, outside or in its hall (the hall is walled up
+  at the back).
+- Out of a door, she stands a couple of steps clear of it, and may walk straight back in.
+- With her back to a wall the eye no longer sits inside her: it rises and looks down on her,
+  as far as a ceiling lets it.
+- Stand: `yardhouse`, `where`, `doorlog S`; scene `yard.txt` (through the hall into the yard and
+  straight back in).
+
 ## 0.23
 
 - Fixed: a game that began with the folder's mission (the last one having ended with the folder

@@ -418,8 +418,10 @@ final class City implements Ground {
                     lift(c.houses, o, l);
                     boolean up = Math.abs(feet - l[5]) < 1.5f;
                     if (!up && feet > 1f) continue;
-                    // in the street, its door in the front or the one at the back, on the yard
-                    for (int back = 0; back < (up ? 1 : 2); back++) {
+                    // in the street, its door in the front or the one at the back, on the yard (if
+                    // the back looks on the yard and not on the end of the next row)
+                    int doors = up ? 1 : backClear(c.houses, o) ? 2 : 1;
+                    for (int back = 0; back < doors; back++) {
                         if (back == 1) {
                             float half = Math.abs(l[2]) * c.houses[o + 2] + Math.abs(l[3]) * c.houses[o + 3];
                             l[0] -= l[2] * (2f * half + 1.4f);
@@ -439,6 +441,28 @@ final class City implements Ground {
                 }
             }
         return found;
+    }
+
+    /**
+     * Whether the back of the house at o looks on the yard: nothing of another house stands
+     * just behind the middle of its back (a house at a corner of its block backs onto the end
+     * of the row across, and has no door there).
+     */
+    boolean backClear(float[] h, int o) {
+        float cx = h[o], cz = h[o + 1], nx = h[o + 5], nz = h[o + 6];
+        float half = Math.abs(nx) * h[o + 2] + Math.abs(nz) * h[o + 3];
+        float px = cx - nx * (half + 1.2f), pz = cz - nz * (half + 1.2f), r = 0.9f;
+        int ci = index(px), cj = index(pz);
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                Cell c = cell(i, j);
+                for (int k = 0; k < c.wallN; k++) {
+                    int w = k * 5;
+                    if (c.walls[w + 4] < 1f) continue;
+                    if (px + r > c.walls[w] && px - r < c.walls[w + 2] && pz + r > c.walls[w + 1] && pz - r < c.walls[w + 3]) return false;
+                }
+            }
+        return true;
     }
 
     /** The lift of the house at o: as liftAt() tells it. */

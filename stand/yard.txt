@@ -1,0 +1,22 @@
+# Out at the back: in at the front door, straight through the hall and out of the glass door at
+# the back into the yard; the eye with its back to the house; then round and back in at once
+screen 1096 2560
+mission 2
+yardhouse
+wait 1.2
+where
+down 137 600
+wait 2.2
+up 137 600
+doorlog 1.5
+where
+shot y0
+turn 3.1416
+wait 0.2
+shot y1
+down 137 600
+wait 0.6
+up 137 600
+doorlog 1.5
+where
+shot y2

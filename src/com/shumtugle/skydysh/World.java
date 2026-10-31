@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.23";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.24";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -284,6 +284,7 @@ final class World {
     // near a door: so near; standing so long there, or coming at it, it takes her in;
     // running by faster than this, along the front, it does not
     static final float LIFT_NEAR = 1.7f, LIFT_STAND = 0.4f, LIFT_PAST = 5f;
+    static final float OUT_STEP = 1.9f;      // out of a door, she stands so far past the place before it
     private final float[] liftNow = new float[11], houseNow = new float[8];
     private final float[] liftOf = new float[11], houseOf = new float[8], doorAt = new float[11];
 
@@ -348,11 +349,11 @@ final class World {
         long seed = ((long) Math.floor(houseOf[0] * 4f) * 73856093L) ^ ((long) Math.floor(houseOf[1] * 4f) * 19349663L);
         switch (swapTo) {
             case TO_HALL:
-                indoors = Rooms.hall(houseOf, seed);
+                indoors = Rooms.hall(houseOf, seed, city.backClear(houseOf, 0));
                 indoors.enter(r, l[10] > 0.5f);
                 break;
             case TO_CABIN:
-                indoors = Rooms.hall(houseOf, seed);
+                indoors = Rooms.hall(houseOf, seed, city.backClear(houseOf, 0));
                 indoors.comeDown(r);
                 break;
             case TO_ROOF:
@@ -372,7 +373,11 @@ final class World {
                     nx = -nx;
                     nz = -nz;
                 }
+                // a couple of steps clear of the door, so the way back in is open at once
+                px += nx * OUT_STEP;
+                pz += nz * OUT_STEP;
                 r.put(px, swapTo == TO_YARD ? city.ground(px, pz) : City.WALK_TOP, pz, (float) Math.atan2(nx, nz));
+                liftArmed = true;
                 host.sound(Synth.DOOR, 0.35f, 1.1f);
             }
         }
