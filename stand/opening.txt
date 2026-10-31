@@ -1,0 +1,36 @@
+# The opening, as it plays at every start: the flight down to the square, her eyes lit, the
+# dark, the swing, the blow into the glass, her falling to pieces, the name, the white.
+screen 1096 2560
+opening
+wait 0.3
+shot o00
+wait 0.9
+shot o01
+wait 1.0
+shot o02
+wait 0.5
+shot o03
+wait 0.6
+shot o04
+wait 0.4
+shot o05
+wait 0.35
+shot o06
+wait 0.2
+shot o07
+wait 0.05
+shot o08
+wait 0.3
+shot o09
+wait 0.5
+shot o10
+wait 0.6
+shot o11
+wait 0.5
+shot o12
+wait 0.3
+shot o13
+wait 0.25
+shot o14
+wait 0.4
+shot o15

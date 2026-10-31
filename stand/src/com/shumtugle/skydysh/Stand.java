@@ -26,7 +26,14 @@ public final class Stand implements World.Host {
     private static final float DT = 1f / 60f;
     private final java.util.ArrayList<float[]> sounds = new java.util.ArrayList<float[]>();
     private final java.util.HashMap<String, Integer> kept = new java.util.HashMap<String, Integer>();
-    private World world = new World(this);
+    private World world = fresh();
+
+    /** A new game, the opening skipped: the scenes are of the game itself unless they ask for it. */
+    private World fresh() {
+        World w = new World(this);
+        w.skipOpening();
+        return w;
+    }
     private final DrawList list = new DrawList();
     private final File out;
     private float time;
@@ -183,12 +190,18 @@ public final class Stand implements World.Host {
         } else if (c.equals("restart")) {
             // the game started again, with what it kept
             world = new World(this);
+            world.skipOpening();
             world.resize(1096, 2560);
         } else if (c.equals("back")) {
             world.touch(World.BACK, 0f, 0f);
             step();
+        } else if (c.equals("opening")) {
+            // the opening played from its start
+            world.startOpening();
         } else if (c.equals("skip")) {
-            // nothing to skip: the game opens on the street
+            // the opening skipped, as a touch does
+            world.touch(World.DOWN, 1f, 1f);
+            world.touch(World.UP, 1f, 1f);
         } else if (c.equals("birds")) {
             // a flock across the far end of the street now
             world.standFliers(1, 0f);

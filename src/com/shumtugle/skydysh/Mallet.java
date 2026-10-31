@@ -5,6 +5,7 @@ package com.shumtugle.skydysh;
  * showing, bound round near either end with a band of iron; a square handle of darker wood
  * through it, and on the handle's end a cap of red-brown wood, a little thicker. Its own frame:
  * the handle along x, the grip at the origin, the head out at +x; the head's length along z.
+ * The golden one has a head of gold burning from within.
  */
 final class Mallet {
     // the parts: middle along x, y, z; half sizes; color (meters, at size 1)
@@ -28,13 +29,29 @@ final class Mallet {
      * point at pivot along its handle put at (x, y, z).
      */
     static void draw(DrawList d, float[] rot, float x, float y, float z, float size, float pivot) {
+        draw(d, rot, x, y, z, size, pivot, false, 0, PARTS.length);
+    }
+
+    // which parts are the handle, and which the head
+    static final int HANDLE_FROM = 0, HEAD_FROM = 2, ALL = 7;
+    static final float HEAD_MIDDLE = 0.69f, HANDLE_MIDDLE = 0.24f;
+
+    /** The same, golden or not, only the parts from one to another (the handle, 0 to 2; the head, 2 to 7). */
+    static void draw(DrawList d, float[] rot, float x, float y, float z, float size, float pivot, boolean golden,
+                     int from, int to) {
         System.arraycopy(rot, 0, T, 0, 9);
-        for (int i = 0; i < PARTS.length; i++) {
+        for (int i = from; i < to; i++) {
             float[] p = PARTS[i];
             float ox = (p[0] - pivot) * size, oy = p[1] * size, oz = p[2] * size;
             float cx = x + T[0] * ox + T[1] * oy + T[2] * oz;
             float cy = y + T[3] * ox + T[4] * oy + T[5] * oz;
             float cz = z + T[6] * ox + T[7] * oy + T[8] * oz;
+            if (golden && i >= HEAD_FROM && i != 6) {
+                // gold, alight from within: the bands a little cooler than the planks
+                d.box(cx, cy, cz, p[3] * size, p[4] * size, p[5] * size, T, COL[i],
+                        DrawList.material(DrawList.FIRE, i == 4 || i == 5 ? 205 : 238));
+                continue;
+            }
             int material = i == 4 || i == 5 ? DrawList.PLAIN : DrawList.WOOD;
             d.box(cx, cy, cz, p[3] * size, p[4] * size, p[5] * size, T, COL[i], material);
         }

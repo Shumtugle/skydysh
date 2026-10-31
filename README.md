@@ -7,6 +7,9 @@ people out on the pavements. For now on foot: a giant of
 brick and stone in a maid's dress runs, turns, jumps and slides through it; a car, a boat and
 a plane are to come.
 
+It opens, at every start, with a flight down onto a square by the sea, where she stands with a
+golden mallet and brings it down into the glass of the screen; a touch skips it.
+
 A finger on the glass makes her run; moved sideways, it turns her by as much as it moved;
 flicked up, she jumps; flicked down, she slides; lifted, she slows to a stop.
 

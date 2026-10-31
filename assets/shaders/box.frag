@@ -30,6 +30,8 @@ uniform float uFogScale;
 uniform float uTime;          // seconds, for what moves on its own
 uniform float uNight;         // how far into the night: windows lit
 uniform float uClear;
+uniform vec4 uSpot;           // the one light left in the dark: where, and how far it reaches
+uniform float uDark;          // how far the rest has gone into the dark (0, not at all)
 uniform vec4 uFire;           // something burning: where, and how bright its light on what is near (0, none)         // the see-through pass: only clear plastic is drawn, over what is there
 
 out vec4 outColor;
@@ -100,6 +102,14 @@ vec3 toon(vec3 base, vec3 n, float light) {
     vec3 amb = mix(vec3(0.46, 0.38, 0.34) + uAmbGround * 0.25, vec3(0.38, 0.45, 0.52) + uAmbSky * 0.33, up);
     vec3 sun = (vec3(0.5, 0.41, 0.29) + uSunColor * 0.36) * light;
     return base * (amb + sun);
+}
+
+/** In the dark, only what the light left on falls on keeps its light. */
+vec3 darken(vec3 c, vec3 world) {
+    if (uDark <= 0.0) return c;
+    float r = length(world - uSpot.xyz) / max(uSpot.w, 1e-3);
+    float lit = 1.0 - smoothstep(0.55, 1.0, r);
+    return c * mix(1.0, lit * 1.15, uDark);
 }
 
 vec3 haze(vec3 c, vec3 world) {
@@ -382,6 +392,7 @@ void sphere(float mat) {
         if (sp > cut && sh > 0.5) c = mix(c, vec3(1.0, 0.98, 0.92), 0.85);
     }
     c = haze(c, world);
+    c = darken(c, world);
     // a ball is one thing whichever way it faces; a rod's ends are faces of their own
     outColor = vec4(c, ident(vColor, mat, mat == ROD || mat == HEAD ? abs(nl.x) * vec3(1.0, 0.0, 0.0) : vec3(0.0)));
 }
@@ -475,11 +486,15 @@ void main() {
         // painted things: a faint unevenness, a little dulled by dust
         k = 0.95 + 0.07 * vnoise(vWorld * 2.2);
     } else if (mat == SEA) {
-        // the sea: deep teal near, paler far, a few bright dashes toward the sun
+        // the sea: deep teal near, paler far, long soft swells, a scatter of light toward the sun
         float far = clamp(1.0 - v.y * 9.0, 0.0, 1.0);
-        base = mix(rgb(0x2F7E8E), rgb(0x8FC2C0), smoothstep(0.55, 1.0, far));
-        float n = hash(vec3(floor(vWorld.x * 0.8), floor(vWorld.z * 0.35), 9.0));
-        if (n > 0.9) base = mix(base, rgb(0xF4E6C8), 0.7);
+        base = mix(rgb(0x2C7486), rgb(0x8FC0BE), smoothstep(0.55, 1.0, far));
+        vec2 w = vWorld.xz;
+        float swell = fbm(vec3(w.x * 0.05, w.y * 0.22 + uTime * 0.15, 1.0));
+        base *= 0.86 + 0.24 * swell;
+        float glint = vnoise(vec3(w.x * 0.9, w.y * 2.6 + uTime * 0.6, 4.0));
+        float toSun = max(dot(normalize(vec3(uSun.x, 0.0, uSun.z)), normalize(vec3(vWorld.x - uEye.x, 0.0, vWorld.z - uEye.z))), 0.0);
+        base = mix(base, rgb(0xFBE7C8), smoothstep(0.8, 0.95, glint) * (0.25 + 0.5 * toSun) * 0.8);
     } else if (mat == GOLD) {
         gloss = 1.0;
     }
@@ -508,6 +523,7 @@ void main() {
     }
     c += emit;
     c = haze(c, vWorld);
+    c = darken(c, vWorld);
     // a few things are drawn as part of what they stand on, without a line between
     if (seed == 252) face = vec3(0.0);
     outColor = vec4(c, ident(vColor, mat, face));

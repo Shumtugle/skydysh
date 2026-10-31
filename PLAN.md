@@ -20,15 +20,13 @@ release, each seen on the stand before the phone.
 - 0.11 The hammer a stonemason's maul.
 - 0.12 Run down to the end: within reach, she stops and throws her mallet of planks and iron.
 - 0.13 A new look: early-2000s town realism in place of print; worked surfaces, soft light, haze.
+- 0.14 The opening: down to the square, the dark, the blow into the glass, the name in gold.
 
 ## Next
 
 - The new look carried on: people of natural build with simple faces and big folds in their
   clothes; cars in the manner of the eighties, angular saloons, long coupes and open tops, a
   little chrome; balconies, signs and lights of the evening, pink and blue.
-- An opening: a flight over the town down to the square, her eyes lit, the dark, the swing of
-  the golden hammer into the glass of the screen, the glass cracking and her falling to pieces,
-  the name lit dot by dot, white. The sea, the promenade and the square of setts it needs.
 
 - The race against the clock: gates at crossings strung into a course, a clock, a mark at the
   edge of the frame pointing to the next gate.

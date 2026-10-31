@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.13";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.14";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -41,6 +41,8 @@ final class World {
     final Mission mission = new Mission(0x60E3L);
     Chase chase;                             // the nearest of them still loose
     final Toss toss = new Toss();            // her hammer
+    private Opening opening;                 // what the game opens with, while it plays
+    private float whiteOut;                  // the white of the opening going off the game, seconds left
     final Cars cars = new Cars();
     final Walkers walkers = new Walkers();
     private int caughtSeen, struckSeen;
@@ -54,6 +56,18 @@ final class World {
         if (moves != null) Frida.use(Moves.read(moves));
         mission.start(0f, 0f);
         chase = mission.target(null);
+        opening = new Opening(host);
+    }
+
+    /** The opening done with at once (the desktop stand, for scenes of the game itself). */
+    void skipOpening() {
+        opening = null;
+        Frida.eyes = 1f;
+    }
+
+    /** The opening from its start (the desktop stand). */
+    void startOpening() {
+        opening = new Opening(host);
     }
 
     void resize(int screenW, int screenH) {
@@ -62,11 +76,25 @@ final class World {
 
     void touch(int type, float x, float y) {
         if (type == BACK) return;
+        if (opening != null) {
+            if (type == DOWN) opening.skip();
+            return;
+        }
         runner.touch(type, x, y);
     }
 
     void update(float dt) {
         time += dt;
+        if (opening != null) {
+            opening.update(dt);
+            if (opening.done) {
+                opening = null;
+                Frida.eyes = 1f;
+                whiteOut = WHITE_OUT;
+            }
+            return;
+        }
+        whiteOut = Math.max(0f, whiteOut - dt);
         runner.update(dt, city, cars, walkers);
         int round = mission.round;
         mission.update(dt, runner, city, cars);
@@ -200,10 +228,21 @@ final class World {
         return (s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60);
     }
 
+    static final float WHITE_OUT = 0.35f;
+
     void draw(DrawList d) {
         d.begin(W, h);
         d.time = time;
+        if (opening != null) {
+            java.util.Arrays.fill(d.flat, 0);
+            if (flatPx == null || flatPx.a != d.flat) flatPx = new Px(d.w, d.h, d.flat);
+            d.hudRows = 0;
+            opening.draw(d, flatPx, h);
+            return;
+        }
         Runner r = runner;
+        d.fogStart = 8f;
+        d.fogScale = 150f;
         // the sun's depth map laid round the ground she is heading into
         float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading);
         Daylight.light(d, 1f);
@@ -234,6 +273,8 @@ final class World {
         }
         chaseFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
+        // the white the opening ended on, going off
+        if (whiteOut > 0f) Opening.wash(f, whiteOut / WHITE_OUT);
         // while the engine is young: how long a frame takes, in milliseconds, and how finely it is drawn
         if (frameMs > 0f) {
             int qs = Math.round(drawScale * 100f);

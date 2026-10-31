@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.14
+
+- An opening, some six and a half seconds, at every start. The eye comes down out of the sky
+  over the town by the sea, over the promenade with its palms and parapet, onto a square paved
+  in rings, houses round it, roads behind and to the right with cars both ways, people far off.
+  It stops before her, a giant two and a half times her height, a golden mallet in her right
+  hand; her eyes light to a low blow of metal. The town goes dark, one light left on her, the
+  mallet glowing of itself. She swings it back over her head, slowly, then down at the eye,
+  faster, the eye stepping up to meet it: it strikes the glass of the screen, with thunder, the
+  ground's boom and glass, a white flash and the frame shaking. Eight white cracks run out and
+  branch; she falls to pieces, every block flung off away from the blow, turning and knocking on
+  the stones, the mallet's handle and burning head falling apart; the eye draws back and down,
+  the cracks melt away. The light goes up to the name, lit dot by dot from the left, each dot
+  white and then a bar of gold, to a high chime; the frame goes white and the game begins.
+  A touch skips to the white.
+- The renderer can put the world in the dark with one light left on one place, whatever glows
+  of itself glowing on.
+- The sea made over: long soft swells, a scatter of light toward the sun.
+- Stand: the scenes of the game skip the opening; `opening` plays it, `skip` touches past it.
+
 ## 0.13
 
 - A new look: the printed one is gone, no ink lines and no halftone. Faces are lit smoothly by

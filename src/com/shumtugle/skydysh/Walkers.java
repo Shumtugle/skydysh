@@ -136,6 +136,11 @@ final class Walkers {
         return hit;
     }
 
+    /** One of them, as dressed, drawn somewhere else (in a set of its own): at (x, y, z), walking. */
+    void figure(DrawList d, int i, float x, float y, float z, float yaw, float phase) {
+        person(d, x, y, z, yaw, phase, i, false);
+    }
+
     void draw(DrawList d, float ex, float ez, float fx, float fz) {
         for (int i = 0; i < MOST; i++) {
             if (!live[i]) continue;

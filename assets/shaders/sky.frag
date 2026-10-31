@@ -20,6 +20,7 @@ uniform vec3 uGlow;
 uniform vec3 uSun;
 uniform float uTime;
 uniform float uNight;    // how far into the night: the stars out, the moon in place of the sun
+uniform float uDark;     // the town gone dark: the sky with it
 // strokes: ends in frame pixels, then widths and covers at the ends (a negative first width: dark)
 uniform vec4 uFly[64];
 uniform int uFlyN;
@@ -86,5 +87,6 @@ void main() {
         vec3 ink = m.x < 0.0 ? vec3(0.137, 0.165, 0.29) : vec3(1.0, 0.98, 0.94);
         c = mix(c, ink, cover);
     }
+    c *= 1.0 - uDark;
     outColor = vec4(c, 0.0);
 }

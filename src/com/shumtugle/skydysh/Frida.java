@@ -220,7 +220,7 @@ final class Frida {
 
     // when set, draw() keeps each block where it is instead of drawing it (see capture)
     private static float[] capPos, capRot, capHalf;
-    private static int[] capCol;
+    private static int[] capCol, capMat;
     private static int capN;
     /** Where the plate on a golem's brow was at the last capture, and its turn. */
     static final float[] shemAt = new float[3], shemTurn = new float[9];
@@ -231,6 +231,13 @@ final class Frida {
      */
     static int capture(float x, float y, float z, float yaw, float size, String motion, float t,
                        float[] pos, float[] turn, float[] half, int[] color) {
+        return capture(x, y, z, yaw, size, motion, t, pos, turn, half, color, null);
+    }
+
+    /** The same, each block's material too, into material (when given). */
+    static int capture(float x, float y, float z, float yaw, float size, String motion, float t,
+                       float[] pos, float[] turn, float[] half, int[] color, int[] material) {
+        capMat = material;
         capPos = pos;
         capRot = turn;
         capHalf = half;
@@ -328,6 +335,7 @@ final class Frida {
                 capHalf[capN * 3] = HALF[i * 3] * size;
                 capHalf[capN * 3 + 1] = HALF[i * 3 + 1] * size;
                 capHalf[capN * 3 + 2] = HALF[i * 3 + 2] * size;
+                if (capMat != null) capMat[capN] = MAT[i];
                 capCol[capN++] = COL[i];
                 continue;
             }

@@ -58,6 +58,9 @@ final class DrawList {
     // something burning: its light on what is near (x, y, z, strength; 0, none), and the glow
     // printed round it (middle x, y and reach, frame pixels; strength; how far off, meters)
     final float[] fire = new float[4], halo = new float[5];
+    // the dark: a light on one place only (its middle, x y z, and its reach in meters), and how
+    // far the rest has gone into the dark, 0 to 1; whatever glows of itself keeps glowing
+    final float[] spot = new float[5];
 
     /** A dot of a flight, in frame pixels. */
     void dot(float x, float y, int kind) {
@@ -103,6 +106,7 @@ final class DrawList {
         finger[2] = 0f;
         fire[3] = 0f;
         halo[3] = 0f;
+        spot[4] = 0f;
     }
 
     /**
@@ -288,6 +292,7 @@ final class DrawList {
         arr(s, "finger", finger);
         arr(s, "fire", fire);
         arr(s, "halo", halo);
+        arr(s, "spot", spot);
         s.append(",\"trailN\":").append(trailN);
         arr(s, "trail", trail);
         s.append(",\"flyN\":").append(flyN).append(",\"fly\":[");

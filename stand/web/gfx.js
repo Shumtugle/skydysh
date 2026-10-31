@@ -192,6 +192,9 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
     gl.uniform1f(u(p, 'uTime'), frame.time || 0);
     gl.uniform1f(u(p, 'uNight'), frame.night || 0);
     gl.uniform4fv(u(p, 'uFire'), frame.fire || [0, 0, 0, 0]);
+    const spot = frame.spot || [0, 0, 0, 0, 0];
+    gl.uniform4fv(u(p, 'uSpot'), spot.slice(0, 4));
+    gl.uniform1f(u(p, 'uDark'), spot[4]);
   };
 
   // 2. the sky, then the boxes, at the drawing size
@@ -213,6 +216,7 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
   gl.uniform3fv(u(skyP, 'uSun'), frame.sun);
   gl.uniform1f(u(skyP, 'uTime'), frame.time || 0);
   gl.uniform1f(u(skyP, 'uNight'), frame.night || 0);
+  gl.uniform1f(u(skyP, 'uDark'), (frame.spot || [0, 0, 0, 0, 0])[4]);
   const flyN = frame.flyN || 0;
   gl.uniform1i(u(skyP, 'uFlyN'), flyN);
   if (flyN > 0) gl.uniform4fv(u(skyP, 'uFly'), new Float32Array(frame.fly));
