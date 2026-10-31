@@ -4,6 +4,8 @@ screen 1096 2560
 dispatch
 wait 0.35
 shot d0
+wait 0.43
+shot d0b
 wait 0.6
 shot d1
 wait 1.5
@@ -14,6 +16,8 @@ wait 0.3
 shot d3
 down 137 300
 up 137 300
+wait 0.15
+shot d4c
 wait 0.4
 shot d4
 wait 0.45

@@ -12,7 +12,7 @@ package com.shumtugle.skydysh;
  */
 final class Runner {
     static final float SIZE = 1.3f, RADIUS = 0.55f;
-    static final float TOP_SPEED = 10f, PICK_UP = 1.1f, BRAKE = 12f;
+    static final float TOP_SPEED = 11.5f, PICK_UP = 1.1f, BRAKE = 12f;
     static final float GRAVITY = 22f, JUMP = 8f;
     // the finger: frame pixels moved sideways for a quarter turn; how far and how fast a flick goes
     static final float QUARTER = 110f, FLICK_PX = 26f, FLICK_S = 0.16f;
@@ -88,6 +88,12 @@ final class Runner {
             state = RUN;
             stateAt = clock;
         }
+    }
+
+    /** Turns her, while she throws, to (fx, fz): what she throws at runs on. */
+    void face(float fx, float fz) {
+        faceX = fx;
+        faceZ = fz;
     }
 
     /** How long she has been throwing, seconds; negative when she is not. */

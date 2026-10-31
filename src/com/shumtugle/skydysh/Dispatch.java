@@ -5,15 +5,18 @@ import java.util.Calendar;
 /**
  * The dispatcher's room, between missions: a room high up over the town, the sea in its window
  * at evening; on a wooden desk an old television, a panel of keys before it, a clock with the
- * real time, a lamp, papers and a mug. On the glass of the set the dispatch is typed out, line by
+ * real time and date, a lamp, papers and a mug. On the glass of the set the dispatch is typed out, line by
  * line: before a mission what happened and what is to be done, after it what was done and in
- * what time. A touch (when it is all typed; the first touch types the rest at once) and the eye
- * goes into the glass, and the mission begins in the street. Coming back, the eye comes out of the
- * glass into the room.
+ * what time; the set comes on from a thin line, as old sets did. At a touch (when all is typed;
+ * the first touch types the rest at once) the red key goes in with a click and lights; the eye
+ * goes into the glass, and the mission begins in the street. Coming back, the eye comes out of
+ * the glass into the room.
  */
 final class Dispatch {
     static final float TYPE = 38f;                      // letters a second
-    static final float DIVE = 0.75f, EMERGE = 0.7f;
+    static final float DIVE = 0.75f, EMERGE = 0.7f, ON = 0.28f;
+    // the red key going in under the finger, and lit a moment before the eye goes into the glass
+    static final float KNOCK = 0.05f, KNOCKED = 0.2f, AWAY = 0f;
 
     // the glass of the set, and where the eye sits before it
     private static final float GX = -0.04f, GY = 1.07f, GZ = 0.06f, GHX = 0.24f, GHY = 0.185f;
@@ -25,7 +28,8 @@ final class Dispatch {
     private final DrawList room = new DrawList();
     private final String[] lines;
     private final int letters;
-    private float t, typed, diveAt = -1f;
+    private float t, typed, diveAt = -1f, knockAt = -1f;
+    private boolean pressed;
     private boolean done;
     private int ticked;
     private final float[] at = new float[3];
@@ -63,13 +67,12 @@ final class Dispatch {
 
     /** A touch: the rest typed at once, or, all typed, into the glass. */
     void touch() {
-        if (t < EMERGE || diveAt >= 0f) return;
+        if (t < EMERGE || knockAt >= 0f) return;
         if (typed < letters) {
             typed = letters;
             return;
         }
-        diveAt = t;
-        host.sound(Synth.WHOOSH, 0.5f, 1.4f);
+        knockAt = t;
     }
 
     /** Whether the eye has gone into the glass: the mission begins. */
@@ -87,6 +90,15 @@ final class Dispatch {
                 ticked = k;
                 host.sound(Synth.TOCK, 0.12f, 1.9f);
             }
+        }
+        if (knockAt >= 0f && !pressed && t - knockAt >= KNOCK) {
+            // the key goes in
+            pressed = true;
+            host.sound(Synth.TOCK, 0.6f, 1.2f);
+        }
+        if (pressed && diveAt < 0f && t - knockAt >= KNOCK + KNOCKED + AWAY) {
+            diveAt = t;
+            host.sound(Synth.WHOOSH, 0.5f, 1.4f);
         }
         if (diveAt >= 0f && t - diveAt >= DIVE) done = true;
     }
@@ -123,12 +135,19 @@ final class Dispatch {
         d.fire[1] = LAMP_Y - 0.05f;
         d.fire[2] = LAMP_Z;
         d.fire[3] = 0.55f;
+        key(d);
         screen(d, f);
         clock(d, f);
         float white = 0f;
         if (t < EMERGE) white = Math.max(0f, 1f - t / (EMERGE * 0.45f));
         if (diveAt >= 0f) white = Math.max(white, (t - diveAt - DIVE * 0.6f) / (DIVE * 0.4f));
         if (white > 0f) Opening.wash(f, Math.min(1f, white));
+    }
+
+    /** The red key: up, or knocked in and lit. */
+    private void key(DrawList d) {
+        if (pressed) d.box(0.17f, 0.826f, -0.27f, 0.06f, 0.012f, 0.07f, null, 0xFF5A3C, DrawList.GLOW);
+        else d.box(0.17f, 0.84f, -0.27f, 0.06f, 0.016f, 0.07f, null, 0xC5372B, DrawList.PLAIN);
     }
 
     /** The glass of the set: dark phosphor, scan lines, the dispatch typed on it. */
@@ -153,8 +172,22 @@ final class Dispatch {
                 float dim = 1f - 0.45f * r;
                 if ((y & 1) == 1) dim *= 0.82f;
                 int g = Math.round(42 * dim), b = Math.round(46 * dim), red = Math.round(12 * dim);
+                // coming on: the picture opens out of a bright line across the middle
+                float open = (t - EMERGE) / ON;
+                if (open < 1f) {
+                    float band = Math.max(0.02f, open);
+                    if (Math.abs(qy) > band) {
+                        f.a[y * f.w + x] = 0xFF040706;
+                        continue;
+                    }
+                    if (Math.abs(qy) > band - 0.06f || open < 0.3f) {
+                        f.a[y * f.w + x] = 0xFFE4FFF6;
+                        continue;
+                    }
+                }
                 f.a[y * f.w + x] = 0xFF000000 | (red << 16) | (g << 8) | b;
             }
+        if (t < EMERGE + ON) return;
         // the lines, as far as typed; the last one blinks once all is typed
         int scale = Math.max(1, (int) ((x1 - x0) / 185f));
         int lineH = 9 * scale, top = iy0 + Math.max(4, Math.round((iy1 - iy0 - lines.length * lineH) * 0.5f));
@@ -184,8 +217,11 @@ final class Dispatch {
         Calendar c = Calendar.getInstance();
         int hh = c.get(Calendar.HOUR_OF_DAY), mm = c.get(Calendar.MINUTE);
         String s = (hh < 10 ? "0" : "") + hh + (c.get(Calendar.SECOND) % 2 == 0 ? ":" : " ") + (mm < 10 ? "0" : "") + mm;
-        int w = PixelFont.width(s, 1);
-        PixelFont.draw(f, s, Math.round(at[0] - w * 0.5f), Math.round(at[1] - 3.5f), 1, 0xFFFF8A3C);
+        int dd = c.get(Calendar.DAY_OF_MONTH), mo = c.get(Calendar.MONTH) + 1;
+        String date = (dd < 10 ? "0" : "") + dd + "." + (mo < 10 ? "0" : "") + mo;
+        int w = PixelFont.width(s, 1), wd = PixelFont.width(date, 1);
+        PixelFont.draw(f, s, Math.round(at[0] - w * 0.5f), Math.round(at[1] - 8f), 1, 0xFFFF8A3C);
+        PixelFont.draw(f, date, Math.round(at[0] - wd * 0.5f), Math.round(at[1] + 1f), 1, 0xFFC9622A);
     }
 
     // ---- the room, once ----
@@ -236,9 +272,8 @@ final class Dispatch {
         d.box(0f, 0.79f, 0.36f, 0.3f, 0.012f, 0.25f, null, 0x2A2826, DrawList.PLAIN);
         // the panel of keys before it: a row of pale keys, a red one, a yellow one
         d.box(0.02f, 0.8f, -0.24f, 0.36f, 0.025f, 0.12f, null, 0xCFC6B4, DrawList.PLAIN);
-        for (int k = 0; k < 6; k++)
-            d.box(-0.24f + k * 0.075f, 0.835f, -0.27f, 0.028f, 0.012f, 0.04f, null, 0xEDE6D6, DrawList.PLAIN);
-        d.box(0.25f, 0.84f, -0.24f, 0.06f, 0.016f, 0.07f, null, 0xC5372B, DrawList.PLAIN);
+        for (int k = 0; k < 5; k++)
+            d.box(-0.3f + k * 0.075f, 0.835f, -0.27f, 0.028f, 0.012f, 0.04f, null, 0xEDE6D6, DrawList.PLAIN);
         d.box(-0.24f, 0.835f, -0.17f, 0.1f, 0.012f, 0.025f, null, 0xF0C03A, DrawList.PLAIN);
         // the clock on top of the set: a dark case, its face
         d.box(CX, CY, CZ + 0.08f, 0.13f, 0.06f, 0.08f, null, 0x2C2A28, DrawList.PLAIN);

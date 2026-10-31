@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.16
+
+- A golem run down no longer stops: it runs on, and she stops, turns after it as she swings and
+  throws; the mallet catches it up on the run and knocks the plate off. The mallet flies faster.
+- Everyone a little quicker, by about a sixth: she runs to 11.5 meters a second, the golems run
+  and bolt quicker to match, the cars go at 10.5, the people walk a little brisker.
+- In the dispatcher's room the set comes on out of a bright line across its middle, as old sets
+  did; the clock shows the date under the time; the red key, now under the set, goes in with a
+  click and lights at the touch that goes into the glass.
+
 ## 0.15
 
 - The dispatcher's room, made anew in the new look: a room high over the town, the sea in its

@@ -22,6 +22,7 @@ release, each seen on the stand before the phone.
 - 0.13 A new look: early-2000s town realism in place of print; worked surfaces, soft light, haze.
 - 0.14 The opening: down to the square, the dark, the blow into the glass, the name in gold.
 - 0.15 The dispatcher's room: the briefing on the set before a mission, the report after it.
+- 0.16 The golem runs on when reached and the mallet catches it up; all a little quicker.
 
 ## Next
 

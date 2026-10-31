@@ -15,7 +15,7 @@ import java.util.Random;
 final class Cars {
     static final int[] PAINT = {0xE9B63A, 0xB5352C, 0xE9E1CB, 0x2D3A57, 0x6E9DB0, 0x9DBB8E, 0x3A3B40, 0xF4F2EC};
     static final float LANE = 1.5f;                 // right of the road's middle, clear of the parked
-    static final float CRUISE = 9f, TURNING = 5f, GAP = 11f;
+    static final float CRUISE = 10.5f, TURNING = 5.8f, GAP = 12f;
     static final float BORN_NEAR = 45f, BORN_FAR = 130f, GONE = 170f;
     static final int MOST = 12;
 

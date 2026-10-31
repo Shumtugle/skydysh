@@ -2,13 +2,13 @@ package com.shumtugle.skydysh;
 
 /**
  * Her mallet (see Mallet): carried in her right hand, hanging from the fist and trailing behind
- * her, its head low. When she has run a golem down and it is held within her reach, she stops,
- * turns to it and throws: the mallet flies at its head end over end, knocks the plate off its
- * brow, and comes back to her hand.
+ * her, its head low. When she has run a golem down to within her reach, she stops, turns after
+ * it as it runs on, and throws: the mallet flies after its head end over end, knocks the plate
+ * off its brow, and comes back to her hand.
  */
 final class Toss {
     static final float LOCK = 1.1f, RELEASE = 0.33f;       // how long she stands to throw; when it leaves her hand
-    static final float OUT_SPEED = 16f, BACK_TIME = 0.45f, SCALE = 1.6f, MIDDLE = 0.5f;
+    static final float OUT_SPEED = 24f, BACK_TIME = 0.45f, SCALE = 1.6f, MIDDLE = 0.5f;
     static final int HELD = 0, OUT = 1, BACK = 2, WINDUP = 3;
 
     int state = HELD;
@@ -33,6 +33,8 @@ final class Toss {
             return;
         }
         if (state == WINDUP) {
+            // it runs on: she turns after it as she swings
+            r.face(aim.x, aim.z);
             if (r.throwing() < RELEASE) return;
             // out of her hand at the height of the swing
             grip(r);

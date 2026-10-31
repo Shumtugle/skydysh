@@ -104,7 +104,7 @@ final class Walkers {
             if (dd < (anywhere ? 8f : BORN_NEAR) || dd > BORN_FAR) continue;
             float fx = (float) Math.sin(r.eyeYaw), fz = (float) Math.cos(r.eyeYaw);
             if (!anywhere && (dx * fx + dz * fz) / dd > 0.7f && dd < 60f) continue;
-            v[i] = 1.0f + rnd.nextFloat() * 0.5f;
+            v[i] = 1.2f + rnd.nextFloat() * 0.55f;
             ph[i] = rnd.nextFloat() * 60f;
             size[i] = rnd.nextInt(7) == 0 ? 0.7f : 0.92f + rnd.nextFloat() * 0.14f;
             top[i] = TOPS[rnd.nextInt(TOPS.length)];
