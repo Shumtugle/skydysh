@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10
+
+- The hammer flies from nearer: within 10 meters of a golem instead of 18.
+
 ## 0.9
 
 - She carries a hammer in her right hand. When a golem still loose is within 18 meters, before

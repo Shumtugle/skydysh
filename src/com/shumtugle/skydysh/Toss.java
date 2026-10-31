@@ -7,7 +7,7 @@ package com.shumtugle.skydysh;
  * knocks the plate off its brow, and comes back to her hand.
  */
 final class Toss {
-    static final float RANGE = 18f, CONE = 1.05f;          // how near, how far to either side of her way
+    static final float RANGE = 10f, CONE = 1.05f;          // how near, how far to either side of her way
     static final float OUT_SPEED = 26f, BACK_TIME = 0.55f, SCALE = 1.7f;
     static final int HELD = 0, OUT = 1, BACK = 2;
 

@@ -305,10 +305,10 @@ public final class Stand implements World.Host {
                     thrownAt = time;
                     System.out.println(String.format("%7.2fs  hammer thrown, %.1f m off", time, world.chase.apart));
                 }
-                float[] afterThrow = {0.05f, 0.25f, 0.45f};
+                float[] afterThrow = {0.05f, 0.18f, 0.3f};
                 if (thrownAt >= 0f && nextThrow < afterThrow.length && time - thrownAt >= afterThrow[nextThrow])
                     shot(prefix + "t" + nextThrow++);
-                if (got != caughtWas && once && nextThrow >= afterThrow.length) {
+                if (once && got > 0 && (nextThrow >= afterThrow.length || thrownAt < 0f)) {
                     caughtWas = got;
                     break;
                 }
