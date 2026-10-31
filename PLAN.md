@@ -23,6 +23,7 @@ release, each seen on the stand before the phone.
 - 0.14 The opening: down to the square, the dark, the blow into the glass, the name in gold.
 - 0.15 The dispatcher's room: the briefing on the set before a mission, the report after it.
 - 0.16 The golem runs on when reached and the mallet catches it up; all a little quicker.
+- 0.17 The dispatcher's room is her head: walls of her brick round the street seen through her eyes.
 
 ## Next
 
@@ -40,7 +41,9 @@ release, each seen on the stand before the phone.
   needs a pedal of its own is to be tried.
 - The sea along one side of the town, a promenade, canals; a boat.
 - Roofs to land on; a plane.
-- The room's keys and its set to do more: a choice of missions, the best times kept.
+- The room in her head to go with her in the car, the boat and the plane: the same room, what
+  she sees through the screen changing with what she is in. Its keys to do more: a choice of
+  missions, the best times kept.
 - A start and a finish to every race; what is won and kept.
 - Sound: steps, breath, the fire.
 - The project's page, with the game working in the browser.

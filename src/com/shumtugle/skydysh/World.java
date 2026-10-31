@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.16";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.17";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -73,7 +73,8 @@ final class World {
     void standDispatch(boolean done) {
         opening = null;
         Frida.eyes = 1f;
-        dispatch = new Dispatch(host, done ? Dispatch.report(mission.round, clock(mission.doneAt)) : Dispatch.briefing(mission.round), true);
+        runner.update(0f, city, cars, walkers);
+        dispatch = new Dispatch(host, done ? Dispatch.report(mission.round, clock(mission.doneAt)) : Dispatch.briefing(mission.round));
     }
 
     /** The opening from its start (the desktop stand). */
@@ -103,29 +104,33 @@ final class World {
         if (opening != null) {
             opening.update(dt);
             if (opening.done) {
-                // out of the white into the dispatcher's room, the first mission on its set
+                // out of the white into the street, and the room in her head closing round it, the
+                // first mission on its screen
                 opening = null;
                 Frida.eyes = 1f;
-                dispatch = new Dispatch(host, Dispatch.briefing(mission.round), true);
+                whiteOut = WHITE_OUT;
+                runner.update(0f, city, cars, walkers);      // the eye put behind her
+                dispatch = new Dispatch(host, Dispatch.briefing(mission.round));
             }
             return;
         }
         if (dispatch != null) {
+            // the street stands still while she is in her head
+            whiteOut = Math.max(0f, whiteOut - dt);
             dispatch.update(dt);
             if (dispatch.done()) {
-                // through the glass into the street: the mission begins (the next one, after a report)
+                // the walls drawn back: the street goes on (the next mission, after a report)
                 dispatch = null;
                 if (mission.over()) {
                     mission.start(runner.x, runner.z);
                     chase = mission.target(null);
                 }
                 overFor = 0f;
-                whiteOut = WHITE_OUT;
             }
             return;
         }
         if (mission.over() && (overFor += dt) > BACK_TO_ROOM) {
-            dispatch = new Dispatch(host, Dispatch.report(mission.round, clock(mission.doneAt)), true);
+            dispatch = new Dispatch(host, Dispatch.report(mission.round, clock(mission.doneAt)));
             overFor = 0f;
             return;
         }
@@ -264,16 +269,16 @@ final class World {
     }
 
     static final float WHITE_OUT = 0.35f;
+    private final float[] eyeNow = new float[5];
 
     void draw(DrawList d) {
         d.begin(W, h);
         d.time = time;
-        if (opening != null || dispatch != null) {
+        if (opening != null) {
             java.util.Arrays.fill(d.flat, 0);
             if (flatPx == null || flatPx.a != d.flat) flatPx = new Px(d.w, d.h, d.flat);
             d.hudRows = 0;
-            if (opening != null) opening.draw(d, flatPx, h);
-            else dispatch.draw(d, flatPx, h);
+            opening.draw(d, flatPx, h);
             return;
         }
         Runner r = runner;
@@ -291,23 +296,36 @@ final class World {
         if (flatPx == null || flatPx.a != d.flat) flatPx = new Px(d.w, d.h, d.flat);
         Px f = flatPx;
         d.hudRows = 0;
-        d.camera(r.eyeX, r.eyeY, r.eyeZ, r.eyeYaw, r.eyePitch, W * 1.6f, 0.1f, 500f);
+        // the eye: behind her, or in the room in her head, or on its way between
+        float eyeX = r.eyeX, eyeY = r.eyeY, eyeZ = r.eyeZ, eyeYaw = r.eyeYaw, eyePitch = r.eyePitch;
+        if (dispatch != null) {
+            dispatch.eye(r, eyeNow);
+            eyeX = eyeNow[0];
+            eyeY = eyeNow[1];
+            eyeZ = eyeNow[2];
+            eyeYaw = eyeNow[3];
+            eyePitch = eyeNow[4];
+        }
+        d.camera(eyeX, eyeY, eyeZ, eyeYaw, eyePitch, W * 1.6f, 0.03f, 500f);
         fliers.strokes(d);
-        float ex = (float) Math.sin(r.eyeYaw), ez = (float) Math.cos(r.eyeYaw);
-        city.draw(d, r.eyeX, r.eyeZ, ex, ez);
-        cars.draw(d, r.eyeX, r.eyeZ, ex, ez);
-        walkers.draw(d, r.eyeX, r.eyeZ, ex, ez);
-        r.draw(d);
-        toss.draw(d, r);
+        float ex = (float) Math.sin(eyeYaw), ez = (float) Math.cos(eyeYaw);
+        city.draw(d, eyeX, eyeZ, ex, ez);
+        cars.draw(d, eyeX, eyeZ, ex, ez);
+        walkers.draw(d, eyeX, eyeZ, ex, ez);
+        if (dispatch == null || dispatch.showsHer()) {
+            r.draw(d);
+            toss.draw(d, r);
+        }
         // the one nearest that still burns gives off light and glow; the others only burn
         Chase lit = null;
         for (Chase g : mission.golems) if (g.burning() && (lit == null || g.apart < lit.apart)) lit = g;
         for (Chase g : mission.golems) {
-            float gx = g.x - r.eyeX, gz = g.z - r.eyeZ;
+            float gx = g.x - eyeX, gz = g.z - eyeZ;
             if (gx * ex + gz * ez < -6f || gx * gx + gz * gz > 200f * 200f) continue;
             g.draw(d, g == lit);
         }
-        chaseFlat(d, f);
+        if (dispatch != null) dispatch.draw(d, f, h);
+        else chaseFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         // the white the opening ended on, going off
         if (whiteOut > 0f) Opening.wash(f, whiteOut / WHITE_OUT);

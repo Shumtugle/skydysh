@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.17
+
+- The dispatcher's room is her head. She is a golem too; where the forged golems have a plate on
+  the brow, she has a room inside her head, walled in courses of her own brick and stone, a
+  ceiling of planks as her cap is, a floor of slab. In its front wall the screen, her eyes:
+  through it the street is seen as she sees it, standing still while she is in there; over it
+  her eyes, two lamps, lit. Under it a shelf of planks with keys, the red key, and a clock with
+  the time and the date.
+- The room stands in the world where her head is, turned as she is. Coming in, its walls close
+  round the street from every side until the street is left only on the screen; going out, they
+  draw back past the edges of the frame and the eye is behind her again, and the street goes on.
+- The dispatch is typed over what she sees, on a dark veil with the lines of a tube.
+- At the touch that goes on, her mallet, the same and as big as in the street, comes up from
+  below on the right and knocks the red key in.
+- The office with the window, the desk and the set is gone.
+
 ## 0.16
 
 - A golem run down no longer stops: it runs on, and she stops, turns after it as she swings and

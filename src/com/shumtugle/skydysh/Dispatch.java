@@ -3,52 +3,57 @@ package com.shumtugle.skydysh;
 import java.util.Calendar;
 
 /**
- * The dispatcher's room, between missions: a room high up over the town, the sea in its window
- * at evening; on a wooden desk an old television, a panel of keys before it, a clock with the
- * real time and date, a lamp, papers and a mug. On the glass of the set the dispatch is typed out, line by
- * line: before a mission what happened and what is to be done, after it what was done and in
- * what time; the set comes on from a thin line, as old sets did. At a touch (when all is typed;
- * the first touch types the rest at once) the red key goes in with a click and lights; the eye
- * goes into the glass, and the mission begins in the street. Coming back, the eye comes out of
- * the glass into the room.
+ * The dispatcher's room is her head. She is a golem too, of brick and stone; where the forged
+ * golems have a plate on the brow, she has this: a room inside her head, walled in courses of
+ * her own brick and stone, a ceiling of planks as her cap is, a floor of slab. In its front wall
+ * the screen: her eyes. Through it the street is seen as she sees it, standing still while she
+ * is in here; her eyes, two lamps over the screen, lit. Under the screen a shelf of planks with a
+ * row of keys, a red one, and a clock with the real time and the date.
+ *
+ * Coming in, the walls close round the street from every side until it is left only on the
+ * screen; going out, they draw back past the edges of the frame and the eye is behind her again.
+ * On the screen, over what she sees, the dispatch is typed out: before a mission what happened and
+ * what is to be done, after it what was done and in what time. At a touch (when all is typed;
+ * the first touch types the rest at once) her mallet comes up from below on the right, the same
+ * mallet and as big, and knocks the red key in; the walls draw back and the street goes on.
+ *
+ * The room stands in the world where her head is, turned as she is, so the screen looks out the
+ * way she looks.
  */
 final class Dispatch {
     static final float TYPE = 38f;                      // letters a second
-    static final float DIVE = 0.75f, EMERGE = 0.7f, ON = 0.28f;
-    // the red key going in under the finger, and lit a moment before the eye goes into the glass
-    static final float KNOCK = 0.05f, KNOCKED = 0.2f, AWAY = 0f;
+    static final float CLOSE = 0.55f, OPEN = 0.55f;     // the walls closing round the street; drawing back
+    static final float KNOCK = 0.34f, KNOCKED = 0.16f;  // the mallet up and onto the key; resting on it
+    static final float WIDE = 4.5f;                     // how far out the walls start, and end, times their size
+    static final float HEAD = 2.2f;                     // the room's middle above her feet
 
-    // the glass of the set, and where the eye sits before it
-    private static final float GX = -0.04f, GY = 1.07f, GZ = 0.06f, GHX = 0.24f, GHY = 0.185f;
-    private static final float EYE_BACK = 1.22f;
-    private static final float LAMP_X = 0.62f, LAMP_Y = 1.24f, LAMP_Z = 0.12f;
-    private static final float CX = -0.17f, CY = 1.385f, CZ = 0.2f;     // the clock's face
+    // the screen in the front wall, the eye before it (the room's own frame: x right, y up, z ahead)
+    private static final float SX = 0.5f, SY0 = -0.1f, SY1 = 0.62f, FRONT = 0.65f;
+    private static final float EYE_Y = 0.2f, EYE_Z = -1.3f;
+    private static final float KEY_X = 0.25f, KEY_Y = -0.47f, KEY_Z = 0.42f;
+    private static final float CLOCK_X = -0.35f, CLOCK_Y = -0.4f, CLOCK_Z = 0.4f;
 
     private final World.Host host;
-    private final DrawList room = new DrawList();
     private final String[] lines;
     private final int letters;
-    private float t, typed, diveAt = -1f, knockAt = -1f;
-    private boolean pressed;
-    private boolean done;
+    private float t, typed, knockAt = -1f, openAt = -1f;
+    private boolean pressed, done;
     private int ticked;
     private final float[] at = new float[3];
 
-    /**
-     * The room, its set showing these lines (the last is the call to go on, and blinks once all
-     * is typed); coming in out of the glass if emerging.
-     */
-    Dispatch(World.Host host, String[] lines, boolean emerging) {
+    // where the room is: her head, and the way she faces
+    private float ox, oy, oz, cs, sn, size = 1f;
+
+    /** The room in her head, its screen showing these lines (the last is the call to go on, blinking once all is typed). */
+    Dispatch(World.Host host, String[] lines) {
         this.host = host;
         this.lines = lines;
         int n = 0;
         for (String l : lines) n += l.length();
         letters = n;
-        build(room);
-        t = emerging ? 0f : EMERGE;
     }
 
-    /** What the set says before a mission. */
+    /** What the screen says before a mission. */
     static String[] briefing(int round) {
         if (round <= 1)
             return new String[]{"DISPATCH - MISSION 1", "", "AT SUNSET FIVE GOLEMS", "BROKE OUT OF THE FOUNDRY.",
@@ -59,15 +64,15 @@ final class Dispatch {
                 "FIND THEM. RUN THEM DOWN.", "KNOCK EVERY PLATE OFF.", "", "TOUCH TO GO"};
     }
 
-    /** What the set says when a mission is done. */
+    /** What the screen says when a mission is done. */
     static String[] report(int round, String time) {
         return new String[]{"DISPATCH - MISSION " + round, "", "ALL FIVE PLATES ARE IN.", "THE TOWN IS SAFE",
                 "FOR TONIGHT.", "", "TIME  " + time, "", "MORE ARE LOOSE.", "", "TOUCH TO GO ON"};
     }
 
-    /** A touch: the rest typed at once, or, all typed, into the glass. */
+    /** A touch: the rest typed at once, or, all typed, the mallet onto the key. */
     void touch() {
-        if (t < EMERGE || knockAt >= 0f) return;
+        if (t < CLOSE || knockAt >= 0f) return;
         if (typed < letters) {
             typed = letters;
             return;
@@ -75,16 +80,15 @@ final class Dispatch {
         knockAt = t;
     }
 
-    /** Whether the eye has gone into the glass: the mission begins. */
+    /** Whether the walls have drawn back: the street goes on. */
     boolean done() {
         return done;
     }
 
     void update(float dt) {
         t += dt;
-        if (t >= EMERGE && diveAt < 0f) {
+        if (t >= CLOSE && knockAt < 0f) {
             typed = Math.min(letters, typed + dt * TYPE);
-            // the set ticks as it types
             int k = (int) typed / 3;
             if (k > ticked && typed < letters) {
                 ticked = k;
@@ -92,106 +96,213 @@ final class Dispatch {
             }
         }
         if (knockAt >= 0f && !pressed && t - knockAt >= KNOCK) {
-            // the key goes in
             pressed = true;
-            host.sound(Synth.TOCK, 0.6f, 1.2f);
+            host.sound(Synth.WOOD, 0.9f, 0.75f);
+            host.sound(Synth.TOCK, 0.5f, 1.3f);
         }
-        if (pressed && diveAt < 0f && t - knockAt >= KNOCK + KNOCKED + AWAY) {
-            diveAt = t;
-            host.sound(Synth.WHOOSH, 0.5f, 1.4f);
+        if (pressed && openAt < 0f && t - knockAt >= KNOCK + KNOCKED) {
+            openAt = t;
+            host.sound(Synth.WHOOSH, 0.45f, 1.2f);
         }
-        if (diveAt >= 0f && t - diveAt >= DIVE) done = true;
+        if (openAt >= 0f && t - openAt >= OPEN) done = true;
+    }
+
+    private static float ease(float u) {
+        u = Math.max(0f, Math.min(1f, u));
+        return u * u * (3f - 2f * u);
+    }
+
+    /**
+     * Where the eye is, into eye (x, y, z, yaw, pitch): in the room before the screen, or on its way
+     * between there and behind her, where the street is seen from.
+     */
+    void eye(Runner r, float[] eye) {
+        place(r);
+        float k = 1f;
+        if (t < CLOSE) k = ease(t / CLOSE);
+        if (openAt >= 0f) k = 1f - ease((t - openAt) / OPEN);
+        // the room's eye
+        float ix = ox + sn * EYE_Z, iy = oy + EYE_Y, iz = oz + cs * EYE_Z;
+        float ipitch = -0.04f;
+        eye[0] = r.eyeX + (ix - r.eyeX) * k;
+        eye[1] = r.eyeY + (iy - r.eyeY) * k;
+        eye[2] = r.eyeZ + (iz - r.eyeZ) * k;
+        float dy = r.heading - r.eyeYaw;
+        while (dy > Math.PI) dy -= 2f * (float) Math.PI;
+        while (dy < -Math.PI) dy += 2f * (float) Math.PI;
+        eye[3] = r.eyeYaw + dy * k;
+        eye[4] = r.eyePitch + (ipitch - r.eyePitch) * k;
+        // the walls far out while the eye is out, round it when it is in
+        size = 1f + (WIDE - 1f) * (1f - k);
+    }
+
+    /** Whether she is to be drawn: not while the eye is in her head. */
+    boolean showsHer() {
+        return size > 3.9f;
+    }
+
+    private void place(Runner r) {
+        ox = r.x;
+        oy = r.y + HEAD;
+        oz = r.z;
+        cs = (float) Math.cos(r.heading);
+        sn = (float) Math.sin(r.heading);
     }
 
     // ---- drawing ----
 
+    private final float[] rot = new float[9];
+
+    /** A box of the room, in its own frame, scaled about its middle as far as the walls are out. */
+    private void box(DrawList d, float x, float y, float z, float hx, float hy, float hz, int color, int material) {
+        float s = size;
+        rot[0] = cs; rot[1] = 0f; rot[2] = sn;
+        rot[3] = 0f; rot[4] = 1f; rot[5] = 0f;
+        rot[6] = -sn; rot[7] = 0f; rot[8] = cs;
+        d.box(ox + (cs * x + sn * z) * s, oy + y * s, oz + (-sn * x + cs * z) * s, hx * s, hy * s, hz * s, rot, color, material);
+    }
+
+    /** The room round the eye, and over the frame what the screen says. */
     void draw(DrawList d, Px f, int h) {
-        // the eye before the set, a little above it, looking down at it; out of the glass at first,
-        // into it at the end
-        float back = EYE_BACK;
-        if (t < EMERGE) {
-            float u = t / EMERGE;
-            u = 1f - (1f - u) * (1f - u);
-            back = 0.04f + (EYE_BACK - 0.04f) * u;
-        }
-        if (diveAt >= 0f) {
-            float u = Math.min(1f, (t - diveAt) / DIVE);
-            back = EYE_BACK + (0.03f - EYE_BACK) * u * u;
-        }
-        float k = back / EYE_BACK;
-        float ex = GX, ey = GY + 0.07f * k, ez = GZ - back;
-        float pitch = (float) Math.atan2(GY - 0.04f * k - ey, back);
-        Daylight.light(d, 1f);
-        d.fogStart = 40f;
-        d.fogScale = 400f;
-        // the low sun outside the window, coming in over the desk
-        double el = Math.toRadians(22), tu = Math.toRadians(18);
-        d.sun((float) (Math.cos(el) * Math.sin(tu)), (float) Math.sin(el), (float) (Math.cos(el) * Math.cos(tu)),
-                0f, 1f, 0.5f, 7f, 5f, 12f);
-        d.camera(ex, ey, ez, 0f, pitch, World.W * 1.6f, 0.02f, 500f);
-        d.append(room);
-        // the lamp's warm light on the desk
-        d.fire[0] = LAMP_X;
-        d.fire[1] = LAMP_Y - 0.05f;
-        d.fire[2] = LAMP_Z;
+        walls(d);
+        if (knockAt >= 0f && openAt < 0f) mallet(d);
+        // a warm light inside
+        d.fire[0] = ox + sn * -0.6f;
+        d.fire[1] = oy + 0.9f * size;
+        d.fire[2] = oz + cs * -0.6f;
         d.fire[3] = 0.55f;
-        key(d);
-        screen(d, f);
-        clock(d, f);
-        float white = 0f;
-        if (t < EMERGE) white = Math.max(0f, 1f - t / (EMERGE * 0.45f));
-        if (diveAt >= 0f) white = Math.max(white, (t - diveAt - DIVE * 0.6f) / (DIVE * 0.4f));
-        if (white > 0f) Opening.wash(f, Math.min(1f, white));
+        if (size < 1.05f) {
+            screen(d, f);
+            clock(d, f);
+        }
     }
 
-    /** The red key: up, or knocked in and lit. */
-    private void key(DrawList d) {
-        if (pressed) d.box(0.17f, 0.826f, -0.27f, 0.06f, 0.012f, 0.07f, null, 0xFF5A3C, DrawList.GLOW);
-        else d.box(0.17f, 0.84f, -0.27f, 0.06f, 0.016f, 0.07f, null, 0xC5372B, DrawList.PLAIN);
+    private static final int BRICK = Frida.BRICK, BRICK_DARK = Frida.BRICK_DARK, STONE = Frida.STONE,
+            STONE_DARK = Frida.STONE_DARK, PLANK = Frida.CAP, SLAB = Frida.SLAB, IRON = Frida.IRON;
+
+    /** Her head from inside: courses of brick and stone, the cap of planks, the slab floor, the screen, the shelf. */
+    private void walls(DrawList d) {
+        float back = -1.7f, top = 1.3f, bottom = -1.05f, side = 1.2f, course = 0.22f;
+        // the front wall, round the screen
+        int row = 0;
+        for (float y = bottom; y < top; y += course, row++) {
+            float y1 = Math.min(top, y + course), cy = (y + y1) * 0.5f, hy = (y1 - y) * 0.5f;
+            int c = (row & 1) == 0 ? BRICK : BRICK_DARK;
+            boolean beside = y1 > SY0 && y < SY1;
+            if (beside) {
+                for (int s = -1; s <= 1; s += 2) {
+                    float x0 = SX + 0.06f, x1 = side;
+                    box(d, s * (x0 + x1) * 0.5f, cy, FRONT + 0.08f, (x1 - x0) * 0.5f, hy, 0.08f, (row % 3 == 1) ? STONE : c, DrawList.STONE);
+                }
+            } else {
+                box(d, 0f, cy, FRONT + 0.08f, side, hy, 0.08f, c, DrawList.STONE);
+            }
+            // the side walls, in the same courses, a stone block now and then
+            for (int s = -1; s <= 1; s += 2) {
+                box(d, s * side, cy, (back + FRONT) * 0.5f, 0.08f, hy, (FRONT - back) * 0.5f, c, DrawList.STONE);
+                if ((row + (s > 0 ? 1 : 0)) % 3 == 0)
+                    box(d, s * (side - 0.09f), cy, -0.4f + 0.3f * s, 0.02f, hy * 0.92f, 0.32f, (row & 2) == 0 ? STONE : STONE_DARK, DrawList.STONE);
+            }
+        }
+        // between the screen's sides and the bricks, above and below it
+        box(d, 0f, (SY1 + 0.06f + Math.min(top, SY1 + 0.3f)) * 0.5f, FRONT + 0.08f, SX + 0.06f, (0.3f - 0.06f) * 0.5f, 0.08f, IRON, DrawList.PLAIN);
+        // the screen's frame, dark, and her eyes over it, lit
+        box(d, 0f, SY1 + 0.03f, FRONT, SX + 0.06f, 0.03f, 0.03f, 0x26241F, DrawList.PLAIN);
+        box(d, 0f, SY0 - 0.03f, FRONT, SX + 0.06f, 0.03f, 0.03f, 0x26241F, DrawList.PLAIN);
+        for (int s = -1; s <= 1; s += 2) {
+            box(d, s * (SX + 0.03f), (SY0 + SY1) * 0.5f, FRONT, 0.03f, (SY1 - SY0) * 0.5f + 0.06f, 0.03f, 0x26241F, DrawList.PLAIN);
+            box(d, s * 0.36f, SY1 + 0.19f, FRONT - 0.01f, 0.07f, 0.035f, 0.01f, Frida.EYES, DrawList.GLOW);
+        }
+        // the cap: planks across overhead, a slab over them
+        for (int k = 0; k < 7; k++) {
+            float x = -side + (k + 0.5f) * (2f * side / 7f);
+            box(d, x, top + 0.05f, (back + FRONT) * 0.5f, side / 7f - 0.01f, 0.05f, (FRONT - back) * 0.5f + 0.1f,
+                    (k & 1) == 0 ? PLANK : 0x8F5220, DrawList.WOOD);
+        }
+        box(d, 0f, bottom - 0.05f, (back + FRONT) * 0.5f, side, 0.05f, (FRONT - back) * 0.5f, SLAB, DrawList.STONE);
+        box(d, 0f, top * 0.5f + bottom * 0.5f, back - 0.08f, side, (top - bottom) * 0.5f, 0.08f, BRICK_DARK, DrawList.STONE);
+        // the shelf under the screen: planks, keys, the red key, the clock
+        box(d, 0f, KEY_Y - 0.04f, 0.4f, 0.75f, 0.03f, 0.24f, 0x8A6650, DrawList.WOOD);
+        for (int k = 0; k < 4; k++)
+            box(d, 0.13f - k * 0.09f, KEY_Y, KEY_Z, 0.033f, 0.015f, 0.05f, 0xEDE6D6, DrawList.PLAIN);
+        if (pressed) box(d, KEY_X, KEY_Y - 0.008f, KEY_Z, 0.07f, 0.012f, 0.08f, 0xFF5A3C, DrawList.GLOW);
+        else box(d, KEY_X, KEY_Y + 0.006f, KEY_Z, 0.07f, 0.018f, 0.08f, 0xC5372B, DrawList.PLAIN);
+        box(d, CLOCK_X, CLOCK_Y, CLOCK_Z + 0.06f, 0.14f, 0.06f, 0.06f, 0x2C2A28, DrawList.PLAIN);
+        box(d, CLOCK_X, CLOCK_Y, CLOCK_Z - 0.002f, 0.11f, 0.04f, 0.004f, 0x120C0A, DrawList.GLASS);
     }
 
-    /** The glass of the set: dark phosphor, scan lines, the dispatch typed on it. */
+    private final float[] head = new float[3], turn = new float[9];
+
+    /**
+     * Her mallet, the same and as big as in the street: up from below the frame on the right, and
+     * down onto the red key, where it rests a moment.
+     */
+    private void mallet(DrawList d) {
+        float u = Math.min(1f, (t - knockAt) / KNOCK);
+        // in the room's frame: from below, up beside the shelf, down onto the key
+        float[] from = {0.85f, -1.4f, 0.1f}, top = {0.42f, -0.3f, 0.32f}, key = {KEY_X, KEY_Y + 0.17f, KEY_Z};
+        float lx, ly, lz;
+        if (u < 0.6f) {
+            float v = u / 0.6f;
+            v = 1f - (1f - v) * (1f - v);
+            lx = from[0] + (top[0] - from[0]) * v;
+            ly = from[1] + (top[1] - from[1]) * v;
+            lz = from[2] + (top[2] - from[2]) * v;
+        } else {
+            float v = (u - 0.6f) / 0.4f;
+            v = v * v;
+            lx = top[0] + (key[0] - top[0]) * v;
+            ly = top[1] + (key[1] - top[1]) * v;
+            lz = top[2] + (key[2] - top[2]) * v;
+        }
+        // the handle back toward her right shoulder, off the frame below and to the right
+        float hx = lx - 1.1f, hy = ly + 1.2f, hz = lz + 0.5f;
+        float l = (float) Math.sqrt(hx * hx + hy * hy + hz * hz);
+        hx /= l;
+        hy /= l;
+        hz /= l;
+        // into the world
+        float wx = cs * hx + sn * hz, wz = -sn * hx + cs * hz;
+        head[0] = ox + cs * lx + sn * lz;
+        head[1] = oy + ly;
+        head[2] = oz - sn * lx + cs * lz;
+        float bx = -wz, bz = wx, bl = Math.max(1e-3f, (float) Math.sqrt(bx * bx + bz * bz));
+        bx /= bl;
+        bz /= bl;
+        float ux = -bz * hy, uy = bz * wx - bx * wz, uz = bx * hy;
+        turn[0] = wx; turn[1] = ux; turn[2] = bx;
+        turn[3] = hy; turn[4] = uy; turn[5] = 0f;
+        turn[6] = wz; turn[7] = uz; turn[8] = bz;
+        Mallet.draw(d, turn, head[0], head[1], head[2], Toss.SCALE, Mallet.HEAD_MIDDLE);
+    }
+
+    /** A point of the room's frame onto the frame of the picture. */
+    private boolean onFrame(DrawList d, float x, float y, float z) {
+        return d.project(ox + cs * x + sn * z, oy + y, oz - sn * x + cs * z, at);
+    }
+
+    /** Over what she sees: the lines of a tube, a dark veil where the dispatch is typed, the dispatch. */
     private void screen(DrawList d, Px f) {
         float x0 = 1e9f, y0 = 1e9f, x1 = -1e9f, y1 = -1e9f;
         for (int c = 0; c < 4; c++) {
-            float px = GX + ((c & 1) == 0 ? -GHX : GHX), py = GY + ((c & 2) == 0 ? -GHY : GHY);
-            if (!d.project(px, py, GZ - 0.012f, at)) return;
+            if (!onFrame(d, (c & 1) == 0 ? -SX : SX, (c & 2) == 0 ? SY0 : SY1, FRONT)) return;
             x0 = Math.min(x0, at[0]);
             x1 = Math.max(x1, at[0]);
             y0 = Math.min(y0, at[1]);
             y1 = Math.max(y1, at[1]);
         }
-        int ix0 = Math.round(x0), iy0 = Math.round(y0), ix1 = Math.round(x1), iy1 = Math.round(y1);
-        float cx = (x0 + x1) * 0.5f, cy = (y0 + y1) * 0.5f, rx = (x1 - x0) * 0.5f, ry = (y1 - y0) * 0.5f;
-        for (int y = Math.max(0, iy0); y < Math.min(f.h, iy1); y++)
-            for (int x = Math.max(0, ix0); x < Math.min(f.w, ix1); x++) {
-                // the tube's corners rounded off, darker toward them
-                float qx = (x + 0.5f - cx) / rx, qy = (y + 0.5f - cy) / ry;
-                float r = qx * qx * qx * qx + qy * qy * qy * qy;
-                if (r > 1f) continue;
-                float dim = 1f - 0.45f * r;
-                if ((y & 1) == 1) dim *= 0.82f;
-                int g = Math.round(42 * dim), b = Math.round(46 * dim), red = Math.round(12 * dim);
-                // coming on: the picture opens out of a bright line across the middle
-                float open = (t - EMERGE) / ON;
-                if (open < 1f) {
-                    float band = Math.max(0.02f, open);
-                    if (Math.abs(qy) > band) {
-                        f.a[y * f.w + x] = 0xFF040706;
-                        continue;
-                    }
-                    if (Math.abs(qy) > band - 0.06f || open < 0.3f) {
-                        f.a[y * f.w + x] = 0xFFE4FFF6;
-                        continue;
-                    }
-                }
-                f.a[y * f.w + x] = 0xFF000000 | (red << 16) | (g << 8) | b;
+        int ix0 = Math.max(0, Math.round(x0)), iy0 = Math.max(0, Math.round(y0));
+        int ix1 = Math.min(f.w, Math.round(x1)), iy1 = Math.min(f.h, Math.round(y1));
+        float typedShare = Math.min(1f, (t - CLOSE) / 0.25f);
+        for (int y = iy0; y < iy1; y++)
+            for (int x = ix0; x < ix1; x++) {
+                // a dark veil over the street, so the words read; the lines of a tube across it
+                int a = Math.round(150 * Math.max(0f, typedShare)) + ((y & 1) == 1 ? 40 : 0);
+                f.a[y * f.w + x] = (Math.min(255, a) << 24) | 0x06181A;
             }
-        if (t < EMERGE + ON) return;
-        // the lines, as far as typed; the last one blinks once all is typed
-        int scale = Math.max(1, (int) ((x1 - x0) / 185f));
-        int lineH = 9 * scale, top = iy0 + Math.max(4, Math.round((iy1 - iy0 - lines.length * lineH) * 0.5f));
-        int left = ix0 + 6 * scale;
+        if (t < CLOSE) return;
+        int lineH = 9, top = iy0 + Math.max(4, Math.round((iy1 - iy0 - lines.length * lineH) * 0.5f));
+        int left = ix0 + 7;
         int shown = (int) typed;
         for (int i = 0; i < lines.length; i++) {
             String s = lines[i];
@@ -202,18 +313,17 @@ final class Dispatch {
             if (last && typed >= letters && (int) (t * 2.2f) % 2 == 1) continue;
             int col = last ? 0xFFF6D36A : 0xFFA6F2DA;
             int y = top + i * lineH;
-            if (y + 7 * scale > iy1 - 2) break;
-            PixelFont.draw(f, part, left + 1, y + 1, scale, 0x55102A28);
-            PixelFont.draw(f, part, left, y, scale, col);
-            // the cursor
+            if (y + 7 > iy1 - 2) break;
+            PixelFont.draw(f, part, left + 1, y + 1, 1, 0xAA041012);
+            PixelFont.draw(f, part, left, y, 1, col);
             if (shown < 0 && typed < letters)
-                f.rect(left + PixelFont.width(part, scale) + scale, y, left + PixelFont.width(part, scale) + 5 * scale, y + 7 * scale, col);
+                f.rect(left + PixelFont.width(part, 1) + 1, y, left + PixelFont.width(part, 1) + 5, y + 7, col);
         }
     }
 
-    /** The clock on the desk: the real time, in orange. */
+    /** The clock on the shelf: the real time and the date, in orange. */
     private void clock(DrawList d, Px f) {
-        if (!d.project(CX, CY, CZ - 0.005f, at)) return;
+        if (!onFrame(d, CLOCK_X, CLOCK_Y, CLOCK_Z - 0.01f)) return;
         Calendar c = Calendar.getInstance();
         int hh = c.get(Calendar.HOUR_OF_DAY), mm = c.get(Calendar.MINUTE);
         String s = (hh < 10 ? "0" : "") + hh + (c.get(Calendar.SECOND) % 2 == 0 ? ":" : " ") + (mm < 10 ? "0" : "") + mm;
@@ -222,73 +332,5 @@ final class Dispatch {
         int w = PixelFont.width(s, 1), wd = PixelFont.width(date, 1);
         PixelFont.draw(f, s, Math.round(at[0] - w * 0.5f), Math.round(at[1] - 8f), 1, 0xFFFF8A3C);
         PixelFont.draw(f, date, Math.round(at[0] - wd * 0.5f), Math.round(at[1] + 1f), 1, 0xFFC9622A);
-    }
-
-    // ---- the room, once ----
-
-    /** A turn about the upright, into a fresh array of rows. */
-    private static float[] yaw(float a) {
-        float c = (float) Math.cos(a), s = (float) Math.sin(a);
-        return new float[]{c, 0f, s, 0f, 1f, 0f, -s, 0f, c};
-    }
-
-    private static void build(DrawList d) {
-        int plaster = 0xE6D7BC, frame = 0xF1EBDD;
-        // the floor, boards; the walls, plaster; the window in the back wall over the desk
-        d.box(0f, -0.05f, 0f, 3f, 0.05f, 3f, null, 0x9A6B44, DrawList.WOOD);
-        d.box(-2.95f, 0f, 0.9f, 2.05f, 1.5f, 0.06f, null, plaster, DrawList.PLAIN);
-        d.box(2.95f, 0f, 0.9f, 2.05f, 1.5f, 0.06f, null, plaster, DrawList.PLAIN);
-        d.box(0f, 0.72f, 0.9f, 0.9f, 0.72f, 0.06f, null, plaster, DrawList.PLAIN);
-        d.box(0f, 2.95f, 0.9f, 0.9f, 0.35f, 0.06f, null, plaster, DrawList.PLAIN);
-        d.box(-2.2f, 1.5f, -1f, 0.06f, 1.5f, 2f, null, plaster, DrawList.PLAIN);
-        d.box(2.2f, 1.5f, -1f, 0.06f, 1.5f, 2f, null, plaster, DrawList.PLAIN);
-        // the window: a frame, the bars across, a sill
-        d.box(0f, 1.45f, 0.86f, 0.95f, 0.04f, 0.1f, null, frame, DrawList.PLAIN);
-        d.box(0f, 2.6f, 0.9f, 0.95f, 0.04f, 0.08f, null, frame, DrawList.PLAIN);
-        d.box(-0.92f, 2.02f, 0.9f, 0.04f, 0.6f, 0.08f, null, frame, DrawList.PLAIN);
-        d.box(0.92f, 2.02f, 0.9f, 0.04f, 0.6f, 0.08f, null, frame, DrawList.PLAIN);
-        d.box(0f, 2.02f, 0.92f, 0.025f, 0.58f, 0.03f, null, frame, DrawList.PLAIN);
-        d.box(0f, 2.1f, 0.92f, 0.9f, 0.02f, 0.03f, null, frame, DrawList.PLAIN);
-        // outside, far below: the sea out to the haze, the promenade's edge, a few roofs
-        d.box(0f, -14f, 500f, 900f, 0.25f, 480f, null, 0x2D6990, DrawList.SEA);
-        d.box(0f, -13.2f, 22f, 60f, 0.8f, 4f, null, 0xDCCDB2, DrawList.PROMENADE);
-        for (int i = 0; i < 7; i++) {
-            float x = -30f + i * 10f + (i % 3) * 2f, hgt = 3f + (i * 37 % 5);
-            d.box(x, -14f + hgt, 10f + (i % 2) * 4f, 4f, hgt, 3f, null, Street.WALLS[i % Street.WALLS.length],
-                    DrawList.material(DrawList.FACADE, 200 + i));
-            d.box(x, -14f + 2f * hgt + 0.3f, 10f + (i % 2) * 4f, 3.8f, 0.3f, 2.8f, null, 0xC4673E, DrawList.GRAIN);
-        }
-        // the desk
-        d.box(0f, 0.755f, 0.05f, 1.15f, 0.025f, 0.6f, null, 0x8A5A36, DrawList.WOOD);
-        d.box(0f, 0.38f, -0.5f, 1.12f, 0.35f, 0.02f, null, 0x7A4E2E, DrawList.WOOD);
-        for (int s = -1; s <= 1; s += 2) d.box(s * 1.08f, 0.38f, 0.05f, 0.03f, 0.37f, 0.55f, null, 0x7A4E2E, DrawList.WOOD);
-        // the set: a cabinet of grey plastic, a dark bezel, the glass, two knobs and a grille beside it
-        d.box(0f, 1.05f, 0.36f, 0.34f, 0.27f, 0.29f, null, 0xBDB5A6, DrawList.PLAIN);
-        d.box(0f, 1.05f, 0.08f, 0.335f, 0.265f, 0.012f, null, 0x34322F, DrawList.PLAIN);
-        d.box(GX, GY, GZ, GHX + 0.01f, GHY + 0.01f, 0.01f, null, 0x0C2A2E, DrawList.GLASS);
-        d.box(0.275f, 1.2f, 0.06f, 0.022f, 0.022f, 0.02f, null, 0xC9C2B2, DrawList.PLAIN);
-        d.box(0.275f, 1.12f, 0.06f, 0.022f, 0.022f, 0.02f, null, 0xC9C2B2, DrawList.PLAIN);
-        for (int k = 0; k < 5; k++) d.box(0.275f, 0.98f - k * 0.025f, 0.065f, 0.035f, 0.004f, 0.005f, null, 0x1C1B1A, DrawList.PLAIN);
-        d.box(0f, 0.79f, 0.36f, 0.3f, 0.012f, 0.25f, null, 0x2A2826, DrawList.PLAIN);
-        // the panel of keys before it: a row of pale keys, a red one, a yellow one
-        d.box(0.02f, 0.8f, -0.24f, 0.36f, 0.025f, 0.12f, null, 0xCFC6B4, DrawList.PLAIN);
-        for (int k = 0; k < 5; k++)
-            d.box(-0.3f + k * 0.075f, 0.835f, -0.27f, 0.028f, 0.012f, 0.04f, null, 0xEDE6D6, DrawList.PLAIN);
-        d.box(-0.24f, 0.835f, -0.17f, 0.1f, 0.012f, 0.025f, null, 0xF0C03A, DrawList.PLAIN);
-        // the clock on top of the set: a dark case, its face
-        d.box(CX, CY, CZ + 0.08f, 0.13f, 0.06f, 0.08f, null, 0x2C2A28, DrawList.PLAIN);
-        d.box(CX, CY, CZ, 0.1f, 0.035f, 0.004f, null, 0x120C0A, DrawList.GLASS);
-        // the lamp: a heavy foot, an arm, a green shade, the bulb
-        d.box(LAMP_X, 0.79f, LAMP_Z + 0.1f, 0.09f, 0.015f, 0.09f, null, 0x2F3A33, DrawList.PLAIN);
-        d.box(LAMP_X, 1.03f, LAMP_Z + 0.1f, 0.012f, 0.24f, 0.012f, null, 0x8E8A80, DrawList.PLAIN);
-        d.box(LAMP_X, LAMP_Y + 0.04f, LAMP_Z, 0.13f, 0.05f, 0.1f, null, 0x2E5E44, DrawList.PLAIN);
-        d.box(LAMP_X, LAMP_Y - 0.02f, LAMP_Z, 0.04f, 0.02f, 0.04f, null, 0xFFF1C8, DrawList.GLOW);
-        // papers, a pencil, a mug, before the keys
-        d.box(-0.2f, 0.785f, -0.46f, 0.15f, 0.003f, 0.1f, yaw(0.25f), 0xF4EFE4, DrawList.PLAIN);
-        d.box(-0.14f, 0.789f, -0.47f, 0.15f, 0.003f, 0.1f, yaw(-0.12f), 0xEDE6D4, DrawList.PLAIN);
-        d.box(-0.05f, 0.795f, -0.5f, 0.08f, 0.005f, 0.005f, yaw(0.6f), 0xD9A43A, DrawList.PLAIN);
-        d.box(0.27f, 0.84f, -0.46f, 0.045f, 0.06f, 0.045f, null, 0xF1EEE6, DrawList.PLAIN);
-        d.box(0.27f, 0.9f, -0.46f, 0.038f, 0.002f, 0.038f, null, 0x3A2416, DrawList.PLAIN);
-        d.box(0.32f, 0.85f, -0.46f, 0.012f, 0.03f, 0.01f, null, 0xF1EEE6, DrawList.PLAIN);
     }
 }

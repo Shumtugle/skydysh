@@ -9,8 +9,9 @@ a plane are to come.
 
 It opens, at every start, with a flight down onto a square by the sea, where she stands with a
 golden mallet and brings it down into the glass of the screen; a touch skips it. Then the
-dispatcher's room: what is to be done is typed out on an old television, and a touch goes into
-its glass and out into the street; when it is done, back to the room for the report.
+dispatcher's room, which is her head: walls of her own brick round the street seen through her
+eyes, what is to be done typed over it; a touch, her mallet knocks a key, the walls draw back
+and the street goes on. When it is done, back into her head for the report.
 
 A finger on the glass makes her run; moved sideways, it turns her by as much as it moved;
 flicked up, she jumps; flicked down, she slides; lifted, she slows to a stop.
