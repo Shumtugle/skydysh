@@ -40,7 +40,7 @@ const float PLAIN = 0.0, GRAIN = 1.0, STONE = 2.0, ASPHALT = 3.0, WOOD = 4.0, PA
 const float FACADE = 8.0, FROND = 9.0, TRUNK = 10.0, ROAD = 11.0, GLASS = 12.0, GLOW = 13.0, SEA = 14.0, RAIL = 15.0;
 const float PROMENADE = 16.0, AWNING = 17.0, SQUARE = 18.0, LANE = 19.0;
 const float POLISHED = 20.0, RUBBER = 21.0, MATTE = 26.0, CLEAR = 27.0;
-const float ROD = 28.0, HEAD = 29.0, FIRE = 30.0, TILES = 31.0;
+const float ROD = 28.0, HEAD = 29.0, FIRE = 30.0, TILES = 31.0, CLOTH = 32.0;
 
 const vec3 INK = vec3(0.137, 0.165, 0.290);
 
@@ -462,6 +462,13 @@ void main() {
         bool dark = mod(cell.x + cell.y, 2.0) == 1.0;
         k = (f.x < 0.03 || f.y < 0.03) ? 0.7 : (dark ? 0.3 : 1.0) * (0.95 + 0.07 * hash(vec3(cell, 4.0)));
         gloss = 0.5;
+    } else if (mat == CLOTH) {
+        // folds across the longer way of the piece, uneven, dark in the hollows; a seam at its edges
+        bool longY = ext.y >= ext.x;
+        float along = longY ? uv.y : uv.x, across = longY ? uv.x : uv.y, len = longY ? ext.y : ext.x;
+        float f = sin(along * 26.0 + across * 9.0 + vnoise(vec3(uv * 4.0, float(seed))) * 4.0);
+        k = 0.8 + 0.2 * smoothstep(-0.7, 0.8, f);
+        if (len - abs(along) < 0.012) k *= 0.85;
     } else if (mat == PROMENADE) {
         vec2 cell = floor(vWorld.xz / 1.4), f = fract(vWorld.xz / 1.4);
         k = (f.x < 0.03 || f.y < 0.03) ? 0.82 : 0.92 + 0.1 * hash(vec3(cell, 6.0));

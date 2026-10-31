@@ -1,0 +1,16 @@
+# The town's people and animals in a row on the pavement, the eye before them: the people as
+# they are drawn now, the ones made by Folk, and the animals
+screen 1096 2560
+wait 0.5
+show now
+shot now1
+show now2
+shot now2
+show folk1
+shot folk1
+show folk2
+shot folk2
+show folk3
+shot folk3
+show beasts
+shot beasts

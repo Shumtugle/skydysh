@@ -49,6 +49,11 @@ final class Frida {
         build();
     }
 
+    /** The skeleton and its motions, as given; null until then. */
+    static Moves moves() {
+        return moves;
+    }
+
     static boolean ready() {
         return moves != null;
     }
@@ -201,7 +206,7 @@ final class Frida {
 
     // ---- turns as quaternions (x y z w) ----
 
-    private static float[] mul(float[] a, float[] b) {
+    static float[] mul(float[] a, float[] b) {
         return new float[]{
                 a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1],
                 a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
@@ -209,7 +214,7 @@ final class Frida {
                 a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2]};
     }
 
-    private static float[] rotate(float[] q, float[] v) {
+    static float[] rotate(float[] q, float[] v) {
         float x = q[0], y = q[1], z = q[2], w = q[3];
         // v + 2 u x (u x v + w v)
         float cx = y * v[2] - z * v[1] + w * v[0], cy = z * v[0] - x * v[2] + w * v[1], cz = x * v[1] - y * v[0] + w * v[2];

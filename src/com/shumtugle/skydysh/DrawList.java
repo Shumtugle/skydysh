@@ -28,6 +28,8 @@ final class DrawList {
     static final int FIRE = 30;
     // a floor of tiles in two tones; its seed past half sets them on the diagonal
     static final int TILES = 31;
+    // cloth: soft folds across the longer way, a little uneven, darker in their hollows
+    static final int CLOTH = 32;
     // per box: middle (3), half sizes (3), the turn as three columns (9), color (3), material (1)
     static final int STRIDE = 19;
 

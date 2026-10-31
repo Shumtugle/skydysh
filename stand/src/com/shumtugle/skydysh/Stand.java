@@ -470,6 +470,9 @@ public final class Stand implements World.Host {
             if (down) world.touch(World.UP, fx, fy);
             System.out.println(String.format("%7.2fs  fuzz done, mission %d, her %.0f %.1f %.0f", time, world.mission.round,
                     world.runner.x, world.runner.y, world.runner.z));
+        } else if (c.equals("show")) {
+            // show now|now2|folk1|folk2|folk3|beasts|off: what the shots look at (see lineup)
+            show = p[1].equals("off") ? null : p[1];
         } else if (c.equals("onhut")) {
             // onhut: her on the roof of the lift's house nearest the folder, standing at its hut's door
             float[] l = doorNearFolder();
@@ -741,8 +744,48 @@ public final class Stand implements World.Host {
         bdown = false;
     }
 
+    // show WHAT: the shots from now on look at a row of figures on the pavement instead (see lineup)
+    private String show;
+
+    /**
+     * A row of figures on the pavement beside the start, and the eye before them: the people of
+     * the town as they are drawn now, the ones to come, or animals.
+     */
+    private void lineup(DrawList d) {
+        float px = 5.6f, z0 = 20f, step = 0.95f, t = time;
+        float eyeX, eyeY, eyeZ, pitch;
+        int n;
+        if (show.equals("beasts")) {
+            n = 4;
+            step = 0.62f;
+            for (int k = 0; k < n; k++) Beasts.draw(d, k, px - (k == 3 ? 0.25f : 0f), City.WALK_TOP, z0 + k * step, -(float) Math.PI * 0.5f - 0.6f, t + k);
+            eyeX = px - 3.7f;
+            eyeY = 1f;
+            pitch = -0.17f;
+        } else {
+            n = 3;
+            for (int k = 0; k < n; k++) {
+                float z = z0 + k * step;
+                if (show.startsWith("now")) {
+                    world.walkers.figure(d, k + (show.length() > 3 ? 3 : 0), px, City.WALK_TOP, z, -(float) Math.PI * 0.5f + 0.35f, 0.4f + k);
+                } else {
+                    int part = (show.equals("folk2") ? 3 : show.equals("folk3") ? 6 : 0) + k;
+                    if (part >= Folk.PARTS) continue;
+                    String[] how = {"idle", "walk", "arms_folded", "idle", "idle", "idle", "idle", "idle"};
+                    new Folk(17L + part * 5L, part).draw(d, px, City.WALK_TOP, z, (float) Math.PI * 0.5f - 0.35f, how[part], part == 1 ? 0.35f : 0.6f + k * 0.3f);
+                }
+            }
+            eyeX = px - 3.6f;
+            eyeY = 1.45f;
+            pitch = -0.1f;
+        }
+        eyeZ = z0 + (n - 1) * step * 0.5f + (show.equals("beasts") ? 0.05f : 0f);
+        d.camera(eyeX, eyeY, eyeZ, (float) Math.PI * 0.5f, pitch, World.W * 1.25f, 0.03f, 300f);
+    }
+
     private void shot(String name) throws IOException {
         world.draw(list);
+        if (show != null) lineup(list);
         Files.write(new File(out, name + ".json").toPath(), list.json().getBytes(StandardCharsets.UTF_8));
         BufferedImage img = new BufferedImage(list.w, list.h, BufferedImage.TYPE_INT_ARGB);
         img.setRGB(0, 0, list.w, list.h, list.flat, 0, list.w);
