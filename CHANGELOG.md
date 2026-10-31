@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11
+
+- Her hammer is now a stonemason's maul: a long ash handle, a navy band, a block of dark steel
+  for a head with its two faces worn bright and a wedge in its top. She carries it hanging from
+  her fist, trailing behind her with its head low; thrown, it turns end over end about its
+  middle.
+- The icon redrawn with the maul.
+
 ## 0.10
 
 - The hammer flies from nearer: within 10 meters of a golem instead of 18.

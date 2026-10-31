@@ -17,6 +17,7 @@ release, each seen on the stand before the phone.
 - 0.9 Her hammer: thrown by itself at a golem near enough, it knocks the plate off its brow;
   the plates won fill five slots over the frame. A new icon.
 - 0.10 The hammer thrown from nearer, within 10 meters.
+- 0.11 The hammer a stonemason's maul.
 
 ## Next
 

@@ -1,14 +1,14 @@
 package com.shumtugle.skydysh;
 
 /**
- * Her hammer: carried in her right hand, the handle running on from the forearm, the head past
- * the fist. When a golem still loose is near enough, before her and not behind a wall, the
+ * Her maul (see Maul): carried in her right hand, hanging from the fist and trailing behind
+ * her, its head low. When a golem still loose is near enough, before her and not behind a wall, the
  * hammer flies at it by itself, end over end, finding the head wherever it has got to; it
  * knocks the plate off its brow, and comes back to her hand.
  */
 final class Toss {
     static final float RANGE = 10f, CONE = 1.05f;          // how near, how far to either side of her way
-    static final float OUT_SPEED = 26f, BACK_TIME = 0.55f, SCALE = 1.7f;
+    static final float OUT_SPEED = 26f, BACK_TIME = 0.55f, SCALE = 1.6f, MIDDLE = 0.55f;
     static final int HELD = 0, OUT = 1, BACK = 2;
 
     int state = HELD;
@@ -17,7 +17,7 @@ final class Toss {
     private Chase aim;
     private final float[] from = new float[3], pos = new float[3], to = new float[3];
     private float flight, spin;
-    private final float[] pose = new float[12], hand = new float[3], elbow = new float[3];
+    private final float[] hand = new float[3], elbow = new float[3];
     private final float[] axis = new float[3], base = new float[9], turn = new float[9];
 
     void update(float dt, Runner r, Mission m, City city) {
@@ -104,10 +104,13 @@ final class Toss {
     void draw(DrawList d, Runner r) {
         float hx, hy, hz;
         if (state == HELD) {
+            // hanging from the fist, trailing behind her, swung a little with her forearm
             grip(r);
-            hx = hand[0] - elbow[0];
-            hy = hand[1] - elbow[1];
-            hz = hand[2] - elbow[2];
+            float fx = hand[0] - elbow[0], fy = hand[1] - elbow[1], fz = hand[2] - elbow[2];
+            float fl = Math.max(1e-3f, (float) Math.sqrt(fx * fx + fy * fy + fz * fz));
+            hx = -0.45f * (float) Math.sin(r.heading) + 0.35f * fx / fl;
+            hy = -1f + 0.35f * fy / fl;
+            hz = -0.45f * (float) Math.cos(r.heading) + 0.35f * fz / fl;
         } else {
             // flying: the handle along the way it goes, turning end over end
             hx = to[0] - from[0];
@@ -130,11 +133,9 @@ final class Toss {
         float cx, cy, cz;
         if (state == HELD) {
             System.arraycopy(base, 0, turn, 0, 9);
-            // the grip in the fist
-            float g = 0.31f * SCALE;
-            cx = hand[0] + hx * g;
-            cy = hand[1] + hy * g;
-            cz = hand[2] + hz * g;
+            cx = hand[0];
+            cy = hand[1];
+            cz = hand[2];
         } else {
             axis[0] = bx;
             axis[1] = 0f;
@@ -144,10 +145,7 @@ final class Toss {
             cy = pos[1];
             cz = pos[2];
         }
-        pose[0] = cx;
-        pose[1] = cy;
-        pose[2] = cz;
-        System.arraycopy(turn, 0, pose, 3, 9);
-        Hammer.draw(d, pose, Hammer.PLAIN, SCALE);
+        // held, by the grip; flying, turning about its middle
+        Maul.draw(d, turn, cx, cy, cz, SCALE, state == HELD ? 0f : MIDDLE);
     }
 }

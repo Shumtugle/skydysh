@@ -11,7 +11,7 @@ flicked up, she jumps; flicked down, she slides; lifted, she slows to a stop.
 
 For now, to try: a hunt. Five golems on fire that should not be are loose in the town, each
 waiting somewhere far off on a pavement of its own; come near one and it runs. Near enough, her
-hammer flies at it by itself and knocks the plate off its brow; it goes out and falls apart.
+maul flies at it by itself and knocks the plate off its brow; it goes out and falls apart.
 At the top, how far off the nearest still loose is, in meters; in the corners, the five plates
 as they are won, and the clock; at the edge of the frame, a burning mark
 the way each one out of sight is. When the last is caught, five more are let loose.
