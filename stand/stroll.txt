@@ -1,0 +1,16 @@
+# The townspeople's own walk, seen from the side as they go along the pavement: four of them,
+# a stride in six steps; then from the front
+screen 1096 2560
+wait 0.5
+folkrow 4 stroll 0.0 3.1416
+shot w0
+folkrow 4 stroll 0.25 3.1416
+shot w1
+folkrow 4 stroll 0.5 3.1416
+shot w2
+folkrow 4 stroll 0.75 3.1416
+shot w3
+folkrow 18 stroll 0.4 1.2
+shot w4
+folkrow 33 stroll 0.9 1.2
+shot w5

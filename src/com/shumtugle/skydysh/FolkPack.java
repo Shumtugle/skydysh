@@ -80,13 +80,41 @@ final class FolkPack {
     static void person(DrawList d, int m, float x, float y, float z, float yaw, float scale, String motion, float t) {
         Moves mv = Frida.moves();
         if (town == null || mv == null || mv.bone.length != BONES) return;
+        ready();
+        int c = mv.motion(motion);
+        if (c < 0) c = 0;
+        mv.pose(c, t, pq, pp);
+        put(d, m, x, y, z, yaw, scale, mv);
+    }
+
+    /**
+     * Person m walking their own way (see Stroll), so far along (meters walked; the stride
+     * follows the ground), walking so much (1) or standing still (0).
+     */
+    static void walker(DrawList d, int m, float x, float y, float z, float yaw, float scale, Stroll.Way way, float walked, float walking) {
+        Moves mv = Frida.moves();
+        if (town == null || mv == null || mv.bone.length != BONES) return;
+        ready();
+        float size = town.size[m] * scale;
+        float phase = walked / (Stroll.cycle(way) * size) * 2f * (float) Math.PI;
+        Stroll.pose(mv, way, phase, walking, pq, pp);
+        put(d, m, x, y, z, yaw, scale, mv);
+    }
+
+    /** Whether model m is a woman. */
+    boolean woman(int m) {
+        return kind[m] == WOMAN || kind[m] == POLICEWOMAN || kind[m] == DANCER;
+    }
+
+    private static void ready() {
         if (pq == null) {
             pq = new float[BONES * 4];
             pp = new float[BONES * 3];
         }
-        int c = mv.motion(motion);
-        if (c < 0) c = 0;
-        mv.pose(c, t, pq, pp);
+    }
+
+    /** The pose now in pq and pp, as person m, into the draw list. */
+    private static void put(DrawList d, int m, float x, float y, float z, float yaw, float scale, Moves mv) {
         float[] o = d.person();
         if (o == null) return;
         int at = d.folkAt();

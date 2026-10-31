@@ -26,6 +26,7 @@ final class Walkers {
     private final Random rnd = new Random(0x5EE7L);
     private final int[] bi = new int[MOST], bj = new int[MOST], top = new int[MOST], legs = new int[MOST],
             skin = new int[MOST], hair = new int[MOST], kind = new int[MOST], model = new int[MOST];
+    private final Stroll.Way[] way = new Stroll.Way[MOST];
     private final float[] u = new float[MOST], v = new float[MOST], dir = new float[MOST], ph = new float[MOST],
             size = new float[MOST], aside = new float[MOST];
     final float[] x = new float[MOST], z = new float[MOST], yaw = new float[MOST];
@@ -117,6 +118,7 @@ final class Walkers {
             hat[i] = rnd.nextInt(4) == 0;
             bag[i] = rnd.nextInt(3) == 0;
             model[i] = pick();
+            way[i] = Stroll.way(rnd.nextLong(), FolkPack.town != null && FolkPack.town.woman(model[i] % FolkPack.town.count));
             live[i] = true;
             return;
         }
@@ -174,15 +176,12 @@ final class Walkers {
     private float px, py, pz, c, sn, s;
     private final float[] rot = new float[9], a = new float[3], b = new float[3];
 
-    // a walk's metres a second of the skeleton's own motion, and how far its time runs per metre
-    private static final float WALK_TIME = 0.952f / 3.2f;
-
     private void person(DrawList d, float x, float y, float z, float yaw, float phase, int i, boolean still) {
-        if (FolkPack.town != null && Frida.ready()) {
-            // the skeleton faces -z at no turn: turned half round, they walk the way they are headed
-            float t = phase * WALK_TIME;
-            FolkPack.person(d, model[i] % FolkPack.town.count, x, y, z, yaw + (float) Math.PI, 1f,
-                    still ? "idle" : "walk", still ? t * 0.3f : t);
+        if (FolkPack.town != null && Frida.ready() && way[i] != null) {
+            // the skeleton faces -z at no turn: turned half round, they walk the way they are headed;
+            // the stride follows the metres walked, so the feet do not slide
+            FolkPack.walker(d, model[i] % FolkPack.town.count, x, y, z, yaw + (float) Math.PI, 1f, way[i],
+                    phase / 3.2f, still ? 0f : 1f);
             return;
         }
         px = x;

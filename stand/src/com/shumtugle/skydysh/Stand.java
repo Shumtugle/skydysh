@@ -508,6 +508,7 @@ public final class Stand implements World.Host {
                 rowFirst = Integer.parseInt(p[1]);
                 rowMotion = p.length > 2 ? p[2] : "idle";
                 rowT = p.length > 3 ? f(p[3]) : 0f;
+                rowYaw = p.length > 4 ? f(p[4]) : (float) Math.PI * 0.5f - 0.35f;
             }
         } else if (c.equals("where")) {
             // where: her place, the eye's, and whether she is indoors, told
@@ -785,18 +786,22 @@ public final class Stand implements World.Host {
         bdown = false;
     }
 
-    // folkrow FIRST MOTION T: the shots from now on look at four of the town's people in a row
-    // on the pavement beside the start (models FIRST on), in a motion at a time; folkrow off
+    // folkrow FIRST MOTION T [YAW]: the shots from now on look at four of the town's people in a
+    // row on the pavement beside the start (models FIRST on), in a motion at a time (stroll: their
+    // own walk, T meters along), turned so; folkrow off
     private int rowFirst = -1;
     private String rowMotion = "idle";
-    private float rowT;
+    private float rowT, rowYaw = (float) Math.PI * 0.5f - 0.35f;
 
     private void folkRow(DrawList d) {
         float px = 5.6f, z0 = 20f, step = 0.95f;
         int n = 4;
         for (int k = 0; k < n; k++) {
             int m = (rowFirst + k) % Math.max(1, FolkPack.town == null ? 1 : FolkPack.town.count);
-            FolkPack.person(d, m, px, City.WALK_TOP, z0 + k * step, (float) Math.PI * 0.5f - 0.35f, 1f, rowMotion, rowT + k * 0.2f);
+            if (rowMotion.equals("stroll")) {
+                Stroll.Way w = Stroll.way(1000L + m, FolkPack.town.woman(m));
+                FolkPack.walker(d, m, px, City.WALK_TOP, z0 + k * step, rowYaw, 1f, w, rowT + k * 0.37f, 1f);
+            } else FolkPack.person(d, m, px, City.WALK_TOP, z0 + k * step, rowYaw, 1f, rowMotion, rowT + k * 0.2f);
         }
         d.camera(px - 4.2f, 1.35f, z0 + (n - 1) * step * 0.5f, (float) Math.PI * 0.5f, -0.06f, World.W * 1.25f, 0.03f, 300f);
     }

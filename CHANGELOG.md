@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.26
+
+- The townspeople walk as people, not as the heroine: a walk of their own worked out on the
+  skeleton (`Stroll`) instead of her giant's motion. Upright and leaning a little into it, the
+  legs swinging from the hips, the knee bending only as the leg comes through, the foot set
+  down flat and rolled off the toes, the arms hanging and swinging against the legs, the hips
+  turning and dropping a little with each step, the head level. The stride follows the ground
+  walked, so the feet do not slide.
+- Each walks their own way: longer or shorter steps, more or less swing in the arms and the
+  hips (women a little more), now and then a stoop. Standing aside, they stand still, arms down.
+- Their heads no longer tip back: the trunk and the head are carried onto the skeleton as they
+  stand, not turned to follow it.
+- Stand: `folkrow ... stroll` (their own walk, so many meters along) with a turn; scene
+  `stroll.txt` (a stride from the side, then from the front).
+
 ## 0.25
 
 - The townspeople are people now: textured meshes of natural build, on the same skeleton as
