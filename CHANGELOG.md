@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.21
+
+- New controls. A finger on the glass still runs her and turns her. A flick up jumps; a second
+  flick up while she is in the air takes her on up as high as a leap would have, over a car or a
+  storey up. A flick just after running off an edge is still a jump. She glides by herself once
+  she is falling high over what is below; no flick for it any more. A flick down slides.
+- A tap is the mallet's. A golem within reach she strikes where she stands; one ahead of the eye
+  and within 20 m she stops and throws at, and the mallet flies after its head as before. With
+  none, she throws it straight ahead and it comes back empty. Reaching a golem no longer throws
+  by itself, and a golem reached is no longer taken by itself after a while.
+- Lifts open by themselves: come to the door, or stand at it a moment, and the doors take her.
+  Running by along the front, they do not.
+- The folder is marked green: a ring round it in sight, a green mark at the edge of the frame
+  when it is not, kept clear of the rivals' marks in the corner.
+- The rivals set off later (60, 80 and 100 s) and climb slower; with no one after it, the first
+  gets to the folder at about two minutes.
+- Stand: `swipe X Y`; `nearfolder [METERS [RADIANS]]`; the hunting bot taps for the mallet, the
+  folder bot jumps with two flicks. Scene `liftstand.txt`.
+
 ## 0.20
 
 - A second kind of mission, every other one: the folder. A folder of papers has fallen out of a

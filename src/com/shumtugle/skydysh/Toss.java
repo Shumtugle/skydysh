@@ -2,12 +2,17 @@ package com.shumtugle.skydysh;
 
 /**
  * Her mallet (see Mallet): carried in her right hand, hanging from the fist and trailing behind
- * her, its head low. When she has run a golem down to within her reach, she stops, turns after
- * it as it runs on, and throws: the mallet flies after its head end over end, knocks the plate
- * off its brow, and comes back to her hand.
+ * her, its head low. At a tap she uses it: a golem within her reach she strikes where she stands;
+ * one further off, ahead of her and not too far, she throws at: she stops, turns after it as it
+ * runs on, and the mallet flies after its head end over end, knocks the plate off its brow, and
+ * comes back to her hand. With nothing to throw at, she throws all the same, straight ahead, and
+ * it comes back empty.
  */
 final class Toss {
-    static final float LOCK = 1.1f, RELEASE = 0.33f;       // how long she stands to throw; when it leaves her hand
+    static final float LOCK = 0.8f, RELEASE = 0.33f;       // how long she stands to throw; when it leaves her hand
+    static final float STRIKE_LOCK = 0.6f;                 // how long she stands to strike
+    // within so far she strikes; ahead within so far she throws; ahead: the cosine off the eye's way
+    static final float STRIKE = 3.6f, RANGE = 20f, AHEAD = 0.6f, MISS = 14f;
     static final float OUT_SPEED = 24f, BACK_TIME = 0.45f, SCALE = 1.6f, MIDDLE = 0.5f;
     static final int HELD = 0, OUT = 1, BACK = 2, WINDUP = 3;
 
@@ -15,31 +20,73 @@ final class Toss {
     int thrown;
     private float clock, at;
     private Chase aim;
+    private boolean near, hit;
     private final float[] from = new float[3], pos = new float[3], to = new float[3];
     private float flight, spin;
     private final float[] hand = new float[3], elbow = new float[3];
     private final float[] axis = new float[3], base = new float[9], turn = new float[9];
 
-    void update(float dt, Runner r, Chase[] golems, City city) {
+    /** The golem a tap now would be for: within reach, or ahead of the eye and not too far; or null. */
+    static Chase pick(Runner r, Chase[] golems) {
+        float ax = (float) Math.sin(r.eyeYaw), az = (float) Math.cos(r.eyeYaw);
+        Chase best = null;
+        float bd = 1e9f;
+        for (Chase g : golems) {
+            if (g.done()) continue;
+            float dx = g.x - r.x, dy = g.y - r.y, dz = g.z - r.z;
+            float flat = (float) Math.sqrt(dx * dx + dz * dz), d = (float) Math.sqrt(flat * flat + dy * dy);
+            boolean ahead = flat > 1e-3f && (dx * ax + dz * az) / flat > AHEAD;
+            if (d < STRIKE || (ahead && d < RANGE)) {
+                if (d < bd) {
+                    bd = d;
+                    best = g;
+                }
+            }
+        }
+        return best;
+    }
+
+    void update(float dt, Runner r, Chase[] golems, City city, boolean tap) {
         clock += dt;
         if (state == HELD) {
-            for (Chase g : golems)
-                if (g.seized()) {
-                    aim = g;
-                    r.lock(LOCK, g.x, g.z);
-                    state = WINDUP;
-                    break;
-                }
+            if (!tap || r.inAir() || r.hidden) return;
+            aim = pick(r, golems);
+            hit = false;
+            if (aim != null) {
+                float dx = aim.x - r.x, dy = aim.y - r.y, dz = aim.z - r.z;
+                near = dx * dx + dy * dy + dz * dz < STRIKE * STRIKE;
+                r.lock(near ? STRIKE_LOCK : LOCK, aim.x, aim.z);
+            } else {
+                // nothing to throw at: straight on along the eye's way
+                near = false;
+                float ax = (float) Math.sin(r.eyeYaw), az = (float) Math.cos(r.eyeYaw);
+                to[0] = r.x + ax * MISS;
+                to[1] = r.y + 1.6f;
+                to[2] = r.z + az * MISS;
+                r.lock(LOCK, to[0], to[2]);
+            }
+            state = WINDUP;
             return;
         }
         if (state == WINDUP) {
             // it runs on: she turns after it as she swings
-            r.face(aim.x, aim.z);
+            if (aim != null) r.face(aim.x, aim.z);
+            if (near) {
+                // within reach: the blow lands at the height of the swing, the mallet kept in hand
+                if (!hit && r.throwing() >= RELEASE) {
+                    hit = true;
+                    aim.head(to);
+                    grip(r);
+                    aim.take(r, city, to[0] - hand[0], to[2] - hand[2]);
+                }
+                if (r.throwing() < 0f) state = HELD;
+                return;
+            }
             if (r.throwing() < RELEASE) return;
             // out of her hand at the height of the swing
             grip(r);
             System.arraycopy(hand, 0, from, 0, 3);
-            aim.head(to);
+            if (aim != null) aim.head(to);
             float dx = to[0] - from[0], dy = to[1] - from[1], dz = to[2] - from[2];
             flight = Math.max(0.15f, (float) Math.sqrt(dx * dx + dy * dy + dz * dz) / OUT_SPEED);
             at = clock;
@@ -52,10 +99,10 @@ final class Toss {
         float u = (clock - at) / (state == OUT ? flight : BACK_TIME);
         if (state == OUT) {
             // the head it was thrown at
-            if (!aim.done()) aim.head(to);
+            if (aim != null && !aim.done()) aim.head(to);
             flown(Math.min(1f, u), 0.08f);
             if (u >= 1f) {
-                aim.take(r, city, to[0] - from[0], to[2] - from[2]);
+                if (aim != null) aim.take(r, city, to[0] - from[0], to[2] - from[2]);
                 System.arraycopy(pos, 0, from, 0, 3);
                 at = clock;
                 state = BACK;

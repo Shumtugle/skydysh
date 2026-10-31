@@ -27,8 +27,13 @@ release, each seen on the stand before the phone.
 - 0.18 Russian, by the phone's language or the game's own.
 - 0.19 A tap jumps, two taps leap, a flick up glides; over cars and onto roofs; autosave.
 - 0.20 The folder on the roofs: lifts up, roof to roof, rival golems climbing; the tube's letters.
+- 0.21 A tap is the mallet's (strike or throw); a flick jumps, a second flick goes on up; she
+  glides by herself from high up; lifts open by themselves; the folder marked green; rivals later.
 
 ## Next
+
+- Rooms made from a seed as the town is: in at a house's entrance, a hall with a lift whose
+  doors and buttons work by themselves, and out on the roof; then other rooms for other missions.
 
 - The new look carried on: people of natural build with simple faces and big folds in their
   clothes; cars in the manner of the eighties, angular saloons, long coupes and open tops, a

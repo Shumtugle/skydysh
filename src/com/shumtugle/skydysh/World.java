@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.20";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.21";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -225,7 +225,7 @@ final class World {
             mission.update(dt, runner, city, cars);
             chase = mission.target(chase);
         }
-        toss.update(dt, runner, golems(), city);
+        toss.update(dt, runner, golems(), city, runner.tapped());
         cars.update(dt, runner, golems());
         walkers.update(dt, runner, chase);
         int caught = mission.caught(), struck = 0;
@@ -270,10 +270,17 @@ final class World {
     static final float LIFT_SHUT = 0.45f, LIFT_UP = 2.2f, LIFT_END = 2.75f;
     private float liftT = -1f;
     private boolean liftDown, liftArmed = true;
+    private float liftWait;                  // how long she has stood at a lift's door
+    // near its door: so near; standing so long there, or coming at it, the doors take her in;
+    // running by faster than this, along the front, they do not
+    static final float LIFT_NEAR = 1.7f, LIFT_STAND = 0.4f, LIFT_PAST = 5f;
     private int liftFloors;
     private final float[] liftNow = new float[10];
 
-    /** A lift on its way, or, she going into a lift's door (in the street or on a roof), one setting off. */
+    /**
+     * A lift on its way, or one setting off: the doors open by themselves for her when she comes
+     * to them or stands at them (in the street or on a roof); not when she runs by.
+     */
     private void lift(float dt) {
         Runner r = runner;
         if (liftT >= 0f) {
@@ -300,14 +307,21 @@ final class World {
             liftArmed = true;
             return;
         }
-        if (!liftArmed || r.speed < 1f) return;
+        if (!liftArmed) return;
         float[] l = liftNow;
         boolean street = r.y < 1f;
         float px = street ? l[0] : l[8], pz = street ? l[1] : l[9];
-        // into the door: near it and running at it
         float wx = street ? -l[2] : l[2], wz = street ? -l[3] : l[3];
         float dx = px - r.x, dz = pz - r.z;
-        if (dx * dx + dz * dz > 0.95f * 0.95f || fx * wx + fz * wz < 0.7f) return;
+        if (dx * dx + dz * dz > LIFT_NEAR * LIFT_NEAR) {
+            liftWait = 0f;
+            return;
+        }
+        // at the door: coming at it, or standing there a moment; running past, not
+        boolean at = fx * wx + fz * wz > 0.3f && r.speed > 0.5f;
+        liftWait = r.speed < 1.5f ? liftWait + dt : 0f;
+        if (!(at && r.speed < LIFT_PAST || at && fx * wx + fz * wz > 0.7f || liftWait > LIFT_STAND)) return;
+        liftWait = 0f;
         liftT = 0f;
         liftDown = !street;
         liftFloors = Math.max(2, Math.round((l[5] - 0.5f) / 3.3f) - 1);
@@ -426,13 +440,14 @@ final class World {
     }
 
     /**
-     * Over the frame, the folder's mission: how far off it is, in meters, at the top, and at the
-     * edge of the frame a red mark the way it is while it is out of sight; the reward and the
+     * Over the frame, the folder's mission: how far off it is, in meters, at the top; a green ring
+     * round it when it is in sight, and at the edge of the frame a green mark the way it is while
+     * it is not; the reward and the
      * clock in one corner; in the other, for each rival, a burning mark and how far it still has
      * to go, rising as it climbs. Taken, the reward large in the middle; lost, a word for it.
      */
     private void folderFlat(DrawList d, Px f) {
-        int fire = 0xFFF0581C, ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, red = 0xFFC8352C;
+        int fire = 0xFFF0581C, ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
         Folder fo = folder;
         String clock = clock(fo.over() ? fo.doneAt : fo.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
@@ -462,25 +477,36 @@ final class World {
         if (fo.hers) return;
         String m = String.valueOf(Math.round(fo.apart(runner)));
         shadowed(f, m, (W - PixelFont.width(m, 3)) / 2, 14, 3, cream, ink);
-        // where it is, when it is not to be seen: a red mark at the edge
+        // where it is: a green ring round it in sight, a green mark at the edge out of sight
         boolean seen = d.project(fo.x, fo.y + 0.3f, fo.z, at) && at[0] > 6 && at[0] < W - 6 && at[1] > 30 && at[1] < h - 6;
         if (seen) {
-            // over it, a small red mark coming and going
-            if (((int) (time * 3f) & 1) == 0) {
-                f.rect(Math.round(at[0]) - 3, Math.round(at[1]) - 14, Math.round(at[0]) + 3, Math.round(at[1]) - 9, ink);
-                f.rect(Math.round(at[0]) - 2, Math.round(at[1]) - 13, Math.round(at[0]) + 2, Math.round(at[1]) - 10, red);
-            }
+            // the ring breathes a little, so the eye finds it
+            float rr = 6.5f + 1.2f * (float) Math.sin(time * 5f);
+            ring(f, at[0], at[1], rr + 1f, rr - 3f, ink);
+            ring(f, at[0], at[1], rr, rr - 2f, green);
             return;
         }
         float ax = (float) Math.sin(runner.eyeYaw), az = (float) Math.cos(runner.eyeYaw);
         float vx = fo.x - runner.x, vz = fo.z - runner.z;
         float ang = (float) Math.atan2(vx * az - vz * ax, vx * ax + vz * az);
         float ex = (float) Math.sin(ang), ey = -(float) Math.cos(ang);
-        float k = Math.min((W * 0.5f - 12f) / Math.max(1e-3f, Math.abs(ex)), (h * 0.5f - 34f) / Math.max(1e-3f, Math.abs(ey)));
-        int px = Math.round(W * 0.5f + ex * k), py = Math.round(h * 0.5f + ey * k);
-        f.rect(px - 6, py - 5, px + 6, py + 5, ink);
-        f.rect(px - 5, py - 4, px + 5, py + 4, red);
-        f.rect(px - 5, py - 1, px + 5, py, 0xFF1B1B20);
+        // kept clear of the rivals' marks in the corner above
+        float k = Math.min((W * 0.5f - 12f) / Math.max(1e-3f, Math.abs(ex)), (h * 0.5f - 60f) / Math.max(1e-3f, Math.abs(ey)));
+        float px = W * 0.5f + ex * k, py = h * 0.5f + ey * k;
+        f.disc(px, py, 6.5f, ink);
+        f.disc(px, py, 5.5f, green);
+        f.disc(px, py, 2.2f, 0xFFD9FFE6);
+    }
+
+    /** A ring over the frame round (cx, cy): between radii in and out, in one colour. */
+    private static void ring(Px f, float cx, float cy, float out, float in, int c) {
+        int r0 = (int) Math.ceil(out);
+        float oo = out * out + out * 0.6f, ii = in * in + in * 0.6f;
+        for (int y = -r0; y <= r0; y++)
+            for (int x = -r0; x <= r0; x++) {
+                int q = x * x + y * y;
+                if (q <= oo && q > ii) f.rect(Math.round(cx) + x, Math.round(cy) + y, Math.round(cx) + x + 1, Math.round(cy) + y + 1, c);
+            }
     }
 
     static final float PLATE_POP = 0.45f, PLATE_FLY = 0.75f;

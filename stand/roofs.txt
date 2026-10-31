@@ -1,5 +1,5 @@
-# On the roofs: her on a roof, running along it to the street, a flick up at the edge and she
-# glides across to the roofs over the way.
+# On the roofs: her on a roof, running along it to the street, a flick up at the edge: she jumps,
+# and falling high over the street she puts her arms out and glides across by herself.
 screen 1096 2560
 roof
 wait 0.3

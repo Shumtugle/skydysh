@@ -210,6 +210,9 @@ public final class Stand implements World.Host {
             step();
             world.touch(World.UP, f(p[1]), f(p[2]));
             step();
+        } else if (c.equals("swipe")) {
+            // swipe X Y: a finger down, flicked up quickly, and lifted
+            flick(f(p[1]), f(p[2]));
         } else if (c.equals("carahead")) {
             // carahead METERS: a car standing across her way so far ahead
             world.cars.standAcross(world.runner, f(p[1]));
@@ -361,10 +364,19 @@ public final class Stand implements World.Host {
                     thrownSeen = world.toss.thrown;
                     System.out.println(String.format("%7.2fs  hammer flies, %.1f m", time, world.chase.apart));
                 }
-                if (thrownAt < 0f && world.chase.seized()) {
-                    // shots from the moment one is held: the stop, the swing, the mallet out
-                    thrownAt = time + 0.33f;
-                    System.out.println(String.format("%7.2fs  hammer thrown, %.1f m off", time, world.chase.apart));
+                if (world.toss.state == Toss.HELD && !r.inAir() && Toss.pick(r, world.golems()) == ch
+                        && ch.apart < THROW_AT && !ch.done()) {
+                    // near enough and ahead: a tap, and the finger back down
+                    world.touch(World.UP, fx, fy);
+                    step();
+                    world.touch(World.DOWN, fx, fy);
+                    step();
+                    world.touch(World.UP, fx, fy);
+                    step();
+                    world.touch(World.DOWN, fx, fy);
+                    System.out.println(String.format("%7.2fs  tap: the mallet, %.1f m off", time, ch.apart));
+                    // shots from the moment of the tap: the stop, the swing, the mallet out
+                    if (thrownAt < 0f) thrownAt = time + 0.33f;
                 }
                 float[] afterThrow = {-0.3f, -0.12f, 0.06f};
                 if (thrownAt >= 0f && nextThrow < afterThrow.length && time - thrownAt >= afterThrow[nextThrow])
@@ -426,9 +438,11 @@ public final class Stand implements World.Host {
                 System.out.println(String.format("%7.2fs  mission %d: the folder at %.0f %.1f %.0f, %.0f m off", time,
                         world.mission.round, fo.x, fo.y, fo.z, fo.apart(world.runner)));
         } else if (c.equals("nearfolder")) {
-            // nearfolder: her put on the street before the lift nearest the folder, facing its door
+            // nearfolder [METERS [RADIANS]]: her put on the street before the lift nearest the folder,
+            // so far out (6 m), facing its door, or turned so much from it
             float[] l = doorNearFolder();
-            world.runner.put(l[0] + l[2] * 6f, City.WALK_TOP, l[1] + l[3] * 6f, (float) Math.atan2(-l[2], -l[3]));
+            float out = p.length > 1 ? f(p[1]) : 6f, turn = p.length > 2 ? f(p[2]) : 0f;
+            world.runner.put(l[0] + l[2] * out, City.WALK_TOP, l[1] + l[3] * out, (float) Math.atan2(-l[2], -l[3]) + turn);
             step();
         } else if (c.equals("onfolder")) {
             // onfolder METERS RADIANS: her put on the folder's roof so far from it, the way given round it, facing it
@@ -497,6 +511,21 @@ public final class Stand implements World.Host {
         return best;
     }
 
+    /** A golem this near and ahead, the hunting finger taps for the mallet. */
+    static final float THROW_AT = 12f;
+
+    /** A finger put down at (x, y), flicked up quickly and lifted, a step a frame. */
+    private void flick(float x, float y) {
+        world.touch(World.DOWN, x, y);
+        step();
+        for (int t = 1; t <= 4; t++) {
+            world.touch(World.MOVE, x, y - t * 12f);
+            step();
+        }
+        world.touch(World.UP, x, y - 48f);
+        step();
+    }
+
     // the bot's finger: where it is on the glass, and whether it is down
     private float bx = World.W * 0.5f, by = 600f;
     private boolean bdown;
@@ -533,7 +562,7 @@ public final class Stand implements World.Host {
         int wi = Math.round(world.runner.x / City.CELL), wj = Math.round(world.runner.z / City.CELL);
         int n = Math.round(secs / DT), k = 0;
         float next = every, stuck = 0f, leapAt = -9f;
-        boolean wasUp = false, wasHers = false, wasHidden = false;
+        boolean wasUp = false, wasHers = false, wasHidden = false, wasGliding = false;
         int phase = 0;
         for (int i = 0; i < n; i++) {
             Runner r = world.runner;
@@ -587,28 +616,18 @@ public final class Stand implements World.Host {
                 float ax = r.x + (float) Math.sin(r.heading) * 1.6f, az = r.z + (float) Math.cos(r.heading) * 1.6f;
                 float ahead = world.city.ground(ax, az, r.y, 5f);
                 if (!r.inAir() && (stuck > 0.25f || ahead > r.y + 0.6f) && time - leapAt > 0.8f) {
+                    // two flicks up: a jump, and on up from it
                     world.touch(World.UP, bx, by);
-                    for (int t = 0; t < 2; t++) {
-                        world.touch(World.DOWN, bx, by);
-                        step();
-                        world.touch(World.UP, bx, by);
-                        step();
-                    }
+                    flick(bx, by);
+                    flick(bx, by);
                     world.touch(World.DOWN, bx, by);
                     leapAt = time;
                     stuck = 0f;
                     System.out.println(String.format("%7.2fs  leap, %.1f m up ahead", time, ahead - r.y));
                 }
-                if (r.inAir() && r.vy < -1f && !r.gliding) {
-                    world.touch(World.MOVE, bx, by);
-                    for (int t = 1; t <= 4; t++) {
-                        world.touch(World.MOVE, bx, by - t * 12f);
-                        step();
-                    }
-                    world.touch(World.UP, bx, by - 48f);
-                    world.touch(World.DOWN, bx, by);
+                if (r.inAir() && r.gliding && !wasGliding)
                     System.out.println(String.format("%7.2fs  gliding, %.1f m up", time, r.y));
-                }
+                wasGliding = r.inAir() && r.gliding;
             }
             step();
             if (r.hidden != wasHidden) {

@@ -4,8 +4,10 @@ package com.shumtugle.skydysh;
  * Freedie on foot, and the eye that follows her: she runs while a finger is on the glass and
  * slows to a stop when it lifts (not at once: a quick lift and touch again keeps her going); the
  * finger leads her: moved sideways, she turns by as much as it moved, wherever it lies on the
- * glass. A tap, she jumps; two taps quickly, she leaps high, over a car or onto what is a storey
- * up; flicked up, she glides, falling slowly with her arms out; flicked down, she slides.
+ * glass. Flicked up, she jumps; flicked up again while she is in the air, she goes on up as high
+ * as a leap would have taken her, over a car or onto what is a storey up; flicked down, she
+ * slides. Falling from high enough, she puts her arms out and glides down by herself. A tap is
+ * not hers: it is the mallet's (see Toss).
  * Houses, lamp posts, palms, cars and people stop her, unless she is over them; she stands on
  * whatever she comes down on, the roofs too, and runs off their edges into the air; the curb is
  * a step she takes in her stride.
@@ -17,9 +19,10 @@ final class Runner {
     static final float SIZE = 1.3f, RADIUS = 0.55f;
     static final float TOP_SPEED = 11.5f, PICK_UP = 1.1f, BRAKE = 12f;
     static final float GRAVITY = 22f, JUMP = 8f, LEAP = 12.6f, SINK = 2.2f;
-    // a tap: so short and so still; two taps, so close together; a lift that keeps her running
     static final float GLIDE_POSE = 1.2f;              // where in the jump's motion her arms are out
-    static final float TAP_S = 0.22f, TAP_PX = 14f, DOUBLE_S = 0.34f, GRACE = 0.3f;
+    static final float GLIDE_ABOVE = 4f;               // falling higher than this over what is below, she glides
+    // a tap: so short and so still; a lift that keeps her running
+    static final float TAP_S = 0.22f, TAP_PX = 14f, GRACE = 0.3f;
     // the finger: frame pixels moved sideways for a quarter turn; how far and how fast a flick goes
     static final float QUARTER = 110f, FLICK_PX = 26f, FLICK_S = 0.16f;
     // the eye: so far behind her, so high, looking so far ahead of her
@@ -41,7 +44,15 @@ final class Runner {
 
     // the finger: where it was last, and where it was a moment ago, for a flick
     private float lastX, lastY, flickY, flickAt;
-    private float downAt = -9f, upAt = -9f, tapAt = -9f, moved;
+    private float downAt = -9f, upAt = -9f, moved;
+    // a flick done with: none heard again till the finger has stopped or been lifted
+    private boolean flicked;
+    // the jump now: where it set off from, and whether it has been flicked on up already
+    private float jumpFrom, offEdgeAt = -9f;
+    private boolean boosted;
+    static final float LATE = 0.2f;                    // a flick so soon after running off an edge is still a jump
+    /** A tap not yet heard by the mallet. */
+    private boolean tapped;
     /** Gliding: falling slowly, arms out, till she lands. */
     boolean gliding;
     /** Hidden: in a lift, between the street and the roof. */
@@ -75,57 +86,76 @@ final class Runner {
             flickAt = clock;
             downAt = clock;
             moved = 0f;
+            flicked = false;
         } else if (type == World.MOVE && holding) {
             heading += (fx - lastX) / QUARTER * (float) (Math.PI / 2);
             moved += Math.abs(fx - lastX) + Math.abs(fy - lastY);
             lastX = fx;
             lastY = fy;
-            // a flick: far enough, quickly enough, up or down
-            if (clock - flickAt > FLICK_S) {
+            // a flick: far enough, quickly enough, up or down; one at a time
+            if (flicked) {
+                if (Math.abs(fy - flickY) < 3f) flicked = false;
+                flickY = fy;
+                flickAt = clock;
+            } else if (clock - flickAt > FLICK_S) {
                 flickY = fy;
                 flickAt = clock;
             } else if (flickY - fy > FLICK_PX) {
-                glide();
+                jump();
+                flicked = true;
                 flickY = fy;
-                flickAt = clock;
             } else if (fy - flickY > FLICK_PX) {
                 slide();
+                flicked = true;
                 flickY = fy;
-                flickAt = clock;
             }
         } else if (type == World.UP) {
             holding = false;
             upAt = clock;
-            if (clock - downAt < TAP_S && moved < TAP_PX) {
-                // a tap; a second one close after the first makes it a leap
-                if (clock - tapAt < DOUBLE_S) leap();
-                else jump();
-                tapAt = clock;
-            }
+            if (clock - downAt < TAP_S && moved < TAP_PX) tapped = true;
         }
     }
 
+    /** Up off the ground; in the air, once, on up as high as a leap from where she set off. */
     private void jump() {
-        if (state == AIR) return;
+        if (state == AIR && clock - offEdgeAt < LATE) {
+            // just off an edge: a jump all the same
+            offEdgeAt = -9f;
+            jumpFrom = y;
+            boosted = false;
+            vy = Math.max(vy, JUMP);
+            return;
+        }
+        if (state == AIR) {
+            if (boosted || gliding) return;
+            boosted = true;
+            float left = LEAP * LEAP - 2f * GRAVITY * Math.max(0f, y - jumpFrom);
+            vy = Math.max(vy, (float) Math.sqrt(Math.max(0f, left)));
+            return;
+        }
         state = AIR;
         stateAt = clock;
+        jumpFrom = y;
+        boosted = false;
         vy = JUMP;
     }
 
-    /** High: from the ground, or, just after a jump, on up from it. */
+    /** High, at once: from the ground or on up from a jump (going down by herself). */
     private void leap() {
-        if (state == AIR && (clock - stateAt > 0.35f || vy <= 0f)) return;
         if (state != AIR) {
             state = AIR;
             stateAt = clock;
         }
+        jumpFrom = y;
+        boosted = true;
         vy = LEAP;
     }
 
-    /** Arms out: on the ground she jumps first. */
-    private void glide() {
-        if (state != AIR) jump();
-        gliding = true;
+    /** Whether there was a tap since this was last asked; asked, it is forgotten. */
+    boolean tapped() {
+        boolean t = tapped;
+        tapped = false;
+        return t;
     }
 
     /** For the desktop stand and for missions: her put down here, facing so. */
@@ -140,6 +170,7 @@ final class Runner {
         gliding = false;
         placed = false;
         auto = false;
+        tapped = false;
     }
 
     /** Whether her feet are off whatever is under her. */
@@ -218,6 +249,8 @@ final class Runner {
             if (gliding && vy < -(auto ? AUTO_SINK : SINK)) vy = -(auto ? AUTO_SINK : SINK);
             y += vy * dt;
             float ground = city.ground(x, z, y - vy * dt, 0.05f);
+            // falling, high over what is below: arms out
+            if (vy < 0f && y - ground > GLIDE_ABOVE) gliding = true;
             if (y <= ground && vy < 0f) {
                 y = ground;
                 vy = 0f;
@@ -236,6 +269,9 @@ final class Runner {
                 // off an edge: into the air
                 state = AIR;
                 stateAt = clock;
+                jumpFrom = y;
+                boosted = true;
+                offEdgeAt = clock;
                 vy = 0f;
             } else {
                 // the step up onto the pavement taken in a moment, the step down as quick

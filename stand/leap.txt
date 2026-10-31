@@ -1,13 +1,14 @@
-# Over a car: running down the street, a car standing across the way ahead; a double tap and she
-# leaps over it. Then a plain tap, a plain jump.
+# Over a car: running down the street, a car standing across the way ahead; two flicks up and
+# she jumps and goes on up over it. Then a single flick, a plain jump. Then a tap: the mallet
+# thrown straight ahead with nothing to throw at, and back.
 screen 1096 2560
 down 137 600
 wait 2.5
 carahead 9
 wait 0.25
 up 137 600
-tap 137 600
-tap 137 600
+swipe 137 600
+swipe 137 600
 shot j0
 wait 0.15
 shot j1
@@ -18,6 +19,12 @@ shot j3
 down 137 600
 wait 1.5
 up 137 600
-tap 137 600
-wait 0.15
+swipe 137 600
+wait 0.05
 shot j4
+wait 1.2
+tap 137 600
+wait 0.3
+shot j5
+wait 0.25
+shot j6

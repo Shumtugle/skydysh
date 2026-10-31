@@ -14,13 +14,16 @@ eyes, what is to be done typed over it; a touch, her mallet knocks a key, the wa
 and the street goes on. When it is done, back into her head for the report.
 
 A finger on the glass makes her run; moved sideways, it turns her by as much as it moved;
-a tap, she jumps; two taps quickly, she leaps over a car or up onto what stands a storey up;
-flicked up, she glides; flicked down, she slides; lifted, she slows to a stop. She stands on
+flicked up, she jumps; flicked up again in the air, she goes on up, over a car or onto what
+stands a storey up; falling from high enough, she glides down by herself; flicked down, she
+slides; lifted, she slows to a stop. A tap is the mallet's: a golem within reach she strikes,
+one ahead and not too far she throws at; with none, she throws it ahead and it comes back. A
+lift's doors open by themselves when she comes to them or stands at them. She stands on
 whatever she comes down on, the roofs too. When a mission is done the game keeps where it is.
 
 For now, to try: a hunt. Five golems on fire that should not be are loose in the town, each
-waiting somewhere far off on a pavement of its own; come near one and it runs. Run it down to
-within reach, and she stops and throws her mallet; it knocks the plate off its brow, and the
+waiting somewhere far off on a pavement of its own; come near one and it runs. Run it down
+close enough and tap: she stops and throws her mallet (or, within reach, strikes with it); it knocks the plate off its brow, and the
 golem goes out and falls apart.
 At the top, how far off the nearest still loose is, in meters; in the corners, the five plates
 as they are won, and the clock; at the edge of the frame, a burning mark

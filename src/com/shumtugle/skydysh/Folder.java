@@ -15,7 +15,7 @@ final class Folder {
     static final int RIVALS = 3, REWARD = 100000;
     // how far off it falls; how far off the rivals start; when each sets off, and how fast it runs
     static final float NEAR = 170f, SPREAD = 50f, RIVALS_FROM = 260f;
-    static final float[] SETS_OFF = {14f, 30f, 46f};
+    static final float[] SETS_OFF = {60f, 80f, 100f};
     static final float RIVAL_RUN = 8.6f;
     // she has it when this near; the helicopter, over where it fell
     static final float TAKE = 1.4f, HELI_UP = 14f, HELI_ROUND = 30f, HELI_TURN = 0.22f;

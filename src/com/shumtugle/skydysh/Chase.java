@@ -34,10 +34,7 @@ final class Chase {
     static final int FLEE = 0, JOLTED = 1, LOOSE = 2, WAITING = 3, DOWN = 4, RISING = 5, STONE = 6;
     static final int SEEK = 7, CLIMB = 8, ROOF = 9;
     // a rival: how fast she climbs, and walks on the roof; how near the thing she is after is reached
-    static final float CLIMBS = 1.5f, ROOF_WALK = 3.6f, GOT = 0.9f, OFF_WALL = 0.5f;
-    // a hunt's golem is reached a little further off, and runs on: she stops and throws at it; if
-    // the blow has not come so long after, it falls apart all the same
-    static final float REACHED_MOST = 4f, HELD_REACH = 3.4f;
+    static final float CLIMBS = 1.1f, ROOF_WALK = 3.6f, GOT = 0.9f, OFF_WALL = 0.5f;
     static final float SIDE = 5.4f;            // where one of a hunt waits: on the pavement
     static final float COOL = 1.4f, LIES = 7f, SINKS = 2f;
 
@@ -88,9 +85,6 @@ final class Chase {
         heading = (float) Math.atan2(di, dj);
         state = WAITING;
     }
-
-    private boolean marked;
-    private float markedAt;
 
     // a rival: whether she is one, how long she looks about first, how fast she runs
     private boolean rival;
@@ -210,18 +204,6 @@ final class Chase {
         stride += dt * speed / 3.3f;
     }
 
-    /** Reached by the runner: it runs on, and she throws at it. */
-    private void mark() {
-        caught++;
-        marked = true;
-        markedAt = clock;
-    }
-
-    /** Whether she has reached it and is to throw at it. */
-    boolean seized() {
-        return marked && state != STONE;
-    }
-
     /** Caught for good and fallen apart. */
     boolean done() {
         return state == STONE;
@@ -251,10 +233,6 @@ final class Chase {
             rubble(dt);
             return;
         }
-        if (marked && clock - markedAt > REACHED_MOST) {
-            crumble(r, city);
-            return;
-        }
         float want;
         switch (state) {
             case JOLTED:
@@ -269,22 +247,18 @@ final class Chase {
                 want = 0f;
                 if (rival) {
                     // looking about, until it is time, or the runner comes by
-                    if (!marked && apart < HELD_REACH) mark();
                     if ((startIn -= dt) <= 0f || apart < NEAR) set(SEEK);
                 } else if (apart < RESUME) set(FLEE);
                 break;
             case SEEK:
-                if (!marked && apart < HELD_REACH) mark();
                 want = pace;
                 break;
             case CLIMB:
             case ROOF:
-                if (!marked && apart < HELD_REACH) mark();
                 above(dt, city);
                 return;
             case DOWN:
                 want = 0f;
-                if (forGood && !marked && apart < HELD_REACH) mark();
                 if (!forGood && apart < REACH && !caughtDown) {
                     caught++;
                     caughtDown = true;
@@ -299,7 +273,6 @@ final class Chase {
                 }
                 break;
             default:
-                if (forGood && !marked && apart < HELD_REACH) mark();
                 if (!forGood && apart < REACH) {
                     caught++;
                     set(JOLTED);
@@ -425,10 +398,6 @@ final class Chase {
      * Caught for good: she goes out where she is, every block flying off her a little, the
      * runner's push in it, and turning as it goes.
      */
-    private void crumble(Runner r, City city) {
-        crumble(r, city, x - r.x, z - r.z);
-    }
-
     /**
      * Struck on the head (by the runner's hammer) coming from the way (bx, bz): the plate is
      * knocked off her brow and she is caught for good. False if she already was.
