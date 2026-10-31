@@ -40,9 +40,14 @@ release, each seen on the stand before the phone.
 - 0.28 A shorter mallet, thrown by itself at a golem run down; up a ladder by the arms alone;
   the lift down from a roof by a button; dogs and cats, more people and cars, five kinds of
   car; squares with fountains or gardens, trees, benches, pots and ivy along the streets.
+- 0.29 Buttons and signs of glass over the frame, sixteen of them; pause; the lift's button;
+  signs over the ways in and up.
 
 ## Next
 
+- The other buttons put to work as their things come: the wheel in a car, the jet pack, the map,
+  the help, a throw and a lift of a thing; buttons as part of the controls where a gesture is
+  not enough.
 - A river through the town: a channel of water in place of a street now and then, stone
   embankments and steps down, bridges at the crossings (stone arches, an iron one, a foot
   bridge), the traffic and the chase going over them; boats moored along it.

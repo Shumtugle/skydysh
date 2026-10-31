@@ -36,6 +36,7 @@ final class Gfx {
     private IntBuffer flat, hudBuf;
     private final int[] hudTexs = new int[2], hudSizeW = new int[2], hudSizeH = new int[2];
     private int hudSlot;
+    private int badgesTex;                    // the sheet of buttons and signs, sent once
     private int[] hudSwizzled;
     private int[] swizzled;
 
@@ -84,6 +85,7 @@ final class Gfx {
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0);
         frameW = frameH = drawW = drawH = 0;
         hudTex = 0;
+        badgesTex = 0;
         hudTexs[0] = hudTexs[1] = 0;
         hudSizeW[0] = hudSizeW[1] = hudSizeH[0] = hudSizeH[1] = 0;
     }
@@ -352,6 +354,15 @@ final class Gfx {
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, hudTex);
         GLES30.glUniform1i(u(blitP, "uHud"), 2);
         GLES30.glUniform1f(u(blitP, "uHudRows"), hudTex != 0 ? d.hudRows : 0f);
+        if (d.badgeN > 0 && badgesTex == 0) badges();
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE3);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, badgesTex);
+        GLES30.glUniform1i(u(blitP, "uBadges"), 3);
+        GLES30.glUniform1i(u(blitP, "uBadgeN"), badgesTex != 0 ? d.badgeN : 0);
+        if (d.badgeN > 0) {
+            GLES30.glUniform4fv(u(blitP, "uBadge"), d.badgeN, d.badge, 0);
+            GLES30.glUniform2fv(u(blitP, "uBadgeOf"), d.badgeN, d.badgeOf, 0);
+        }
         GLES30.glUniform2f(u(blitP, "uFrameSize"), d.w, d.h);
         GLES30.glUniform2f(u(blitP, "uScreen"), screenW, screenH);
         GLES30.glUniform1f(u(blitP, "uScale"), screenScale);
@@ -375,6 +386,30 @@ final class Gfx {
         GLES30.glBindVertexArray(empty);
         GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, 3);
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+    }
+
+    /** The sheet of buttons and signs into a texture, smooth, with its smaller sizes for the far ones. */
+    private void badges() {
+        int[] src = Badges.sheet();
+        int side = Badges.CELLS * Badges.SIZE;
+        int[] dst = new int[src.length];
+        for (int i = 0; i < src.length; i++) {
+            int c = src[i];
+            dst[i] = (c & 0xFF00FF00) | ((c >> 16) & 0xFF) | ((c & 0xFF) << 16);
+        }
+        IntBuffer b = ByteBuffer.allocateDirect(dst.length * 4).order(ByteOrder.nativeOrder()).asIntBuffer();
+        b.put(dst).position(0);
+        int[] t = new int[1];
+        GLES30.glGenTextures(1, t, 0);
+        badgesTex = t[0];
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, badgesTex);
+        GLES30.glPixelStorei(GLES30.GL_UNPACK_ALIGNMENT, 4);
+        GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, side, side, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, b);
+        GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR_MIPMAP_LINEAR);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
     }
 
     /** The town's people into buffers, and their picture into a texture; nothing if the game has none. */

@@ -25,7 +25,14 @@
       hud.src = q.get('hud');
       await hud.decode();
     }
-    await render(document.getElementById('c'), frame, img, +(q.get('scale') || 4), q.get('shaders') || '../../assets/shaders/', hud, +(q.get('q') || 2));
+    // the sheet of buttons and signs, written once next to the frames
+    let badges = null;
+    if (frame.badgeN > 0) {
+      badges = new Image();
+      badges.src = q.get('frame').replace(/[^/]*$/, 'badges.png');
+      await badges.decode();
+    }
+    await render(document.getElementById('c'), frame, img, +(q.get('scale') || 4), q.get('shaders') || '../../assets/shaders/', hud, +(q.get('q') || 2), badges);
     window.DONE = 'ok';
   } catch (e) {
     window.DONE = 'error: ' + e.message;

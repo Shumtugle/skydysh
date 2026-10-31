@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.28";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.29";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -173,6 +173,20 @@ final class World {
             if (type == DOWN) dispatch.touch();
             return;
         }
+        // paused: a touch anywhere plays on, the finger the button's till it is lifted
+        if (paused) {
+            if (type == DOWN) {
+                paused = false;
+                buttonHeld = true;
+            }
+            return;
+        }
+        if (type == DOWN && onButton(x, y, pauseX(), pauseY())) {
+            paused = true;
+            buttonHeld = true;
+            runner.touch(UP, x, y);
+            return;
+        }
         // the button down by the lift on a roof: pressed, the finger is the button's till it is lifted
         if (type == DOWN && liftOffer && onLiftButton(x, y)) {
             liftPressed = true;
@@ -186,7 +200,11 @@ final class World {
         runner.touch(type, x, y);
     }
 
+    /** Paused: the game stands still, the buttons say how to play on. */
+    boolean paused;
+
     void update(float dt) {
+        if (paused && opening == null && dispatch == null) return;
         time += dt;
         if (opening != null) {
             opening.update(dt);
@@ -395,22 +413,99 @@ final class World {
         return Math.abs(x - liftButtonX()) < m && Math.abs(y - liftButtonY()) < m;
     }
 
-    /** The button: a lift's two doors under a green lamp with an arrow down in it, the frame breathing. */
-    private void liftFlat(Px f) {
-        if (!liftOffer) return;
-        int cx = liftButtonX(), cy = liftButtonY(), b = BUTTON;
-        int ink = 0xFF232A4A, face = 0xFFF4E8D2, door = 0xFF1D2730, lamp = 0xFF000000 | City.LIFT_LIGHT;
-        float pulse = 0.5f + 0.5f * (float) Math.sin(time * 5f);
-        int glow = Px.mix(0xFF5FB89A, lamp, pulse);
-        f.rect(cx - b - 2, cy - b - 2, cx + b + 2, cy + b + 2, ink);
-        f.rect(cx - b, cy - b, cx + b, cy + b, glow);
-        f.rect(cx - b + 3, cy - b + 3, cx + b - 3, cy + b - 3, face);
-        // the doors, a seam down the middle
-        f.rect(cx - 11, cy - 4, cx + 11, cy + b - 6, door);
-        f.rect(cx - 1, cy - 4, cx + 1, cy + b - 6, 0xFF9AA3A8);
-        // the lamp over them: an arrow down
-        f.rect(cx - 10, cy - b + 6, cx + 10, cy - 7, lamp);
-        for (int k = 0; k < 5; k++) f.rect(cx - 6 + k, cy - b + 9 + k, cx + 6 - k, cy - b + 10 + k, 0xFF1D3A32);
+    // the pause button, high on the left under the marks
+    static final int PAUSE_HALF = 15;
+
+    int pauseX() {
+        return 24;
+    }
+
+    int pauseY() {
+        return 68;
+    }
+
+    private boolean onButton(float x, float y, int cx, int cy) {
+        float m = PAUSE_HALF + 6;
+        return Math.abs(x - cx) < m && Math.abs(y - cy) < m;
+    }
+
+    /**
+     * The buttons over the frame: pause (or play, paused, and a large play in the middle), and
+     * the lift's by its hut on a roof, breathing, lit while pressed.
+     */
+    /** For the desktop stand: every button and sign there is, in a grid over the frame. */
+    boolean showAll;
+    int showFrom;
+
+    private void buttons(DrawList d) {
+        if (showAll) {
+            d.badgeN = 0;
+            for (int k = 0; k < DrawList.BADGE_MAX && k + showFrom < Badges.COUNT; k++)
+                d.badge(W * (0.2f + 0.3f * (k % 3)), h * 0.18f + (k / 3) * 70f, 28f, k + showFrom, 1f, 0f);
+            return;
+        }
+        if (paused) {
+            d.badge(W * 0.5f, h * 0.46f, 40f, Badges.PLAY, 0.95f, 0.15f + 0.15f * (float) Math.sin(time * 3f));
+            d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PLAY, 0.9f, 0f);
+            return;
+        }
+        d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PAUSE, 0.75f, 0f);
+        if (liftOffer) {
+            float breathe = 0.5f + 0.5f * (float) Math.sin(time * 4f);
+            d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.LIFT, 1f, liftPressed ? 1f : 0.12f * breathe);
+        }
+    }
+
+    // ---- signs at the ways in and up: over a lift's doors, a fire escape's foot, a ladder up a wall ----
+    private final float[] marks = new float[6 * 64], markAt = new float[3];
+    private final float[] signs = new float[5 * 16];
+    static final float SIGN_FAR = 34f;       // seen no farther off than this
+
+    /**
+     * The signs where she can go in or up near her, those that face the eye: the lift's over its
+     * doors and its hut's, a ladder's at the foot of a fire escape, an arrow up at a ladder from
+     * one roof to the next; only those on her level (the street, or the roofs about her), the
+     * nearest few, fading with distance, rocking a little.
+     */
+    private void signs(DrawList d) {
+        Runner r = runner;
+        int n = city.marks(r.x, r.z, SIGN_FAR, marks, 64), k = 0;
+        for (int i = 0; i < n && k < 16; i++) {
+            int o = i * 6;
+            float x = marks[o], y = marks[o + 1], z = marks[o + 2], nx = marks[o + 3], nz = marks[o + 4];
+            int kind = (int) marks[o + 5];
+            // on her level: a lift's or a fire escape's in the street while she is in the street; a
+            // ladder's up, or a hut's, while she is up there near its foot
+            float level = kind == City.MARK_STREET_LIFT || kind == City.MARK_ESCAPE ? City.WALK_TOP : marks[o + 1] - (kind == City.MARK_ROOF_LADDER ? 1.9f : City.HUT_HIGH + 0.8f);
+            if (Math.abs(r.y - level) > 2.6f) continue;
+            float ox = r.eyeX - x, oz = r.eyeZ - z;
+            if (ox * nx + oz * nz <= 0.2f) continue;
+            float dist = (float) Math.sqrt(ox * ox + oz * oz + (r.eyeY - y) * (r.eyeY - y));
+            float shown = Math.min(1f, (SIGN_FAR - dist) / 10f) * Math.min(1f, Math.max(0f, (dist - 2.5f) / 3f));
+            if (shown <= 0.02f) continue;
+            float bob = 0.08f * (float) Math.sin(time * 2.2f + x * 0.7f + z * 0.3f);
+            if (!d.project(x, y + bob, z, markAt) || markAt[2] < 1f) continue;
+            if (markAt[0] < -20f || markAt[0] > W + 20f || markAt[1] < -20f || markAt[1] > h + 20f) continue;
+            int s = k * 5;
+            signs[s] = markAt[0];
+            signs[s + 1] = markAt[1];
+            signs[s + 2] = Math.max(7f, Math.min(18f, W * 1.6f * 0.75f / markAt[2]));
+            signs[s + 3] = kind == City.MARK_ROOF_LADDER ? Badges.UP : kind == City.MARK_ESCAPE ? Badges.LADDER : Badges.LIFT;
+            signs[s + 4] = shown * 0.9f + dist * 1e-4f;
+            k++;
+        }
+        // the nearest first, as many as there is room for beside the buttons
+        for (int a = 0; a < k && d.badgeN < DrawList.BADGE_MAX - 3; a++) {
+            int best = -1;
+            float bs = -1f;
+            for (int b2 = 0; b2 < k; b2++) if (signs[b2 * 5 + 2] > bs) {
+                bs = signs[b2 * 5 + 2];
+                best = b2;
+            }
+            int s = best * 5;
+            d.badge(signs[s], signs[s + 1], signs[s + 2], (int) signs[s + 3], signs[s + 4], 0f);
+            signs[s + 2] = -2f;
+        }
     }
 
     // ---- ladders: up a fire escape from the street, or from one roof up onto a taller one ----
@@ -717,6 +812,7 @@ final class World {
         if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
         beatsFlat(f);
+        buttons(d);
         swapFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         meter(f);
@@ -797,7 +893,10 @@ final class World {
         else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
         beatsFlat(f);
-        liftFlat(f);
+        if (dispatch == null) {
+            signs(d);
+            buttons(d);
+        }
         swapFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         // the white the opening ended on, going off

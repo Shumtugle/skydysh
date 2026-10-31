@@ -654,6 +654,60 @@ final class City implements Ground {
         out[9] = cz + nz * door;
     }
 
+    // the kinds of sign at the ways in and up (see marks)
+    static final int MARK_STREET_LIFT = 0, MARK_HUT = 1, MARK_ESCAPE = 2, MARK_ROOF_LADDER = 3;
+
+    /**
+     * The places for signs at the ways in and up within reach of (x, z), at most max of them,
+     * six floats each into out: where the sign hangs (x, y, z), the way the wall it is on faces
+     * (x, z), and its kind: over a lift's front door, over the door of its hut on the roof, at
+     * the foot of a fire escape, at the foot of a ladder from one roof up to the next. How many.
+     */
+    int marks(float x, float z, float reach, float[] out, int max) {
+        int n = 0, ci = index(x), cj = index(z);
+        float[] l = new float[10];
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                if (square(i, j)) continue;
+                Cell c = cell(i, j);
+                for (int k = 0; k < c.houseN && n < max - 1; k++) {
+                    int o = k * Cell.HOUSE;
+                    if (c.houses[o + 7] != LIFT) continue;
+                    float nx = c.houses[o + 5], nz = c.houses[o + 6], top = c.houses[o + 4];
+                    float half = Math.abs(nx) * c.houses[o + 2] + Math.abs(nz) * c.houses[o + 3];
+                    float fx = c.houses[o] + nx * (half + 0.25f), fz = c.houses[o + 1] + nz * (half + 0.25f);
+                    if (near(fx, fz, x, z, reach)) n = mark(out, n, fx, WALK_TOP + 4.3f, fz, nx, nz, MARK_STREET_LIFT);
+                    lift(c.houses, o, l);
+                    float hx = l[8] + nx * 0.45f, hz = l[9] + nz * 0.45f;
+                    if (near(hx, hz, x, z, reach)) n = mark(out, n, hx, top + HUT_HIGH + 0.8f, hz, -nx, -nz, MARK_HUT);
+                }
+                for (int k = 0; k < c.ladderN && n < max; k++) {
+                    int o = k * Cell.LADDER;
+                    float lx = c.ladders[o], lz = c.ladders[o + 1], bottom = c.ladders[o + 2], nx = c.ladders[o + 4], nz = c.ladders[o + 5];
+                    float sx = lx + nx * 0.6f, sz = lz + nz * 0.6f;
+                    if (!near(sx, sz, x, z, reach)) continue;
+                    boolean street = bottom < 1f;
+                    n = mark(out, n, sx, bottom + (street ? 2.6f : 1.9f), sz, nx, nz, street ? MARK_ESCAPE : MARK_ROOF_LADDER);
+                }
+            }
+        return n;
+    }
+
+    private static boolean near(float ax, float az, float x, float z, float reach) {
+        return (ax - x) * (ax - x) + (az - z) * (az - z) < reach * reach;
+    }
+
+    private static int mark(float[] out, int n, float x, float y, float z, float nx, float nz, int kind) {
+        int o = n * 6;
+        out[o] = x;
+        out[o + 1] = y;
+        out[o + 2] = z;
+        out[o + 3] = nx;
+        out[o + 4] = nz;
+        out[o + 5] = kind;
+        return n + 1;
+    }
+
     /** How many houses cell (i, j) has (none, if it is a square). */
     int houses(int i, int j) {
         return square(i, j) ? 0 : cell(i, j).houseN;

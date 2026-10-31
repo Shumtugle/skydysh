@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.29
+
+- Buttons and signs over the frame, all of one make: round panes of dark glass, half
+  see-through, a rim lit turquoise at the top left going to pink at the bottom right, a soft
+  glow round it, a sign in white. Sixteen of them are drawn, in code, once, into a sheet: the
+  lift, arrows down, up, left and right, the mallet, a steering wheel, a jet pack, a throw, a
+  lift of a box, a map, a question, pause, play, a house, a ladder. The renderer lays any of
+  them over the frame at any size, smooth at the screen's own fineness, smaller ones from the
+  sheet's smaller copies.
+- Pause: a button high on the left. Paused, the game stands still, a large play button in the
+  middle; a touch anywhere plays on.
+- The lift's button on a roof is now one of these, breathing, lit while pressed.
+- Signs where she can go in or up: the lift's over each lift's front door and over the door of
+  its hut on the roof, a ladder's at the foot of each fire escape, an arrow up at each ladder
+  from one roof to the next. Only those on her level (the street, or the roofs about her) and
+  facing her eye show, the nearest few, fading with distance, rocking a little.
+- Stand: `badges FROM|off` (the sheet in a grid); scene `buttons.txt`. The sheet is written once
+  next to the frames as `badges.png`.
+
 ## 0.28
 
 - Her mallet is shorter: the handle half as long, the head as it was. It no longer trails at her

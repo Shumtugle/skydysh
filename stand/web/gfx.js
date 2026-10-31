@@ -131,7 +131,7 @@ function people(gl, p, frame, folk) {
   gl.bindVertexArray(null);
 }
 
-async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
+async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q, badgesImage) {
   const W = frame.w, H = frame.h;
   canvas.width = W * scale;
   canvas.height = H * scale;
@@ -373,6 +373,24 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
   gl.bindVertexArray(empty);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 
+  // the sheet of buttons and signs, premultiplied, smooth, with its smaller sizes
+  const badgesTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, badgesTex);
+  if (badgesImage) {
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, badgesImage);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  } else {
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  }
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
   // 4. onto the screen: the print scaled up, the layers and the aim over it
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.viewport(0, 0, canvas.width, canvas.height);
@@ -387,6 +405,15 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
   gl.bindTexture(gl.TEXTURE_2D, hudTex);
   gl.uniform1i(u(blitP, 'uHud'), 2);
   gl.uniform1f(u(blitP, 'uHudRows'), hudImage ? (frame.hudRows || 0) : 0);
+  gl.activeTexture(gl.TEXTURE3);
+  gl.bindTexture(gl.TEXTURE_2D, badgesTex);
+  gl.uniform1i(u(blitP, 'uBadges'), 3);
+  const bn = badgesImage ? (frame.badgeN || 0) : 0;
+  gl.uniform1i(u(blitP, 'uBadgeN'), bn);
+  if (bn > 0) {
+    gl.uniform4fv(u(blitP, 'uBadge'), new Float32Array(frame.badge.slice(0, bn * 4)));
+    gl.uniform2fv(u(blitP, 'uBadgeOf'), new Float32Array(frame.badgeOf.slice(0, bn * 2)));
+  }
   gl.uniform2f(u(blitP, 'uFrameSize'), W, H);
   gl.uniform2f(u(blitP, 'uScreen'), canvas.width, canvas.height);
   gl.uniform1f(u(blitP, 'uScale'), scale);

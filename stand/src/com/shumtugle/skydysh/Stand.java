@@ -536,6 +536,11 @@ public final class Stand implements World.Host {
             System.out.println(String.format("%7.2fs  a ladder at %.1f %.1f, from %.1f to %.1f m, facing %.0f %.0f", time,
                     best[0], best[1], best[2], best[3], best[4], best[5]));
             step();
+        } else if (c.equals("badges")) {
+            // badges FROM|off: the buttons and signs from so far in the sheet, a dozen in a grid; off, as in play
+            world.showAll = !p[1].equals("off");
+            if (world.showAll) world.showFrom = Integer.parseInt(p[1]);
+            step();
         } else if (c.equals("pet")) {
             // pet dog|cat|led METERS: her put so far out from the nearest stray dog (a led one, a
             // cat) toward the road, looking at it past her shoulder
@@ -893,6 +898,13 @@ public final class Stand implements World.Host {
         BufferedImage img = new BufferedImage(list.w, list.h, BufferedImage.TYPE_INT_ARGB);
         img.setRGB(0, 0, list.w, list.h, list.flat, 0, list.w);
         ImageIO.write(img, "png", new File(out, name + ".flat.png"));
+        if (list.badgeN > 0 && !new File(out, "badges.png").exists()) {
+            // the sheet of buttons and signs, once, as the phone sends it to the screen
+            int side = Badges.CELLS * Badges.SIZE;
+            BufferedImage bi = new BufferedImage(side, side, BufferedImage.TYPE_INT_ARGB);
+            bi.setRGB(0, 0, side, side, Badges.sheet(), 0, side);
+            ImageIO.write(bi, "png", new File(out, "badges.png"));
+        }
         // the fine layer over the top (the crest), when the frame has one: its pixels as they are, premultiplied
         if (list.hudRows > 0 && list.hud != null) {
             BufferedImage hi = new BufferedImage(list.hudW, list.hudH, BufferedImage.TYPE_INT_ARGB);

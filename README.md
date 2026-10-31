@@ -24,7 +24,9 @@ one ahead and not too far she throws at; with none, she throws it ahead and it c
 door of a house with a lift opens by itself when she comes to it or stands at it: inside is
 its hall, made from the house's seed, and in its side wall the lift, which is called, opens,
 takes her up and lets her out on the roof by itself. On the roof, by the hut's door, a button
-shows; pressed, the lift takes her down and the cabin opens onto the hall again. She stands on
+shows; pressed, the lift takes her down and the cabin opens onto the hall again. Signs of glass
+hang over the ways in and up near her: the lifts' doors, the fire escapes, the ladders from roof
+to roof. A button high on the left pauses the game. She stands on
 whatever she comes down on, the roofs too. When a mission is done the game keeps where it is.
 
 For now, to try: a hunt. Five golems on fire that should not be are loose in the town, each

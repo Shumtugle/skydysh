@@ -122,6 +122,25 @@ final class DrawList {
         fly[o + 4] = dark ? -w0 : w0; fly[o + 5] = w1; fly[o + 6] = a0; fly[o + 7] = a1;
     }
 
+    // the buttons and signs over the frame (see Badges): each its middle and half its size
+    // (frame pixels), how much it shows (0 to 1), which of the sheet's cells, how lit (0 to 1)
+    static final int BADGE_MAX = 12;
+    final float[] badge = new float[BADGE_MAX * 4], badgeOf = new float[BADGE_MAX * 2];
+    int badgeN;
+
+    /** A button or sign over the frame: at (x, y), so big, so much shown, lit so much. */
+    void badge(float x, float y, float half, int which, float shown, float lit) {
+        if (badgeN >= BADGE_MAX || shown <= 0.01f) return;
+        int o = badgeN * 4;
+        badge[o] = x;
+        badge[o + 1] = y;
+        badge[o + 2] = half;
+        badge[o + 3] = Math.min(1f, shown);
+        badgeOf[badgeN * 2] = which;
+        badgeOf[badgeN * 2 + 1] = lit;
+        badgeN++;
+    }
+
     void begin(int w, int h) {
         if (flat == null || flat.length != w * h) flat = new int[w * h];
         this.w = w;
@@ -130,6 +149,7 @@ final class DrawList {
         ballCount = 0;
         flyN = 0;
         trailN = 0;
+        badgeN = 0;
         folkN = 0;
         ring[3] = 0f;
         finger[2] = 0f;
@@ -324,6 +344,9 @@ final class DrawList {
         arr(s, "halo", halo);
         arr(s, "spot", spot);
         arr(s, "tube", tube);
+        s.append(",\"badgeN\":").append(badgeN);
+        arr(s, "badge", badge);
+        arr(s, "badgeOf", badgeOf);
         s.append(",\"trailN\":").append(trailN);
         arr(s, "trail", trail);
         s.append(",\"flyN\":").append(flyN).append(",\"fly\":[");

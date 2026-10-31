@@ -1,6 +1,7 @@
 #version 300 es
 // The printed scene onto the screen: scaled up from the size it was drawn at, the flat layer on
 // top, then the fine layer at the top of the frame (the crest, or the room over all of it), then
+// the buttons and signs (round panes from a sheet drawn once, laid over at any size), then
 // the aim, drawn smooth at the screen's own size from what the world says of it: the ring on the
 // building and its wind-up, the finger's own circle, the dotted flight. A faint grain over all.
 precision highp float;
@@ -12,6 +13,10 @@ uniform sampler2D uPrint;   // the scene as printed, at the size it was drawn
 uniform sampler2D uFlat;
 uniform sampler2D uHud;     // the fine layer over the top of the frame, premultiplied
 uniform float uHudRows;     // how many frame rows it covers from the top; none, 0
+uniform sampler2D uBadges;  // the sheet of buttons and signs, 4 by 4 cells, premultiplied
+uniform vec4 uBadge[12];    // each one shown: its middle and half its size (frame pixels), how much it shows
+uniform vec2 uBadgeOf[12];  // which cell of the sheet, how lit
+uniform int uBadgeN;
 uniform vec2 uFrameSize;    // the frame, in frame pixels
 uniform vec2 uScreen;       // the screen, in its own pixels
 uniform float uScale;       // screen pixels to a frame pixel
@@ -70,6 +75,21 @@ void main() {
             vec4 hd = texture(uHud, vec2(uv.x, gy / uHudRows));
             c = c * (1.0 - hd.a) + hd.rgb;
         }
+    }
+
+    // the buttons and signs, each its cell of the sheet laid over where it is
+    vec2 fpx = vec2(uv.x, 1.0 - uv.y) * uFrameSize;
+    for (int i = 0; i < 12; i++) {
+        if (i >= uBadgeN) break;
+        vec4 b = uBadge[i];
+        vec2 d = (fpx - b.xy) / b.z;
+        if (abs(d.x) >= 1.0 || abs(d.y) >= 1.0) continue;
+        float k = uBadgeOf[i].x;
+        vec2 cell = vec2(mod(k, 4.0), floor(k / 4.0));
+        vec4 t = texture(uBadges, (cell + d * 0.5 + 0.5) * 0.25);
+        t.rgb *= 1.0 + 0.6 * uBadgeOf[i].y;
+        t *= b.w;
+        c = c * (1.0 - t.a) + t.rgb;
     }
 
     // the aim, in screen pixels from the top left

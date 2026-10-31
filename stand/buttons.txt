@@ -1,0 +1,31 @@
+# The buttons and signs: the whole sheet in two grids; then in play, the pause button and the
+# signs over the lifts' doors and the fire escapes along the street; paused, the play button;
+# on a roof, by the lift's hut, its button and the sign over its door; the arrow up at a ladder
+# from one roof to the next; a fire escape's sign from the pavement.
+screen 1096 2560
+badges 0
+shot g0
+badges 12
+shot g1
+badges off
+wait 1
+shot b0
+tap 24 68
+wait 0.5
+shot b1
+tap 137 300
+wait 0.3
+mission 2
+onhut
+turn 3.1
+wait 0.6
+shot b2
+turn 3.1
+wait 0.3
+shot b3
+ladder roof 7
+wait 0.3
+shot b4
+ladder street 9
+wait 0.3
+shot b5
