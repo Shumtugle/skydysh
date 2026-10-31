@@ -2,8 +2,7 @@
 // The printed scene onto the screen: scaled up from the size it was drawn at, the flat layer on
 // top, then the fine layer at the top of the frame (the crest, or the room over all of it), then
 // the aim, drawn smooth at the screen's own size from what the world says of it: the ring on the
-// building and its wind-up, the finger's own circle, the dotted flight. The grain of the paper
-// over all of it.
+// building and its wind-up, the finger's own circle, the dotted flight. A faint grain over all.
 precision highp float;
 precision highp int;
 
@@ -106,9 +105,8 @@ void main() {
         c = mix(c, vec3(1.0, 0.98, 0.94), disc(p, r0, 1.3 * s));
     }
 
-    // the paper: a fine grain over everything, a little warm
-    float n = hash(floor(gl_FragCoord.xy * 0.75)) - 0.5;
-    c += n * 0.045;
-    c = mix(c, c * vec3(1.02, 1.0, 0.96), 0.5);
+    // a faint grain, so the gradients do not band
+    float n = hash(floor(gl_FragCoord.xy)) - 0.5;
+    c += n * 0.012;
     outColor = vec4(clamp(c, 0.0, 1.0), 1.0);
 }

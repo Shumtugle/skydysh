@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.13
+
+- A new look: the printed one is gone, no ink lines and no halftone. Faces are lit smoothly by
+  a low warm sun and the open sky, shadows soft at their edges; a soft bloom where the frame is
+  brightest; the shadows a touch cooler, the lights a touch warmer; the corners a little darker.
+- Worked surfaces: the plaster blotched and weathered, darker toward the street; a dressed stone
+  base under the shops; windows in pale frames with their bars, sills, slatted shutters in teal,
+  blue or coral, a balcony rail under some; asphalt grained and patched, darker in the tracks,
+  its paint worn thin; paving and promenade tiles each a shade of their own; the square's setts
+  laid in rings; planks with their grain; stone speckled; painted things a little uneven.
+- A soft sheen where the sun glances off painted metal and glass.
+- The sky smooth from teal to peach, soft streaks of cloud coral underneath, a warm haze round
+  the low sun and thick sea haze along the horizon.
+- The paper grain is gone; a faint grain stays only so the gradients do not band.
+- A new icon: the plank mallet in the round, lit warm, on teal going to peach, the plate it has
+  knocked off alight beside it.
+
 ## 0.12
 
 - The chase runs to its end again: a golem is to be run down until she is within reach of it.

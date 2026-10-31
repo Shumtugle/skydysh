@@ -1,7 +1,7 @@
 #version 300 es
-// The evening sky behind everything, painted flat: teal overhead going down through a pale
-// green to peach at the horizon, warmest where the street runs out into it; long thin bars of
-// cloud laid along the horizon, salmon, each with a teal line under it; and far off, now and
+// The evening sky behind everything: deep teal overhead going down through a pale green to
+// peach at the horizon, warmest where the street runs out into it and round the low sun; soft
+// streaks of cloud along the horizon, coral underneath, and the sea haze thick over it; and far off, now and
 // then, birds or a plane's white trail, laid out by the world as strokes. At night the stars
 // and the moon. The alpha is 0: the sky is nothing the ink outlines.
 precision highp float;
@@ -42,26 +42,28 @@ void main() {
     float dome = exp(-(az * az) * 6.0 - el * 14.0) * toStreet;
     c = mix(c, mix(uGlow, vec3(1.0, 0.93, 0.8), 0.35), dome * 0.55 * (1.0 - uNight));
 
-    // bars of cloud: rows at their heights, each a long bar with rounded ends, a teal line under
+    // the sun low over the sea: a warm haze round it
+    float toSun = max(dot(d, normalize(vec3(uSun.x, 0.0, uSun.z) + vec3(0.0, 0.08, 0.0))), 0.0);
+    c = mix(c, vec3(1.0, 0.82, 0.62), pow(toSun, 12.0) * 0.45 * (1.0 - uNight));
+    // soft streaks of cloud along the horizon, coral underneath where the sun catches them
     float drift = uTime * 0.004;
-    vec3 salmon = mix(vec3(0.925, 0.56, 0.47), uGlow, 0.25), teal = mix(vec3(0.43, 0.63, 0.67), uTop, 0.2);
+    vec3 coral = mix(vec3(0.96, 0.6, 0.5), uGlow, 0.3);
     float light = clamp(length(uHorizon) / 1.49, 0.2, 1.0);
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 6; i++) {
         float fi = float(i);
-        float row = 0.035 + fi * 0.034 + h(vec2(fi, 3.1)) * 0.02;
-        float th = 0.0065 + h(vec2(fi, 7.7)) * 0.006;
-        float len = 0.14 + h(vec2(fi, 1.3)) * 0.32;
+        float row = 0.05 + fi * 0.045 + h(vec2(fi, 3.1)) * 0.03;
+        float th = 0.012 + h(vec2(fi, 7.7)) * 0.01;
+        float len = 0.2 + h(vec2(fi, 1.3)) * 0.4;
         float at = (h(vec2(fi, 5.9)) - 0.5) * 2.4 + drift * (1.0 + fi * 0.2);
         float da = mod(az - at + PI, 2.0 * PI) - PI;
         float de = el - row;
-        // the bar: a stretched capsule
-        float q = length(vec2(max(abs(da) - len, 0.0) * 0.55, de));
-        if (q < th) c = salmon * light;
-        // the line under it, a little shorter, set off to one side
-        float da2 = da - len * 0.18;
-        float q2 = length(vec2(max(abs(da2) - len * 0.7, 0.0) * 0.55, de + th * 2.1));
-        if (q2 < th * 0.45) c = teal * light;
+        float q = length(vec2(max(abs(da) - len, 0.0) * 0.4, de)) / th;
+        float cover = (1.0 - smoothstep(0.3, 1.0, q)) * 0.75;
+        vec3 cl = mix(coral, vec3(1.0, 0.92, 0.84), smoothstep(-0.5, 0.5, de / th)) * light;
+        c = mix(c, cl, cover);
     }
+    // the sea haze thickening toward the horizon
+    c = mix(c, uHorizon * vec3(1.02, 0.98, 0.95), (1.0 - smoothstep(0.0, 0.12, el)) * 0.35);
 
     if (uNight > 0.0) {
         float dark = smoothstep(0.3, 0.75, uNight);

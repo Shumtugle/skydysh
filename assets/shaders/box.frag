@@ -1,8 +1,8 @@
 #version 300 es
-// The faces of the boxes, painted flat: each material keeps its own simple pattern, and the
-// light comes in two tones only, lit or in shade, with the sun's shadows cut clean; far things
-// go into the haze. The alpha carries what the face belongs to (its colour, its material, which
-// way it faces), so the frame can draw an ink line wherever one thing meets another.
+// The faces of the boxes: each material its own worked surface (plaster, asphalt, stone, wood,
+// tiles, painted metal), a little worn; lit by a low warm sun and the open sky, the sun's shadows
+// soft at their edges; far things go into the sea haze. The alpha carries what the face belongs
+// to (its colour, its material, which way it faces).
 // A material may carry a number of its own in its fraction (a house's seed, a flag).
 precision highp float;
 precision highp int;
@@ -48,6 +48,19 @@ float hash(vec3 p) {
     return fract((p.x + p.y) * p.z);
 }
 
+// smooth value noise, and a few octaves of it
+float vnoise(vec3 p) {
+    vec3 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash(i), b = hash(i + vec3(1.0, 0.0, 0.0)), c = hash(i + vec3(0.0, 1.0, 0.0)), d = hash(i + vec3(1.0, 1.0, 0.0));
+    float e = hash(i + vec3(0.0, 0.0, 1.0)), g = hash(i + vec3(1.0, 0.0, 1.0)), h = hash(i + vec3(0.0, 1.0, 1.0)), k = hash(i + vec3(1.0));
+    return mix(mix(mix(a, b, f.x), mix(c, d, f.x), f.y), mix(mix(e, g, f.x), mix(h, k, f.x), f.y), f.z);
+}
+
+float fbm(vec3 p) {
+    return vnoise(p) * 0.55 + vnoise(p * 2.03 + 7.1) * 0.3 + vnoise(p * 4.1 + 3.3) * 0.15;
+}
+
 // the integer hash the world uses too, so both agree on which window is shut
 int nz(int a, int b, int seed) {
     uint h = uint(a) * 374761393u + uint(b) * 668265263u + uint(seed) * 1442695041u;
@@ -80,16 +93,13 @@ float shadowAt(vec4 lp) {
     return s * 0.25;
 }
 
-// the two tones of the light: in shade, a cool share of the colour; lit, a warm one
+// the light on a face: the open sky from above, the warm ground from below, the low sun where
+// it reaches; a little light wraps round past the edge of the lit side
 vec3 toon(vec3 base, vec3 n, float light) {
-    float t = smoothstep(0.16, 0.26, light);
-    vec3 shade = 0.33 + uAmbSky * 1.05;
-    vec3 lit = 0.5 + uSunColor * 0.32;
-    lit = max(lit, shade);
-    vec3 k = mix(shade, lit, t);
-    // tops a little lighter than the sides, under the open sky
-    if (n.y > 0.6) k *= 1.04;
-    return base * k;
+    float up = n.y * 0.5 + 0.5;
+    vec3 amb = mix(vec3(0.46, 0.38, 0.34) + uAmbGround * 0.25, vec3(0.38, 0.45, 0.52) + uAmbSky * 0.33, up);
+    vec3 sun = (vec3(0.5, 0.41, 0.29) + uSunColor * 0.36) * light;
+    return base * (amb + sun);
 }
 
 vec3 haze(vec3 c, vec3 world) {
@@ -115,9 +125,11 @@ bool railHole(vec3 l, vec3 hf) {
 }
 
 /**
- * A street front in a seaside quarter at (u along the wall, v up), meters: shops at street
- * level, above them tall windows framed in ink with shutters beside them, floor after floor, a
- * cornice line at every floor. glass is set where the pane is (2 when lit at night).
+ * A street front in a seaside quarter at (u along the wall, v up), meters: a stone base with
+ * shops at street level, above them tall windows in pale frames with shutters beside them, here
+ * and there a balcony rail under one, floor after floor, a band of moulding at every floor; the
+ * plaster blotched and weathered, darker toward the street and streaked under the sills. glass
+ * is set where the pane is (2 when lit at night).
  */
 vec3 facade(float u, float v, vec3 base, int seed, out float glass) {
     glass = 0.0;
@@ -127,37 +139,56 @@ vec3 facade(float u, float v, vec3 base, int seed, out float glass) {
     int bay = int(floor(u / bw));
     float fu = u - float(bay) * bw;
     int h = nz(bay, storey, seed);
-    vec3 wall = base;
-    if (storey > 0 && fv < 0.12) return INK;                            // cornice line
-    if (storey > 0 && fv < 0.26) return base * 1.07;
+    vec3 sp = vec3(u, v, float(seed));
+    // the plaster: blotched, sun-faded, grimier near the street
+    float blot = fbm(sp * vec3(0.55, 0.55, 1.0));
+    vec3 wall = base * (0.9 + blot * 0.2);
+    wall *= 1.0 - 0.18 * (1.0 - smoothstep(0.0, 2.2, v));
+    vec3 frame = vec3(0.93, 0.9, 0.84), sill = vec3(0.86, 0.82, 0.76);
+    if (storey > 0 && fv < 0.1) return wall * 0.72;                     // the shadow under the moulding
+    if (storey > 0 && fv < 0.26) return mix(base, vec3(0.95, 0.92, 0.86), 0.45) * (0.95 + blot * 0.08);
     if (storey == 0) {
+        // the base: dressed stone, a darker course at the foot
+        vec3 stone = mix(base, vec3(0.78, 0.74, 0.68), 0.55) * (0.88 + vnoise(sp * vec3(1.6, 3.0, 1.0)) * 0.16);
+        if (fv < 0.35) stone *= 0.78;
         if (fu > 0.3 && fu < 2.6 && fv < 2.75) {
-            if (fu < 0.4 || fu > 2.5 || fv > 2.65 || fv < 0.1) return INK;
+            if (fu < 0.42 || fu > 2.48 || fv > 2.62 || fv < 0.14) return vec3(0.25, 0.22, 0.2);
             glass = 1.0;
             if (uNight > 0.0 && float(nz(bay, 77, seed)) < 255.0 * 0.7 * uNight) glass = 2.0;
             // a striped blind half down over some of the shop windows
-            if (nz(bay, 99, seed) > 150 && fv > 1.7) return mod(floor(fu * 3.0), 2.0) == 0.0 ? rgb(0xD9503A) : rgb(0xF3E9D6);
-            return rgb(0x2C3A55);
+            if (nz(bay, 99, seed) > 150 && fv > 1.7) {
+                vec3 st = mod(floor(fu * 3.0), 2.0) == 0.0 ? rgb(0xD9503A) : rgb(0xF3E9D6);
+                return st * (fv > 2.5 ? 0.85 : 1.0);
+            }
+            float refl = smoothstep(0.0, 2.6, fv);
+            return mix(rgb(0x1E2A36), rgb(0x5E8A96), refl * 0.7 + 0.1 * vnoise(vec3(fu * 3.0, fv * 0.5, 2.0)));
         }
-        return wall * 0.92;
+        return stone;
     }
     bool closed = (h & 7) == 0;
-    vec3 shutter = (h & 16) != 0 ? rgb(0x4E8C86) : rgb(0x5B86A0);
+    vec3 shutter = (h & 16) != 0 ? rgb(0x3E8C84) : (h & 32) != 0 ? rgb(0x5B86A0) : rgb(0xC9775E);
+    // a balcony rail across the bay under some windows
+    if ((h & 96) == 96 && fv > 0.3 && fv < 1.25 && fu > 0.55 && fu < 2.35) {
+        if (fv > 1.15 || fv < 0.38 || fract(fu / 0.12) < 0.28) return vec3(0.17, 0.17, 0.18);
+    }
+    if (fv > 0.3 && fv < 0.4 && fu > 0.88 && fu < 2.02) return sill;               // the sill
+    // a streak of grime run down from the sill
+    if (fv < 0.3 && fu > 1.05 && fu < 1.85) wall *= 0.9 + 0.1 * smoothstep(0.0, 0.3, fv);
     if (fv > 0.36 && fv < 2.7) {
         if (fu > 0.95 && fu < 1.95) {
-            if (fu < 1.03 || fu > 1.87 || fv < 0.44 || fv > 2.62) return INK;     // the frame, inked
-            if (closed) return shutter;
+            if (fu < 1.04 || fu > 1.86 || fv < 0.45 || fv > 2.61) return frame;   // the frame
+            if (closed) return shutter * (fract(fv / 0.12) < 0.2 ? 0.8 : 1.0);
             glass = 1.0;
             if (uNight > 0.0 && float(nz(bay, storey + 50, seed)) < 255.0 * 0.38 * uNight) glass = 2.0;
-            // the pane: the sky in it, a pale streak across its top corner
-            float s = fu - 1.03 + (2.62 - fv) * 0.6;
-            if (s > 0.12 && s < 0.26) return rgb(0x9ED0D4);
-            return rgb(0x3F7E8C);
+            if (abs(fu - 1.45) < 0.03 || abs(fv - 1.9) < 0.03) return frame;      // the bars of the window
+            // the pane: the sky in it, brighter toward the top, a soft sheen across
+            float s = fu - 1.04 + (2.61 - fv) * 0.6;
+            vec3 pane = mix(rgb(0x26414C), rgb(0x8CB8C0), smoothstep(0.45, 2.6, fv) * 0.75);
+            return pane + vec3(0.12) * (1.0 - smoothstep(0.0, 0.1, abs(s - 0.25)));
         }
         if ((fu > 0.62 && fu < 0.95) || (fu > 1.95 && fu < 2.28)) {
             if (closed) return wall;
-            if (fu < 0.67 || fu > 2.23) return INK;
-            return shutter;                                                    // open shutters
+            return shutter * (fract(fv / 0.12) < 0.2 ? 0.8 : 1.0) * (0.92 + blot * 0.1);   // open shutters, slatted
         }
     }
     return wall;
@@ -169,10 +200,17 @@ vec3 facade(float u, float v, vec3 base, int seed, out float glass) {
  */
 vec3 road(float across, float along, float hw, vec3 base) {
     float ax = abs(across);
-    vec3 c = base;
-    if (ax < 0.09 && mod(along, 6.0) < 2.6) c = rgb(0xF0E6D2);
-    if (ax > hw - 0.3 && ax < hw - 0.17) c = rgb(0xE9DCC2);
-    else if (ax >= hw - 0.17) c = base * 0.9;
+    vec2 w = vec2(along, across);
+    // asphalt: grained, patched, darker in the two tracks of each lane
+    float g = fbm(vec3(w * 0.35, 4.0));
+    vec3 c = base * vec3(1.18, 1.12, 1.06) * (0.86 + g * 0.26);
+    float track = exp(-pow((ax - hw * 0.37) / 0.45, 2.0)) + exp(-pow((ax - hw * 0.8) / 0.4, 2.0)) * 0.6;
+    c *= 1.0 - 0.07 * track;
+    if (vnoise(vec3(w * 0.08, 9.0)) > 0.72) c *= 0.9;
+    float paint = 0.82 + 0.18 * vnoise(vec3(w * 2.0, 1.0));      // the paint worn thin in places
+    if (ax < 0.09 && mod(along, 6.0) < 2.6) c = mix(c, rgb(0xEFE6D2), paint);
+    if (ax > hw - 0.3 && ax < hw - 0.17) c = mix(c, rgb(0xE9DCC2), paint);
+    else if (ax >= hw - 0.17) c = base * 0.82;
     return c;
 }
 
@@ -393,18 +431,26 @@ void main() {
         // the long way of the stretch is the way it runs; dashes counted from the world, so stretches meet in step
         base = vHalf.x > vHalf.z ? road(vLocal.z, vWorld.x, vHalf.z, vColor) : road(vLocal.x, vWorld.z, vHalf.x, vColor);
     } else if (mat == WOOD) {
-        // planks along the longer way, every other a shade apart
-        float across = ext.x > ext.y ? uv.y : uv.x;
-        k = mod(floor(across / 0.09), 2.0) == 0.0 ? 1.0 : 0.94;
+        // planks along the longer way, every other a shade apart, the grain running along them
+        bool longX = ext.x > ext.y;
+        float across = longX ? uv.y : uv.x, along = longX ? uv.x : uv.y;
+        float plank = floor(across / 0.09);
+        k = (mod(plank, 2.0) == 0.0 ? 1.0 : 0.93) * (0.9 + 0.16 * vnoise(vec3(along * 1.5, across * 30.0, plank)));
+    } else if (mat == STONE) {
+        k = 0.88 + 0.2 * fbm(vWorld * 3.0);
     } else if (mat == PAVING) {
-        vec2 f = fract(vWorld.xz / 0.9);
-        k = (f.x < 0.04 || f.y < 0.04) ? 0.88 : 1.0;
+        vec2 cell = floor(vWorld.xz / 0.9), f = fract(vWorld.xz / 0.9);
+        k = (f.x < 0.04 || f.y < 0.04) ? 0.8 : 0.9 + 0.12 * hash(vec3(cell, 3.0));
+        k *= 0.93 + 0.1 * vnoise(vec3(vWorld.xz * 0.6, 5.0));
     } else if (mat == PROMENADE) {
-        vec2 f = fract(vWorld.xz / 1.4);
-        k = (f.x < 0.03 || f.y < 0.03) ? 0.9 : 1.0;
+        vec2 cell = floor(vWorld.xz / 1.4), f = fract(vWorld.xz / 1.4);
+        k = (f.x < 0.03 || f.y < 0.03) ? 0.82 : 0.92 + 0.1 * hash(vec3(cell, 6.0));
     } else if (mat == SQUARE) {
+        // setts laid in rings round the middle of the square
         float rr = length(vec2(vLocal.x, vLocal.z * 1.18));
-        k = mod(rr, 1.2) < 0.06 ? 0.86 : 1.0;
+        float ring = floor(rr / 0.6), ang = atan(vLocal.z, vLocal.x) * (ring + 1.0) * 1.6;
+        bool joint = mod(rr, 0.6) < 0.05 || fract(ang) < 0.06;
+        k = joint ? 0.78 : 0.9 + 0.14 * hash(vec3(ring, floor(ang), 2.0));
     } else if (mat == LANE) {
         bool alongX = vHalf.x > vHalf.z;
         float across = alongX ? vLocal.z : vLocal.x, along = alongX ? vWorld.x : vWorld.z;
@@ -425,6 +471,9 @@ void main() {
         leaf = 1.0;
     } else if (mat == GLASS) {
         glass = 1.0;
+    } else if (mat == PLAIN || mat == GRAIN) {
+        // painted things: a faint unevenness, a little dulled by dust
+        k = 0.95 + 0.07 * vnoise(vWorld * 2.2);
     } else if (mat == SEA) {
         // the sea: deep teal near, paler far, a few bright dashes toward the sun
         float far = clamp(1.0 - v.y * 9.0, 0.0, 1.0);
@@ -443,9 +492,14 @@ void main() {
     vec3 c = toon(albedo, n, light);
     c += albedo * fireLight(vWorld, n);
     if (glass > 0.0 && glass < 1.5 && mat == GLASS) {
-        // glass: the sky's teal in it, a pale streak across
+        // glass: the sky in it, lighter toward the top, a soft sheen across
         float s = uv.x + uv.y * 0.7;
-        c = mix(rgb(0x3F7E8C), rgb(0x9ED0D4), step(0.7, fract(s * 1.3)));
+        c = mix(rgb(0x2E5664), rgb(0x9CC6CC), 0.35 + 0.35 * n.y + 0.25 * smoothstep(0.55, 0.9, fract(s * 1.3)));
+    }
+    // a soft sheen where the low sun glances off painted metal and glass
+    if (mat == PLAIN || mat == GLASS) {
+        float sp = pow(max(dot(n, normalize(uSun + v)), 0.0), mat == GLASS ? 60.0 : 24.0);
+        c += vec3(1.0, 0.86, 0.66) * sp * sh * (mat == GLASS ? 0.5 : 0.22);
     }
     if (gloss > 0.0) {
         // gold: a band of pale light across each face
