@@ -174,6 +174,11 @@ final class Runner {
         eyePitch = (float) Math.atan2(ty - eyeY, Math.sqrt(dx * dx + dz * dz));
     }
 
+    /** Where one of her bones is now, into out (x, y, z). */
+    void bone(String name, float[] out) {
+        Frida.place(name, x, y, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), out);
+    }
+
     void draw(DrawList d) {
         // the figure faces -z at no turn: turned half round, she runs the way she is headed
         Frida.draw(d, x, y, z, heading + (float) Math.PI, SIZE, motion(), motionTime());

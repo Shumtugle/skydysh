@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.8";     // shown on screen; keep in step with versionName
+    static final String VERSION = "0.9";     // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -40,6 +40,7 @@ final class World {
     final Runner runner = new Runner();
     final Mission mission = new Mission(0x60E3L);
     Chase chase;                             // the nearest of them still loose
+    final Toss toss = new Toss();            // her hammer
     final Cars cars = new Cars();
     final Walkers walkers = new Walkers();
     private int caughtSeen, struckSeen;
@@ -69,6 +70,7 @@ final class World {
         runner.update(dt, city, cars, walkers);
         int round = mission.round;
         mission.update(dt, runner, city, cars);
+        toss.update(dt, runner, mission, city);
         chase = mission.target(chase);
         cars.update(dt, runner, mission.golems);
         walkers.update(dt, runner, chase);
@@ -76,6 +78,7 @@ final class World {
         for (Chase g : mission.golems) struck += g.struck;
         if (round != mission.round) {
             caughtSeen = 0;
+            nextSlot = 0;
             struckSeen = struck;
         }
         if (caught != caughtSeen) {
@@ -101,7 +104,7 @@ final class World {
     }
 
     /**
-     * Over the frame: how many of the five are caught, in the corner; the clock in the other;
+     * Over the frame: the five plates, alight as each is knocked off, in the corner; the clock in the other;
      * how far off the nearest one still loose is, in meters, at the top; and for every one out
      * of sight a burning mark at the edge the way it is, smaller the further. When the last is
      * caught, the count and the time large in the middle.
@@ -110,7 +113,35 @@ final class World {
         int fire = 0xFFF0581C, ink = 0xFF232A4A, cream = 0xFFF4E8D2;
         int got = mission.caught();
         String c = got + "/" + Mission.FIVE;
-        shadowed(f, c, 8, 14, 2, fire, ink);
+        // the plates knocked off, alight in their slots once they have flown there; the empty slots dark
+        int slots = 0;
+        for (Chase g : mission.golems) {
+            if (g.done() && g.slot < 0) g.slot = nextSlot++;
+            if (g.slot >= 0 && g.sinceTaken() >= PLATE_POP + PLATE_FLY) slots |= 1 << g.slot;
+        }
+        for (int k = 0; k < Mission.FIVE; k++) {
+            boolean lit = (slots & (1 << k)) != 0;
+            plate(f, 13 + k * 13, 18, 5f, 1f, lit ? 0xFF5FE0C4 : 0xFF3A4660, lit ? 0xFF1E3A40 : 0xFF2A3350, ink);
+        }
+        // a plate just knocked off: up off the brow, then across the frame into its slot
+        for (Chase g : mission.golems) {
+            float t = g.sinceTaken();
+            if (t < 0f || t >= PLATE_POP + PLATE_FLY || g.slot < 0) continue;
+            g.plateAt(at3);
+            float sx = W * 0.5f, sy = h * 0.3f;
+            if (d.project(at3[0], at3[1], at3[2], at)) {
+                sx = at[0];
+                sy = at[1];
+            }
+            float u = Math.max(0f, (t - PLATE_POP) / PLATE_FLY);
+            float e = u * u * (3f - 2f * u);
+            float tx = 13 + g.slot * 13, ty = 18;
+            float px = sx + (tx - sx) * e, py = sy + (ty - sy) * e - (float) Math.sin(Math.PI * e) * 30f;
+            // big as it leaves her, small as it lands; turning over as it flies
+            float size = (t < PLATE_POP ? 4f + 14f * t / PLATE_POP : 18f) * (1f - e) + 5f * e;
+            float flip = Math.abs((float) Math.cos(g.plateSpin() * 0.5f)) * (1f - e) + e;
+            plate(f, px, py, size, Math.max(0.15f, flip), 0xFF8FF5DF, 0xFF1E3A40, ink);
+        }
         String clock = clock(mission.over() ? mission.doneAt : mission.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
         if (mission.over()) {
@@ -142,6 +173,20 @@ final class World {
             f.disc(px, py, rr, fire);
             f.disc(px + ex * rr * 0.33f, py + ey * rr * 0.33f, rr * 0.42f, 0xFFFFD45A);
         }
+    }
+
+    static final float PLATE_POP = 0.45f, PLATE_FLY = 0.75f;
+    private int nextSlot;
+    private final float[] at3 = new float[3];
+
+    /** A plate over the frame: so wide either side of (x, y), squeezed to flip across, its sign down the middle. */
+    private static void plate(Px f, float x, float y, float half, float flip, int face, int sign, int ink) {
+        float hw = half * flip, hh = half * 0.62f;
+        int x0 = Math.round(x - hw), x1 = Math.round(x + hw), y0 = Math.round(y - hh), y1 = Math.round(y + hh);
+        f.rect(x0 - 1, y0 - 1, x1 + 1, y1 + 1, ink);
+        f.rect(x0, y0, x1, y1, face);
+        int sw = Math.max(1, Math.round(hw * 0.2f));
+        f.rect(Math.round(x) - sw, y0 + 1, Math.round(x) + sw, y1 - 1, sign);
     }
 
     private static void shadowed(Px f, String s, int x, int y, int scale, int color, int shadow) {
@@ -178,6 +223,7 @@ final class World {
         cars.draw(d, r.eyeX, r.eyeZ, ex, ez);
         walkers.draw(d, r.eyeX, r.eyeZ, ex, ez);
         r.draw(d);
+        toss.draw(d, r);
         // the one nearest that still burns gives off light and glow; the others only burn
         Chase lit = null;
         for (Chase g : mission.golems) if (g.burning() && (lit == null || g.apart < lit.apart)) lit = g;

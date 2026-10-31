@@ -14,6 +14,8 @@ release, each seen on the stand before the phone.
   catch her.
 - 0.8 The first mission: five golems loose about the town, to be found, run down and caught;
   caught, each falls apart for good.
+- 0.9 Her hammer: thrown by itself at a golem near enough, it knocks the plate off its brow;
+  the plates won fill five slots over the frame. A new icon.
 
 ## Next
 

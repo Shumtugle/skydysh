@@ -48,6 +48,11 @@ final class Chase {
     private int[] bc;
     private int bn;
     private float floor;
+    // the plate off her brow: where, how fast, its turn when it came off and as it spins since
+    private final float[] plate = new float[3], plateV = new float[3], plateTurn = new float[9], plateAxis = new float[3];
+    private float plateSpin, plateRate;
+    /** Which of the five slots over the frame her plate goes to, once it is off; -1 until then. */
+    int slot = -1;
     private static final float[] turnNow = new float[9];
 
     /** The chase as it was first tried: she starts down the street ahead, already running. */
@@ -249,6 +254,27 @@ final class Chase {
      * runner's push in it, and turning as it goes.
      */
     private void crumble(Runner r, City city) {
+        crumble(r, city, x - r.x, z - r.z);
+    }
+
+    /**
+     * Struck on the head (by the runner's hammer) coming from the way (bx, bz): the plate is
+     * knocked off her brow and she is caught for good. False if she already was.
+     */
+    boolean take(Runner r, City city, float bx, float bz) {
+        if (state == STONE) return false;
+        caught++;
+        crumble(r, city, bx, bz);
+        return true;
+    }
+
+    /** Where her head is now, into out (x, y, z). */
+    void head(float[] out) {
+        Frida.place("Head", x, y + lift, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), out);
+        out[1] += 0.1f * SIZE;
+    }
+
+    private void crumble(Runner r, City city, float bx, float bz) {
         int most = Frida.blocks();
         if (bp == null || bp.length < most * 3) {
             bp = new float[most * 3];
@@ -261,7 +287,7 @@ final class Chase {
             bc = new int[most];
         }
         bn = Frida.capture(x, y + lift, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), bp, bt, bh, bc);
-        float px = x - r.x, pz = z - r.z, pl = Math.max(0.1f, (float) Math.sqrt(px * px + pz * pz));
+        float px = bx, pz = bz, pl = Math.max(0.1f, (float) Math.sqrt(px * px + pz * pz));
         px /= pl;
         pz /= pl;
         for (int i = 0; i < bn; i++) {
@@ -278,13 +304,36 @@ final class Chase {
             spin[i * 2] = 0f;
             spin[i * 2 + 1] = 2f + rnd.nextFloat() * 6f;
         }
+        // the plate flies high off her brow, the way the blow went, spinning
+        System.arraycopy(Frida.shemAt, 0, plate, 0, 3);
+        System.arraycopy(Frida.shemTurn, 0, plateTurn, 0, 9);
+        plateV[0] = px * 2.2f + (rnd.nextFloat() - 0.5f);
+        plateV[1] = 7.5f;
+        plateV[2] = pz * 2.2f + (rnd.nextFloat() - 0.5f);
+        plateAxis[0] = pz;
+        plateAxis[1] = 0.3f;
+        plateAxis[2] = -px;
+        float al = (float) Math.sqrt(pz * pz + 0.09f + px * px);
+        for (int k = 0; k < 3; k++) plateAxis[k] /= al;
+        plateSpin = 0f;
+        plateRate = 14f;
         floor = city.ground(x, z);
         speed = 0f;
         set(STONE);
     }
 
-    /** Her blocks falling, bouncing a little and coming to rest on the ground. */
+    /** Her blocks falling, bouncing a little and coming to rest on the ground; the plate too. */
     private void rubble(float dt) {
+        plateV[1] -= 14f * dt;
+        for (int k = 0; k < 3; k++) plate[k] += plateV[k] * dt;
+        plateSpin += plateRate * dt;
+        if (plate[1] < floor + 0.03f) {
+            plate[1] = floor + 0.03f;
+            if (plateV[1] < 0f) plateV[1] *= -0.3f;
+            plateV[0] *= 0.5f;
+            plateV[2] *= 0.5f;
+            plateRate *= 0.4f;
+        }
         for (int i = 0; i < bn; i++) {
             float h = Math.min(bh[i * 3], Math.min(bh[i * 3 + 1], bh[i * 3 + 2]));
             bv[i * 3 + 1] -= 20f * dt;
@@ -298,6 +347,21 @@ final class Chase {
                 spin[i * 2 + 1] *= 0.45f;
             }
         }
+    }
+
+    /** How long since she was caught for good, seconds; negative while she is loose. */
+    float sinceTaken() {
+        return state == STONE ? clock - stateAt : -1f;
+    }
+
+    /** Where the plate knocked off her brow is now, into out (x, y, z). */
+    void plateAt(float[] out) {
+        System.arraycopy(plate, 0, out, 0, 3);
+    }
+
+    /** How far the plate has spun since it came off, radians. */
+    float plateSpin() {
+        return plateSpin;
     }
 
     /** Whether she still burns: loose, or caught a moment ago and not yet gone out. */
@@ -393,18 +457,7 @@ final class Chase {
         float sink = Math.max(0f, k - LIES) / SINKS;
         for (int i = 0; i < bn; i++) {
             // the block's turn as it fell: about its own axis, so far
-            float a = spin[i * 2], c = (float) Math.cos(a), s = (float) Math.sin(a), t = 1f - c;
-            float ux = axis[i * 3], uy = axis[i * 3 + 1], uz = axis[i * 3 + 2];
-            float r00 = t * ux * ux + c, r01 = t * ux * uy - s * uz, r02 = t * ux * uz + s * uy;
-            float r10 = t * ux * uy + s * uz, r11 = t * uy * uy + c, r12 = t * uy * uz - s * ux;
-            float r20 = t * ux * uz - s * uy, r21 = t * uy * uz + s * ux, r22 = t * uz * uz + c;
-            int o = i * 9;
-            for (int col = 0; col < 3; col++) {
-                float m0 = bt[o + col], m1 = bt[o + 3 + col], m2 = bt[o + 6 + col];
-                turnNow[col] = r00 * m0 + r01 * m1 + r02 * m2;
-                turnNow[3 + col] = r10 * m0 + r11 * m1 + r12 * m2;
-                turnNow[6 + col] = r20 * m0 + r21 * m1 + r22 * m2;
-            }
+            spun(axis, i * 3, spin[i * 2], bt, i * 9, turnNow);
             float hy = bh[i * 3 + 1];
             float py = bp[i * 3 + 1] - sink * (hy * 2f + 0.3f);
             int own = bc[i];
@@ -416,11 +469,39 @@ final class Chase {
                 d.box(bp[i * 3], py, bp[i * 3 + 2], bh[i * 3], hy, bh[i * 3 + 2], turnNow, Frida.cold(own), DrawList.STONE);
             }
         }
+        // the plate, still alight, the sign cut in it, as long as her stones lie
+        spun(plateAxis, plateSpin, plateTurn, turnNow);
+        float py = plate[1] - sink * 0.2f;
+        float sz = SIZE;
+        d.box(plate[0], py, plate[2], 0.075f * sz, 0.045f * sz, 0.008f * sz, turnNow, Frida.SHEM, DrawList.GLOW);
+        float nx = turnNow[2], ny = turnNow[5], nz = turnNow[8];
+        for (int side = -1; side <= 1; side += 2)
+            d.box(plate[0] + nx * side * 0.01f * sz, py + ny * side * 0.01f * sz, plate[2] + nz * side * 0.01f * sz,
+                    0.015f * sz, 0.03f * sz, 0.003f * sz, turnNow, Frida.SIGN, DrawList.PLAIN);
         if (lit && cool > 0f) {
             d.fire[0] = x;
             d.fire[1] = y + 0.8f;
             d.fire[2] = z;
             d.fire[3] = 1.3f * cool;
+        }
+    }
+
+    private static void spun(float[] axis, float angle, float[] turn, float[] out) {
+        spun(axis, 0, angle, turn, 0, out);
+    }
+
+    /** A turn (rows, at to) turned further about a unit axis (at ao) by an angle, into out. */
+    static void spun(float[] axis, int ao, float angle, float[] turn, int to, float[] out) {
+        float c = (float) Math.cos(angle), s = (float) Math.sin(angle), t = 1f - c;
+        float ux = axis[ao], uy = axis[ao + 1], uz = axis[ao + 2];
+        float r00 = t * ux * ux + c, r01 = t * ux * uy - s * uz, r02 = t * ux * uz + s * uy;
+        float r10 = t * ux * uy + s * uz, r11 = t * uy * uy + c, r12 = t * uy * uz - s * ux;
+        float r20 = t * ux * uz - s * uy, r21 = t * uy * uz + s * ux, r22 = t * uz * uz + c;
+        for (int col = 0; col < 3; col++) {
+            float m0 = turn[to + col], m1 = turn[to + 3 + col], m2 = turn[to + 6 + col];
+            out[col] = r00 * m0 + r01 * m1 + r02 * m2;
+            out[3 + col] = r10 * m0 + r11 * m1 + r12 * m2;
+            out[6 + col] = r20 * m0 + r21 * m1 + r22 * m2;
         }
     }
 }

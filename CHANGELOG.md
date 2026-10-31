@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9
+
+- She carries a hammer in her right hand. When a golem still loose is within 18 meters, before
+  her and with no house between, the hammer flies at it by itself, end over end, finding its
+  head wherever it has run to, and comes back to her hand.
+- Every golem wears a plate on its brow, alight. The hammer knocks it off: the plate flies up
+  turning over, then across the frame into its slot in the corner, and the golem falls apart.
+  Running into one still pulls its plate off, as before.
+- In the corner, five slots for the five plates, dark until each is won, instead of a count.
+- A new icon in two layers, the evening street behind and the hammer with the plate it has
+  knocked loose in front, so the launcher shapes it as it likes and frames it in nothing.
+
 ## 0.8
 
 - The first mission, to try: five golems on fire that should not be are loose in the town,

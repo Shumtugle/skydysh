@@ -214,7 +214,9 @@ public final class Stand implements World.Host {
             int wi = 0, wj = 0;
             boolean routing = false;
             float stuck = 0f, dodge = 0f, firstAt = -1f, lastAt = -1f;
-            int nextAfter = 0;
+            int nextAfter = 0, nextThrow = 0;
+            float thrownAt = -1f;
+            int thrownSeen = world.toss.thrown;
             // chasebot ... once: the finger lifted as soon as one is caught
             boolean once = p.length > 4 && p[4].equals("once");
             boolean endShot = false;
@@ -295,7 +297,18 @@ public final class Stand implements World.Host {
                 int got = world.mission.caught();
                 if (world.chase.struck != was)
                     System.out.println(String.format("%7.2fs  struck by a car, %.0f m off", time, world.chase.apart));
-                if (got != caughtWas && once) {
+                if (world.toss.thrown != thrownSeen) {
+                    thrownSeen = world.toss.thrown;
+                    System.out.println(String.format("%7.2fs  hammer flies, %.1f m", time, world.chase.apart));
+                }
+                if (world.toss.thrown > 0 && thrownAt < 0f) {
+                    thrownAt = time;
+                    System.out.println(String.format("%7.2fs  hammer thrown, %.1f m off", time, world.chase.apart));
+                }
+                float[] afterThrow = {0.05f, 0.25f, 0.45f};
+                if (thrownAt >= 0f && nextThrow < afterThrow.length && time - thrownAt >= afterThrow[nextThrow])
+                    shot(prefix + "t" + nextThrow++);
+                if (got != caughtWas && once && nextThrow >= afterThrow.length) {
                     caughtWas = got;
                     break;
                 }
