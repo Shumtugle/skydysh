@@ -5,17 +5,21 @@ import java.util.Random;
 /**
  * The folder: dropped out of a helicopter's cabin, it lies somewhere on the roofs, and there is a
  * reward for it. The helicopter circles over where it fell. Golems are after it too: they look
- * about a while, then run for its house, climb the front and cross the roof to it. Whoever gets
- * to it first has it.
+ * about a while, then each runs for a house of its row, climbs the front and runs along the roofs
+ * to it. Whoever gets to it first has it.
  *
- * The house it lies on has no lift; houses near it have. Up in one of them, then across the
- * roofs: leaping, gliding. Taken, she carries it, and goes down to the street gliding.
+ * The house it lies on has no way up; a house of its row has, a lift or a fire escape. Up there,
+ * then along the roofs: up the ladders where the next roof stands higher, leaping, down onto
+ * the lower ones, gliding, beating the air to rise. Taken, she carries it, and goes down to the
+ * street gliding.
  */
 final class Folder {
     static final int RIVALS = 3, REWARD = 100000;
     // how far off it falls; how far off the rivals start; when each sets off, and how fast it runs
-    static final float NEAR = 170f, SPREAD = 50f, RIVALS_FROM = 260f;
-    static final float[] SETS_OFF = {60f, 80f, 100f};
+    static final float NEAR = 170f, SPREAD = 50f, RIVALS_FROM = 200f;
+    static final float[] SETS_OFF = {35f, 45f, 55f};
+    // she up on the roofs this near it: the rivals still looking about see her, and are off
+    static final float SEEN_UP = 8f, SEEN_NEAR = 80f;
     static final float RIVAL_RUN = 8.6f;
     // she has it when this near; the helicopter, over where it fell
     static final float TAKE = 1.4f, HELI_UP = 14f, HELI_ROUND = 30f, HELI_TURN = 0.22f;
@@ -40,22 +44,35 @@ final class Folder {
         return n % 2 == 0;
     }
 
-    /** Dropped a way off from (sx, sz) onto a house without a lift, in a block where others have one. */
+    // the folder's row, wall to wall: its houses (as the cell keeps them), in order along it, and which is the folder's
+    private final float[][] row = new float[12][8];
+    private int rowN, mine;
+
+    /**
+     * Dropped a way off from (sx, sz) onto a house without a way up, in a row of at least three
+     * where another house has one, in a block with a lift.
+     */
     void start(float sx, float sz, City city) {
+        int ci, cj;
         for (int tries = 0; ; tries++) {
             float a = rnd.nextFloat() * 6.2832f, d = NEAR + rnd.nextFloat() * SPREAD;
-            int ci = City.index(sx + (float) Math.sin(a) * d), cj = City.index(sz + (float) Math.cos(a) * d);
+            ci = City.index(sx + (float) Math.sin(a) * d);
+            cj = City.index(sz + (float) Math.cos(a) * d);
             int n = city.houses(ci, cj), lifts = 0, pick = -1, seen = 0;
             for (int k = 0; k < n; k++) {
                 city.house(ci, cj, k, h);
-                if (h[7] != 0f) lifts++;
-                // tall enough to want a lift, and without one
-                else if (h[4] > 17f && rnd.nextInt(++seen) == 0) pick = k;
+                if (h[7] == City.LIFT) lifts++;
+                // tall enough to want a way up, and without one
+                if (h[7] == 0f && h[4] > 17f && rnd.nextInt(++seen) == 0) pick = k;
             }
-            // a block with lifts near it first; failing that, any house at all
-            if (pick < 0 && tries > 200 && n > 0) pick = 0;
-            if (pick < 0 || lifts < 2 && tries < 40) continue;
+            // failing all else, after long enough: any house at all
+            if (pick < 0 && tries > 400 && n > 0) pick = 0;
+            if (pick < 0) continue;
             city.house(ci, cj, pick, h);
+            rowOf(city, ci, cj);
+            boolean up = false;
+            for (int k = 0; k < rowN; k++) if (k != mine && row[k][7] != 0f) up = true;
+            if ((rowN < 3 || !up || lifts == 0) && tries < 400) continue;
             if (lie(city)) break;
         }
         // the helicopter over it, a little off; the rivals far round it, each from its own way
@@ -63,18 +80,80 @@ final class Folder {
         heliZ = z + (rnd.nextFloat() - 0.5f) * 20f;
         heliA = rnd.nextFloat() * 6.2832f;
         float turned = rnd.nextFloat() * 6.2832f;
+        // the houses they climb: the farthest along the row from the folder's first, on both sides
+        int[] from = new int[rowN - 1];
+        int fn = 0;
+        for (int k = 0; k < rowN; k++) if (k != mine) from[fn++] = k;
+        for (int a = 1; a < fn; a++)
+            for (int b = a; b > 0 && Math.abs(from[b] - mine) > Math.abs(from[b - 1] - mine); b--) {
+                int t = from[b];
+                from[b] = from[b - 1];
+                from[b - 1] = t;
+            }
+        boolean alongX = Math.abs(frontZ) > 0.5f;
         for (int k = 0; k < RIVALS; k++) {
             float a = turned + k * 6.2832f / RIVALS;
-            int ci = Math.round((x + (float) Math.sin(a) * RIVALS_FROM) / City.CELL);
-            int cj = Math.round((z + (float) Math.cos(a) * RIVALS_FROM) / City.CELL);
-            Chase g = new Chase(rnd.nextLong(), ci, cj, rnd.nextInt(4));
-            // each climbs at its own place along the front
-            float along = (k - 1) * Math.min(2.4f, (Math.abs(frontX) * houseHZ + Math.abs(frontZ) * houseHX) * 0.6f);
-            float half = Math.abs(frontX) * houseHX + Math.abs(frontZ) * houseHZ;
-            float fx = houseX + frontX * half + frontZ * along, fz = houseZ + frontZ * half - frontX * along;
-            g.rival(fx, fz, frontX, frontZ, top, x, z, SETS_OFF[k] + rnd.nextFloat() * 4f, RIVAL_RUN + rnd.nextFloat() * 0.8f);
+            int gi = Math.round((x + (float) Math.sin(a) * RIVALS_FROM) / City.CELL);
+            int gj = Math.round((z + (float) Math.cos(a) * RIVALS_FROM) / City.CELL);
+            Chase g = new Chase(rnd.nextLong(), gi, gj, rnd.nextInt(4));
+            int s = fn > 0 ? from[k % fn] : mine;
+            float[] o = row[s];
+            float cu = alongX ? o[0] : o[1], hu = alongX ? o[2] : o[3];
+            float cv = alongX ? o[1] : o[0], hv = alongX ? o[3] : o[2];
+            float side = alongX ? frontZ : frontX;
+            // up its fire escape, if it has one; else up the front, each a little apart
+            float along = o[7] == City.ESCAPE ? cu - hu + 1.1f : cu + (k - 1) * Math.min(1.6f, hu * 0.4f);
+            float fv = cv + side * hv;
+            float fx = alongX ? along : fv, fz = alongX ? fv : along;
+            g.rival(fx, fz, frontX, frontZ, o[4], x, z, SETS_OFF[k] + rnd.nextFloat() * 4f, RIVAL_RUN + rnd.nextFloat() * 0.8f);
+            // then along the roofs: before each wall between it and the folder's house
+            int dir = Integer.signum(mine - s), n = Math.abs(mine - s);
+            float[] w = new float[n * 5];
+            for (int i = 0, at = s; i < n; i++, at += dir) {
+                float wall = (alongX ? row[at][0] : row[at][1]) + dir * (alongX ? row[at][2] : row[at][3]);
+                float stand = wall - dir * 0.6f;
+                w[i * 5] = alongX ? stand : cv;
+                w[i * 5 + 1] = alongX ? cv : stand;
+                w[i * 5 + 2] = row[at + dir][4];
+                w[i * 5 + 3] = alongX ? dir : 0f;
+                w[i * 5 + 4] = alongX ? 0f : dir;
+            }
+            g.over(w, n);
             rivals[k] = g;
         }
+    }
+
+    /** The row of the house in h, in cell (ci, cj): the houses wall to wall with it along its front. */
+    private void rowOf(City city, int ci, int cj) {
+        boolean alongX = Math.abs(h[6]) > 0.5f;
+        float cv = alongX ? h[1] : h[0];
+        float[] o = new float[8];
+        rowN = 0;
+        // every house of the cell facing the same way along the same line, in order along it
+        for (int k = 0, n = city.houses(ci, cj); k < n && rowN < row.length; k++) {
+            city.house(ci, cj, k, o);
+            if (o[5] != h[5] || o[6] != h[6] || Math.abs((alongX ? o[1] : o[0]) - cv) > 0.5f) continue;
+            int at = rowN++;
+            float u = alongX ? o[0] : o[1];
+            while (at > 0 && (alongX ? row[at - 1][0] : row[at - 1][1]) > u) {
+                System.arraycopy(row[at - 1], 0, row[at], 0, 8);
+                at--;
+            }
+            System.arraycopy(o, 0, row[at], 0, 8);
+        }
+        mine = 0;
+        for (int k = 0; k < rowN; k++) if (row[k][0] == h[0] && row[k][1] == h[1]) mine = k;
+        // only those wall to wall with it: cut where there is a gap
+        int lo = mine, hi = mine;
+        while (lo > 0 && gap(row[lo - 1], row[lo], alongX) < 0.3f) lo--;
+        while (hi < rowN - 1 && gap(row[hi], row[hi + 1], alongX) < 0.3f) hi++;
+        for (int k = lo; k <= hi; k++) System.arraycopy(row[k], 0, row[k - lo], 0, 8);
+        rowN = hi - lo + 1;
+        mine -= lo;
+    }
+
+    private static float gap(float[] a, float[] b, boolean alongX) {
+        return alongX ? (b[0] - b[2]) - (a[0] + a[2]) : (b[1] - b[3]) - (a[1] + a[3]);
     }
 
     /** It comes down somewhere on the house h: on the tiles, clear of the chimneys. */
@@ -103,6 +182,9 @@ final class Folder {
         if (doneAt < 0f) clock += dt;
         rotor += dt * 28f;
         heliA += dt * HELI_TURN;
+        float sx = r.x - x, sz = r.z - z;
+        if (r.y > SEEN_UP && sx * sx + sz * sz < SEEN_NEAR * SEEN_NEAR)
+            for (int k = 0; k < RIVALS; k++) rivals[k].hurry(1f + k * 2f);
         for (Chase g : rivals) g.update(dt, r, city, cars);
         if (doneAt >= 0f) return;
         for (Chase g : rivals)

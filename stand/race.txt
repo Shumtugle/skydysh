@@ -1,0 +1,17 @@
+# The race on the roofs: no one playing until the first rival is over the front of a house down
+# the row; then her put on the folder's roof, looking down the row at the rivals coming along it:
+# down off a roof's edge, up a ladder to the next roof, running at the folder.
+screen 1096 2560
+mission 2
+idle 84 0 x
+onfolder 1.6 -1.5708
+wait 0.2
+shot r0
+wait 2.5
+shot r1
+wait 2.5
+shot r2
+wait 2.5
+shot r3
+wait 2.5
+shot r4

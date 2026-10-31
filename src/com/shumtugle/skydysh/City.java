@@ -44,14 +44,35 @@ final class City implements Ground {
         int wallN;
         int used;
         // the houses: middle x, z, half sizes x, z, the top of the roof, the way the front faces
-        // (x, z), and whether a lift goes up from a door in the front to a hut on the roof
+        // (x, z), and the way up it from the street: none (0), a lift (LIFT), a fire escape (ESCAPE)
         static final int HOUSE = 8;
         float[] houses = new float[HOUSE * 16];
         int houseN;
+        // the ladders: where the ladder's foot is on its wall (x, z), the bottom and top of the
+        // climb, the way the wall faces (x, z): seven floats each
+        static final int LADDER = 6;
+        float[] ladders = new float[LADDER * 8];
+        int ladderN;
 
-        void house(float cx, float cz, float hx, float hz, float top, float nx, float nz, boolean lift) {
+        void ladder(float x, float z, float bottom, float top, float nx, float nz) {
+            if ((ladderN + 1) * LADDER > ladders.length) ladders = java.util.Arrays.copyOf(ladders, ladders.length * 2);
+            float[] l = {x, z, bottom, top, nx, nz};
+            System.arraycopy(l, 0, ladders, ladderN * LADDER, LADDER);
+            ladderN++;
+        }
+
+        /** The house standing at (x, z), as its place in houses, or -1. */
+        int houseAt(float x, float z) {
+            for (int k = 0; k < houseN; k++) {
+                int o = k * HOUSE;
+                if (Math.abs(x - houses[o]) < houses[o + 2] && Math.abs(z - houses[o + 1]) < houses[o + 3]) return o;
+            }
+            return -1;
+        }
+
+        void house(float cx, float cz, float hx, float hz, float top, float nx, float nz, float up) {
             if ((houseN + 1) * HOUSE > houses.length) houses = java.util.Arrays.copyOf(houses, houses.length * 2);
-            float[] h = {cx, cz, hx, hz, top, nx, nz, lift ? 1f : 0f};
+            float[] h = {cx, cz, hx, hz, top, nx, nz, up};
             System.arraycopy(h, 0, houses, houseN * HOUSE, HOUSE);
             houseN++;
         }
@@ -320,15 +341,110 @@ final class City implements Ground {
             // the taller houses, one in two, have a lift: a door in the front, a hut on the roof
             // (and no chimneys in its way)
             boolean lift = storeys >= 4 && ((seed >>> 3) & 1) == 0;
+            // of the rest, one in three has a fire escape up its front
+            boolean escape = !lift && ((seed >>> 5) % 3) == 0;
             roof(c, d, lift ? null : c.detail, cx, height, cz, hx, hz, seed);
             // the house, and its roof to stand on: the tiles, a step up in the middle
             c.wall(cx - hx, cz - hz, cx + hx, cz + hz, height + 0.5f);
             c.wall(cx - hx + 1.3f, cz - Math.max(0.4f, hz - 1.3f), cx + hx - 1.3f, cz + Math.max(0.4f, hz - 1.3f), height + 0.75f);
             float nx = alongX ? 0f : side, nz = alongX ? side : 0f;
             if (lift) lift(c, d, cu, fv, alongX, side, height, tint);
-            c.house(cx, cz, hx, hz, height + 0.5f, nx, nz, lift);
+            if (escape) escape(c, u + 1.1f, fv, alongX, side, height + 0.5f);
+            // ladders up from a lower roof next door, or down onto it from this one: on the
+            // taller house's wall, at the middle of the row, from the one roof to the other
+            for (int end = 0; end < 2; end++) {
+                float bu = end == 0 ? u : u + len, look = end == 0 ? -0.4f : 0.4f;
+                int o = c.houseAt(alongX ? bu + look : cv, alongX ? cv : bu + look);
+                if (o < 0) continue;
+                float other = c.houses[o + 4], mine = height + 0.5f;
+                if (Math.abs(other - mine) < 1f) continue;
+                // facing from the taller toward the lower
+                float dir = (mine > other ? 1f : -1f) * (end == 0 ? -1f : 1f);
+                float lx = alongX ? bu : cv, lz = alongX ? cv : bu;
+                ladder(c, lx, lz, Math.min(mine, other), Math.max(mine, other), alongX ? dir : 0f, alongX ? 0f : dir, false);
+            }
+            c.house(cx, cz, hx, hz, height + 0.5f, nx, nz, lift ? LIFT : escape ? ESCAPE : 0f);
             u += len;
         }
+    }
+
+    /** What a house has to go up it by: a lift, or a fire escape. */
+    static final float LIFT = 1f, ESCAPE = 2f;
+    // a ladder: half its width; how far apart its rungs; its iron
+    static final float LADDER_HALF = 0.32f, RUNG = 0.36f;
+    static final int IRON = 0x2C2B2E;
+
+    /**
+     * A ladder on a wall at (x, z) facing (nx, nz), from bottom to top: iron rails and rungs, a hoop
+     * over its top, and its place kept for climbing (see ladderNear); a fire escape has landings
+     * with railings every two storeys.
+     */
+    private static void ladder(Cell c, float x, float z, float bottom, float top, float nx, float nz, boolean escape) {
+        DrawList d = c.detail;
+        float h = top - bottom, my = (top + bottom) * 0.5f;
+        float ax = -nz, az = nx;                          // across the ladder
+        float ox = x + nx * 0.14f, oz = z + nz * 0.14f;   // off the wall
+        for (int e = -1; e <= 1; e += 2)
+            d.box(ox + ax * e * LADDER_HALF, my + 0.5f, oz + az * e * LADDER_HALF, Math.abs(nx) * 0.03f + Math.abs(nz) * 0.025f,
+                    h * 0.5f + 0.5f, Math.abs(nz) * 0.03f + Math.abs(nx) * 0.025f, null, IRON, DrawList.PLAIN);
+        for (float y = bottom + 0.3f; y < top + 0.9f; y += RUNG)
+            d.box(ox, y, oz, Math.abs(nz) * LADDER_HALF + 0.02f, 0.018f, Math.abs(nx) * LADDER_HALF + 0.02f, null, IRON, DrawList.PLAIN);
+        // the brackets holding it to the wall, now and then
+        for (float y = bottom + 1.5f; y < top; y += 3.3f)
+            for (int e = -1; e <= 1; e += 2)
+                d.box(x + nx * 0.07f + ax * e * LADDER_HALF, y, z + nz * 0.07f + az * e * LADDER_HALF, Math.abs(nx) * 0.07f + 0.02f, 0.02f,
+                        Math.abs(nz) * 0.07f + 0.02f, null, IRON, DrawList.PLAIN);
+        if (escape) {
+            // landings every two storeys, a railing round each
+            for (float y = bottom + 3.3f * 2f - 0.1f; y < top - 2f; y += 3.3f * 2f) {
+                float px = x + nx * 0.55f, pz = z + nz * 0.55f;
+                d.box(px, y, pz, Math.abs(nz) * 0.9f + Math.abs(nx) * 0.55f, 0.03f, Math.abs(nx) * 0.9f + Math.abs(nz) * 0.55f, null, IRON, DrawList.PLAIN);
+                d.box(x + nx * 1.08f, y + 0.5f, z + nz * 1.08f, Math.abs(nz) * 0.9f + 0.02f, 0.5f, Math.abs(nx) * 0.9f + 0.02f, null, IRON, DrawList.RAIL);
+                for (int e = -1; e <= 1; e += 2)
+                    d.box(px + ax * e * 0.9f, y + 0.5f, pz + az * e * 0.9f, Math.abs(nx) * 0.55f + 0.02f, 0.5f, Math.abs(nz) * 0.55f + 0.02f, null, IRON, DrawList.RAIL);
+            }
+        }
+        c.ladder(x, z, bottom, top, nx, nz);
+    }
+
+    /** A fire escape up the front at u along the row, the front at fv facing side, from the pavement to the roof's edge. */
+    private static void escape(Cell c, float u, float fv, boolean alongX, int side, float top) {
+        float x = alongX ? u : fv, z = alongX ? fv : u;
+        ladder(c, x, z, WALK_TOP, top, alongX ? 0f : side, alongX ? side : 0f, true);
+    }
+
+    /**
+     * The ladder whose foot is within reach of one at (x, z) with feet at feet (near its bottom):
+     * into out where to stand to climb it (x, z), its bottom and top, the way its wall faces (x,
+     * z); false if none is.
+     */
+    boolean ladderNear(float x, float z, float feet, float reach, float[] out) {
+        float best = reach * reach;
+        boolean found = false;
+        int ci = index(x), cj = index(z);
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                if (square(i, j)) continue;
+                Cell c = cell(i, j);
+                for (int k = 0; k < c.ladderN; k++) {
+                    int o = k * Cell.LADDER;
+                    float bottom = c.ladders[o + 2];
+                    if (feet < bottom - 0.6f || feet > bottom + 1.2f) continue;
+                    float fx = c.ladders[o] + c.ladders[o + 4] * 0.55f, fz = c.ladders[o + 1] + c.ladders[o + 5] * 0.55f;
+                    float dd = (fx - x) * (fx - x) + (fz - z) * (fz - z);
+                    if (dd < best) {
+                        best = dd;
+                        out[0] = fx;
+                        out[1] = fz;
+                        out[2] = bottom;
+                        out[3] = c.ladders[o + 3];
+                        out[4] = c.ladders[o + 4];
+                        out[5] = c.ladders[o + 5];
+                        found = true;
+                    }
+                }
+            }
+        return found;
     }
 
     // a lift's door: half its width, its height; its hut on the roof: in from the front, half sizes, height
@@ -388,7 +504,7 @@ final class City implements Ground {
                 Cell c = cell(i, j);
                 for (int k = 0; k < c.houseN; k++) {
                     int o = k * Cell.HOUSE;
-                    if (c.houses[o + 7] == 0f) continue;
+                    if (c.houses[o + 7] != LIFT) continue;
                     lift(c.houses, o, out);
                     float dx = out[0] - x, dz = out[1] - z;
                     if (dx * dx + dz * dz < reach * reach) return true;
@@ -414,7 +530,7 @@ final class City implements Ground {
                 Cell c = cell(i, j);
                 for (int k = 0; k < c.houseN; k++) {
                     int o = k * Cell.HOUSE;
-                    if (c.houses[o + 7] == 0f) continue;
+                    if (c.houses[o + 7] != LIFT) continue;
                     lift(c.houses, o, l);
                     boolean up = Math.abs(feet - l[5]) < 1.5f;
                     if (!up && feet > 1f) continue;

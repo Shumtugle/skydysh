@@ -15,7 +15,9 @@ and the street goes on. When it is done, back into her head for the report.
 
 A finger on the glass makes her run; moved sideways, it turns her by as much as it moved;
 flicked up, she jumps; flicked up again in the air, she goes on up, over a car or onto what
-stands a storey up; falling from high enough, she glides down by herself; flicked down, she
+stands a storey up; falling from high enough, she glides down by herself, and gliding, a flick
+up beats her arms and lifts her (four times a flight, the wings at the bottom of the glass
+telling how many are left); run at a ladder, she takes hold and climbs it; flicked down, she
 slides; lifted, she slows to a stop. A tap is the mallet's: a golem within reach she strikes,
 one ahead and not too far she throws at; with none, she throws it ahead and it comes back. The
 door of a house with a lift opens by itself when she comes to it or stands at it: inside is
@@ -33,9 +35,11 @@ as they are won, and the clock; at the edge of the frame, a burning mark
 the way each one out of sight is. When the last is caught, five more are let loose.
 
 Every other mission, the folder: dropped from a helicopter somewhere on the roofs, a reward for
-it, and golems after it too, climbing the fronts. Up by a lift in a house near it, then roof to
-roof, leaping and gliding; taken, she goes down to the street with it by herself. If a golem
-gets there first, the mission is played again.
+it, and golems after it too, each climbing a house of its row and running along the roofs.
+Up by a lift or a fire escape in a house of the row, then roof to roof: up the iron ladders
+where the next roof stands higher, down onto the lower ones, leaping, gliding, beating the air
+to rise; taken, she goes down to the street with it by herself. If a golem gets there first,
+the mission is played again.
 
 What is to come is in `PLAN.md`.
 

@@ -492,7 +492,7 @@ public final class Stand implements World.Host {
                 for (int i = ci - 2; i <= ci + 2; i++)
                     for (int k = 0; k < world.city.houses(i, j); k++) {
                         world.city.house(i, j, k, h);
-                        if (h[7] == 0f || !world.city.backClear(h, 0)) continue;
+                        if (h[7] != City.LIFT || !world.city.backClear(h, 0)) continue;
                         City.lift(h, 0, l);
                         float dd = (l[0] - r.x) * (l[0] - r.x) + (l[1] - r.z) * (l[1] - r.z);
                         if (dd < bd) {
@@ -510,11 +510,31 @@ public final class Stand implements World.Host {
                 rowT = p.length > 3 ? f(p[3]) : 0f;
                 rowYaw = p.length > 4 ? f(p[4]) : (float) Math.PI * 0.5f - 0.35f;
             }
+        } else if (c.equals("ladder")) {
+            // ladder street|roof METERS: her put so far back from the nearest ladder whose foot is
+            // on the pavement (a fire escape) or on a roof (up to the next roof), facing it
+            Runner r = world.runner;
+            float[] l = new float[6], best = null;
+            float bd = 1e9f;
+            boolean street = p[1].equals("street");
+            for (float feet = street ? City.WALK_TOP : 5f; feet <= (street ? City.WALK_TOP : 40f); feet += 0.5f)
+                if (world.city.ladderNear(r.x, r.z, feet, 120f, l)) {
+                    float dd = (l[0] - r.x) * (l[0] - r.x) + (l[1] - r.z) * (l[1] - r.z);
+                    if (dd < bd) {
+                        bd = dd;
+                        best = l.clone();
+                    }
+                }
+            float back = f(p[2]);
+            r.put(best[0] + best[4] * back, best[2], best[1] + best[5] * back, (float) Math.atan2(-best[4], -best[5]));
+            System.out.println(String.format("%7.2fs  a ladder at %.1f %.1f, from %.1f to %.1f m, facing %.0f %.0f", time,
+                    best[0], best[1], best[2], best[3], best[4], best[5]));
+            step();
         } else if (c.equals("where")) {
             // where: her place, the eye's, and whether she is indoors, told
             Runner r = world.runner;
             System.out.println(String.format("%7.2fs  her %.1f %.1f %.1f, eye %.1f %.1f %.1f, %s", time, r.x, r.y, r.z,
-                    r.eyeX, r.eyeY, r.eyeZ, world.indoors != null ? "indoors" : "out of doors"));
+                    r.eyeX, r.eyeY, r.eyeZ, world.indoors != null ? "indoors" : "out of doors") + (r.inAir() ? ", beats left " + r.beatsLeft() + (r.gliding ? ", gliding" : "") : ""));
         } else if (c.equals("onhut")) {
             // onhut: her on the roof of the lift's house nearest the folder, standing at its hut's door
             float[] l = doorNearFolder();
@@ -583,6 +603,11 @@ public final class Stand implements World.Host {
                         was[g] = fo.rivals[g].state;
                         System.out.println(String.format("%7.2fs  rival %d: state %d, %.0f m to go", time, g, was[g], fo.toGo(fo.rivals[g])));
                     }
+                if (System.getenv("FOLDERLOG") != null && i % 120 == 0)
+                    for (int g = 0; g < Folder.RIVALS; g++) {
+                        Chase r = fo.rivals[g];
+                        if (r.above()) System.out.println(String.format("%7.2fs  rival %d at %.1f %.1f %.1f speed %.1f", time, g, r.x, r.y, r.z, r.speed));
+                    }
                 if (every > 0f && i * DT >= next) {
                     shot(p[3] + (k++));
                     next += every;
@@ -606,7 +631,7 @@ public final class Stand implements World.Host {
         float bd = 1e9f;
         for (int k = 0; k < world.city.houses(ci, cj); k++) {
             world.city.house(ci, cj, k, h);
-            if (h[7] == 0f) continue;
+            if (h[7] != City.LIFT) continue;
             City.lift(h, 0, l);
             float dd = (l[4] - fo.x) * (l[4] - fo.x) + (l[6] - fo.z) * (l[6] - fo.z);
             if (dd < bd) {

@@ -35,7 +35,16 @@ final class Runner {
     float speed;
     boolean holding;
     // what she is doing, and since when (seconds of her own clock)
-    static final int RUN = 0, AIR = 1, SLIDE = 2;
+    static final int RUN = 0, AIR = 1, SLIDE = 2, CLIMB = 3;
+    // gliding, a flick up beats the arms: so fast up, so many times a flight
+    static final float BEAT = 7.5f;
+    static final int BEATS = 4;
+    // up a ladder so fast, meters a second
+    static final float CLIMB_UP = 3f;
+    private int beats;
+    private float beatAt = -9f;
+    // the ladder she is on: its top, the way its wall faces
+    private float climbTop, climbNX, climbNZ;
     int state = RUN;
     float stateAt, clock, stride;
     // the eye
@@ -111,7 +120,8 @@ final class Runner {
                 flicked = true;
                 flickY = fy;
             } else if (fy - flickY > FLICK_PX) {
-                slide();
+                if (state == CLIMB) letGo();
+                else slide();
                 flicked = true;
                 flickY = fy;
             }
@@ -122,8 +132,21 @@ final class Runner {
         }
     }
 
-    /** Up off the ground; in the air, once, on up as high as a leap from where she set off. */
+    /**
+     * Up off the ground; in the air, once, on up as high as a leap from where she set off;
+     * gliding, a beat of the arms that takes her up again (so many a flight).
+     */
     private void jump() {
+        if (state == CLIMB) return;
+        if (state == AIR && (gliding || boosted && clock - stateAt > 0.3f)) {
+            // gliding, or the jump and the leap from it already spent: the arms out, and a beat of them
+            if (beats >= BEATS) return;
+            gliding = true;
+            beats++;
+            beatAt = clock;
+            vy = Math.max(vy, BEAT);
+            return;
+        }
         if (state == AIR && clock - offEdgeAt < LATE) {
             // just off an edge: a jump all the same
             offEdgeAt = -9f;
@@ -177,6 +200,44 @@ final class Runner {
         placed = false;
         auto = false;
         tapped = false;
+        beats = 0;
+    }
+
+    /** Onto a ladder: standing at (fx, fz) before its wall (facing nx, nz), up from bottom to top. */
+    void climb(float fx, float fz, float bottom, float top, float nx, float nz) {
+        state = CLIMB;
+        stateAt = clock;
+        x = fx;
+        z = fz;
+        y = Math.max(y, bottom);
+        climbTop = top;
+        climbNX = nx;
+        climbNZ = nz;
+        heading = (float) Math.atan2(-nx, -nz);
+        speed = 0f;
+        vy = 0f;
+        gliding = false;
+    }
+
+    /** Off the ladder, back from it, falling. */
+    private void letGo() {
+        state = AIR;
+        stateAt = clock;
+        x += climbNX * 0.4f;
+        z += climbNZ * 0.4f;
+        vy = 0f;
+        boosted = true;
+        jumpFrom = y;
+    }
+
+    /** Whether she is on a ladder. */
+    boolean climbing() {
+        return state == CLIMB;
+    }
+
+    /** How many beats of the arms she has left in this flight. */
+    int beatsLeft() {
+        return BEATS - beats;
     }
 
     /** Whether her feet are off whatever is under her. */
@@ -224,6 +285,20 @@ final class Runner {
         if (held) {
             holding = false;
             speed = 0f;
+        }
+        if (state == CLIMB) {
+            // up the ladder, hand over hand; at the top, over the edge onto the roof
+            y += CLIMB_UP * dt;
+            if (y >= climbTop) {
+                y = climbTop;
+                x -= climbNX * 1.3f;
+                z -= climbNZ * 1.3f;
+                state = RUN;
+                stateAt = clock;
+                speed = 2f;
+            }
+            eye(dt, g);
+            return;
         }
         if (throwing() >= 0f) {
             // stopped short, turned to what she throws at
@@ -277,6 +352,7 @@ final class Runner {
                 state = RUN;
                 stateAt = clock;
                 gliding = false;
+                beats = 0;
                 // down by herself: done in the street; on a roof on the way, on to its edge
                 if (auto && y < 1f) {
                     auto = false;
@@ -339,6 +415,8 @@ final class Runner {
     }
 
     private String motion() {
+        if (state == CLIMB) return "climb";
+        if (state == AIR && clock - beatAt < 0.35f) return "leap_air";
         if (throwing() >= 0f && state != AIR) return "throw";
         if (state == AIR && gliding && vy < 0f) return "jump_air";
         if (state == AIR) return "leap_air";
@@ -350,6 +428,8 @@ final class Runner {
     }
 
     private float motionTime() {
+        if (state == CLIMB) return ((clock - stateAt) * 1.8f) % 0.62f;
+        if (state == AIR && clock - beatAt < 0.35f) return 0.3f + (clock - beatAt) * 1.4f;
         if (throwing() >= 0f && state != AIR) return throwing();
         if (state == AIR && gliding && vy < 0f) return GLIDE_POSE;
         if (state == AIR) return (clock - stateAt) * 1.4f + 0.3f;
@@ -380,6 +460,12 @@ final class Runner {
         float fx = (float) Math.sin(eyeYaw), fz = (float) Math.cos(eyeYaw);
         boolean in = room != null;
         float back = in ? BACK_IN : BACK, high = in ? HIGH_IN : HIGH;
+        // on a ladder: farther back and lower, looking up past her at the wall she climbs
+        boolean up = state == CLIMB;
+        if (up) {
+            back = CLIMB_BACK;
+            high = CLIMB_HIGH;
+        }
         // back from her along the way she looks, as far as nothing is in the way
         float r = in ? 0.3f : 0.4f, feet = y + high - 1f;
         float[] p = {x, z};
@@ -403,8 +489,8 @@ final class Runner {
         // instead, as far as a ceiling lets it
         float short_ = Math.max(0f, Math.min(back, NEAR_BACK) - free) / NEAR_BACK;
         eyeY = Math.min(y + high + short_ * RISE, g.ceiling(eyeX, eyeZ) - 0.25f);
-        float ahead = (in ? AHEAD_IN : AHEAD) * (1f - 0.85f * short_);
-        float tx = x + fx * ahead, tz = z + fz * ahead, ty = y + (in ? LOOK_UP_IN : LOOK_UP);
+        float ahead = up ? 0f : (in ? AHEAD_IN : AHEAD) * (1f - 0.85f * short_);
+        float tx = x + fx * ahead, tz = z + fz * ahead, ty = y + (in ? LOOK_UP_IN : LOOK_UP) + (up ? CLIMB_LOOK : 0f);
         float dx = tx - eyeX, dz = tz - eyeZ;
         eyePitch = (float) Math.atan2(ty - eyeY, Math.sqrt(dx * dx + dz * dz));
     }
@@ -412,6 +498,8 @@ final class Runner {
     private static final float EYE_STEP = 0.3f;
     // the eye with less room behind her than this rises so much higher at most (none at all)
     static final float NEAR_BACK = 2.4f, RISE = 4.5f;
+    // the eye with her on a ladder: so far back, so high over her feet, looking so much higher than it would
+    static final float CLIMB_BACK = 10f, CLIMB_HIGH = 1.2f, CLIMB_LOOK = 2f;
     private final float[] eyeTry = new float[2];
 
     /** Where one of her bones is now, into out (x, y, z). */

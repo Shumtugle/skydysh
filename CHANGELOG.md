@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.27
+
+- The folder's mission is a race over the roofs. The folder lies on a house of a row with no
+  way up of its own; another house of the same row has one, a lift or a fire escape, and the
+  block has a lift.
+- Fire escapes: one in three of the houses without a lift has an iron ladder up its front from
+  the pavement to the roof, with a landing and railing every two storeys.
+- Ladders between roofs: where two houses of a row stand a metre or more apart in height, an
+  iron ladder runs up the taller one's wall from the lower roof to the higher, at the middle of
+  the row.
+- Run at a ladder (or stand at its foot), and she takes hold and climbs by herself, over the
+  top and on across the roof; a flick down lets go. The eye stands farther back and lower
+  while she climbs, looking up past her at the wall.
+- Gliding, a flick up beats her arms: she rises. Four beats a flight, counted by wings at the
+  bottom of the glass; a whoosh with each. A flick in the air once the jump and the leap from
+  it are spent opens the arms and beats at once.
+- The rivals no longer all climb the folder's own front: each runs for a house down its row,
+  climbs it (up its fire escape when it has one), and runs along the roofs, climbing the wall
+  where the next roof stands higher and dropping off the edge onto a lower one, round the
+  chimneys. They set off sooner, from nearer, and climb and run quicker; if she is up on the
+  roofs near the folder while one still looks about, it is off at once.
+- The briefing tells of fire escapes and of beating up in a glide.
+- Stand: `ladder street|roof METERS`; scenes `climb.txt` (up a fire escape, up a ladder to the
+  next roof), `beats.txt` (gliding up off a roof's edge), `race.txt` (the rivals coming along
+  the row's roofs); `where` tells her beats left in the air.
+
 ## 0.26
 
 - The townspeople walk as people, not as the heroine: a walk of their own worked out on the

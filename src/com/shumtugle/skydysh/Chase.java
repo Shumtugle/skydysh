@@ -19,7 +19,8 @@ import java.util.Random;
  * her blocks lie cooling to stone on the road a while and sink into it.
  *
  * A rival (see Folder) is after something on a roof: she looks about a while, then runs the
- * streets the shortest way to the front of its house, climbs it, and crosses the roof to it.
+ * streets the shortest way to the front of a house in its row, climbs it, and runs along the
+ * roofs to it: up the wall where the next roof stands higher, down off the edge where it is lower.
  * She does not run from the runner; caught, she falls apart as one of a hunt does.
  */
 final class Chase {
@@ -34,7 +35,7 @@ final class Chase {
     static final int FLEE = 0, JOLTED = 1, LOOSE = 2, WAITING = 3, DOWN = 4, RISING = 5, STONE = 6;
     static final int SEEK = 7, CLIMB = 8, ROOF = 9;
     // a rival: how fast she climbs, and walks on the roof; how near the thing she is after is reached
-    static final float CLIMBS = 1.1f, ROOF_WALK = 3.6f, GOT = 0.9f, OFF_WALL = 0.5f;
+    static final float CLIMBS = 1.6f, ROOF_WALK = 5f, GOT = 0.9f, OFF_WALL = 0.5f, DROP = 22f;
     static final float SIDE = 5.4f;            // where one of a hunt waits: on the pavement
     static final float COOL = 1.4f, LIES = 7f, SINKS = 2f;
 
@@ -95,6 +96,28 @@ final class Chase {
     private int gi, gj, gdi, gdj;
     /** A rival that has got to what she was after. */
     boolean got;
+    // her way over the roofs: before each wall between two houses, where to stand (x, z), the
+    // next roof's top, the way across (x, z); how many, and the one she is going to; falling
+    private float[] way = new float[0];
+    private int ways, wayAt;
+    private float fallV;
+
+    /** A rival's way over the roofs, after the front she climbs: n points, as way keeps them. */
+    void over(float[] w, int n) {
+        way = w;
+        ways = n;
+        wayAt = 0;
+    }
+
+    /** A rival still looking about sets off within so many seconds. */
+    void hurry(float in) {
+        if (rival && state == WAITING) startIn = Math.min(startIn, in);
+    }
+
+    /** Whether she is on the roofs (or up a wall). */
+    boolean above() {
+        return state == CLIMB || state == ROOF;
+    }
 
     /**
      * Made a rival, after (px, pz) on the roof (top) of the house whose front faces (nx, nz),
@@ -184,23 +207,68 @@ final class Chase {
                 y = roofTop;
                 x -= wallX * (OFF_WALL + 0.9f);
                 z -= wallZ * (OFF_WALL + 0.9f);
+                fallV = 0f;
                 set(ROOF);
             }
             return;
         }
-        float ex = prizeX - x, ez = prizeZ - z, e = (float) Math.sqrt(ex * ex + ez * ez);
-        if (e < GOT) {
+        if (got) {
+            speed = 0f;
+            return;
+        }
+        boolean edge = wayAt < ways;
+        float tx = edge ? way[wayAt * 5] : prizeX, tz = edge ? way[wayAt * 5 + 1] : prizeZ;
+        float ex = tx - x, ez = tz - z, e = (float) Math.sqrt(ex * ex + ez * ez);
+        if (edge && e < 0.3f && fallV == 0f) {
+            // at a wall between two houses: up it, if the next roof stands higher; else on, and off the edge
+            float next = way[wayAt * 5 + 2], ax = way[wayAt * 5 + 3], az = way[wayAt * 5 + 4];
+            wayAt++;
+            if (next > y + City.STEP) {
+                footX = x;
+                footZ = z;
+                wallX = -ax;
+                wallZ = -az;
+                roofTop = next;
+                speed = 0f;
+                set(CLIMB);
+                return;
+            }
+            roofTop = next;
+            edge = wayAt < ways;
+            tx = edge ? way[wayAt * 5] : prizeX;
+            tz = edge ? way[wayAt * 5 + 1] : prizeZ;
+            ex = tx - x;
+            ez = tz - z;
+            e = (float) Math.sqrt(ex * ex + ez * ez);
+        }
+        if (!edge && e < GOT) {
             got = true;
             speed = 0f;
             return;
         }
         heading = (float) Math.atan2(ex, ez);
         speed = ROOF_WALK;
-        float[] p = {x + ex / e * speed * dt, z + ez / e * speed * dt};
+        float go = Math.min(e, speed * dt), ux = ex / e, uz = ez / e;
+        float[] p = {x + ux * go, z + uz * go};
         city.push(p, 0.4f, y);
+        // straight into a chimney: round it, along its side
+        for (int side = 1; side >= -1 && go > 1e-4f && (p[0] - x) * ux + (p[1] - z) * uz < go * 0.3f; side -= 2) {
+            p[0] = x - uz * side * go;
+            p[1] = z + ux * side * go;
+            city.push(p, 0.4f, y);
+        }
         x = p[0];
         z = p[1];
-        y = Math.max(roofTop, city.ground(x, z, y, City.STEP));
+        float g = city.ground(x, z, y, City.STEP);
+        if (g < y - 0.05f) {
+            // off the edge, down onto the roof below
+            fallV -= DROP * dt;
+            y = Math.max(g, y + fallV * dt);
+            if (y <= g) fallV = 0f;
+        } else {
+            y = g;
+            fallV = 0f;
+        }
         stride += dt * speed / 3.3f;
     }
 
@@ -544,7 +612,7 @@ final class Chase {
 
     private String motion() {
         if (state == CLIMB) return "climb";
-        if (state == ROOF) return got ? "crouch" : "jog";
+        if (state == ROOF) return got ? "crouch" : fallV < -1f ? "leap_air" : "jog";
         if (state == DOWN || state == RISING) return "fall";
         if (state == JOLTED) return "knockback";
         if (state == WAITING) return speed < 0.4f ? "arms_folded" : "walk";
@@ -556,8 +624,8 @@ final class Chase {
 
     private float motionTime() {
         // the climb is one reach up, over and over
-        if (state == CLIMB) return ((clock - stateAt) * 0.8f) % 0.62f;
-        if (state == ROOF) return got ? Math.min(0.9f, clock - stateAt) : stride * 0.9333f;
+        if (state == CLIMB) return ((clock - stateAt) * 1.15f) % 0.62f;
+        if (state == ROOF) return got ? Math.min(0.9f, clock - stateAt) : fallV < -1f ? 0.3f : stride * 0.9333f;
         if (state == DOWN) return FALL_FROM + (clock - stateAt) * FALL_PACE;
         // getting up: the fall played back
         if (state == RISING) return Math.max(0f, FALL_END - (clock - stateAt) * RISE_PACE);

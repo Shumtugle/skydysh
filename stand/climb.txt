@@ -1,0 +1,32 @@
+# Up a fire escape: her before one on the pavement, running at it; she takes hold and climbs
+# by herself, over the top onto the roof. Then a ladder from a lower roof up to the next one.
+screen 1096 2560
+ladder street 4
+wait 0.3
+shot c0
+down 137 600
+wait 1.0
+where
+shot c1
+wait 3
+where
+shot c2
+wait 6
+where
+shot c3
+up 137 600
+wait 1
+where
+shot c4
+ladder roof 3
+wait 0.3
+shot c5
+down 137 600
+wait 1.5
+where
+shot c6
+wait 3
+where
+up 137 600
+wait 0.5
+shot c7

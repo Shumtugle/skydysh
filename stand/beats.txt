@@ -1,0 +1,35 @@
+# Gliding up: off a roof's edge with a flick, gliding over the street, a flick up beats the arms
+# and she rises; four times a flight, the wings at the bottom telling how many are left.
+screen 1096 2560
+roof
+wait 0.3
+down 137 600
+wait 2.0
+move 137 590
+move 137 570
+move 137 545
+up 137 545
+wait 0.8
+where
+shot b0
+swipe 137 600
+wait 0.25
+shot b1
+where
+wait 0.3
+swipe 137 600
+wait 0.4
+where
+swipe 137 600
+wait 0.4
+where
+swipe 137 600
+wait 0.3
+shot b2
+where
+swipe 137 600
+wait 0.4
+where
+wait 1
+shot b3
+where

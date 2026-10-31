@@ -35,6 +35,8 @@ release, each seen on the stand before the phone.
 - 0.24 No back door into a wall; out of a door, straight back in; the eye rises at a wall.
 - 0.25 The townspeople as textured meshes on the heroine's skeleton; meshes in the renderer.
 - 0.26 The townspeople walk their own walk, worked out on the skeleton, each their own way.
+- 0.27 The folder's race on the roofs: fire escapes, ladders between roofs, beating up in a
+  glide; the rivals run the row's roofs.
 
 ## Next
 

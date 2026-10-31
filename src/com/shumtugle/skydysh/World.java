@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.26";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.27";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -43,6 +43,7 @@ final class World {
     final Mission mission = new Mission(0x60E3L);
     Chase chase;                             // the nearest of them still loose
     Folder folder;                           // the mission now, when it is the folder's
+    private int beatsWere = Runner.BEATS;    // her beats left, as the last frame left them
     private boolean again;                   // the folder's mission once more, the rivals were first
     final Toss toss = new Toss();            // her hammer
     private Opening opening;                 // what the game opens with, while it plays
@@ -219,8 +220,12 @@ final class World {
             return;
         }
         whiteOut = Math.max(0f, whiteOut - dt);
+        ladders(dt);
         doors(dt);
+        // a beat of the arms (a flick, between frames): the air through them
+        if (runner.beatsLeft() < beatsWere) host.sound(Synth.WHOOSH, 0.5f, 0.8f);
         if (swapT < 0f) runner.update(dt, city, cars, walkers);
+        beatsWere = runner.beatsLeft();
         int round = mission.round;
         if (folder != null) {
             boolean had = folder.hers;
@@ -310,7 +315,7 @@ final class World {
             else if (e == Indoors.OUT_BACK) go(TO_YARD);
             return;
         }
-        if (r.inAir() || r.throwing() >= 0f || (folder != null && folder.hers)) return;
+        if (r.inAir() || r.climbing() || r.throwing() >= 0f || (folder != null && folder.hers)) return;
         float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading);
         boolean near = city.liftNear(r.x, r.z, r.y, 3f, liftNow, houseNow);
         if (!near) {
@@ -336,6 +341,29 @@ final class World {
         System.arraycopy(houseNow, 0, houseOf, 0, 8);
         host.sound(Synth.DOOR, 0.45f, 1f);
         go(street ? TO_HALL : TO_CABIN);
+    }
+
+    // ---- ladders: up a fire escape from the street, or from one roof up onto a taller one ----
+    private final float[] ladderNow = new float[6];
+    private float ladderWait;
+    static final float LADDER_NEAR = 1.1f, LADDER_STAND = 0.35f;
+
+    /** At the foot of a ladder, coming at its wall or standing there a moment, she climbs it. */
+    private void ladders(float dt) {
+        Runner r = runner;
+        if (indoors != null || swapT >= 0f || r.inAir() || r.climbing() || r.throwing() >= 0f || (folder != null && folder.hers)) return;
+        float[] l = ladderNow;
+        if (!city.ladderNear(r.x, r.z, r.y, LADDER_NEAR, l)) {
+            ladderWait = 0f;
+            return;
+        }
+        float into = -((float) Math.sin(r.heading) * l[4] + (float) Math.cos(r.heading) * l[5]);
+        boolean at = into > 0.5f && r.speed > 0.5f;
+        ladderWait = r.speed < 1.2f ? ladderWait + dt : 0f;
+        if (!at && ladderWait < LADDER_STAND) return;
+        ladderWait = 0f;
+        r.climb(l[0], l[1], l[2], l[3], l[4], l[5]);
+        host.sound(Synth.CLANG, 0.25f, 1.5f);
     }
 
     private void go(int to) {
@@ -560,6 +588,22 @@ final class World {
             }
     }
 
+    /** Gliding: the beats of the arms left in this flight, as small wings low in the middle of the frame. */
+    private void beatsFlat(Px f) {
+        Runner r = runner;
+        if (!r.inAir() || !r.gliding) return;
+        int ink = 0xFF232A4A, lit = 0xFFF4E8D2, spent = 0xFF5A6070;
+        int n = Runner.BEATS, left = r.beatsLeft(), y = h - 34, x0 = W / 2 - (n * 14) / 2 + 2;
+        for (int k = 0; k < n; k++) {
+            int c = k < left ? lit : spent, x = x0 + k * 14;
+            // a wing: three feathers, longer to the outside
+            for (int s = 0; s < 3; s++) {
+                f.rect(x + s * 3 - 1, y - s - 1, x + s * 3 + 3, y + 3, ink);
+                f.rect(x + s * 3, y - s, x + s * 3 + 2, y + 2, c);
+            }
+        }
+    }
+
     static final float PLATE_POP = 0.45f, PLATE_FLY = 0.75f;
     private int nextSlot;
     private final float[] at3 = new float[3];
@@ -602,6 +646,7 @@ final class World {
         }
         if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
+        beatsFlat(f);
         swapFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         meter(f);
@@ -680,6 +725,7 @@ final class World {
         if (dispatch != null) dispatch.draw(d, f, h);
         else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
+        beatsFlat(f);
         swapFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         // the white the opening ended on, going off
