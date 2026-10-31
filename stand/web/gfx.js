@@ -283,6 +283,7 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q) {
   gl.uniform2f(u(blitP, 'uScreen'), canvas.width, canvas.height);
   gl.uniform1f(u(blitP, 'uScale'), scale);
   gl.uniform1f(u(blitP, 'uTime'), frame.time || 0);
+  gl.uniform4fv(u(blitP, 'uTube'), frame.tube || [0, 0, 0, 0]);
   gl.uniform4fv(u(blitP, 'uRing'), frame.ring || [0, 0, 0, 0]);
   gl.uniform3fv(u(blitP, 'uFinger'), frame.finger || [0, 0, 0]);
   const tn = frame.trailN || 0;

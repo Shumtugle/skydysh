@@ -1,0 +1,14 @@
+# the folder's mission with no one after it but the rivals: they get there, the report, the same mission again
+screen 1096 2560
+lang ru
+mission 2
+idle 200 0 i
+shot got
+wait 4
+shot report
+wait 6
+tap 100 300
+wait 1
+tap 100 300
+wait 6
+shot again

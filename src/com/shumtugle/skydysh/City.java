@@ -43,6 +43,18 @@ final class City {
         float[] walls = new float[80];
         int wallN;
         int used;
+        // the houses: middle x, z, half sizes x, z, the top of the roof, the way the front faces
+        // (x, z), and whether a lift goes up from a door in the front to a hut on the roof
+        static final int HOUSE = 8;
+        float[] houses = new float[HOUSE * 16];
+        int houseN;
+
+        void house(float cx, float cz, float hx, float hz, float top, float nx, float nz, boolean lift) {
+            if ((houseN + 1) * HOUSE > houses.length) houses = java.util.Arrays.copyOf(houses, houses.length * 2);
+            float[] h = {cx, cz, hx, hz, top, nx, nz, lift ? 1f : 0f};
+            System.arraycopy(h, 0, houses, houseN * HOUSE, HOUSE);
+            houseN++;
+        }
 
         void wall(float x0, float z0, float x1, float z1) {
             wall(x0, z0, x1, z1, TALL);
@@ -296,18 +308,161 @@ final class City {
             float fv = side < 0 ? v0 : v1;
             float kx = alongX ? cu : fv + side * 0.15f, kz = alongX ? fv + side * 0.15f : cu;
             d.box(kx, height - 0.2f, kz, alongX ? hu : 0.25f, 0.2f, alongX ? 0.25f : hu, null, Street.scale(tint, 1.05f), DrawList.PLAIN);
-            roof(c, d, c.detail, cx, height, cz, hx, hz, seed);
+            // the taller houses, one in two, have a lift: a door in the front, a hut on the roof
+            // (and no chimneys in its way)
+            boolean lift = storeys >= 4 && ((seed >>> 3) & 1) == 0;
+            roof(c, d, lift ? null : c.detail, cx, height, cz, hx, hz, seed);
             // the house, and its roof to stand on: the tiles, a step up in the middle
             c.wall(cx - hx, cz - hz, cx + hx, cz + hz, height + 0.5f);
             c.wall(cx - hx + 1.3f, cz - Math.max(0.4f, hz - 1.3f), cx + hx - 1.3f, cz + Math.max(0.4f, hz - 1.3f), height + 0.75f);
+            float nx = alongX ? 0f : side, nz = alongX ? side : 0f;
+            if (lift) lift(c, d, cu, fv, alongX, side, height, tint);
+            c.house(cx, cz, hx, hz, height + 0.5f, nx, nz, lift);
             u += len;
         }
     }
 
-    /** A roof of red tiles in two steps; its chimneys among the small things. */
+    // a lift's door: half its width, its height; its hut on the roof: in from the front, half sizes, height
+    static final float DOOR_HALF = 0.85f, DOOR_HIGH = 2.6f, HUT_IN = 2.6f, HUT_HALF = 1.3f, HUT_DEEP = 1.1f, HUT_HIGH = 2.2f;
+    static final int LIFT_LIGHT = 0x8FF0C8;
+
+    /**
+     * A lift: in the front at u (along the row), the front at v facing side, a door of dark glass
+     * in a stone frame, a green lamp over it, and the same at the back, on the yard; on the roof
+     * the hut it comes up into, its door facing in, away from the street.
+     */
+    private static void lift(Cell c, DrawList d, float u, float fv, boolean alongX, int side, float height, int tint) {
+        liftDoor(d, u, fv, alongX, side);
+        liftDoor(d, u, fv - side * DEPTH, alongX, -side);
+        // the hut on the roof, and its door on the side away from the street
+        float top = height + 0.5f, hv = fv - side * (HUT_IN + HUT_DEEP);
+        boxUV(d, u, top + HUT_HIGH * 0.5f, hv, HUT_HALF, HUT_HIGH * 0.5f, HUT_DEEP, alongX, Street.scale(tint, 0.95f), DrawList.PLAIN);
+        boxUV(d, u, top + HUT_HIGH + 0.08f, hv, HUT_HALF + 0.12f, 0.08f, HUT_DEEP + 0.12f, alongX, 0xA8553A, DrawList.GRAIN);
+        float back = hv - side * (HUT_DEEP + 0.03f);
+        boxUV(d, u, top + 1.05f, back, 0.55f, 1.05f, 0.04f, alongX, 0x1D2730, DrawList.PLAIN);
+        boxUV(d, u, top + 1.95f, back - side * 0.02f, 0.18f, 0.1f, 0.04f, alongX, LIFT_LIGHT, DrawList.GLOW);
+        float x0 = alongX ? u - HUT_HALF : hv - HUT_DEEP, z0 = alongX ? hv - HUT_DEEP : u - HUT_HALF;
+        c.wall(x0, z0, x0 + 2f * (alongX ? HUT_HALF : HUT_DEEP), z0 + 2f * (alongX ? HUT_DEEP : HUT_HALF), top + HUT_HIGH + 0.16f);
+    }
+
+    /** A lift's door in a wall at v facing side: dark glass in a stone frame, a green lamp over it. */
+    private static void liftDoor(DrawList d, float u, float fv, boolean alongX, int side) {
+        float out = fv + side * 0.06f;
+        boxUV(d, u, DOOR_HIGH * 0.5f + WALK_TOP, out, DOOR_HALF + 0.22f, DOOR_HIGH * 0.5f + 0.15f, 0.07f, alongX, 0xD8CDB8, DrawList.STONE);
+        boxUV(d, u, DOOR_HIGH * 0.5f + WALK_TOP, out + side * 0.03f, DOOR_HALF, DOOR_HIGH * 0.5f, 0.06f, alongX, 0x1D2730, DrawList.PLAIN);
+        boxUV(d, u, DOOR_HIGH * 0.5f + WALK_TOP, out + side * 0.05f, 0.03f, DOOR_HIGH * 0.5f, 0.05f, alongX, 0x9AA3A8, DrawList.PLAIN);
+        // the lamp: a pale green pane with an arrow up in it
+        float ly = WALK_TOP + DOOR_HIGH + 0.75f;
+        boxUV(d, u, ly, out + side * 0.04f, 0.36f, 0.3f, 0.05f, alongX, LIFT_LIGHT, DrawList.GLOW);
+        boxUV(d, u, ly - 0.08f, out + side * 0.09f, 0.04f, 0.13f, 0.01f, alongX, 0x1D3A32, DrawList.PLAIN);
+        for (int k = 0; k < 3; k++)
+            boxUV(d, u, ly + 0.17f - k * 0.06f, out + side * 0.09f, 0.04f + k * 0.055f, 0.03f, 0.01f, alongX, 0x1D3A32, DrawList.PLAIN);
+    }
+
+    /** A box placed by u along a row and v across it, so wide, high and deep. */
+    private static void boxUV(DrawList d, float u, float y, float v, float hu, float hy, float hv, boolean alongX, int color, int material) {
+        if (alongX) d.box(u, y, v, hu, hy, hv, null, color, material);
+        else d.box(v, y, u, hv, hy, hu, null, color, material);
+    }
+
+    /**
+     * A lift whose door is within reach of (x, z): into out the place before its door on the
+     * pavement (x, z), the way its door faces (x, z), where she is when she has come out of its
+     * hut on the roof, a few steps on (x, y, z), the way she faces there, as a heading, and the
+     * place before the hut's door (x, z); false if none is so near.
+     */
+    boolean liftAt(float x, float z, float reach, float[] out) {
+        int ci = index(x), cj = index(z);
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                if (square(i, j)) continue;
+                Cell c = cell(i, j);
+                for (int k = 0; k < c.houseN; k++) {
+                    int o = k * Cell.HOUSE;
+                    if (c.houses[o + 7] == 0f) continue;
+                    lift(c.houses, o, out);
+                    float dx = out[0] - x, dz = out[1] - z;
+                    if (dx * dx + dz * dz < reach * reach) return true;
+                }
+            }
+        return false;
+    }
+
+    /**
+     * The nearest lift to one at (x, z) with feet at feet: in the street, by its door in the
+     * front or at the back; on a roof, by its hut's door; as liftAt() tells it (the door being the
+     * one near), false if none is within reach.
+     */
+    boolean liftNear(float x, float z, float feet, float reach, float[] out) {
+        float best = reach * reach;
+        boolean found = false;
+        float[] l = new float[10];
+        int ci = index(x), cj = index(z);
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                if (square(i, j)) continue;
+                Cell c = cell(i, j);
+                for (int k = 0; k < c.houseN; k++) {
+                    int o = k * Cell.HOUSE;
+                    if (c.houses[o + 7] == 0f) continue;
+                    lift(c.houses, o, l);
+                    boolean up = Math.abs(feet - l[5]) < 1.5f;
+                    if (!up && feet > 1f) continue;
+                    // in the street, its door in the front or the one at the back, on the yard
+                    for (int back = 0; back < (up ? 1 : 2); back++) {
+                        if (back == 1) {
+                            float half = Math.abs(l[2]) * c.houses[o + 2] + Math.abs(l[3]) * c.houses[o + 3];
+                            l[0] -= l[2] * (2f * half + 1.4f);
+                            l[1] -= l[3] * (2f * half + 1.4f);
+                            l[2] = -l[2];
+                            l[3] = -l[3];
+                        }
+                        float dx = (up ? l[8] : l[0]) - x, dz = (up ? l[9] : l[1]) - z, dd = dx * dx + dz * dz;
+                        if (dd < best) {
+                            best = dd;
+                            System.arraycopy(l, 0, out, 0, 10);
+                            found = true;
+                        }
+                    }
+                }
+            }
+        return found;
+    }
+
+    /** The lift of the house at o: as liftAt() tells it. */
+    static void lift(float[] h, int o, float[] out) {
+        float cx = h[o], cz = h[o + 1], hx = h[o + 2], hz = h[o + 3], top = h[o + 4], nx = h[o + 5], nz = h[o + 6];
+        float half = Math.abs(nx) * hx + Math.abs(nz) * hz;
+        // the front's middle, and a little before it
+        out[0] = cx + nx * (half + 0.7f);
+        out[1] = cz + nz * (half + 0.7f);
+        out[2] = nx;
+        out[3] = nz;
+        // out of the hut's door and a few steps on into the roof, clear of the hut for the eye
+        float door = half - HUT_IN - 2f * HUT_DEEP - 0.7f, in = door - 3.3f;
+        out[4] = cx + nx * in;
+        out[5] = top;
+        out[6] = cz + nz * in;
+        out[7] = (float) Math.atan2(-nx, -nz);
+        out[8] = cx + nx * door;
+        out[9] = cz + nz * door;
+    }
+
+    /** How many houses cell (i, j) has (none, if it is a square). */
+    int houses(int i, int j) {
+        return square(i, j) ? 0 : cell(i, j).houseN;
+    }
+
+    /** House k of cell (i, j), into out as the cell keeps it (see Cell.house). */
+    void house(int i, int j, int k, float[] out) {
+        System.arraycopy(cell(i, j).houses, k * Cell.HOUSE, out, 0, Cell.HOUSE);
+    }
+
+    /** A roof of red tiles in two steps; its chimneys among the small things (none, if small is null). */
     private static void roof(Cell cell, DrawList d, DrawList small, float x, float top, float z, float hx, float hz, int seed) {
         d.box(x, top + 0.25f, z, hx - 0.3f, 0.25f, hz - 0.3f, null, 0xC4673E, DrawList.GRAIN);
         d.box(x, top + 0.6f, z, hx - 1.3f, 0.15f, Math.max(0.4f, hz - 1.3f), null, 0xA8553A, DrawList.GRAIN);
+        if (small == null) return;
         int h = seed * 0x2545F491;
         for (int c = 0; c <= ((h >>> 7) & 1); c++) {
             float cx = x + ((((h >>> (9 + c * 5)) & 31) / 31f) - 0.5f) * hx;

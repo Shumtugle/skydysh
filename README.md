@@ -26,6 +26,11 @@ At the top, how far off the nearest still loose is, in meters; in the corners, t
 as they are won, and the clock; at the edge of the frame, a burning mark
 the way each one out of sight is. When the last is caught, five more are let loose.
 
+Every other mission, the folder: dropped from a helicopter somewhere on the roofs, a reward for
+it, and golems after it too, climbing the fronts. Up by a lift in a house near it, then roof to
+roof, leaping and gliding; taken, she goes down to the street with it by herself. If a golem
+gets there first, the mission is played again.
+
 What is to come is in `PLAN.md`.
 
 ## How it is made

@@ -335,6 +335,7 @@ final class Gfx {
         GLES30.glUniform2f(u(blitP, "uScreen"), screenW, screenH);
         GLES30.glUniform1f(u(blitP, "uScale"), screenScale);
         GLES30.glUniform1f(u(blitP, "uTime"), d.time);
+        GLES30.glUniform4fv(u(blitP, "uTube"), 1, d.tube, 0);
         GLES30.glUniform4fv(u(blitP, "uRing"), 1, d.ring, 0);
         GLES30.glUniform3fv(u(blitP, "uFinger"), 1, d.finger, 0);
         GLES30.glUniform1i(u(blitP, "uTrailN"), d.trailN);

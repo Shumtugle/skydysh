@@ -17,6 +17,10 @@ import java.util.Random;
  *
  * One of a hunt (see Mission) is caught for good: she goes out on the spot, falls apart, and
  * her blocks lie cooling to stone on the road a while and sink into it.
+ *
+ * A rival (see Folder) is after something on a roof: she looks about a while, then runs the
+ * streets the shortest way to the front of its house, climbs it, and crosses the roof to it.
+ * She does not run from the runner; caught, she falls apart as one of a hunt does.
  */
 final class Chase {
     static final float SIZE = 1.3f;
@@ -28,6 +32,9 @@ final class Chase {
     static final float FALL_FROM = 0.5f, FALL_PACE = 1.5f, FALL_END = 1.25f, LIE = 1.6f, RISE_PACE = 1.3f;
 
     static final int FLEE = 0, JOLTED = 1, LOOSE = 2, WAITING = 3, DOWN = 4, RISING = 5, STONE = 6;
+    static final int SEEK = 7, CLIMB = 8, ROOF = 9;
+    // a rival: how fast she climbs, and walks on the roof; how near the thing she is after is reached
+    static final float CLIMBS = 1.5f, ROOF_WALK = 3.6f, GOT = 0.9f, OFF_WALL = 0.5f;
     // a hunt's golem is reached a little further off, and runs on: she stops and throws at it; if
     // the blow has not come so long after, it falls apart all the same
     static final float REACHED_MOST = 4f, HELD_REACH = 3.4f;
@@ -85,6 +92,124 @@ final class Chase {
     private boolean marked;
     private float markedAt;
 
+    // a rival: whether she is one, how long she looks about first, how fast she runs
+    private boolean rival;
+    private float startIn, pace;
+    // the foot of the front she climbs, the way it faces, the roof's top, and what she is after
+    private float footX, footZ, wallX, wallZ, roofTop, prizeX, prizeZ;
+    // the stretch of street the foot is on: from crossing (gi, gj) one step along (gdi, gdj)
+    private int gi, gj, gdi, gdj;
+    /** A rival that has got to what she was after. */
+    boolean got;
+
+    /**
+     * Made a rival, after (px, pz) on the roof (top) of the house whose front faces (nx, nz),
+     * climbing it from (fx, fz) on that front; she sets off so many seconds from now, running so
+     * fast.
+     */
+    void rival(float fx, float fz, float nx, float nz, float top, float px, float pz, float delay, float runs) {
+        rival = true;
+        startIn = delay;
+        pace = runs;
+        footX = fx + nx * OFF_WALL;
+        footZ = fz + nz * OFF_WALL;
+        wallX = nx;
+        wallZ = nz;
+        roofTop = top;
+        prizeX = px;
+        prizeZ = pz;
+        // the street before the front runs along x when the front faces along z, and the other way
+        if (Math.abs(nz) > 0.5f) {
+            gj = Math.round(fz / City.CELL);
+            gi = (int) Math.floor(fx / City.CELL);
+            gdi = 1;
+            gdj = 0;
+        } else {
+            gi = Math.round(fx / City.CELL);
+            gj = (int) Math.floor(fz / City.CELL);
+            gdi = 0;
+            gdj = 1;
+        }
+    }
+
+    /** For the desktop stand: a rival already at the foot of her front, so far up it. */
+    void standClimb(float up) {
+        x = footX;
+        z = footZ;
+        y = City.WALK_TOP + up;
+        startIn = 0f;
+        set(CLIMB);
+    }
+
+    /** Whether she is on the stretch of street the front she is to climb is on. */
+    private boolean onGoal() {
+        int pi = ti - di, pj = tj - dj;
+        return Math.min(pi, ti) == gi && Math.min(pj, tj) == gj && Math.abs(di) == gdi && Math.abs(dj) == gdj
+                && (gdi == 0 ? pi == ti : pj == tj);
+    }
+
+    /** At a crossing, a rival: the way that brings her nearest the stretch she is after. */
+    private void steer() {
+        int ai = gi, aj = gj, bi = gi + gdi, bj = gj + gdj;
+        int ni = di, nj = dj, best = Integer.MAX_VALUE;
+        if (ti == ai && tj == aj) {
+            ni = gdi;
+            nj = gdj;
+        } else if (ti == bi && tj == bj) {
+            ni = -gdi;
+            nj = -gdj;
+        } else {
+            int[][] ways = {{di, dj}, {-dj, di}, {dj, -di}, {-di, -dj}};
+            for (int[] w : ways) {
+                int ci = ti + w[0], cj = tj + w[1];
+                int far = Math.min(Math.abs(ci - ai) + Math.abs(cj - aj), Math.abs(ci - bi) + Math.abs(cj - bj));
+                // turning back only if nothing else will do
+                if (w[0] == -di && w[1] == -dj) far += 2;
+                if (far < best) {
+                    best = far;
+                    ni = w[0];
+                    nj = w[1];
+                }
+            }
+        }
+        di = ni;
+        dj = nj;
+        ti += di;
+        tj += dj;
+    }
+
+    /** A rival up the front and on the roof: climbing, then walking to what she is after. */
+    private void above(float dt, City city) {
+        if (state == CLIMB) {
+            heading = (float) Math.atan2(-wallX, -wallZ);
+            x = footX;
+            z = footZ;
+            y += CLIMBS * dt;
+            if (y >= roofTop) {
+                // over the cornice and onto the tiles
+                y = roofTop;
+                x -= wallX * (OFF_WALL + 0.9f);
+                z -= wallZ * (OFF_WALL + 0.9f);
+                set(ROOF);
+            }
+            return;
+        }
+        float ex = prizeX - x, ez = prizeZ - z, e = (float) Math.sqrt(ex * ex + ez * ez);
+        if (e < GOT) {
+            got = true;
+            speed = 0f;
+            return;
+        }
+        heading = (float) Math.atan2(ex, ez);
+        speed = ROOF_WALK;
+        float[] p = {x + ex / e * speed * dt, z + ez / e * speed * dt};
+        city.push(p, 0.4f, y);
+        x = p[0];
+        z = p[1];
+        y = Math.max(roofTop, city.ground(x, z, y, City.STEP));
+        stride += dt * speed / 3.3f;
+    }
+
     /** Reached by the runner: it runs on, and she throws at it. */
     private void mark() {
         caught++;
@@ -120,8 +245,8 @@ final class Chase {
 
     void update(float dt, Runner r, City city, Cars cars) {
         clock += dt;
-        float dx = r.x - x, dz = r.z - z;
-        apart = (float) Math.sqrt(dx * dx + dz * dz);
+        float dx = r.x - x, dz = r.z - z, dy = rival ? r.y - y : 0f;
+        apart = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (state == STONE) {
             rubble(dt);
             return;
@@ -142,8 +267,21 @@ final class Chase {
                 break;
             case WAITING:
                 want = 0f;
-                if (apart < RESUME) set(FLEE);
+                if (rival) {
+                    // looking about, until it is time, or the runner comes by
+                    if (!marked && apart < HELD_REACH) mark();
+                    if ((startIn -= dt) <= 0f || apart < NEAR) set(SEEK);
+                } else if (apart < RESUME) set(FLEE);
                 break;
+            case SEEK:
+                if (!marked && apart < HELD_REACH) mark();
+                want = pace;
+                break;
+            case CLIMB:
+            case ROOF:
+                if (!marked && apart < HELD_REACH) mark();
+                above(dt, city);
+                return;
             case DOWN:
                 want = 0f;
                 if (forGood && !marked && apart < HELD_REACH) mark();
@@ -156,7 +294,7 @@ final class Chase {
             case RISING:
                 want = 0f;
                 if (clock - stateAt > FALL_END / RISE_PACE) {
-                    set(caughtDown ? LOOSE : FLEE);
+                    set(rival ? SEEK : caughtDown ? LOOSE : FLEE);
                     onWay();
                 }
                 break;
@@ -188,8 +326,25 @@ final class Chase {
         float rx = (float) dj, rz = (float) -di;
         float tx = ti * City.CELL + rx * LANE, tz = tj * City.CELL + rz * LANE;
         float ex = tx - x, ez = tz - z;
+        if (rival && onGoal()) {
+            // on the stretch the front is on: across to its foot, and up
+            float fx = footX - x, fz = footZ - z;
+            float along = fx * di + fz * dj;
+            if (along < 12f) {
+                tx = footX;
+                tz = footZ;
+                ex = fx;
+                ez = fz;
+                if (fx * fx + fz * fz < 0.6f * 0.6f) {
+                    speed = 0f;
+                    set(CLIMB);
+                    return;
+                }
+            }
+        }
         if (ex * ex + ez * ez < 2.5f * 2.5f) {
-            turn();
+            if (rival) steer();
+            else turn();
             rx = dj;
             rz = -di;
             tx = ti * City.CELL + rx * LANE;
@@ -206,8 +361,9 @@ final class Chase {
         x += (float) Math.sin(heading) * speed * dt;
         z += (float) Math.cos(heading) * speed * dt;
         float[] p = {x, z};
-        city.push(p, 0.55f);
-        cars.push(p, 0.55f);
+        // a rival hops what is lower than a car on her way
+        city.push(p, 0.55f, rival ? 1.2f : 0f);
+        if (!rival) cars.push(p, 0.55f);
         x = p[0];
         z = p[1];
         y += (city.ground(x, z) - y) * Math.min(1f, dt * 18f);
@@ -284,6 +440,11 @@ final class Chase {
         return true;
     }
 
+    /** Where one of her bones is now, into out (x, y, z). */
+    void bone(String name, float[] out) {
+        Frida.place(name, x, y + lift, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), out);
+    }
+
     /** Where her head is now, into out (x, y, z). */
     void head(float[] out) {
         Frida.place("Head", x, y + lift, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), out);
@@ -333,7 +494,7 @@ final class Chase {
         for (int k = 0; k < 3; k++) plateAxis[k] /= al;
         plateSpin = 0f;
         plateRate = 14f;
-        floor = city.ground(x, z);
+        floor = city.ground(x, z, y + lift + 0.1f, 0.6f);
         speed = 0f;
         set(STONE);
     }
@@ -413,6 +574,8 @@ final class Chase {
     }
 
     private String motion() {
+        if (state == CLIMB) return "climb";
+        if (state == ROOF) return got ? "crouch" : "jog";
         if (state == DOWN || state == RISING) return "fall";
         if (state == JOLTED) return "knockback";
         if (state == WAITING) return speed < 0.4f ? "arms_folded" : "walk";
@@ -423,6 +586,9 @@ final class Chase {
     }
 
     private float motionTime() {
+        // the climb is one reach up, over and over
+        if (state == CLIMB) return ((clock - stateAt) * 0.8f) % 0.62f;
+        if (state == ROOF) return got ? Math.min(0.9f, clock - stateAt) : stride * 0.9333f;
         if (state == DOWN) return FALL_FROM + (clock - stateAt) * FALL_PACE;
         // getting up: the fall played back
         if (state == RISING) return Math.max(0f, FALL_END - (clock - stateAt) * RISE_PACE);

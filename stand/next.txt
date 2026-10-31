@@ -1,0 +1,19 @@
+# A hunt done: back in her head, the report, then on the same screen the folder's briefing; out
+# into the street with the folder's mission on
+screen 1096 2560
+catchall
+wait 4
+shot report
+tap 137 300
+wait 1.2
+shot brief0
+tap 137 300
+wait 0.3
+tap 137 300
+wait 3
+shot brief
+tap 137 300
+wait 0.3
+tap 137 300
+wait 2
+shot street

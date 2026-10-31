@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.19";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.20";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -42,6 +42,8 @@ final class World {
     final Runner runner = new Runner();
     final Mission mission = new Mission(0x60E3L);
     Chase chase;                             // the nearest of them still loose
+    Folder folder;                           // the mission now, when it is the folder's
+    private boolean again;                   // the folder's mission once more, the rivals were first
     final Toss toss = new Toss();            // her hammer
     private Opening opening;                 // what the game opens with, while it plays
     private Dispatch dispatch;               // the dispatcher's room, while she is in it
@@ -68,9 +70,53 @@ final class World {
         if (next > 1) mission.round = next - 1;
         plates = host.loadInt(SAVE_PLATES);
         money = host.loadInt(SAVE_MONEY);
-        mission.start(0f, 0f);
-        chase = mission.target(null);
+        begin(0f, 0f);
         opening = new Opening(host);
+    }
+
+    /** The next mission, round (x, z): five golems loose, or, every other time, the folder. */
+    private void begin(float x, float z) {
+        int n = mission.round + 1;
+        if (Folder.its(n)) {
+            mission.round = n;
+            folder = new Folder(0xF01DL + n * 7919L + (again ? 31L : 0L));
+            folder.start(x, z, city);
+            chase = folder.rivals[0];
+        } else {
+            folder = null;
+            mission.start(x, z);
+            chase = mission.target(null);
+        }
+    }
+
+    /** The golems of the mission now. */
+    Chase[] golems() {
+        return folder != null ? folder.rivals : mission.golems;
+    }
+
+    /** Whether the mission now is done with, won or not. */
+    boolean over() {
+        if (folder == null) return mission.over();
+        return folder.theirs || folder.hers && runner.landed;
+    }
+
+    /** The briefing for the mission now. */
+    private String[] briefing() {
+        return again ? Dispatch.again(mission.round) : Dispatch.briefing(mission.round);
+    }
+
+    /** The report on the mission just done. */
+    private String[] report() {
+        if (folder == null) return Dispatch.report(mission.round, clock(mission.doneAt));
+        if (folder.hers) return Dispatch.paid(mission.round, clock(folder.doneAt), money);
+        return Dispatch.lost(mission.round, clock(folder.doneAt));
+    }
+
+    /** A sum of money with its thousands set apart: 100 000. */
+    static String money(int m) {
+        String s = String.valueOf(m), out = "";
+        for (int k = s.length(); k > 0; k -= 3) out = s.substring(Math.max(0, k - 3), k) + (out.isEmpty() ? "" : " " + out);
+        return out;
     }
 
     /** The opening done with at once (the desktop stand, for scenes of the game itself). */
@@ -82,8 +128,11 @@ final class World {
 
     /** The mission done: the next one to play and what has been won, kept for the next game. */
     private void save() {
-        plates += Mission.FIVE;
-        host.saveInt(SAVE_MISSION, mission.round + 1);
+        boolean lost = folder != null && folder.theirs;
+        if (folder == null) plates += Mission.FIVE;
+        else if (folder.hers) money += Folder.REWARD;
+        // lost, the same mission is played again
+        host.saveInt(SAVE_MISSION, lost ? mission.round : mission.round + 1);
         host.saveInt(SAVE_PLATES, plates);
         host.saveInt(SAVE_MONEY, money);
     }
@@ -93,7 +142,13 @@ final class World {
         opening = null;
         Frida.eyes = 1f;
         runner.update(0f, city, cars, walkers);
-        dispatch = new Dispatch(host, done ? Dispatch.report(mission.round, clock(mission.doneAt)) : Dispatch.briefing(mission.round));
+        dispatch = new Dispatch(host, done ? report() : briefing());
+    }
+
+    /** Mission n now, round where she is (the desktop stand). */
+    void standMission(int n) {
+        mission.round = n - 1;
+        begin(runner.x, runner.z);
     }
 
     /** The opening from its start (the desktop stand). */
@@ -129,7 +184,7 @@ final class World {
                 Frida.eyes = 1f;
                 whiteOut = WHITE_OUT;
                 runner.update(0f, city, cars, walkers);      // the eye put behind her
-                dispatch = new Dispatch(host, Dispatch.briefing(mission.round));
+                dispatch = new Dispatch(host, briefing());
             }
             return;
         }
@@ -140,36 +195,48 @@ final class World {
             if (dispatch.done()) {
                 // the walls drawn back: the street goes on (the next mission, after a report)
                 dispatch = null;
-                if (mission.over()) {
-                    mission.start(runner.x, runner.z);
-                    chase = mission.target(null);
-                }
                 overFor = 0f;
             }
             return;
         }
-        if (mission.over() && (overFor += dt) > BACK_TO_ROOM) {
+        if (over() && (overFor += dt) > BACK_TO_ROOM) {
             save();
-            dispatch = new Dispatch(host, Dispatch.report(mission.round, clock(mission.doneAt)));
+            String[] said = report();
+            // lost, the same again, as its briefing says; won, the next; the report, then the briefing
+            again = folder != null && folder.theirs;
+            if (again) mission.round--;
+            begin(runner.x, runner.z);
+            dispatch = new Dispatch(host, said).then(briefing());
+            again = false;
             overFor = 0f;
             return;
         }
         whiteOut = Math.max(0f, whiteOut - dt);
-        runner.update(dt, city, cars, walkers);
+        lift(dt);
+        if (liftT < 0f || liftT > LIFT_UP) runner.update(dt, city, cars, walkers);
         int round = mission.round;
-        mission.update(dt, runner, city, cars);
-        toss.update(dt, runner, mission, city);
-        chase = mission.target(chase);
-        cars.update(dt, runner, mission.golems);
+        if (folder != null) {
+            boolean had = folder.hers;
+            folder.update(dt, runner, city, cars);
+            if (folder.hers && !had) took();
+            Chase n = folder.nearest();
+            chase = n != null ? n : chase;
+        } else {
+            mission.update(dt, runner, city, cars);
+            chase = mission.target(chase);
+        }
+        toss.update(dt, runner, golems(), city);
+        cars.update(dt, runner, golems());
         walkers.update(dt, runner, chase);
         int caught = mission.caught(), struck = 0;
-        for (Chase g : mission.golems) struck += g.struck;
+        if (folder != null) caught = 0;
+        for (Chase g : golems()) struck += g.struck;
         if (round != mission.round) {
             caughtSeen = 0;
             nextSlot = 0;
             struckSeen = struck;
         }
-        if (caught != caughtSeen) {
+        if (folder == null && caught != caughtSeen) {
             caughtSeen = caught;
             host.buzz(caught == Mission.FIVE ? 160 : 60);
         }
@@ -178,6 +245,101 @@ final class World {
             host.buzz(30);
         }
         fliers.update(dt, true);
+    }
+
+    /** The folder in her hands: over the edge of the roof to the street, down along it, gliding. */
+    private void took() {
+        host.buzz(120);
+        host.sound(Synth.LEATHER, 0.7f, 1.1f);
+        Folder f = folder;
+        float half = Math.abs(f.frontX) * f.houseHX + Math.abs(f.frontZ) * f.houseHZ;
+        float ex = f.houseX + f.frontX * (half + 0.6f), ez = f.houseZ + f.frontZ * (half + 0.6f);
+        // the edge straight out from where she is along the front, and then round along the street
+        float along = (runner.x - f.houseX) * f.frontZ - (runner.z - f.houseZ) * f.frontX;
+        ex += f.frontZ * along * 0.6f;
+        ez -= f.frontX * along * 0.6f;
+        float ax = f.frontZ, az = -f.frontX;
+        if (ax * (float) Math.sin(runner.heading) + az * (float) Math.cos(runner.heading) < 0f) {
+            ax = -ax;
+            az = -az;
+        }
+        runner.auto(ex, ez, (float) Math.atan2(ax, az));
+    }
+
+    // ---- the lifts: in at a door in a house's front, out of the hut on its roof, and back down ----
+    static final float LIFT_SHUT = 0.45f, LIFT_UP = 2.2f, LIFT_END = 2.75f;
+    private float liftT = -1f;
+    private boolean liftDown, liftArmed = true;
+    private int liftFloors;
+    private final float[] liftNow = new float[10];
+
+    /** A lift on its way, or, she going into a lift's door (in the street or on a roof), one setting off. */
+    private void lift(float dt) {
+        Runner r = runner;
+        if (liftT >= 0f) {
+            float was = liftT;
+            liftT += dt;
+            if (was < 0.3f && liftT >= 0.3f) r.hidden = true;
+            if (was < LIFT_UP && liftT >= LIFT_UP) {
+                // out of the hut on the roof, or out of the door in the street
+                float[] l = liftNow;
+                if (liftDown) r.put(l[0], City.WALK_TOP, l[1], (float) Math.atan2(l[2], l[3]));
+                else r.put(l[4], l[5], l[6], l[7]);
+                r.hidden = false;
+                host.sound(Synth.CHIME, 0.5f, 1f);
+                host.sound(Synth.DOOR, 0.35f, 1.2f);
+                liftArmed = false;
+            }
+            if (liftT >= LIFT_END) liftT = -1f;
+            return;
+        }
+        if (r.inAir() || r.throwing() >= 0f || (folder != null && folder.hers)) return;
+        float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading);
+        boolean near = city.liftNear(r.x, r.z, r.y, 3f, liftNow);
+        if (!near) {
+            liftArmed = true;
+            return;
+        }
+        if (!liftArmed || r.speed < 1f) return;
+        float[] l = liftNow;
+        boolean street = r.y < 1f;
+        float px = street ? l[0] : l[8], pz = street ? l[1] : l[9];
+        // into the door: near it and running at it
+        float wx = street ? -l[2] : l[2], wz = street ? -l[3] : l[3];
+        float dx = px - r.x, dz = pz - r.z;
+        if (dx * dx + dz * dz > 0.95f * 0.95f || fx * wx + fz * wz < 0.7f) return;
+        liftT = 0f;
+        liftDown = !street;
+        liftFloors = Math.max(2, Math.round((l[5] - 0.5f) / 3.3f) - 1);
+        host.sound(Synth.DOOR, 0.45f, 1f);
+    }
+
+    /** The lift over the frame: dark coming down over it, the floors counted, light again. */
+    private void liftFlat(Px f) {
+        if (liftT < 0f) return;
+        float dark = liftT < LIFT_SHUT ? liftT / LIFT_SHUT : liftT < LIFT_UP ? 1f : Math.max(0f, 1f - (liftT - LIFT_UP) / (LIFT_END - LIFT_UP));
+        int a = Math.round(255f * Math.min(1f, dark));
+        for (int i = 0; i < f.a.length; i++) {
+            int old = f.a[i], oa = old >>> 24;
+            if (oa == 0) f.a[i] = (a << 24) | 0x0B0A0E;
+            else f.a[i] = Px.mix(old, 0xFF0B0A0E, dark);
+        }
+        if (liftT < LIFT_SHUT * 0.7f || liftT > LIFT_UP) return;
+        // the panel: an arrow and the floor, going up (or down) one at a time
+        float u = Math.max(0f, Math.min(1f, (liftT - LIFT_SHUT) / (LIFT_UP - LIFT_SHUT - 0.2f)));
+        int floor = liftDown ? Math.round((1f - u) * liftFloors) : Math.round(u * liftFloors);
+        String n = String.valueOf(floor);
+        int amber = 0xFFFFB347, cx = W / 2, cy = h / 2;
+        f.rect(cx - 30, cy - 34, cx + 30, cy + 34, 0xFF17151B);
+        f.rect(cx - 28, cy - 32, cx + 28, cy + 32, 0xFF221F27);
+        // the arrow: its head of seven rows, its shaft
+        int head = liftDown ? cy - 16 : cy - 29, shaft = liftDown ? cy - 29 : cy - 22;
+        for (int k = 0; k < 7; k++) {
+            int w = liftDown ? 6 - k : k;
+            f.rect(cx - w, head + k, cx + w + 1, head + k + 1, amber);
+        }
+        f.rect(cx - 2, shaft, cx + 3, shaft + 7, amber);
+        PixelFont.draw(f, n, cx - PixelFont.width(n, 4) / 2, cy - 2, 4, amber);
     }
 
     /** Whether the back key means something here, rather than leaving the game. */
@@ -263,6 +425,64 @@ final class World {
         }
     }
 
+    /**
+     * Over the frame, the folder's mission: how far off it is, in meters, at the top, and at the
+     * edge of the frame a red mark the way it is while it is out of sight; the reward and the
+     * clock in one corner; in the other, for each rival, a burning mark and how far it still has
+     * to go, rising as it climbs. Taken, the reward large in the middle; lost, a word for it.
+     */
+    private void folderFlat(DrawList d, Px f) {
+        int fire = 0xFFF0581C, ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, red = 0xFFC8352C;
+        Folder fo = folder;
+        String clock = clock(fo.over() ? fo.doneAt : fo.clock);
+        shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        String sum = money(Folder.REWARD);
+        shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
+        // the rivals: a mark each, alight while it is about, and what it has still to go
+        for (int k = 0; k < Folder.RIVALS; k++) {
+            Chase g = fo.rivals[k];
+            int y = 12 + k * 13;
+            boolean about = !g.done();
+            f.disc(14, y + 3, 4.5f, ink);
+            f.disc(14, y + 3, 3.5f, about ? fire : 0xFF3A4660);
+            if (!about) continue;
+            String m = Math.round(fo.toGo(g)) + "";
+            shadowed(f, m, 22, y, 1, g.y > 1f ? gold : cream, ink);
+        }
+        if (fo.over() && fo.hers) {
+            String big = "+" + sum;
+            shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
+            return;
+        }
+        if (fo.theirs) {
+            String w = Lang.lines("lost.short", mission.round, null)[0];
+            shadowed(f, w, (W - PixelFont.width(w, 3)) / 2, h / 2 - 40, 3, fire, ink);
+            return;
+        }
+        if (fo.hers) return;
+        String m = String.valueOf(Math.round(fo.apart(runner)));
+        shadowed(f, m, (W - PixelFont.width(m, 3)) / 2, 14, 3, cream, ink);
+        // where it is, when it is not to be seen: a red mark at the edge
+        boolean seen = d.project(fo.x, fo.y + 0.3f, fo.z, at) && at[0] > 6 && at[0] < W - 6 && at[1] > 30 && at[1] < h - 6;
+        if (seen) {
+            // over it, a small red mark coming and going
+            if (((int) (time * 3f) & 1) == 0) {
+                f.rect(Math.round(at[0]) - 3, Math.round(at[1]) - 14, Math.round(at[0]) + 3, Math.round(at[1]) - 9, ink);
+                f.rect(Math.round(at[0]) - 2, Math.round(at[1]) - 13, Math.round(at[0]) + 2, Math.round(at[1]) - 10, red);
+            }
+            return;
+        }
+        float ax = (float) Math.sin(runner.eyeYaw), az = (float) Math.cos(runner.eyeYaw);
+        float vx = fo.x - runner.x, vz = fo.z - runner.z;
+        float ang = (float) Math.atan2(vx * az - vz * ax, vx * ax + vz * az);
+        float ex = (float) Math.sin(ang), ey = -(float) Math.cos(ang);
+        float k = Math.min((W * 0.5f - 12f) / Math.max(1e-3f, Math.abs(ex)), (h * 0.5f - 34f) / Math.max(1e-3f, Math.abs(ey)));
+        int px = Math.round(W * 0.5f + ex * k), py = Math.round(h * 0.5f + ey * k);
+        f.rect(px - 6, py - 5, px + 6, py + 5, ink);
+        f.rect(px - 5, py - 4, px + 5, py + 4, red);
+        f.rect(px - 5, py - 1, px + 5, py, 0xFF1B1B20);
+    }
+
     static final float PLATE_POP = 0.45f, PLATE_FLY = 0.75f;
     private int nextSlot;
     private final float[] at3 = new float[3];
@@ -332,20 +552,24 @@ final class World {
         city.draw(d, eyeX, eyeZ, ex, ez);
         cars.draw(d, eyeX, eyeZ, ex, ez);
         walkers.draw(d, eyeX, eyeZ, ex, ez);
-        if (dispatch == null || dispatch.showsHer()) {
+        if ((dispatch == null || dispatch.showsHer()) && !r.hidden) {
             r.draw(d);
             toss.draw(d, r);
         }
+        if (folder != null) folder.draw(d, r);
         // the one nearest that still burns gives off light and glow; the others only burn
         Chase lit = null;
-        for (Chase g : mission.golems) if (g.burning() && (lit == null || g.apart < lit.apart)) lit = g;
-        for (Chase g : mission.golems) {
+        Chase[] golems = golems();
+        for (Chase g : golems) if (g.burning() && (lit == null || g.apart < lit.apart)) lit = g;
+        for (Chase g : golems) {
             float gx = g.x - eyeX, gz = g.z - eyeZ;
             if (gx * ex + gz * ez < -6f || gx * gx + gz * gz > 200f * 200f) continue;
             g.draw(d, g == lit);
         }
         if (dispatch != null) dispatch.draw(d, f, h);
+        else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
+        liftFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         // the white the opening ended on, going off
         if (whiteOut > 0f) Opening.wash(f, whiteOut / WHITE_OUT);

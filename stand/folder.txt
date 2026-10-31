@@ -1,0 +1,13 @@
+# the folder's mission: the briefing, then a player after it, through a lift and over the roofs
+screen 1096 2560
+mission 2
+dispatch
+wait 6
+shot brief
+skip
+wait 1.2
+folderbot 150 6 f
+wait 2
+shot down
+wait 2.5
+shot room

@@ -225,6 +225,11 @@ public final class Stand implements World.Host {
             Runner r = world.runner;
             r.put(r.x, r.y, r.z, f(p[1]));
             step();
+        } else if (c.equals("turn")) {
+            // turn RADIANS: her turned so much from where she faces
+            Runner r = world.runner;
+            r.put(r.x, r.y, r.z, r.heading + f(p[1]));
+            step();
         } else if (c.equals("lang")) {
             // lang CODE: the game speaks this language from now on
             lang = p[1];
@@ -383,8 +388,8 @@ public final class Stand implements World.Host {
                 }
                 caughtWas = got;
                 if (System.getenv("HUNTLOG") != null && i % 300 == 0)
-                    System.out.println(String.format("%7.2fs  target %.0f m, state %d, speed %.1f, runner %.1f %s at %.1f %.1f wp %d %d h %.2f",
-                            time, world.chase.apart, world.chase.state, world.chase.speed, world.runner.speed, routing ? "routing" : "trail", world.runner.x, world.runner.z, wi, wj, world.runner.heading));
+                    System.out.println(String.format("%7.2fs  target %.0f m, state %d, speed %.1f, runner %.1f %s at %.1f %.1f y %.1f wp %d %d h %.2f",
+                            time, world.chase.apart, world.chase.state, world.chase.speed, world.runner.speed, routing ? "routing" : "trail", world.runner.x, world.runner.z, world.runner.y, wi, wj, world.runner.heading));
                 if (every > 0f && i * DT >= next) {
                     shot(prefix + (k++));
                     next += every;
@@ -413,11 +418,233 @@ public final class Stand implements World.Host {
                     next = 0.001f;
                 }
             }
+        } else if (c.equals("mission")) {
+            // mission N: mission N now, round where she is
+            world.standMission(Integer.parseInt(p[1]));
+            Folder fo = world.folder;
+            if (fo != null)
+                System.out.println(String.format("%7.2fs  mission %d: the folder at %.0f %.1f %.0f, %.0f m off", time,
+                        world.mission.round, fo.x, fo.y, fo.z, fo.apart(world.runner)));
+        } else if (c.equals("nearfolder")) {
+            // nearfolder: her put on the street before the lift nearest the folder, facing its door
+            float[] l = doorNearFolder();
+            world.runner.put(l[0] + l[2] * 6f, City.WALK_TOP, l[1] + l[3] * 6f, (float) Math.atan2(-l[2], -l[3]));
+            step();
+        } else if (c.equals("onfolder")) {
+            // onfolder METERS RADIANS: her put on the folder's roof so far from it, the way given round it, facing it
+            Folder fo = world.folder;
+            float d = f(p[1]), a = f(p[2]);
+            float x = fo.x + (float) Math.sin(a) * d, z = fo.z + (float) Math.cos(a) * d;
+            world.runner.put(x, world.city.ground(x, z, fo.y + 1f, 2f), z, a + (float) Math.PI);
+            step();
+        } else if (c.equals("climbing")) {
+            // climbing METERS: the first rival so far up the front of the folder's house, she across the street watching
+            Folder fo = world.folder;
+            Chase g = fo.rivals[1];
+            g.standClimb(f(p[1]));
+            float nx = fo.frontX, nz = fo.frontZ;
+            float px = g.x + nx * 5f + nz * 16f, pz = g.z + nz * 5f - nx * 16f;
+            world.runner.put(px, City.WALK_TOP, pz, (float) Math.atan2(g.x - px, g.z - pz));
+            step();
+        } else if (c.equals("catchall")) {
+            // catchall: every golem of the hunt knocked down at once, as if the mallet had got them all
+            for (Chase g : world.mission.golems) g.take(world.runner, world.city, 1f, 0f);
+            step();
+        } else if (c.equals("idle")) {
+            // idle SECONDS EVERY PREFIX: no one playing; the rivals' ways told, shot so often, till the folder is got
+            float secs = f(p[1]), every = f(p[2]), next = every;
+            Folder fo = world.folder;
+            int n = Math.round(secs / DT), k = 0;
+            int[] was = new int[Folder.RIVALS];
+            for (int i = 0; i < n && !fo.over(); i++) {
+                step();
+                for (int g = 0; g < Folder.RIVALS; g++)
+                    if (fo.rivals[g].state != was[g]) {
+                        was[g] = fo.rivals[g].state;
+                        System.out.println(String.format("%7.2fs  rival %d: state %d, %.0f m to go", time, g, was[g], fo.toGo(fo.rivals[g])));
+                    }
+                if (every > 0f && i * DT >= next) {
+                    shot(p[3] + (k++));
+                    next += every;
+                }
+            }
+            if (fo.theirs) System.out.println(String.format("%7.2fs  a rival got it (clock %.1f)", time, fo.clock));
+        } else if (c.equals("folderbot")) {
+            folderBot(f(p[1]), f(p[2]), p[3]);
         } else if (c.equals("shot")) {
             shot(p[1]);
         } else {
             throw new IllegalArgumentException("unknown command: " + c);
         }
+    }
+
+    /** The lift in the folder's block whose door is nearest the folder, as City.liftAt() tells it. */
+    private float[] doorNearFolder() {
+        Folder fo = world.folder;
+        int ci = City.index(fo.x), cj = City.index(fo.z);
+        float[] h = new float[8], l = new float[10], best = null;
+        float bd = 1e9f;
+        for (int k = 0; k < world.city.houses(ci, cj); k++) {
+            world.city.house(ci, cj, k, h);
+            if (h[7] == 0f) continue;
+            City.lift(h, 0, l);
+            float dd = (l[4] - fo.x) * (l[4] - fo.x) + (l[6] - fo.z) * (l[6] - fo.z);
+            if (dd < bd) {
+                bd = dd;
+                best = l.clone();
+            }
+        }
+        return best;
+    }
+
+    // the bot's finger: where it is on the glass, and whether it is down
+    private float bx = World.W * 0.5f, by = 600f;
+    private boolean bdown;
+
+    /** The finger turned toward (gx, gz), a little a frame, as a player's would. */
+    private void lead(float gx, float gz, float most) {
+        Runner r = world.runner;
+        if (!bdown) {
+            bx = World.W * 0.5f;
+            world.touch(World.DOWN, bx, by);
+            bdown = true;
+        }
+        float want = (float) Math.atan2(gx - r.x, gz - r.z), dd = want - r.heading;
+        while (dd > Math.PI) dd -= 2f * (float) Math.PI;
+        while (dd < -Math.PI) dd += 2f * (float) Math.PI;
+        bx += Math.max(-most, Math.min(most, dd / (float) (Math.PI / 2) * Runner.QUARTER));
+        if (bx < 20f || bx > World.W - 20f) {
+            world.touch(World.UP, bx, by);
+            bx = World.W * 0.5f;
+            world.touch(World.DOWN, bx, by);
+        }
+        world.touch(World.MOVE, bx, by);
+    }
+
+    /**
+     * folderbot SECONDS EVERY PREFIX: a player after the folder: along the streets to the lift
+     * nearest it, in and up, across the roofs to it (leaping when a roof stands higher ahead,
+     * gliding when it falls away), then down as she goes by herself; shot so often.
+     */
+    private void folderBot(float secs, float every, String prefix) throws IOException {
+        Folder fo = world.folder;
+        float[] door = doorNearFolder();
+        System.out.println(String.format("%7.2fs  the lift: door %.1f %.1f facing %.0f %.0f, roof %.1f", time, door[0], door[1], door[2], door[3], door[5]));
+        int wi = Math.round(world.runner.x / City.CELL), wj = Math.round(world.runner.z / City.CELL);
+        int n = Math.round(secs / DT), k = 0;
+        float next = every, stuck = 0f, leapAt = -9f;
+        boolean wasUp = false, wasHers = false, wasHidden = false;
+        int phase = 0;
+        for (int i = 0; i < n; i++) {
+            Runner r = world.runner;
+            if (fo.over() || fo.hers) {
+                if (bdown) {
+                    world.touch(World.UP, bx, by);
+                    bdown = false;
+                }
+            } else if (r.hidden) {
+                // in the lift
+            } else if (r.y < 1f) {
+                // the street: crossing to crossing to the crossing by the door, then to the door
+                float dx = door[0] - r.x, dz = door[1] - r.z;
+                // near: in the street before its front, not round the corner
+                float out = -(dx * door[2] + dz * door[3]), side = Math.abs(dx * door[3] - dz * door[2]);
+                boolean near = out > -1f && out < 9f && side < 30f;
+                float gx, gz;
+                if (near) {
+                    // to the door: straight before it, then in
+                    float ax = door[0] + door[2] * 2.5f, az = door[1] + door[3] * 2.5f;
+                    boolean before = (r.x - door[0]) * door[2] + (r.z - door[1]) * door[3] < 3f
+                            && Math.abs((r.x - door[0]) * door[3] - (r.z - door[1]) * door[2]) < 0.8f;
+                    gx = before ? door[0] - door[2] : ax;
+                    gz = before ? door[1] - door[3] : az;
+                } else {
+                    float cx = wi * City.CELL, cz = wj * City.CELL;
+                    if ((cx - r.x) * (cx - r.x) + (cz - r.z) * (cz - r.z) < 36f) {
+                        int ti = Math.round(door[0] / City.CELL), tj = Math.round(door[1] / City.CELL);
+                        if (ti != wi && (Math.abs(ti - wi) >= Math.abs(tj - wj) || tj == wj)) wi += Integer.signum(ti - wi);
+                        else if (tj != wj) wj += Integer.signum(tj - wj);
+                    }
+                    cx = wi * City.CELL;
+                    cz = wj * City.CELL;
+                    if (Math.abs(cx - r.x) > Math.abs(cz - r.z)) {
+                        gx = r.x + Math.max(-10f, Math.min(10f, cx - r.x));
+                        gz = cz - Math.signum(cx - r.x) * 1.6f;
+                    } else {
+                        gx = cx + Math.signum(cz - r.z) * 1.6f;
+                        gz = r.z + Math.max(-10f, Math.min(10f, cz - r.z));
+                    }
+                    if (Math.abs(cx - r.x) < 8f && Math.abs(cz - r.z) < 8f) {
+                        gx = cx;
+                        gz = cz;
+                    }
+                }
+                lead(gx, gz, 6f);
+            } else {
+                // the roofs: to the folder; a roof higher ahead, a leap; falling, arms out
+                lead(fo.x, fo.z, 8f);
+                stuck = r.speed < 2f && !r.inAir() ? stuck + DT : 0f;
+                float ax = r.x + (float) Math.sin(r.heading) * 1.6f, az = r.z + (float) Math.cos(r.heading) * 1.6f;
+                float ahead = world.city.ground(ax, az, r.y, 5f);
+                if (!r.inAir() && (stuck > 0.25f || ahead > r.y + 0.6f) && time - leapAt > 0.8f) {
+                    world.touch(World.UP, bx, by);
+                    for (int t = 0; t < 2; t++) {
+                        world.touch(World.DOWN, bx, by);
+                        step();
+                        world.touch(World.UP, bx, by);
+                        step();
+                    }
+                    world.touch(World.DOWN, bx, by);
+                    leapAt = time;
+                    stuck = 0f;
+                    System.out.println(String.format("%7.2fs  leap, %.1f m up ahead", time, ahead - r.y));
+                }
+                if (r.inAir() && r.vy < -1f && !r.gliding) {
+                    world.touch(World.MOVE, bx, by);
+                    for (int t = 1; t <= 4; t++) {
+                        world.touch(World.MOVE, bx, by - t * 12f);
+                        step();
+                    }
+                    world.touch(World.UP, bx, by - 48f);
+                    world.touch(World.DOWN, bx, by);
+                    System.out.println(String.format("%7.2fs  gliding, %.1f m up", time, r.y));
+                }
+            }
+            step();
+            if (r.hidden != wasHidden) {
+                wasHidden = r.hidden;
+                System.out.println(String.format("%7.2fs  %s", time, r.hidden ? "into the lift" : "out of the lift"));
+            }
+            boolean up = r.y > 3f;
+            if (up != wasUp) {
+                wasUp = up;
+                System.out.println(String.format("%7.2fs  %s at %.1f m", time, up ? "on the roofs" : "in the street", r.y));
+            }
+            if (fo.hers != wasHers) {
+                wasHers = true;
+                System.out.println(String.format("%7.2fs  she has the folder (clock %.1f)", time, fo.clock));
+            }
+            if (System.getenv("FOLDERLOG") != null && i % 120 == 0) {
+                StringBuilder b = new StringBuilder();
+                for (Chase g : fo.rivals) b.append(String.format(" [%d %.0f]", g.state, fo.toGo(g)));
+                System.out.println(String.format("%7.2fs  her %.0f %.1f %.0f speed %.1f, folder %.0f m;%s", time, r.x, r.y, r.z, r.speed, fo.apart(r), b));
+            }
+            if (every > 0f && i * DT >= next) {
+                shot(prefix + (k++));
+                next += every;
+            }
+            if (world.over() && fo.theirs) {
+                System.out.println(String.format("%7.2fs  a rival got it first (clock %.1f)", time, fo.clock));
+                break;
+            }
+            if (r.landed) {
+                System.out.println(String.format("%7.2fs  down in the street with it", time));
+                shot(prefix + "end");
+                break;
+            }
+        }
+        if (bdown) world.touch(World.UP, bx, by);
+        bdown = false;
     }
 
     private void shot(String name) throws IOException {

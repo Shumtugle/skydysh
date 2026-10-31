@@ -1,0 +1,17 @@
+# the folder's mission seen close: a lift's door in the street, the folder on its roof, a rival climbing the front
+screen 1096 2560
+mission 2
+nearfolder
+wait 0.5
+shot door
+onfolder 3.2 0.6
+wait 0.6
+shot lying
+onfolder 26 2.6
+wait 0.6
+shot heli
+climbing 7
+wait 0.5
+shot climb
+wait 3
+shot climb2

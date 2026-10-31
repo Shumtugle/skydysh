@@ -25,6 +25,9 @@ uniform vec3 uTrail[32];
 uniform int uTrailN;
 uniform vec4 uTrailBox;
 uniform float uTime;
+// a tube's glass (frame pixels: x0, y0, x1, y1): the flat layer over it drawn in the tube's rows,
+// a dark line under each, each row a little brighter in its middle; none when x1 <= x0
+uniform vec4 uTube;
 
 out vec4 outColor;
 
@@ -50,6 +53,16 @@ void main() {
     vec2 uv = vNdc * 0.5 + 0.5;
     vec3 c = texture(uPrint, uv).rgb;
     vec4 flat2 = texture(uFlat, vec2(uv.x, 1.0 - uv.y));
+    if (uTube.z > uTube.x) {
+        vec2 fp = vec2(uv.x, 1.0 - uv.y) * uFrameSize;
+        if (fp.x > uTube.x && fp.x < uTube.z && fp.y > uTube.y && fp.y < uTube.w) {
+            float r = fract(fp.y);
+            float row = r > 0.7 ? 0.28 : 0.9 + 0.25 * sin(r / 0.7 * 3.14159);
+            flat2.rgb *= row;
+            // the glow of the lit dots spilling a little into the dark line
+            flat2.a = mix(flat2.a, max(flat2.a, 0.92), step(0.7, r));
+        }
+    }
     c = mix(c, flat2.rgb, flat2.a);
     if (uHudRows > 0.0) {
         float gy = (1.0 - uv.y) * uFrameSize.y;

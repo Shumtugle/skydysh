@@ -1,0 +1,24 @@
+# The dispatch screen's letters, in both languages: the hunt's briefing, the folder's, its report
+screen 1096 2560
+dispatch
+wait 1
+tap 137 300
+wait 0.4
+shot en1
+lang ru
+dispatch
+wait 1
+tap 137 300
+wait 0.3
+shot ru1
+mission 2
+dispatch
+wait 1
+tap 137 300
+wait 0.9
+shot ru2
+dispatch done
+wait 1
+tap 137 300
+wait 0.6
+shot ru3

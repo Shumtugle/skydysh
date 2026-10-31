@@ -20,10 +20,10 @@ final class Toss {
     private final float[] hand = new float[3], elbow = new float[3];
     private final float[] axis = new float[3], base = new float[9], turn = new float[9];
 
-    void update(float dt, Runner r, Mission m, City city) {
+    void update(float dt, Runner r, Chase[] golems, City city) {
         clock += dt;
         if (state == HELD) {
-            for (Chase g : m.golems)
+            for (Chase g : golems)
                 if (g.seized()) {
                     aim = g;
                     r.lock(LOCK, g.x, g.z);

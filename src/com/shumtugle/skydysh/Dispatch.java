@@ -34,8 +34,8 @@ final class Dispatch {
     private static final float CLOCK_X = -0.35f, CLOCK_Y = -0.4f, CLOCK_Z = 0.4f;
 
     private final World.Host host;
-    private final String[] lines;
-    private final int letters;
+    private String[] lines, next;
+    private int letters;
     private float t, typed, knockAt = -1f, openAt = -1f;
     private boolean pressed, done;
     private int ticked;
@@ -47,15 +47,49 @@ final class Dispatch {
     /** The room in her head, its screen showing these lines (the last is the call to go on, blinking once all is typed). */
     Dispatch(World.Host host, String[] lines) {
         this.host = host;
+        show(lines);
+    }
+
+    private void show(String[] lines) {
         this.lines = lines;
         int n = 0;
         for (String l : lines) n += l.length();
         letters = n;
+        typed = 0f;
+        ticked = 0;
+    }
+
+    /** After these lines, at the key, the next ones on the screen before the walls draw back. */
+    Dispatch then(String[] more) {
+        next = more;
+        return this;
     }
 
     /** What the screen says before a mission. */
     static String[] briefing(int round) {
+        if (Folder.its(round)) return Lang.lines("brief.folder", round, null);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
+    }
+
+    /** Before the folder's mission again, after the rivals got there first. */
+    static String[] again(int round) {
+        return Lang.lines("brief.again", round, null);
+    }
+
+    /** The folder brought in: the reward, what has been won in all, the time. */
+    static String[] paid(int round, String time, int money) {
+        return fill(Lang.lines("report.folder", round, time), money);
+    }
+
+    /** The rivals got there first. */
+    static String[] lost(int round, String time) {
+        return Lang.lines("report.lost", round, time);
+    }
+
+    private static String[] fill(String[] lines, int money) {
+        for (int k = 0; k < lines.length; k++)
+            lines[k] = lines[k].replace("{reward}", World.money(Folder.REWARD)).replace("{sum}", World.money(money));
+        return lines;
     }
 
     /** What the screen says when a mission is done. */
@@ -93,7 +127,14 @@ final class Dispatch {
             host.sound(Synth.WOOD, 0.9f, 0.75f);
             host.sound(Synth.TOCK, 0.5f, 1.3f);
         }
-        if (pressed && openAt < 0f && t - knockAt >= KNOCK + KNOCKED) {
+        if (pressed && openAt < 0f && t - knockAt >= KNOCK + KNOCKED && next != null) {
+            // the screen wiped, the next dispatch typed on it
+            show(next);
+            next = null;
+            knockAt = -1f;
+            pressed = false;
+            host.sound(Synth.TV_OFF, 0.3f, 1.6f);
+        } else if (pressed && openAt < 0f && t - knockAt >= KNOCK + KNOCKED) {
             openAt = t;
             host.sound(Synth.WHOOSH, 0.45f, 1.2f);
         }
@@ -287,30 +328,71 @@ final class Dispatch {
         int ix0 = Math.max(0, Math.round(x0)), iy0 = Math.max(0, Math.round(y0));
         int ix1 = Math.min(f.w, Math.round(x1)), iy1 = Math.min(f.h, Math.round(y1));
         float typedShare = Math.min(1f, (t - CLOSE) / 0.25f);
+        // a dark veil over the street, so the words read; the tube draws its rows over it
+        int a = Math.round(185 * Math.max(0f, typedShare));
         for (int y = iy0; y < iy1; y++)
-            for (int x = ix0; x < ix1; x++) {
-                // a dark veil over the street, so the words read; the lines of a tube across it
-                int a = Math.round(150 * Math.max(0f, typedShare)) + ((y & 1) == 1 ? 40 : 0);
-                f.a[y * f.w + x] = (Math.min(255, a) << 24) | 0x06181A;
-            }
+            for (int x = ix0; x < ix1; x++) f.a[y * f.w + x] = (a << 24) | 0x0E0A07;
+        d.tube[0] = ix0;
+        d.tube[1] = iy0;
+        d.tube[2] = ix1;
+        d.tube[3] = iy1;
         if (t < CLOSE) return;
-        int lineH = 9, top = iy0 + Math.max(4, Math.round((iy1 - iy0 - lines.length * lineH) * 0.5f));
-        int left = ix0 + 7;
-        int shown = (int) typed;
+        if (font == null) font = TubeFont.read(host.asset("tube.bin"));
+        if (font == null) {
+            pixelLines(f, ix0, iy0, iy1);
+            return;
+        }
+        // a line a row of letters; an empty line half that
+        int lineH = font.rows - 1, half = lineH / 2, total = 0;
+        for (String l : lines) total += l.isEmpty() ? half : lineH;
+        int top = iy0 + Math.max(3, Math.round((iy1 - iy0 - total) * 0.5f)), left = ix0 + 7;
+        // the beam: a band a little brighter running down the glass now and then
+        float sweep = (t * 0.55f) % 2.2f, beamY = iy0 + sweep * (iy1 - iy0);
+        int shown = (int) typed, y = top;
         for (int i = 0; i < lines.length; i++) {
             String s = lines[i];
             if (shown <= 0) break;
             String part = s.length() <= shown ? s : s.substring(0, shown);
             shown -= s.length();
+            int lh = s.isEmpty() ? half : lineH;
             boolean last = i == lines.length - 1;
-            if (last && typed >= letters && (int) (t * 2.2f) % 2 == 1) continue;
-            int col = last ? 0xFFF6D36A : 0xFFA6F2DA;
+            if (y + lh > iy1 - 2) break;
+            if (!(last && typed >= letters && (int) (t * 2.2f) % 2 == 1)) {
+                int col = last ? 0xFFF2C46A : 0xFFE9DDB0;
+                // each line its own: drifting a little brighter and weaker, and now and then
+                // dimmed a moment, as an uneven beam leaves it
+                float own = 0.84f + 0.1f * (float) Math.sin(t * (1.3f + i * 0.37f) + i * 2.1f)
+                        + 0.06f * (float) Math.sin(t * (4.1f + i * 0.9f) + i);
+                int tick = (int) (t * 7f);
+                if (((tick * 7919 + i * 104729) ^ (tick >>> 3) * 31) % 41 == 0) own *= 0.62f;
+                for (int r = 0; r < font.rows; r++) {
+                    float off = (y + r - beamY) / 7f;
+                    light[r] = own * (1f + 0.28f * (float) Math.exp(-off * off));
+                }
+                font.draw(f, part, left, y, col, light);
+                if (shown < 0 && typed < letters) {
+                    int cx = left + font.width(part) + 1;
+                    f.rect(cx, y + 2, cx + 3, y + font.base, col);
+                }
+            }
+            y += lh;
+        }
+    }
+
+    private static TubeFont font;
+    private final float[] light = new float[32];
+
+    /** The dispatch in the small capitals of the frame, when the tube's own font is not to be had. */
+    private void pixelLines(Px f, int left, int iy0, int iy1) {
+        int lineH = 9, top = iy0 + Math.max(4, Math.round((iy1 - iy0 - lines.length * lineH) * 0.5f));
+        int shown = (int) typed;
+        for (int i = 0; i < lines.length && shown > 0; i++) {
+            String s = lines[i].toUpperCase();
+            String part = s.length() <= shown ? s : s.substring(0, shown);
+            shown -= s.length();
             int y = top + i * lineH;
             if (y + 7 > iy1 - 2) break;
-            PixelFont.draw(f, part, left + 1, y + 1, 1, 0xAA041012);
-            PixelFont.draw(f, part, left, y, 1, col);
-            if (shown < 0 && typed < letters)
-                f.rect(left + PixelFont.width(part, 1) + 1, y, left + PixelFont.width(part, 1) + 5, y + 7, col);
+            PixelFont.draw(f, part, left + 7, y, 1, 0xFFE9DDB0);
         }
     }
 

@@ -44,8 +44,29 @@ final class Runner {
     private float downAt = -9f, upAt = -9f, tapAt = -9f, moved;
     /** Gliding: falling slowly, arms out, till she lands. */
     boolean gliding;
+    /** Hidden: in a lift, between the street and the roof. */
+    boolean hidden;
+
+    // going down by herself: across the roof to (autoX, autoZ) past its edge, off it, then gliding
+    // down along the street (autoH); landed, she is done
+    static final float AUTO_GLIDE = 5.5f, AUTO_SINK = 3.4f;
+    private boolean auto;
+    private float autoX, autoZ, autoH;
+    /** Down in the street again, after going down by herself. */
+    boolean landed;
+
+    /** Down to the street by herself: over the edge at (ex, ez), then gliding on along heading h. */
+    void auto(float ex, float ez, float h) {
+        auto = true;
+        landed = false;
+        autoX = ex;
+        autoZ = ez;
+        autoH = h;
+        holding = false;
+    }
 
     void touch(int type, float fx, float fy) {
+        if (auto) return;
         if (type == World.DOWN) {
             holding = true;
             lastX = fx;
@@ -118,6 +139,7 @@ final class Runner {
         state = RUN;
         gliding = false;
         placed = false;
+        auto = false;
     }
 
     /** Whether her feet are off whatever is under her. */
@@ -163,6 +185,8 @@ final class Runner {
             while (d > Math.PI) d -= 2f * (float) Math.PI;
             while (d < -Math.PI) d += 2f * (float) Math.PI;
             heading += Math.max(-10f * dt, Math.min(10f * dt, d));
+        } else if (auto) {
+            steer(dt);
         } else if (holding || clock - upAt < GRACE) speed += (TOP_SPEED - speed) * Math.min(1f, dt * PICK_UP);
         else if (state != AIR) speed = Math.max(0f, speed - BRAKE * dt);
         if (state == SLIDE) {
@@ -191,7 +215,7 @@ final class Runner {
         if (state == AIR) {
             vy -= GRAVITY * dt;
             // gliding, once past the top of the jump, she sinks slowly
-            if (gliding && vy < -SINK) vy = -SINK;
+            if (gliding && vy < -(auto ? AUTO_SINK : SINK)) vy = -(auto ? AUTO_SINK : SINK);
             y += vy * dt;
             float ground = city.ground(x, z, y - vy * dt, 0.05f);
             if (y <= ground && vy < 0f) {
@@ -200,6 +224,11 @@ final class Runner {
                 state = RUN;
                 stateAt = clock;
                 gliding = false;
+                // down by herself: done in the street; on a roof on the way, on to its edge
+                if (auto && y < 1f) {
+                    auto = false;
+                    landed = true;
+                }
             }
         } else {
             float ground = city.ground(x, z, y, City.STEP);
@@ -216,6 +245,28 @@ final class Runner {
         // the stride: run on in step with the ground going by
         stride += dt * Math.max(0.3f, speed) / strideSpeed();
         eye(dt, city);
+    }
+
+    /** Going down by herself: to the edge at a run and off it in a leap; in the air, round along the street. */
+    private void steer(float dt) {
+        float want;
+        if (state == AIR) {
+            want = autoH;
+            speed += (AUTO_GLIDE - speed) * Math.min(1f, dt * 1.5f);
+        } else {
+            want = (float) Math.atan2(autoX - x, autoZ - z);
+            speed += (TOP_SPEED * 0.8f - speed) * Math.min(1f, dt * 2f);
+            float dx = autoX - x, dz = autoZ - z;
+            if (dx * dx + dz * dz < 1.6f * 1.6f) {
+                leap();
+                gliding = true;
+            }
+        }
+        float d = want - heading;
+        while (d > Math.PI) d -= 2f * (float) Math.PI;
+        while (d < -Math.PI) d += 2f * (float) Math.PI;
+        heading += Math.max(-1.6f * dt, Math.min(1.6f * dt, d));
+        if (state == AIR) gliding = true;
     }
 
     /** How fast the motion now shown carries her when played as it was taken, meters a second. */
@@ -281,6 +332,7 @@ final class Runner {
     }
 
     void draw(DrawList d) {
+        if (hidden) return;
         // the figure faces -z at no turn: turned half round, she runs the way she is headed
         Frida.draw(d, x, y, z, heading + (float) Math.PI, SIZE, motion(), motionTime());
     }

@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.20
+
+- A second kind of mission, every other one: the folder. A folder of papers has fallen out of a
+  helicopter's cabin onto the roofs; there is a reward of 100 000 for it. The helicopter circles
+  low over where it fell. At the top, how far off it is; at the edge of the frame a red mark the
+  way it is; over it, when it is in sight, a red mark coming and going, and it glints.
+- Golems are after it too: three, each setting off a while after the start from its own side of
+  the town, running the streets the shortest way to the folder's house, climbing its front and
+  crossing the roof. In the corner, how far each has still to go (gold once it climbs). The
+  mallet takes them down as it takes the five. If one gets there first, the mission is lost; the
+  report says so, and the same mission is played again.
+- Lifts: one in two of the taller houses has a door in its front and at its back, a green lamp
+  with an arrow over each. Run into it: the doors shut, the floors are counted in the dark, and
+  she comes out of a hut on the roof. Into the hut's door, and down to the street again. The
+  folder's house has none: up a house near it, then roof to roof.
+- Taken, the folder goes under her arm and she goes down by herself: to the edge of the roof,
+  off it in a leap and down along the street, gliding. In the street, back into her head.
+- The room in her head after a mission: the report, a touch, and on the same screen the
+  briefing of the next.
+- The dispatch screen: small letters and capitals in the manner of an old tube, warm white,
+  each row of dots with a dark line under it; each line a little brighter or weaker as the beam
+  goes, now and then dimmed a moment, a brighter band passing down the glass. The texts in both
+  languages are in ordinary small letters now.
+- Autosave keeps the money too, and a lost folder keeps the mission to play again.
+- Stand: `mission N`, `nearfolder`, `onfolder M R`, `climbing M`, `folderbot S E P` (a player
+  after the folder: streets, lift, roofs), `idle S E P` (the rivals alone), `catchall`, `turn R`.
+  Scenes `folder.txt`, `folderlook.txt`, `lost.txt`, `lift.txt`, `next.txt`, `tube.txt`.
+
 ## 0.19
 
 - A tap, she jumps; two taps quickly, she leaps, high enough to clear a car or come down on
