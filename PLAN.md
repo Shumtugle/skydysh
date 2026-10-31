@@ -38,11 +38,31 @@ release, each seen on the stand before the phone.
 
 ## Next
 
+Asset sets kept apart from these sources (the meshes are not in the repository; see the README)
+are waiting for the work below. Each item is one release or a few.
+
+- Still meshes in the renderer: the people's path without bones, for whatever stands and does
+  not walk (trees, hedges, furniture, cars), drawn many times over from one copy.
+- Greenery: trees along the streets, hedges and low bushes round the squares and along the
+  promenade, flower beds, a green maze in a park; summer here, the other seasons for another
+  town.
+- Cars as meshes instead of boxes, their wheels turning on their own: ordinary saloons,
+  hatchbacks, estates, taxis, the police; then an ambulance, a fire engine, a dustcart, vans and
+  lorries about the town; cones and wreckage after a crash.
+- Rooms furnished: a hotel's corridors and stairs built from wall, door and ceiling sections into
+  the room generator's plans; flats with a kitchen, a sitting room, a bathroom; a lobby.
+- Animals, each on a skeleton of its own with motions of its own (the pack's renderer taking any
+  skeleton, not only the people's): dogs on leads and strays first; a mounted police horse on the
+  promenade, a donkey for rides by the sea; the country animals for a mission outside the town.
+- A mission with dinosaurs, loose in the town as the golems were.
+- A mission in another, colder town: its own townspeople in coats and jumpers.
+- Townspeople with something to do: a waiter outside a café, a fisher on the promenade, a seller
+  with a cart, people sitting on benches; the police on foot.
+
 - More plans indoors, of the same parts, for other missions: a stairwell, offices, a garage,
   a hotel's lobby; a mission that starts or ends indoors.
 
-- The new look carried on: cars in the manner of the eighties, angular saloons, long coupes and open tops, a
-  little chrome; balconies, signs and lights of the evening, pink and blue.
+- The new look carried on: balconies, signs and lights of the evening, pink and blue.
 
 - The race against the clock: gates at crossings strung into a course, a clock, a mark at the
   edge of the frame pointing to the next gate.
