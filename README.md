@@ -14,7 +14,9 @@ eyes, what is to be done typed over it; a touch, her mallet knocks a key, the wa
 and the street goes on. When it is done, back into her head for the report.
 
 A finger on the glass makes her run; moved sideways, it turns her by as much as it moved;
-flicked up, she jumps; flicked down, she slides; lifted, she slows to a stop.
+a tap, she jumps; two taps quickly, she leaps over a car or up onto what stands a storey up;
+flicked up, she glides; flicked down, she slides; lifted, she slows to a stop. She stands on
+whatever she comes down on, the roofs too. When a mission is done the game keeps where it is.
 
 For now, to try: a hunt. Five golems on fire that should not be are loose in the town, each
 waiting somewhere far off on a pavement of its own; come near one and it runs. Run it down to

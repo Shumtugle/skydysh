@@ -2,10 +2,13 @@ package com.shumtugle.skydysh;
 
 /**
  * Freedie on foot, and the eye that follows her: she runs while a finger is on the glass and
- * slows to a stop when it lifts; the finger leads her, as it led the aim: moved sideways, she
- * turns by as much as it moved, wherever it lies on the glass; flicked up, she jumps; flicked
- * down, she slides. Houses, lamp posts, palms, cars and people stop her; the curb is a step she takes in her
- * stride.
+ * slows to a stop when it lifts (not at once: a quick lift and touch again keeps her going); the
+ * finger leads her: moved sideways, she turns by as much as it moved, wherever it lies on the
+ * glass. A tap, she jumps; two taps quickly, she leaps high, over a car or onto what is a storey
+ * up; flicked up, she glides, falling slowly with her arms out; flicked down, she slides.
+ * Houses, lamp posts, palms, cars and people stop her, unless she is over them; she stands on
+ * whatever she comes down on, the roofs too, and runs off their edges into the air; the curb is
+ * a step she takes in her stride.
  *
  * Her heading is the way she runs, in the eye's own terms (0 along +z, growing toward +x); the
  * eye sits behind her and a little above, turning after her a moment late.
@@ -13,7 +16,10 @@ package com.shumtugle.skydysh;
 final class Runner {
     static final float SIZE = 1.3f, RADIUS = 0.55f;
     static final float TOP_SPEED = 11.5f, PICK_UP = 1.1f, BRAKE = 12f;
-    static final float GRAVITY = 22f, JUMP = 8f;
+    static final float GRAVITY = 22f, JUMP = 8f, LEAP = 12.6f, SINK = 2.2f;
+    // a tap: so short and so still; two taps, so close together; a lift that keeps her running
+    static final float GLIDE_POSE = 1.2f;              // where in the jump's motion her arms are out
+    static final float TAP_S = 0.22f, TAP_PX = 14f, DOUBLE_S = 0.34f, GRACE = 0.3f;
     // the finger: frame pixels moved sideways for a quarter turn; how far and how fast a flick goes
     static final float QUARTER = 110f, FLICK_PX = 26f, FLICK_S = 0.16f;
     // the eye: so far behind her, so high, looking so far ahead of her
@@ -35,6 +41,9 @@ final class Runner {
 
     // the finger: where it was last, and where it was a moment ago, for a flick
     private float lastX, lastY, flickY, flickAt;
+    private float downAt = -9f, upAt = -9f, tapAt = -9f, moved;
+    /** Gliding: falling slowly, arms out, till she lands. */
+    boolean gliding;
 
     void touch(int type, float fx, float fy) {
         if (type == World.DOWN) {
@@ -43,8 +52,11 @@ final class Runner {
             lastY = fy;
             flickY = fy;
             flickAt = clock;
+            downAt = clock;
+            moved = 0f;
         } else if (type == World.MOVE && holding) {
             heading += (fx - lastX) / QUARTER * (float) (Math.PI / 2);
+            moved += Math.abs(fx - lastX) + Math.abs(fy - lastY);
             lastX = fx;
             lastY = fy;
             // a flick: far enough, quickly enough, up or down
@@ -52,7 +64,7 @@ final class Runner {
                 flickY = fy;
                 flickAt = clock;
             } else if (flickY - fy > FLICK_PX) {
-                jump();
+                glide();
                 flickY = fy;
                 flickAt = clock;
             } else if (fy - flickY > FLICK_PX) {
@@ -62,6 +74,13 @@ final class Runner {
             }
         } else if (type == World.UP) {
             holding = false;
+            upAt = clock;
+            if (clock - downAt < TAP_S && moved < TAP_PX) {
+                // a tap; a second one close after the first makes it a leap
+                if (clock - tapAt < DOUBLE_S) leap();
+                else jump();
+                tapAt = clock;
+            }
         }
     }
 
@@ -70,6 +89,40 @@ final class Runner {
         state = AIR;
         stateAt = clock;
         vy = JUMP;
+    }
+
+    /** High: from the ground, or, just after a jump, on up from it. */
+    private void leap() {
+        if (state == AIR && (clock - stateAt > 0.35f || vy <= 0f)) return;
+        if (state != AIR) {
+            state = AIR;
+            stateAt = clock;
+        }
+        vy = LEAP;
+    }
+
+    /** Arms out: on the ground she jumps first. */
+    private void glide() {
+        if (state != AIR) jump();
+        gliding = true;
+    }
+
+    /** For the desktop stand and for missions: her put down here, facing so. */
+    void put(float px, float py, float pz, float h) {
+        x = px;
+        y = py;
+        z = pz;
+        heading = h;
+        speed = 0f;
+        vy = 0f;
+        state = RUN;
+        gliding = false;
+        placed = false;
+    }
+
+    /** Whether her feet are off whatever is under her. */
+    boolean inAir() {
+        return state == AIR;
     }
 
     private void slide() {
@@ -110,8 +163,8 @@ final class Runner {
             while (d > Math.PI) d -= 2f * (float) Math.PI;
             while (d < -Math.PI) d += 2f * (float) Math.PI;
             heading += Math.max(-10f * dt, Math.min(10f * dt, d));
-        } else if (holding) speed += (TOP_SPEED - speed) * Math.min(1f, dt * PICK_UP);
-        else speed = Math.max(0f, speed - BRAKE * dt);
+        } else if (holding || clock - upAt < GRACE) speed += (TOP_SPEED - speed) * Math.min(1f, dt * PICK_UP);
+        else if (state != AIR) speed = Math.max(0f, speed - BRAKE * dt);
         if (state == SLIDE) {
             // a slide carries her on, a little slower, then she is up and running again
             speed = Math.max(speed - 3f * dt, 2f);
@@ -124,7 +177,8 @@ final class Runner {
         x += fx * speed * dt;
         z += fz * speed * dt;
         float[] p = {x, z};
-        if (city.push(p, RADIUS) | cars.push(p, RADIUS) | walkers.push(p, RADIUS)) {
+        float lift = y - city.ground(x, z);
+        if (city.push(p, RADIUS, y) | cars.push(p, RADIUS, lift) | walkers.push(p, RADIUS, lift)) {
             // ran into something: what was across her way is lost
             float mx = (p[0] - x), mz = (p[1] - z), m = (float) Math.sqrt(mx * mx + mz * mz);
             if (m > 1e-4f) {
@@ -134,19 +188,30 @@ final class Runner {
         }
         x = p[0];
         z = p[1];
-        float ground = city.ground(x, z);
         if (state == AIR) {
             vy -= GRAVITY * dt;
+            // gliding, once past the top of the jump, she sinks slowly
+            if (gliding && vy < -SINK) vy = -SINK;
             y += vy * dt;
+            float ground = city.ground(x, z, y - vy * dt, 0.05f);
             if (y <= ground && vy < 0f) {
                 y = ground;
                 vy = 0f;
                 state = RUN;
                 stateAt = clock;
+                gliding = false;
             }
         } else {
-            // the step up onto the pavement taken in a moment, the step down as quick
-            y += (ground - y) * Math.min(1f, dt * 18f);
+            float ground = city.ground(x, z, y, City.STEP);
+            if (ground < y - 0.7f) {
+                // off an edge: into the air
+                state = AIR;
+                stateAt = clock;
+                vy = 0f;
+            } else {
+                // the step up onto the pavement taken in a moment, the step down as quick
+                y += (ground - y) * Math.min(1f, dt * 18f);
+            }
         }
         // the stride: run on in step with the ground going by
         stride += dt * Math.max(0.3f, speed) / strideSpeed();
@@ -162,6 +227,7 @@ final class Runner {
 
     private String motion() {
         if (throwing() >= 0f && state != AIR) return "throw";
+        if (state == AIR && gliding && vy < 0f) return "jump_air";
         if (state == AIR) return "leap_air";
         if (state == SLIDE) return clock - stateAt < 0.25f ? "slide_start" : clock - stateAt < 0.7f ? "slide" : "slide_end";
         if (speed > 6f) return "sprint";
@@ -172,6 +238,7 @@ final class Runner {
 
     private float motionTime() {
         if (throwing() >= 0f && state != AIR) return throwing();
+        if (state == AIR && gliding && vy < 0f) return GLIDE_POSE;
         if (state == AIR) return (clock - stateAt) * 1.4f + 0.3f;
         if (state == SLIDE) {
             float t = clock - stateAt;
@@ -199,7 +266,7 @@ final class Runner {
         eyeYaw += d * Math.min(1f, dt * 4.5f);
         float fx = (float) Math.sin(eyeYaw), fz = (float) Math.cos(eyeYaw);
         float[] p = {x - fx * BACK, z - fz * BACK};
-        city.push(p, 0.4f);
+        city.push(p, 0.4f, y + HIGH - 1f);
         eyeX = p[0];
         eyeZ = p[1];
         eyeY = y + HIGH;

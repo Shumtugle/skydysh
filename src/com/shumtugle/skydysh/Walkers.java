@@ -122,6 +122,10 @@ final class Walkers {
     }
 
     /** Pushes a round body of radius rr out of anyone it went into; true if it touched someone. */
+    boolean push(float[] p, float r, float lift) {
+        return lift > 1.6f ? false : push(p, r);
+    }
+
     boolean push(float[] p, float rr) {
         boolean hit = false;
         for (int i = 0; i < MOST; i++) {

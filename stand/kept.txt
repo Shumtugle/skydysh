@@ -1,0 +1,6 @@
+# the game started again after two missions: the third one is briefed
+keep mission 3
+keep plates 10
+restart
+dispatch
+shot kept

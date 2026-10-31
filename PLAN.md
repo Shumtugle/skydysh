@@ -25,6 +25,7 @@ release, each seen on the stand before the phone.
 - 0.16 The golem runs on when reached and the mallet catches it up; all a little quicker.
 - 0.17 The dispatcher's room is her head: walls of her brick round the street seen through her eyes.
 - 0.18 Russian, by the phone's language or the game's own.
+- 0.19 A tap jumps, two taps leap, a flick up glides; over cars and onto roofs; autosave.
 
 ## Next
 
@@ -41,7 +42,9 @@ release, each seen on the stand before the phone.
   feel: mass, grip, how it takes a corner. The finger to lead it as it leads her; whether it
   needs a pedal of its own is to be tried.
 - The sea along one side of the town, a promenade, canals; a boat.
-- Roofs to land on; a plane.
+- The folder: dropped from a helicopter onto the roofs, a reward for it, golems after it too;
+  into a building, up to the roof, across the roofs, and down gliding with it.
+- A plane.
 - The room in her head to go with her in the car, the boat and the plane: the same room, what
   she sees through the screen changing with what she is in. Its keys to do more: a choice of
   missions, the best times kept.

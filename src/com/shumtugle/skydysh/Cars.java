@@ -18,6 +18,7 @@ final class Cars {
     static final float CRUISE = 10.5f, TURNING = 5.8f, GAP = 12f;
     static final float BORN_NEAR = 45f, BORN_FAR = 130f, GONE = 170f;
     static final int MOST = 12;
+    static final float TOP = 1.45f;                 // how high a car's roof is
 
     private final Random rnd = new Random(0xCA25L);
     final float[] x = new float[MOST], z = new float[MOST], heading = new float[MOST], speed = new float[MOST];
@@ -144,6 +145,18 @@ final class Cars {
         live[0] = true;
     }
 
+    /** For the desktop stand: car 0 standing across her way, so far ahead of her, stopped. */
+    void standAcross(Runner r, float ahead) {
+        float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading);
+        x[0] = r.x + fx * ahead;
+        z[0] = r.z + fz * ahead;
+        heading[0] = r.heading + (float) Math.PI * 0.5f;
+        speed[0] = 0f;
+        halt[0] = 1000f;
+        paint[0] = PAINT[1];
+        live[0] = true;
+    }
+
     /** What car c does at the crossing after the one it is going to: on, mostly; left or right now and then. */
     private void choose(int c) {
         int roll = rnd.nextInt(5);
@@ -188,6 +201,12 @@ final class Cars {
      * round ends along its length. True if it touched one.
      */
     boolean push(float[] p, float rr) {
+        return push(p, rr, 0f);
+    }
+
+    /** The same, for one whose feet are this high off the road: over a car's roof is clear of it. */
+    boolean push(float[] p, float rr, float lift) {
+        if (lift > TOP - 0.1f) return false;
         boolean hit = false;
         for (int c = 0; c < MOST; c++) {
             if (!live[c]) continue;

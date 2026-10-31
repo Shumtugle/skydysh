@@ -39,17 +39,22 @@ final class City {
         final DrawList detail = new DrawList();
         // the parked cars: nearer still
         final DrawList parked = new DrawList();
-        // x0, z0, x1, z1 for each
-        float[] walls = new float[64];
+        // x0, z0, x1, z1, and how high its top is, for each
+        float[] walls = new float[80];
         int wallN;
         int used;
 
         void wall(float x0, float z0, float x1, float z1) {
-            if ((wallN + 1) * 4 > walls.length) walls = java.util.Arrays.copyOf(walls, walls.length * 2);
-            walls[wallN * 4] = Math.min(x0, x1);
-            walls[wallN * 4 + 1] = Math.min(z0, z1);
-            walls[wallN * 4 + 2] = Math.max(x0, x1);
-            walls[wallN * 4 + 3] = Math.max(z0, z1);
+            wall(x0, z0, x1, z1, TALL);
+        }
+
+        void wall(float x0, float z0, float x1, float z1, float top) {
+            if ((wallN + 1) * 5 > walls.length) walls = java.util.Arrays.copyOf(walls, walls.length * 2);
+            walls[wallN * 5] = Math.min(x0, x1);
+            walls[wallN * 5 + 1] = Math.min(z0, z1);
+            walls[wallN * 5 + 2] = Math.max(x0, x1);
+            walls[wallN * 5 + 3] = Math.max(z0, z1);
+            walls[wallN * 5 + 4] = top;
             wallN++;
         }
     }
@@ -100,6 +105,9 @@ final class City {
         }
     }
 
+    // what has no top to stand on (a palm); how high a step is taken in the stride, or pushed against
+    static final float TALL = 1000f, STEP = 0.6f, LOW = 0.35f;
+
     /** How high the ground is here: the road, or the pavement a step up. */
     float ground(float x, float z) {
         float ox = x - Math.round(x / CELL) * CELL, oz = z - Math.round(z / CELL) * CELL;
@@ -107,17 +115,75 @@ final class City {
     }
 
     /**
+     * For the desktop stand and for missions: the roof of a house near (x, z), whose middle and
+     * top go into out (x, top, z) and whose half sizes into half (x, z); false if none is near.
+     */
+    boolean roofNear(float x, float z, float[] out, float[] half) {
+        float best = 1e9f;
+        int ci = index(x), cj = index(z);
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                Cell c = cell(i, j);
+                for (int k = 0; k < c.wallN; k++) {
+                    int o = k * 5;
+                    float top = c.walls[o + 4];
+                    if (top < 10f || top > 40f) continue;
+                    float w = c.walls[o + 2] - c.walls[o], dpt = c.walls[o + 3] - c.walls[o + 1];
+                    if (w < 5f || dpt < 5f) continue;
+                    float mx = (c.walls[o] + c.walls[o + 2]) * 0.5f, mz = (c.walls[o + 1] + c.walls[o + 3]) * 0.5f;
+                    float dd = (mx - x) * (mx - x) + (mz - z) * (mz - z);
+                    if (dd < best) {
+                        best = dd;
+                        out[0] = mx;
+                        out[1] = top;
+                        out[2] = mz;
+                        half[0] = w * 0.5f;
+                        half[1] = dpt * 0.5f;
+                    }
+                }
+            }
+        return best < 1e9f;
+    }
+
+    /**
+     * The highest thing under (x, z) that one whose feet are at feet can stand on: the street, or
+     * the top of whatever is there no higher than reach above the feet (a roof, a car, a step).
+     */
+    float ground(float x, float z, float feet, float reach) {
+        float g = ground(x, z);
+        int ci = index(x), cj = index(z);
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                Cell c = cell(i, j);
+                for (int k = 0; k < c.wallN; k++) {
+                    int o = k * 5;
+                    float top = c.walls[o + 4];
+                    if (top <= g || top > feet + reach) continue;
+                    if (x >= c.walls[o] && x <= c.walls[o + 2] && z >= c.walls[o + 1] && z <= c.walls[o + 3]) g = top;
+                }
+            }
+        return g;
+    }
+
+    /**
      * Pushes a round body of radius r standing at (p[0], p[1]) out of whatever it went into;
      * true if it touched something.
      */
     boolean push(float[] p, float r) {
+        return push(p, r, 0f);
+    }
+
+    /** The same, for one whose feet are at feet: what is lower than a step under them is not in the way. */
+    boolean push(float[] p, float r, float feet) {
         boolean hit = false;
         int ci = index(p[0]), cj = index(p[1]);
         for (int j = cj - 1; j <= cj + 1; j++)
             for (int i = ci - 1; i <= ci + 1; i++) {
                 Cell c = cell(i, j);
                 for (int k = 0; k < c.wallN; k++) {
-                    float x0 = c.walls[k * 4], z0 = c.walls[k * 4 + 1], x1 = c.walls[k * 4 + 2], z1 = c.walls[k * 4 + 3];
+                    int o = k * 5;
+                    if (c.walls[o + 4] <= feet + LOW) continue;
+                    float x0 = c.walls[o], z0 = c.walls[o + 1], x1 = c.walls[o + 2], z1 = c.walls[o + 3];
                     float nx = Math.max(x0, Math.min(p[0], x1)), nz = Math.max(z0, Math.min(p[1], z1));
                     float dx = p[0] - nx, dz = p[1] - nz, dd = dx * dx + dz * dz;
                     if (dd >= r * r) continue;
@@ -230,14 +296,16 @@ final class City {
             float fv = side < 0 ? v0 : v1;
             float kx = alongX ? cu : fv + side * 0.15f, kz = alongX ? fv + side * 0.15f : cu;
             d.box(kx, height - 0.2f, kz, alongX ? hu : 0.25f, 0.2f, alongX ? 0.25f : hu, null, Street.scale(tint, 1.05f), DrawList.PLAIN);
-            roof(d, c.detail, cx, height, cz, hx, hz, seed);
-            c.wall(cx - hx, cz - hz, cx + hx, cz + hz);
+            roof(c, d, c.detail, cx, height, cz, hx, hz, seed);
+            // the house, and its roof to stand on: the tiles, a step up in the middle
+            c.wall(cx - hx, cz - hz, cx + hx, cz + hz, height + 0.5f);
+            c.wall(cx - hx + 1.3f, cz - Math.max(0.4f, hz - 1.3f), cx + hx - 1.3f, cz + Math.max(0.4f, hz - 1.3f), height + 0.75f);
             u += len;
         }
     }
 
     /** A roof of red tiles in two steps; its chimneys among the small things. */
-    private static void roof(DrawList d, DrawList small, float x, float top, float z, float hx, float hz, int seed) {
+    private static void roof(Cell cell, DrawList d, DrawList small, float x, float top, float z, float hx, float hz, int seed) {
         d.box(x, top + 0.25f, z, hx - 0.3f, 0.25f, hz - 0.3f, null, 0xC4673E, DrawList.GRAIN);
         d.box(x, top + 0.6f, z, hx - 1.3f, 0.15f, Math.max(0.4f, hz - 1.3f), null, 0xA8553A, DrawList.GRAIN);
         int h = seed * 0x2545F491;
@@ -245,6 +313,7 @@ final class City {
             float cx = x + ((((h >>> (9 + c * 5)) & 31) / 31f) - 0.5f) * hx;
             float cz = z + ((((h >>> (19 + c * 5)) & 31) / 31f) - 0.5f) * hz;
             small.box(cx, top + 1.1f, cz, 0.3f, 0.6f, 0.3f, null, 0xBE9C84, DrawList.STONE);
+            cell.wall(cx - 0.3f, cz - 0.3f, cx + 0.3f, cz + 0.3f, top + 1.7f);
         }
     }
 
@@ -263,7 +332,7 @@ final class City {
         d.box(mx, WALK_TOP + 0.3f, mz, 3.2f, 0.3f, 3.2f, null, 0xE2D4BA, DrawList.STONE);
         d.box(mx, WALK_TOP + 0.55f, mz, 2.8f, 0.06f, 2.8f, null, 0x2D6990, DrawList.SEA);
         d.box(mx, WALK_TOP + 1.1f, mz, 0.35f, 0.6f, 0.35f, null, 0xE2D4BA, DrawList.STONE);
-        c.wall(mx - 3.2f, mz - 3.2f, mx + 3.2f, mz + 3.2f);
+        c.wall(mx - 3.2f, mz - 3.2f, mx + 3.2f, mz + 3.2f, WALK_TOP + 0.6f);
     }
 
     /**
@@ -280,12 +349,12 @@ final class City {
                 if (rnd.nextBoolean()) {
                     float x = x0 + s * off, z = z0 + t;
                     Cars.car(c.parked, x, z, s > 0 ? 0f : (float) Math.PI, paint, true);
-                    c.wall(x - 0.95f, z - 2.3f, x + 0.95f, z + 2.3f);
+                    c.wall(x - 0.95f, z - 2.3f, x + 0.95f, z + 2.3f, Cars.TOP);
                 } else {
                     // the street running east: on its south side they face east, on its north side west
                     float x = x0 + t, z = z0 + s * off;
                     Cars.car(c.parked, x, z, s < 0 ? (float) (Math.PI / 2) : (float) (-Math.PI / 2), paint, true);
-                    c.wall(x - 2.3f, z - 0.95f, x + 2.3f, z + 0.95f);
+                    c.wall(x - 2.3f, z - 0.95f, x + 2.3f, z + 0.95f, Cars.TOP);
                 }
             }
     }
@@ -306,6 +375,6 @@ final class City {
         d.box(x, WALK_TOP + 0.25f, z, 0.14f, 0.25f, 0.14f, null, iron, DrawList.PLAIN);
         d.box(x, WALK_TOP + 4.4f, z, 0.135f, 0.185f, 0.135f, null, 0xF3E2B4, DrawList.GLOW);
         d.box(x, WALK_TOP + 4.62f, z, 0.2f, 0.04f, 0.2f, null, iron, DrawList.PLAIN);
-        c.wall(x - 0.12f, z - 0.12f, x + 0.12f, z + 0.12f);
+        c.wall(x - 0.12f, z - 0.12f, x + 0.12f, z + 0.12f, WALK_TOP + 4.7f);
     }
 }

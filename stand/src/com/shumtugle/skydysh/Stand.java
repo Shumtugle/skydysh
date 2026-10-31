@@ -72,6 +72,7 @@ public final class Stand implements World.Host {
     @Override
     public void saveInt(String key, int value) {
         kept.put(key, value);
+        System.out.println(String.format("%7.2fs  kept %s = %d", time, key, value));
     }
 
     @Override
@@ -198,9 +199,31 @@ public final class Stand implements World.Host {
             // the game started again, with what it kept
             world = new World(this);
             world.skipOpening();
+            System.out.println(String.format("%7.2fs  started again at mission %d", time, world.mission.round));
             world.resize(1096, 2560);
         } else if (c.equals("back")) {
             world.touch(World.BACK, 0f, 0f);
+            step();
+        } else if (c.equals("tap")) {
+            // tap X Y: a finger down and up again at once
+            world.touch(World.DOWN, f(p[1]), f(p[2]));
+            step();
+            world.touch(World.UP, f(p[1]), f(p[2]));
+            step();
+        } else if (c.equals("carahead")) {
+            // carahead METERS: a car standing across her way so far ahead
+            world.cars.standAcross(world.runner, f(p[1]));
+        } else if (c.equals("roof")) {
+            // roof: her put on the roof of the house nearest, at its middle, facing along its long side
+            float[] at = new float[3], half = new float[2];
+            Runner r = world.runner;
+            if (world.city.roofNear(r.x, r.z, at, half))
+                r.put(at[0], at[1] + 0.5f, at[2], half[0] > half[1] ? (float) Math.PI * 0.5f : 0f);
+            step();
+        } else if (c.equals("face")) {
+            // face RADIANS: her turned so
+            Runner r = world.runner;
+            r.put(r.x, r.y, r.z, f(p[1]));
             step();
         } else if (c.equals("lang")) {
             // lang CODE: the game speaks this language from now on

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.18";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.19";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -46,6 +46,9 @@ final class World {
     private Opening opening;                 // what the game opens with, while it plays
     private Dispatch dispatch;               // the dispatcher's room, while she is in it
     private float overFor;                   // how long since the last of the five was caught
+    // kept between games, saved when a mission is done
+    static final String SAVE_MISSION = "mission", SAVE_PLATES = "plates", SAVE_MONEY = "money";
+    int plates, money;
     static final float BACK_TO_ROOM = 3f;
     private float whiteOut;                  // the white of the opening going off the game, seconds left
     final Cars cars = new Cars();
@@ -60,6 +63,11 @@ final class World {
         byte[] moves = host.asset("moves.bin");
         if (moves != null) Frida.use(Moves.read(moves));
         Lang.use(host, host.language());
+        // where the last game left off: the mission to play next, and what has been won
+        int next = host.loadInt(SAVE_MISSION);
+        if (next > 1) mission.round = next - 1;
+        plates = host.loadInt(SAVE_PLATES);
+        money = host.loadInt(SAVE_MONEY);
         mission.start(0f, 0f);
         chase = mission.target(null);
         opening = new Opening(host);
@@ -70,6 +78,14 @@ final class World {
         opening = null;
         dispatch = null;
         Frida.eyes = 1f;
+    }
+
+    /** The mission done: the next one to play and what has been won, kept for the next game. */
+    private void save() {
+        plates += Mission.FIVE;
+        host.saveInt(SAVE_MISSION, mission.round + 1);
+        host.saveInt(SAVE_PLATES, plates);
+        host.saveInt(SAVE_MONEY, money);
     }
 
     /** The dispatcher's room now, with the briefing or (done) the report (the desktop stand). */
@@ -133,6 +149,7 @@ final class World {
             return;
         }
         if (mission.over() && (overFor += dt) > BACK_TO_ROOM) {
+            save();
             dispatch = new Dispatch(host, Dispatch.report(mission.round, clock(mission.doneAt)));
             overFor = 0f;
             return;

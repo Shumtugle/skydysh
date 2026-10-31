@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.19
+
+- A tap, she jumps; two taps quickly, she leaps, high enough to clear a car or come down on
+  what stands a storey up; flicked up, she glides, arms out, sinking slowly till she lands.
+- Things are as high as they are: she goes over a car, a basin, a parked car or a person when
+  she is above it, and comes down on top of whatever she lands on, the roofs too. Off an edge
+  she runs on into the air.
+- Lifted for a moment, the finger keeps her running; in the air she does not slow.
+- Autosave: when a mission is done the game keeps which one is next and what has been won;
+  started again, it goes on from there.
+- Stand: `tap X Y`, `carahead M` (a car across her way so far ahead), `roof` (her put on the
+  nearest roof), `face R`; `keep KEY VALUE` and `restart` print what is kept and where the game
+  starts again. Scenes `leap.txt`, `roofs.txt`, `kept.txt`.
+
 ## 0.18
 
 - Russian: the dispatches typed in her head are in Russian when the phone speaks it, or when

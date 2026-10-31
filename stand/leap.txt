@@ -1,0 +1,23 @@
+# Over a car: running down the street, a car standing across the way ahead; a double tap and she
+# leaps over it. Then a plain tap, a plain jump.
+screen 1096 2560
+down 137 600
+wait 2.5
+carahead 9
+wait 0.25
+up 137 600
+tap 137 600
+tap 137 600
+shot j0
+wait 0.15
+shot j1
+wait 0.25
+shot j2
+wait 0.25
+shot j3
+down 137 600
+wait 1.5
+up 137 600
+tap 137 600
+wait 0.15
+shot j4

@@ -1,0 +1,20 @@
+# On the roofs: her on a roof, running along it to the street, a flick up at the edge and she
+# glides across to the roofs over the way.
+screen 1096 2560
+roof
+wait 0.3
+shot k0
+down 137 600
+wait 2.0
+shot k1
+move 137 590
+move 137 570
+move 137 545
+wait 0.3
+shot k2
+wait 0.5
+shot k3
+wait 0.6
+shot k4
+wait 0.8
+shot k5
