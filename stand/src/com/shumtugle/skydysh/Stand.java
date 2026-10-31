@@ -444,6 +444,32 @@ public final class Stand implements World.Host {
             float out = p.length > 1 ? f(p[1]) : 6f, turn = p.length > 2 ? f(p[2]) : 0f;
             world.runner.put(l[0] + l[2] * out, City.WALK_TOP, l[1] + l[3] * out, (float) Math.atan2(-l[2], -l[3]) + turn);
             step();
+        } else if (c.equals("fuzz")) {
+            // fuzz SECONDS SEED: a careless finger: down, about, up, taps and flicks at random
+            java.util.Random fr = new java.util.Random(Long.parseLong(p[2]));
+            int n = Math.round(f(p[1]) / DT);
+            float fx = World.W * 0.5f, fy = 500f;
+            boolean down = false;
+            for (int i = 0; i < n; i++) {
+                int what = fr.nextInt(40);
+                if (!down && what < 3) {
+                    fx = 20f + fr.nextFloat() * (World.W - 40f);
+                    fy = 100f + fr.nextFloat() * 500f;
+                    world.touch(World.DOWN, fx, fy);
+                    down = true;
+                } else if (down && what < 2) {
+                    world.touch(World.UP, fx, fy);
+                    down = false;
+                } else if (down && what < 14) {
+                    fx += (fr.nextFloat() - 0.5f) * 30f;
+                    fy += (fr.nextFloat() - 0.6f) * 40f;
+                    world.touch(World.MOVE, fx, fy);
+                }
+                step();
+            }
+            if (down) world.touch(World.UP, fx, fy);
+            System.out.println(String.format("%7.2fs  fuzz done, mission %d, her %.0f %.1f %.0f", time, world.mission.round,
+                    world.runner.x, world.runner.y, world.runner.z));
         } else if (c.equals("onhut")) {
             // onhut: her on the roof of the lift's house nearest the folder, standing at its hut's door
             float[] l = doorNearFolder();

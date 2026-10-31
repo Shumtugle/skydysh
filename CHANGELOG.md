@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.23
+
+- Fixed: a game that began with the folder's mission (the last one having ended with the folder
+  lost) stopped at once. The hunt's count of golems caught was asked every frame, before any
+  hunt had let its golems loose. It now counts none until there are some.
+- Stand: `fuzz S SEED` (a careless finger at random: down, about, up, taps, flicks); scene
+  `coldfolder.txt` (a game that begins with the folder, lost, and played again).
+
 ## 0.22
 
 - Indoors. The door of a house with a lift (at the front, or at the back on the yard) opens for

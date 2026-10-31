@@ -1,0 +1,22 @@
+# A game that begins with the folder (the last one ended with it lost): straight into mission 2,
+# no hunt before it; the rivals get there, the report, the same again, and on
+screen 1096 2560
+keep mission 2
+restart
+lang ru
+dispatch
+wait 3
+tap 137 300
+wait 0.5
+tap 137 300
+wait 2
+shot c0
+idle 200 0 c
+wait 4
+tap 100 300
+wait 1
+tap 100 300
+wait 6
+shot c1
+fuzz 30 3
+shot c2

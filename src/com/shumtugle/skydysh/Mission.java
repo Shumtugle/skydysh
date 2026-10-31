@@ -42,9 +42,10 @@ final class Mission {
         if (doneAt < 0f && caught() == FIVE) doneAt = clock;
     }
 
+    /** How many are caught; none before the first hunt (a game may begin with the folder). */
     int caught() {
         int n = 0;
-        for (Chase g : golems) if (g.done()) n++;
+        for (Chase g : golems) if (g != null && g.done()) n++;
         return n;
     }
 
@@ -55,7 +56,7 @@ final class Mission {
     /** The nearest of them still loose; the last caught when none is. */
     Chase target(Chase last) {
         Chase best = null;
-        for (Chase g : golems) if (!g.done() && (best == null || g.apart < best.apart)) best = g;
+        for (Chase g : golems) if (g != null && !g.done() && (best == null || g.apart < best.apart)) best = g;
         return best != null ? best : last != null ? last : golems[0];
     }
 }

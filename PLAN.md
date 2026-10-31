@@ -31,6 +31,7 @@ release, each seen on the stand before the phone.
   glides by herself from high up; lifts open by themselves; the folder marked green; rivals later.
 - 0.22 Indoors: places made from a seed; a house's hall, front door to yard door, with a lift
   that calls, opens, rides and lets her out by itself.
+- 0.23 A game that begins with the folder no longer stops at once.
 
 ## Next
 
