@@ -37,9 +37,15 @@ release, each seen on the stand before the phone.
 - 0.26 The townspeople walk their own walk, worked out on the skeleton, each their own way.
 - 0.27 The folder's race on the roofs: fire escapes, ladders between roofs, beating up in a
   glide; the rivals run the row's roofs.
+- 0.28 A shorter mallet, thrown by itself at a golem run down; up a ladder by the arms alone;
+  the lift down from a roof by a button; dogs and cats, more people and cars, five kinds of
+  car; squares with fountains or gardens, trees, benches, pots and ivy along the streets.
 
 ## Next
 
+- A river through the town: a channel of water in place of a street now and then, stone
+  embankments and steps down, bridges at the crossings (stone arches, an iron one, a foot
+  bridge), the traffic and the chase going over them; boats moored along it.
 Asset sets kept apart from these sources (the meshes are not in the repository; see the README)
 are waiting for the work below. Each item is one release or a few.
 

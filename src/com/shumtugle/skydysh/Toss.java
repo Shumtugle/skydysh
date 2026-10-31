@@ -6,14 +6,17 @@ package com.shumtugle.skydysh;
  * one further off, ahead of her and not too far, she throws at: she stops, turns after it as it
  * runs on, and the mallet flies after its head end over end, knocks the plate off its brow, and
  * comes back to her hand. With nothing to throw at, she throws all the same, straight ahead, and
- * it comes back empty.
+ * it comes back empty. In a hunt she needs no tap to throw: once she has run a golem down to
+ * within REACHED of her, she throws at it by herself, and it runs on as the mallet flies after it.
+ * On a ladder the mallet hangs at her hip.
  */
 final class Toss {
     static final float LOCK = 0.8f, RELEASE = 0.33f;       // how long she stands to throw; when it leaves her hand
     static final float STRIKE_LOCK = 0.6f;                 // how long she stands to strike
     // within so far she strikes; ahead within so far she throws; ahead: the cosine off the eye's way
     static final float STRIKE = 3.6f, RANGE = 20f, AHEAD = 0.6f, MISS = 14f;
-    static final float OUT_SPEED = 24f, BACK_TIME = 0.45f, SCALE = 1.6f, MIDDLE = 0.5f;
+    static final float REACHED = 4.5f;                     // in a hunt, so near a golem she throws by herself
+    static final float OUT_SPEED = 24f, BACK_TIME = 0.45f, SCALE = 1.6f, MIDDLE = 0.19f;
     static final int HELD = 0, OUT = 1, BACK = 2, WINDUP = 3;
 
     int state = HELD;
@@ -46,10 +49,37 @@ final class Toss {
         return best;
     }
 
-    void update(float dt, Runner r, Chase[] golems, City city, boolean tap) {
+    /** In a hunt: the nearest golem she has run down to within REACHED, or null. */
+    static Chase reached(Runner r, Chase[] golems) {
+        Chase best = null;
+        float bd = REACHED * REACHED;
+        for (Chase g : golems) {
+            if (g.done()) continue;
+            float dx = g.x - r.x, dy = g.y - r.y, dz = g.z - r.z, d = dx * dx + dy * dy + dz * dz;
+            if (d < bd) {
+                bd = d;
+                best = g;
+            }
+        }
+        return best;
+    }
+
+    /** A frame of it: tap, a tap was heard; hunt, a golem run down is thrown at without one. */
+    void update(float dt, Runner r, Chase[] golems, City city, boolean tap, boolean hunt) {
         clock += dt;
         if (state == HELD) {
-            if (!tap || r.inAir() || r.hidden || r.room != null || r.held) return;
+            if (r.inAir() || r.hidden || r.room != null || r.held || r.climbing()) return;
+            Chase run = hunt && !tap ? reached(r, golems) : null;
+            if (run != null) {
+                // run down: she stops and throws, and it runs on with the mallet after it
+                aim = run;
+                hit = false;
+                near = false;
+                r.lock(LOCK, aim.x, aim.z);
+                state = WINDUP;
+                return;
+            }
+            if (!tap) return;
             aim = pick(r, golems);
             hit = false;
             if (aim != null) {
@@ -129,7 +159,31 @@ final class Toss {
         r.bone("lowerarm_r", elbow);
     }
 
+    private final float[] back = new float[3];
+
+    /** On a ladder, both hands at the rungs: the mallet hung at her right hip by its handle, its head down by her knee. */
+    private void slung(DrawList d, Runner r) {
+        r.bone("pelvis", back);
+        float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading), rx = fz, rz = -fx;
+        // the handle: down, a little out from her and back
+        float hx = rx * 0.12f - fx * 0.1f, hy = -1f, hz = rz * 0.12f - fz * 0.1f, l = (float) Math.sqrt(hx * hx + hy * hy + hz * hz);
+        hx /= l;
+        hy /= l;
+        hz /= l;
+        // the head's length along the way she faces
+        float bx = fx, by = 0f, bz = fz;
+        float ux = by * hz - bz * hy, uy = bz * hx - bx * hz, uz = bx * hy - by * hx;
+        turn[0] = hx; turn[1] = ux; turn[2] = bx;
+        turn[3] = hy; turn[4] = uy; turn[5] = by;
+        turn[6] = hz; turn[7] = uz; turn[8] = bz;
+        Mallet.draw(d, turn, back[0] + rx * 0.42f, back[1] + 0.05f, back[2] + rz * 0.42f, SCALE, 0f);
+    }
+
     void draw(DrawList d, Runner r) {
+        if (state == HELD && r.climbing()) {
+            slung(d, r);
+            return;
+        }
         float hx, hy, hz;
         boolean inHand = state == HELD || state == WINDUP;
         if (inHand && state == WINDUP) {

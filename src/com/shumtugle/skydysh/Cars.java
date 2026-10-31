@@ -3,13 +3,14 @@ package com.shumtugle.skydysh;
 import java.util.Random;
 
 /**
- * The town's traffic: small sedans on the right of the road, going on or turning at the
+ * The town's traffic: cars of a few kinds (sedans, hatchbacks, little town cars, taxis in black
+ * and yellow, vans) on the right of the road, going on or turning at the
  * crossings as it falls out, never turning back; slowing for a turn, for a car ahead and for
  * the runner in the road before them. Not for a golem on the run: they run into it, stop short
  * a while, and wait while it lies there or stands in the road. They come from out of sight round the runner and go out of
  * it behind her, and are put back somewhere else round her.
  *
- * Also the sedan itself, for any car anywhere: the parked ones along the curbs are built with
+ * Also the cars themselves, for any car anywhere: the parked ones along the curbs are built with
  * the town (see City).
  */
 final class Cars {
@@ -17,13 +18,42 @@ final class Cars {
     static final float LANE = 1.5f;                 // right of the road's middle, clear of the parked
     static final float CRUISE = 10.5f, TURNING = 5.8f, GAP = 12f;
     static final float BORN_NEAR = 45f, BORN_FAR = 130f, GONE = 170f;
-    static final int MOST = 12;
-    static final float TOP = 1.45f;                 // how high a car's roof is
+    static final int MOST = 18;
+    static final float TOP = 1.45f;                 // how high a car's roof is (a sedan's)
+    // the kinds of car
+    static final int SEDAN = 0, HATCH = 1, SMALL = 2, TAXI = 3, VAN = 4;
+    static final int TAXI_BLACK = 0x1E1E22, TAXI_YELLOW = 0xF2C230;
+    static final int[] VAN_PAINT = {0xF1EFE8, 0xD9DCDD, 0x6E9DB0, 0x2D3A57, 0xC9B79A};
+    static final int[] SMALL_PAINT = {0x9DD1B8, 0xF0E2B6, 0xD9473A, 0x8FB6DA, 0xF4F2EC, 0xE9B63A};
+
+    /** A kind of car, as they come in the town: sedans and hatchbacks most, then little ones, taxis, vans. */
+    static int kind(Random rnd) {
+        int r = rnd.nextInt(20);
+        return r < 7 ? SEDAN : r < 12 ? HATCH : r < 15 ? SMALL : r < 18 ? TAXI : VAN;
+    }
+
+    /** A colour for a car of a kind (a taxi's is its own). */
+    static int paint(Random rnd, int kind) {
+        if (kind == TAXI) return TAXI_BLACK;
+        if (kind == VAN) return VAN_PAINT[rnd.nextInt(VAN_PAINT.length)];
+        if (kind == SMALL) return SMALL_PAINT[rnd.nextInt(SMALL_PAINT.length)];
+        return PAINT[rnd.nextInt(PAINT.length)];
+    }
+
+    /** How high the roof of a car of a kind is. */
+    static float top(int kind) {
+        return kind == VAN ? 2.1f : kind == SMALL ? 1.5f : TOP;
+    }
+
+    /** Half the length of a car of a kind. */
+    static float half(int kind) {
+        return kind == VAN ? 2.4f : kind == SMALL ? 1.65f : kind == HATCH ? 1.95f : 2.2f;
+    }
 
     private final Random rnd = new Random(0xCA25L);
     final float[] x = new float[MOST], z = new float[MOST], heading = new float[MOST], speed = new float[MOST];
     private final int[] ti = new int[MOST], tj = new int[MOST], di = new int[MOST], dj = new int[MOST];
-    private final int[] ni = new int[MOST], nj = new int[MOST], paint = new int[MOST];
+    private final int[] ni = new int[MOST], nj = new int[MOST], paint = new int[MOST], kind = new int[MOST];
     private final boolean[] live = new boolean[MOST];
     private final float[] halt = new float[MOST];       // stopped short after striking her, seconds left
 
@@ -108,7 +138,8 @@ final class Cars {
             heading[c] = (float) Math.atan2(a, b);
             speed[c] = CRUISE;
             halt[c] = 0f;
-            paint[c] = PAINT[rnd.nextInt(PAINT.length)];
+            kind[c] = kind(rnd);
+            paint[c] = paint(rnd, kind[c]);
             choose(c);
             live[c] = true;
             return;
@@ -142,6 +173,7 @@ final class Cars {
         speed[0] = CRUISE;
         halt[0] = 0f;
         paint[0] = PAINT[1];
+        kind[0] = SEDAN;
         live[0] = true;
     }
 
@@ -154,6 +186,7 @@ final class Cars {
         speed[0] = 0f;
         halt[0] = 1000f;
         paint[0] = PAINT[1];
+        kind[0] = SEDAN;
         live[0] = true;
     }
 
@@ -229,20 +262,25 @@ final class Cars {
             if (!live[c]) continue;
             float dx = x[c] - ex, dz = z[c] - ez;
             if (dx * fx + dz * fz < -6f) continue;
-            car(d, x[c], z[c], heading[c], paint[c], false);
+            car(d, x[c], z[c], heading[c], paint[c], false, kind[c]);
         }
     }
 
-    // ---- the sedan ----
+    // ---- the cars ----
 
     private static float px, py, pz;
     private static final float[] frame = new float[9], t = new float[9];
 
+    /** A sedan standing on the road (see the other). */
+    static void car(DrawList d, float x, float z, float yaw, int paint, boolean lean) {
+        car(d, x, z, yaw, paint, lean, SEDAN);
+    }
+
     /**
-     * A small sedan standing on the road, its nose along yaw (0 along +z); lean, without its
+     * A car of a kind standing on the road, its nose along yaw (0 along +z); lean, without its
      * small things (a parked one: there are many of them).
      */
-    static void car(DrawList d, float x, float z, float yaw, int paint, boolean lean) {
+    static void car(DrawList d, float x, float z, float yaw, int paint, boolean lean, int kind) {
         float cy = (float) Math.cos(yaw), sy = (float) Math.sin(yaw);
         px = x;
         py = 0f;
@@ -250,6 +288,84 @@ final class Cars {
         frame[0] = cy; frame[1] = 0f; frame[2] = sy;
         frame[3] = 0f; frame[4] = 1f; frame[5] = 0f;
         frame[6] = -sy; frame[7] = 0f; frame[8] = cy;
+        if (kind == HATCH) hatch(d, paint, lean);
+        else if (kind == SMALL) small(d, paint, lean);
+        else if (kind == VAN) van(d, paint, lean);
+        else {
+            sedan(d, paint, lean);
+            if (kind == TAXI) {
+                // the doors yellow, a green lamp on the roof
+                for (int side = -1; side <= 1; side += 2)
+                    part(d, side * 0.905f, 0.6f, -0.05f, 0.01f, 0.2f, 0.95f, 0f, TAXI_YELLOW, DrawList.PLAIN);
+                part(d, 0f, 1.39f, -0.25f, 0.2f, 0.065f, 0.09f, 0f, 0x7CF29A, DrawList.GLOW);
+            }
+        }
+    }
+
+    /** What every car has: four wheels (hubs too, unless lean), lamps at both ends, bumpers. */
+    private static void ends(DrawList d, float half, float wheelAt, float w, float wheel, float lampY, int paint, boolean lean) {
+        float plain = DrawList.PLAIN;
+        for (int side = -1; side <= 1; side += 2) {
+            for (int end = -1; end <= 1; end += 2) {
+                part(d, side * (w - 0.05f), wheel, end * wheelAt, 0.12f, wheel, wheel, 0f, 0x1C1B1D, plain);
+                if (!lean) part(d, side * (w + 0.075f), wheel, end * wheelAt, 0.01f, wheel * 0.47f, wheel * 0.47f, 0f, 0xB8B4AC, plain);
+            }
+            part(d, side * (w - 0.3f), lampY, half + 0.005f, 0.15f, 0.07f, 0.01f, 0f, 0xFFF0C2, plain);
+            part(d, side * (w - 0.26f), lampY + 0.02f, -half - 0.005f, 0.15f, 0.07f, 0.01f, 0f, 0xD43A2E, plain);
+        }
+        part(d, 0f, 0.42f, half + 0.04f, w + 0.03f, 0.07f, 0.05f, 0f, 0xD2CEC6, plain);
+        part(d, 0f, 0.42f, -half - 0.04f, w + 0.03f, 0.07f, 0.05f, 0f, 0xD2CEC6, plain);
+    }
+
+    /** A hatchback: shorter, its roof running on to a steep back of glass. */
+    private static void hatch(DrawList d, int paint, boolean lean) {
+        float plain = DrawList.PLAIN, glass = DrawList.GLASS;
+        int clear = 0x33414E;
+        part(d, 0f, 0.6f, 0f, 0.88f, 0.25f, 1.95f, 0f, paint, plain);
+        part(d, 0f, 0.36f, 0f, 0.84f, 0.05f, 1.55f, 0f, 0x2A2829, plain);
+        float top = 1.33f, mid = (0.85f + top) * 0.5f;
+        part(d, 0f, mid, -0.7f, 0.77f, 0.24f, 1.0f, 0f, clear, glass);
+        part(d, 0f, mid, 0.6f, 0.77f, 0.37f, 0.01f, -0.9f, clear, glass);
+        part(d, 0f, mid, -1.72f, 0.77f, 0.25f, 0.01f, 0.25f, clear, glass);
+        part(d, 0f, top + 0.01f, -0.7f, 0.75f, 0.025f, 1.02f, 0f, paint, plain);
+        if (!lean) for (int side = -1; side <= 1; side += 2)
+            part(d, side * 0.775f, mid, -0.35f, 0.01f, 0.23f, 0.06f, 0f, paint, plain);
+        ends(d, 1.95f, 1.22f, 0.88f, 0.31f, 0.7f, paint, lean);
+    }
+
+    /** A little town car: short, high, round-shouldered, two doors. */
+    private static void small(DrawList d, int paint, boolean lean) {
+        float plain = DrawList.PLAIN, glass = DrawList.GLASS;
+        int clear = 0x33414E;
+        part(d, 0f, 0.56f, 0f, 0.8f, 0.24f, 1.65f, 0f, paint, plain);
+        part(d, 0f, 0.8f, 0.95f, 0.72f, 0.06f, 0.55f, 0f, paint, plain);
+        part(d, 0f, 0.34f, 0f, 0.76f, 0.05f, 1.2f, 0f, 0x2A2829, plain);
+        float top = 1.46f, mid = (0.8f + top) * 0.5f;
+        part(d, 0f, mid, -0.45f, 0.72f, 0.33f, 0.82f, 0f, clear, glass);
+        part(d, 0f, mid + 0.02f, 0.48f, 0.72f, 0.36f, 0.01f, -0.55f, clear, glass);
+        part(d, 0f, top + 0.01f, -0.45f, 0.7f, 0.03f, 0.84f, 0f, Street.scale(paint, 1.06f), plain);
+        if (!lean) part(d, 0f, top + 0.05f, -0.45f, 0.5f, 0.02f, 0.6f, 0f, 0xF4F2EC, plain);
+        ends(d, 1.65f, 1.05f, 0.8f, 0.28f, 0.66f, paint, lean);
+    }
+
+    /** A van: a tall box behind a short bonnet, the cab glazed, sliding door, the back shut. */
+    private static void van(DrawList d, int paint, boolean lean) {
+        float plain = DrawList.PLAIN, glass = DrawList.GLASS;
+        int clear = 0x33414E;
+        part(d, 0f, 0.62f, 0f, 0.95f, 0.3f, 2.4f, 0f, paint, plain);
+        part(d, 0f, 0.36f, 0f, 0.9f, 0.05f, 2.0f, 0f, 0x2A2829, plain);
+        part(d, 0f, 1.47f, -0.42f, 0.95f, 0.58f, 1.98f, 0f, paint, plain);
+        part(d, 0f, 1.37f, 1.58f, 0.9f, 0.42f, 0.01f, -0.45f, clear, glass);
+        for (int side = -1; side <= 1; side += 2) {
+            part(d, side * 0.955f, 1.4f, 1.05f, 0.01f, 0.27f, 0.42f, 0f, clear, glass);
+            if (!lean) part(d, side * 0.955f, 1.25f, 0.45f, 0.01f, 0.55f, 0.012f, 0f, Street.scale(paint, 0.7f), plain);
+        }
+        part(d, 0f, 1.25f, -2.405f, 0.012f, 0.55f, 0.01f, 0f, Street.scale(paint, 0.7f), plain);
+        ends(d, 2.4f, 1.6f, 0.95f, 0.34f, 0.78f, paint, lean);
+    }
+
+    /** A small sedan, its glass sloping front and back. */
+    private static void sedan(DrawList d, int paint, boolean lean) {
         float plain = DrawList.PLAIN, glass = DrawList.GLASS;
         int clear = 0x33414E;
         // body, with a darker sill

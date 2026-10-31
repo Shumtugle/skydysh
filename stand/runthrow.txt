@@ -1,0 +1,6 @@
+# Run down: the hunt played with no tap at all; each golem she runs down to within reach she
+# throws at by herself, and it runs on as the mallet flies after it. Shot as the first throw
+# goes (the stop, the swing, the mallet out) and as the first falls apart.
+screen 1096 2560
+wait 0.4
+chasebot 200 0 a once notap

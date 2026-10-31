@@ -276,8 +276,13 @@ public final class Stand implements World.Host {
             int nextAfter = 0, nextThrow = 0;
             float thrownAt = -1f;
             int thrownSeen = world.toss.thrown;
-            // chasebot ... once: the finger lifted as soon as one is caught
-            boolean once = p.length > 4 && p[4].equals("once");
+            // chasebot ... once: the finger lifted as soon as one is caught; notap: never a tap,
+            // the mallet left to throw itself at one run down
+            boolean once = false, notap = false;
+            for (int a = 4; a < p.length; a++) {
+                if (p[a].equals("once")) once = true;
+                if (p[a].equals("notap")) notap = true;
+            }
             boolean endShot = false;
             for (int i = 0; i < n; i++) {
                 Runner r = world.runner;
@@ -364,7 +369,7 @@ public final class Stand implements World.Host {
                     thrownSeen = world.toss.thrown;
                     System.out.println(String.format("%7.2fs  hammer flies, %.1f m", time, world.chase.apart));
                 }
-                if (world.toss.state == Toss.HELD && !r.inAir() && Toss.pick(r, world.golems()) == ch
+                if (!notap && world.toss.state == Toss.HELD && !r.inAir() && Toss.pick(r, world.golems()) == ch
                         && ch.apart < THROW_AT && !ch.done()) {
                     // near enough and ahead: a tap, and the finger back down
                     world.touch(World.UP, fx, fy);
@@ -378,6 +383,7 @@ public final class Stand implements World.Host {
                     // shots from the moment of the tap: the stop, the swing, the mallet out
                     if (thrownAt < 0f) thrownAt = time + 0.33f;
                 }
+                if (notap && thrownAt < 0f && world.toss.state == Toss.WINDUP) thrownAt = time + 0.33f;
                 float[] afterThrow = {-0.3f, -0.12f, 0.06f};
                 if (thrownAt >= 0f && nextThrow < afterThrow.length && time - thrownAt >= afterThrow[nextThrow])
                     shot(prefix + "t" + nextThrow++);
@@ -529,6 +535,55 @@ public final class Stand implements World.Host {
             r.put(best[0] + best[4] * back, best[2], best[1] + best[5] * back, (float) Math.atan2(-best[4], -best[5]));
             System.out.println(String.format("%7.2fs  a ladder at %.1f %.1f, from %.1f to %.1f m, facing %.0f %.0f", time,
                     best[0], best[1], best[2], best[3], best[4], best[5]));
+            step();
+        } else if (c.equals("pet")) {
+            // pet dog|cat|led METERS: her put so far out from the nearest stray dog (a led one, a
+            // cat) toward the road, looking at it past her shoulder
+            Pets pets = world.pets;
+            boolean led = p[1].equals("led");
+            int of = p[1].equals("cat") ? Pets.CAT : Pets.DOG, k = -1;
+            float best = 1e18f;
+            for (int q = 0; q < Pets.MOST; q++) {
+                if (!pets.alive(q) || pets.kindOf(q) != of || led != pets.led(q)) continue;
+                float dx = pets.x[q] - world.runner.x, dz = pets.z[q] - world.runner.z, dd = dx * dx + dz * dz;
+                if (dd < best) {
+                    best = dd;
+                    k = q;
+                }
+            }
+            if (k >= 0) {
+                float mx = (City.index(pets.x[k]) + 0.5f) * City.CELL, mz = (City.index(pets.z[k]) + 0.5f) * City.CELL;
+                float ox = pets.x[k] - mx, oz = pets.z[k] - mz, ol = (float) Math.sqrt(ox * ox + oz * oz);
+                // out to the road: along whichever way is the nearer street
+                if (Math.abs(ox) > Math.abs(oz)) {
+                    ox = Math.signum(ox);
+                    oz = 0f;
+                } else {
+                    oz = Math.signum(oz);
+                    ox = 0f;
+                }
+                float back = f(p[2]), hx = pets.x[k] + ox * back, hz = pets.z[k] + oz * back;
+                world.runner.put(hx, world.city.ground(hx, hz), hz, (float) Math.atan2(-ox, -oz) + 0.45f);
+                System.out.println(String.format("%7.2fs  by the %s at %.1f %.1f", time, p[1], pets.x[k], pets.z[k]));
+            } else System.out.println("no " + p[1] + " about");
+            step();
+        } else if (c.equals("square")) {
+            // square garden|fountain BACK: her on the pavement south of the nearest square of the
+            // kind, so far back from its middle, looking north into it
+            boolean want = p[1].equals("garden");
+            City city = world.city;
+            float best = 1e9f, bx = 0f, bz = 0f;
+            for (int j = -8; j <= 8; j++)
+                for (int i = -8; i <= 8; i++) {
+                    if (!city.square(i, j) || city.garden(i, j) != want) continue;
+                    float mx = (i + 0.5f) * City.CELL, mz = (j + 0.5f) * City.CELL, dd = mx * mx + mz * mz;
+                    if (dd < best) {
+                        best = dd;
+                        bx = mx;
+                        bz = mz;
+                    }
+                }
+            world.runner.put(bx, City.WALK_TOP, bz - f(p[2]), 0f);
             step();
         } else if (c.equals("where")) {
             // where: her place, the eye's, and whether she is indoors, told

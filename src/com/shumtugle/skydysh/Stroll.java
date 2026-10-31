@@ -90,7 +90,30 @@ final class Stroll {
         float swing = w.arms * a * sl;
         arm(ARM_L, FORE_L, 1f, -swing, w);
         arm(ARM_R, FORE_R, -1f, swing, w);
-        // down the bones from the pelvis: each one's turn added to its parent's, its joint carried
+        chain(mv, w.hips * sl * a);
+        // down onto the ground: the lower foot (heel or toes) where it is at rest
+        float drop = Float.MAX_VALUE;
+        drop = Math.min(drop, pos[FOOT_L * 3 + 1] - mv.restP[FOOT_L * 3 + 1]);
+        drop = Math.min(drop, pos[BALL_L * 3 + 1] - mv.restP[BALL_L * 3 + 1]);
+        drop = Math.min(drop, pos[FOOT_R * 3 + 1] - mv.restP[FOOT_R * 3 + 1]);
+        drop = Math.min(drop, pos[BALL_R * 3 + 1] - mv.restP[BALL_R * 3 + 1]);
+        // and a little spring in the step at mid-stance
+        drop -= 0.008f * w.bounce * a * (float) Math.cos(2f * phase);
+        for (int b = 0; b < n; b++) {
+            // the turn from rest to now, times the rest turn: the bone's turn in the figure
+            mul(g, b, mv.restQ, b, q, b);
+            p[b * 3] = pos[b * 3];
+            p[b * 3 + 1] = pos[b * 3 + 1] - drop;
+            p[b * 3 + 2] = pos[b * 3 + 2];
+        }
+    }
+
+    /**
+     * Down the bones from the root: each one's turn added to its parent's (into g), its joint
+     * carried (into pos); the pelvis swayed so far along x.
+     */
+    private static void chain(Moves mv, float sway) {
+        int n = mv.bone.length;
         for (int b = 0; b < n; b++) {
             int par = mv.parent[b];
             if (par < 0) {
@@ -107,26 +130,138 @@ final class Stroll {
             pos[b * 3] = pos[par * 3] + out[0];
             pos[b * 3 + 1] = pos[par * 3 + 1] + out[1];
             pos[b * 3 + 2] = pos[par * 3 + 2] + out[2];
-            if (b == PELVIS) {
-                // the hips swaying over the leg that bears the weight
-                pos[b * 3] += 0.018f * w.hips * sl * a;
-            }
+            // the hips swaying over the leg that bears the weight
+            if (b == PELVIS) pos[b * 3] += 0.018f * sway;
         }
-        // down onto the ground: the lower foot (heel or toes) where it is at rest
-        float drop = Float.MAX_VALUE;
-        drop = Math.min(drop, pos[FOOT_L * 3 + 1] - mv.restP[FOOT_L * 3 + 1]);
-        drop = Math.min(drop, pos[BALL_L * 3 + 1] - mv.restP[BALL_L * 3 + 1]);
-        drop = Math.min(drop, pos[FOOT_R * 3 + 1] - mv.restP[FOOT_R * 3 + 1]);
-        drop = Math.min(drop, pos[BALL_R * 3 + 1] - mv.restP[BALL_R * 3 + 1]);
-        // and a little spring in the step at mid-stance
-        drop -= 0.008f * w.bounce * a * (float) Math.cos(2f * phase);
+    }
+
+    // ---- up a ladder by the arms alone ----
+
+    /** How far the body rises in one pull, on the skeleton, meters: a hand from over the head to the chest. */
+    static final float PULL_RISE = 0.75f;
+    private static final float PULL_PART = 0.55f;          // of each pull, the share the body rises in
+    // a hand at a rung: so far out from the middle, so far before the shoulders; its height over
+    // the shoulder, at the chest and reached up
+    private static final float GRIP_OUT = 0.18f, GRIP_FORE = 0.27f, GRIP_LOW = -0.3f;
+    private static final int HAND_L = 10, HAND_R = 14;
+
+    private static float ease(float u) {
+        u = Math.max(0f, Math.min(1f, u));
+        return u * u * (3f - 2f * u);
+    }
+
+    /**
+     * Hanging from a ladder and pulling up hand over hand, the legs hanging still under her: at
+     * pulls (one a pull; the left hand pulls first), for every bone its turn into q and its place
+     * into p, as pose() gives them. The figure rises a pull's height in jerks, still while the
+     * free hand reaches up and quick while the other pulls; over a whole pull it rises no more
+     * than evenly, so it is put where an even climb puts it.
+     */
+    static void pull(Moves mv, float pulls, float[] q, float[] p) {
+        int n = mv.bone.length;
+        if (turn == null || turn.length != n * 4) {
+            turn = new float[n * 4];
+            g = new float[n * 4];
+            pos = new float[n * 3];
+        }
+        for (int b = 0; b < n; b++) set(b, 0f, 0f, 0f, 1f);
+        int k = (int) Math.floor(pulls);
+        float u = pulls - k;
+        boolean leftPulls = (k & 1) == 0;
+        float rise = ease(u / PULL_PART), reach = ease((u - PULL_PART) / (1f - PULL_PART));
+        // the pulling hand comes down as the body goes up past it; the other reaches up after
+        float hl = leftPulls ? 1f - rise : reach, hr = leftPulls ? reach : 1f - rise;
+        float sw = leftPulls ? 1f : -1f;
+        // the legs hang, a little bent, the toes down, swinging a little with the pulls
+        float swing = 0.07f * (float) Math.sin(Math.PI * pulls);
+        for (int e = 0; e < 2; e++) {
+            int thigh = e == 0 ? THIGH_L : THIGH_R, calf = e == 0 ? CALF_L : CALF_R, foot = e == 0 ? FOOT_L : FOOT_R;
+            axis(thigh, 1f, 0f, 0f, 0.1f + swing);
+            then(thigh, 0f, 0f, 1f, (e == 0 ? 1f : -1f) * 0.03f);
+            axis(calf, 1f, 0f, 0f, -0.18f - 0.5f * swing);
+            axis(foot, 1f, 0f, 0f, -0.55f);
+        }
+        // the body hangs from the hands, turned a little toward the one pulling; the head up
+        axis(PELVIS, 0f, 0f, 1f, 0.05f * sw * (rise - reach));
+        axis(SPINE2, 0f, 1f, 0f, 0.08f * sw * (1f - reach));
+        axis(SPINE3, 1f, 0f, 0f, -0.06f);
+        axis(NECK, 1f, 0f, 0f, -0.25f);
+        axis(HEAD, 1f, 0f, 0f, -0.2f);
+        chain(mv, 0f);
+        // the arms reach the rungs: each hand where it holds on, the elbow out to the side
+        arm(mv, ARM_L, FORE_L, HAND_L, -1f, hl);
+        arm(mv, ARM_R, FORE_R, HAND_R, 1f, hr);
+        // up in jerks: ahead of an even climb while pulling, back to it by the end of the pull
+        float lift = PULL_RISE * (rise - u);
         for (int b = 0; b < n; b++) {
-            // the turn from rest to now, times the rest turn: the bone's turn in the figure
             mul(g, b, mv.restQ, b, q, b);
             p[b * 3] = pos[b * 3];
-            p[b * 3 + 1] = pos[b * 3 + 1] - drop;
+            p[b * 3 + 1] = pos[b * 3 + 1] + lift;
             p[b * 3 + 2] = pos[b * 3 + 2];
         }
+    }
+
+    private static final float[] dir = new float[3], pole = new float[3], elbow = new float[3], hand = new float[3];
+
+    /**
+     * An arm (side -1 left, 1 right) reaching to its hold, high (1, over the head) or low (0, at
+     * the chest): the shoulder where the body put it, the hand at the hold or as near as the arm
+     * reaches, the elbow bent out and down; the upper arm and forearm turned from rest to point so.
+     */
+    private static void arm(Moves mv, int upper, int fore, int handBone, float side, float high) {
+        float sx = pos[upper * 3], sy = pos[upper * 3 + 1], sz = pos[upper * 3 + 2];
+        float a = len(mv, upper, fore), b = len(mv, fore, handBone);
+        float tx = side * GRIP_OUT, ty = sy + GRIP_LOW + (PULL_RISE) * high, tz = -GRIP_FORE;
+        float dx = tx - sx, dy = ty - sy, dz = tz - sz, d = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        dir[0] = dx / d;
+        dir[1] = dy / d;
+        dir[2] = dz / d;
+        d = Math.min(d, (a + b) * 0.999f);
+        // the elbow: off the line to the hand, out to the side and down
+        pole[0] = side;
+        pole[1] = -0.6f;
+        pole[2] = 0.3f;
+        float pd = pole[0] * dir[0] + pole[1] * dir[1] + pole[2] * dir[2];
+        for (int k = 0; k < 3; k++) pole[k] -= dir[k] * pd;
+        float pl = Math.max(1e-4f, (float) Math.sqrt(pole[0] * pole[0] + pole[1] * pole[1] + pole[2] * pole[2]));
+        float ca = Math.max(-1f, Math.min(1f, (a * a + d * d - b * b) / (2f * a * d)));
+        float sa = (float) Math.sqrt(1f - ca * ca);
+        for (int k = 0; k < 3; k++) elbow[k] = pos[upper * 3 + k] + a * (ca * dir[k] + sa * pole[k] / pl);
+        for (int k = 0; k < 3; k++) hand[k] = pos[upper * 3 + k] + d * dir[k];
+        aim(mv, upper, fore, elbow[0] - sx, elbow[1] - sy, elbow[2] - sz);
+        aim(mv, fore, handBone, hand[0] - elbow[0], hand[1] - elbow[1], hand[2] - elbow[2]);
+        pos[fore * 3] = elbow[0];
+        pos[fore * 3 + 1] = elbow[1];
+        pos[fore * 3 + 2] = elbow[2];
+        pos[handBone * 3] = hand[0];
+        pos[handBone * 3 + 1] = hand[1];
+        pos[handBone * 3 + 2] = hand[2];
+        copy(g, fore, g, handBone);
+    }
+
+    private static float len(Moves mv, int from, int to) {
+        float dx = mv.restP[to * 3] - mv.restP[from * 3], dy = mv.restP[to * 3 + 1] - mv.restP[from * 3 + 1],
+                dz = mv.restP[to * 3 + 2] - mv.restP[from * 3 + 2];
+        return (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    /** Bone b's turn in the figure: the shortest turn from its rest way (toward its child c) to (x, y, z). */
+    private static void aim(Moves mv, int b, int c, float x, float y, float z) {
+        float rx = mv.restP[c * 3] - mv.restP[b * 3], ry = mv.restP[c * 3 + 1] - mv.restP[b * 3 + 1],
+                rz = mv.restP[c * 3 + 2] - mv.restP[b * 3 + 2];
+        float rl = (float) Math.sqrt(rx * rx + ry * ry + rz * rz), l = (float) Math.sqrt(x * x + y * y + z * z);
+        rx /= rl;
+        ry /= rl;
+        rz /= rl;
+        x /= l;
+        y /= l;
+        z /= l;
+        float cx = ry * z - rz * y, cy = rz * x - rx * z, cz = rx * y - ry * x, w = 1f + rx * x + ry * y + rz * z;
+        float ql = (float) Math.sqrt(cx * cx + cy * cy + cz * cz + w * w);
+        g[b * 4] = cx / ql;
+        g[b * 4 + 1] = cy / ql;
+        g[b * 4 + 2] = cz / ql;
+        g[b * 4 + 3] = w / ql;
     }
 
     /** A leg at its point of the stride: the thigh's swing, the knee, the ankle keeping the foot flat, the toes. */

@@ -1,0 +1,14 @@
+# The squares: a fountain amid benches, beds, pots and lamps; a garden in its fence, lawns and
+# paths, hedges, trees, a small fountain in the middle. Then a street with trees, benches, pots
+# by the doors and ivy up a front.
+screen 1096 2560
+square fountain 14
+wait 0.3
+shot sq0
+square garden 14
+wait 0.3
+shot sq1
+square garden 12
+turn 0.6
+wait 0.3
+shot sq2

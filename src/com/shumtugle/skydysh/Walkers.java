@@ -21,7 +21,7 @@ final class Walkers {
     // the ring round a block they walk on: so far in from each street's middle
     static final float RING = 6.2f;
     static final float BORN_NEAR = 28f, BORN_FAR = 110f, GONE = 140f, SHY = 3.2f;
-    static final int MOST = 36;
+    static final int MOST = 54;
 
     private final Random rnd = new Random(0x5EE7L);
     private final int[] bi = new int[MOST], bj = new int[MOST], top = new int[MOST], legs = new int[MOST],
@@ -30,6 +30,8 @@ final class Walkers {
     private final float[] u = new float[MOST], v = new float[MOST], dir = new float[MOST], ph = new float[MOST],
             size = new float[MOST], aside = new float[MOST];
     final float[] x = new float[MOST], z = new float[MOST], yaw = new float[MOST];
+    // the way out from where each walks toward the road, level
+    final float[] outX = new float[MOST], outZ = new float[MOST];
     private final boolean[] hat = new boolean[MOST], longHair = new boolean[MOST], bag = new boolean[MOST],
             live = new boolean[MOST];
 
@@ -88,6 +90,8 @@ final class Walkers {
         ix -= dot * ax;
         iz -= dot * az;
         il = (float) Math.sqrt(ix * ix + iz * iz) + 1e-4f;
+        outX[i] = -ix / il;
+        outZ[i] = -iz / il;
         x[i] = px + ix / il * aside[i];
         z[i] = pz + iz / il * aside[i];
         yaw[i] = (float) Math.atan2(ax, az);
@@ -123,6 +127,20 @@ final class Walkers {
             return;
         }
         live[i] = false;
+    }
+
+    /** Whether person i is about, walking (a dog on a lead keeps to someone so). */
+    boolean walking(int i) {
+        return live[i];
+    }
+
+    /** Someone about, at random, not walking a dog already; -1 if none is found. */
+    int free(Random r, Pets pets) {
+        for (int tries = 0; tries < 8; tries++) {
+            int i = r.nextInt(MOST);
+            if (live[i] && size[i] > 0.8f && !pets.leads(i)) return i;
+        }
+        return -1;
     }
 
     /** Which of the town's meshes a newcomer is: now and then the police, very seldom the dancer. */

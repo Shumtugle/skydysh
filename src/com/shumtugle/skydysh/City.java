@@ -269,6 +269,34 @@ final class City implements Ground {
         return (hash(i, j, 2) & 3) == 0;
     }
 
+    /** Whether one of the cell's streets has trees down it (by its salt), one in two. */
+    private boolean leafy(int i, int j, int salt) {
+        return (hash(i, j, salt) & 3) < 2;
+    }
+
+    /** Whether a square is a garden within an iron fence rather than paving round a fountain. */
+    boolean garden(int i, int j) {
+        return (hash(i, j, 5) & 1) == 0;
+    }
+
+    /** A tree in the pavement at (x, z), in a grating of iron. */
+    private static void street(Cell c, Random rnd, float x, float z) {
+        c.detail.box(x, WALK_TOP + 0.005f, z, 0.6f, 0.01f, 0.6f, null, 0x3A3530, DrawList.RAIL);
+        Garden.tree(c.detail, rnd, x, WALK_TOP, z, 7f + rnd.nextFloat() * 2.5f);
+        c.wall(x - 0.2f, z - 0.2f, x + 0.2f, z + 0.2f);
+    }
+
+    /** Benches along the curbs of the block, between the lamp posts, looking out at the street. */
+    private void benches(Cell c, float x0, float z0) {
+        float in = CURB + 0.85f;
+        for (float t = 23f; t < CELL - 8f; t += 18f) {
+            Garden.bench(c.detail, x0 + in, WALK_TOP, z0 + t, (float) (-Math.PI / 2));
+            c.wall(x0 + in - 0.3f, z0 + t - 0.9f, x0 + in + 0.3f, z0 + t + 0.9f, WALK_TOP + 0.48f);
+            Garden.bench(c.detail, x0 + t, WALK_TOP, z0 + in, (float) Math.PI);
+            c.wall(x0 + t - 0.9f, z0 + in - 0.3f, x0 + t + 0.9f, z0 + in + 0.3f, WALK_TOP + 0.48f);
+        }
+    }
+
     private Cell build(int i, int j) {
         Cell c = new Cell();
         DrawList d = c.boxes;
@@ -290,10 +318,23 @@ final class City implements Ground {
         float p0x = b0x + cw, p1x = b1x - cw, p0z = b0z + cw, p1z = b1z - cw;
         d.box((p0x + p1x) * 0.5f, (WALK_TOP - 0.25f) * 0.5f, (p0z + p1z) * 0.5f, (p1x - p0x) * 0.5f, (WALK_TOP + 0.25f) * 0.5f,
                 (p1z - p0z) * 0.5f, null, sq ? 0xDCCDB2 : 0xCDBFA6, sq ? DrawList.PROMENADE : DrawList.PAVING);
-        if (sq) plaza(c, rnd, x0, z0);
+        // what furnishes the streets and squares has its own seed, so the houses stay as they were
+        Random deco = new Random(hash(i, j, 6));
+        if (sq) plaza(c, rnd, deco, x0, z0, garden(i, j));
         else block(c, rnd, x0, z0, i, j);
         lamps(c, x0, z0);
+        benches(c, x0, z0);
         parked(c, rnd, x0, z0);
+        if (!palmy(i, j) && leafy(i, j, 3)) {
+            // plane trees down the street along the west edge, on both its pavements
+            for (float t = 20f; t < CELL - 10f; t += 26f)
+                for (int s = -1; s <= 1; s += 2) street(c, deco, x0 + s * (CURB + 0.9f), z0 + t);
+        }
+        if (leafy(i, j, 4)) {
+            // and down the one along the south edge
+            for (float t = 20f; t < CELL - 10f; t += 26f)
+                for (int s = -1; s <= 1; s += 2) street(c, deco, x0 + t, z0 + s * (CURB + 0.9f));
+        }
         if (palmy(i, j)) {
             // down the street along the west edge, on both its pavements
             for (float z = z0 + 10f; z < z0 + CELL - 6f; z += 12f)
@@ -362,6 +403,19 @@ final class City implements Ground {
                 float dir = (mine > other ? 1f : -1f) * (end == 0 ? -1f : 1f);
                 float lx = alongX ? bu : cv, lz = alongX ? cv : bu;
                 ladder(c, lx, lz, Math.min(mine, other), Math.max(mine, other), alongX ? dir : 0f, alongX ? 0f : dir, false);
+            }
+            // two pots of flowers either side of the middle of the front, now and then; ivy up its far end
+            Random deco = new Random(seed * 0x5DEECE66DL + 11L);
+            if (((seed >>> 11) & 1) == 0)
+                for (int e = -1; e <= 1; e += 2) {
+                    float pu = cu + e * 1.55f, pv = fv + side * 0.4f;
+                    float px = alongX ? pu : pv, pz = alongX ? pv : pu;
+                    Garden.pot(c.detail, deco, px, WALK_TOP, pz, 0.27f);
+                    c.wall(px - 0.24f, pz - 0.24f, px + 0.24f, pz + 0.24f, WALK_TOP + 0.6f);
+                }
+            if (((seed >>> 12) & 3) == 0) {
+                float iu = u + len - 1.8f, top = WALK_TOP + 3.3f * (1 + ((seed >>> 14) & 1)) + 0.8f;
+                Garden.ivy(c.detail, deco, alongX ? iu : fv, alongX ? fv : iu, nx, nz, 1.4f, WALK_TOP, Math.min(top, height));
             }
             c.house(cx, cz, hx, hz, height + 0.5f, nx, nz, lift ? LIFT : escape ? ESCAPE : 0f);
             u += len;
@@ -624,10 +678,14 @@ final class City implements Ground {
         }
     }
 
-    /** A square: big pale paving, palms in rows, a stone basin in the middle. */
-    private void plaza(Cell c, Random rnd, float x0, float z0) {
-        DrawList d = c.boxes;
-        float mx = x0 + CELL * 0.5f, mz = z0 + CELL * 0.5f;
+    /**
+     * A square: big pale paving, palms round it; within them either a fountain amid benches,
+     * flower beds, pots and lamps, or a garden in a low iron fence: lawns, gravel paths across it,
+     * hedges along them, trees and bushes, benches, beds of flowers round a small fountain.
+     */
+    private void plaza(Cell c, Random rnd, Random deco, float x0, float z0, boolean garden) {
+        DrawList d = c.detail;
+        float mx = x0 + CELL * 0.5f, mz = z0 + CELL * 0.5f, y = WALK_TOP;
         for (int a = -2; a <= 2; a++)
             for (int b = -2; b <= 2; b++) {
                 if (Math.abs(a) < 2 && Math.abs(b) < 2) continue;
@@ -635,11 +693,99 @@ final class City implements Ground {
                 Street.palm(c.detail, rnd, px, WALK_TOP, pz, 6f + rnd.nextFloat() * 2.5f, (rnd.nextFloat() - 0.5f) * 0.35f, false);
                 c.wall(px - 0.25f, pz - 0.25f, px + 0.25f, pz + 0.25f);
             }
-        // the basin and its water
-        d.box(mx, WALK_TOP + 0.3f, mz, 3.2f, 0.3f, 3.2f, null, 0xE2D4BA, DrawList.STONE);
-        d.box(mx, WALK_TOP + 0.55f, mz, 2.8f, 0.06f, 2.8f, null, 0x2D6990, DrawList.SEA);
-        d.box(mx, WALK_TOP + 1.1f, mz, 0.35f, 0.6f, 0.35f, null, 0xE2D4BA, DrawList.STONE);
-        c.wall(mx - 3.2f, mz - 3.2f, mx + 3.2f, mz + 3.2f, WALK_TOP + 0.6f);
+        if (garden) {
+            park(c, deco, mx, mz);
+            return;
+        }
+        // the fountain, and round it benches looking at it, pots between them
+        float rim = Garden.fountain(c.boxes, mx, y, mz, 4.2f);
+        c.wall(mx - 3.9f, mz - 3.9f, mx + 3.9f, mz + 3.9f, rim);
+        for (int k = 0; k < 8; k++) {
+            float a = k * (float) (Math.PI / 4) + (float) (Math.PI / 8), ca = (float) Math.cos(a), sa = (float) Math.sin(a);
+            float bx = mx + ca * 8f, bz = mz + sa * 8f;
+            Garden.bench(d, bx, y, bz, (float) Math.atan2(-ca, -sa));
+            c.wall(bx - 0.75f, bz - 0.75f, bx + 0.75f, bz + 0.75f, y + 0.48f);
+            float pa = a + (float) (Math.PI / 8), px = mx + (float) Math.cos(pa) * 8.4f, pz = mz + (float) Math.sin(pa) * 8.4f;
+            Garden.pot(d, deco, px, y, pz, 0.32f);
+            c.wall(px - 0.28f, pz - 0.28f, px + 0.28f, pz + 0.28f, y + 0.7f);
+        }
+        // lamps on the diagonals, flower beds on the four ways out
+        for (int k = 0; k < 4; k++) {
+            float a = k * (float) (Math.PI / 2) + (float) (Math.PI / 4);
+            float lx = mx + (float) Math.cos(a) * 12f, lz = mz + (float) Math.sin(a) * 12f;
+            Garden.lamp(d, lx, y, lz, a);
+            c.wall(lx - 0.2f, lz - 0.2f, lx + 0.2f, lz + 0.2f);
+            float bx = k % 2 == 0 ? (k == 0 ? 14.5f : -14.5f) : 0f, bz = k % 2 == 1 ? (k == 1 ? 14.5f : -14.5f) : 0f;
+            float hx = bx != 0f ? 0.8f : 2.6f, hz = bx != 0f ? 2.6f : 0.8f;
+            for (int e = -1; e <= 1; e += 2) {
+                float cx = mx + bx + (bx == 0f ? e * 4f : 0f), cz = mz + bz + (bz == 0f ? e * 4f : 0f);
+                Garden.bed(d, deco, cx - hx, cz - hz, cx + hx, cz + hz, y);
+                c.wall(cx - hx, cz - hz, cx + hx, cz + hz, y + 0.55f);
+            }
+        }
+    }
+
+    /** The garden within a square's palms: its fence, lawns, paths, hedges, trees, benches and middle. */
+    private void park(Cell c, Random rnd, float mx, float mz) {
+        DrawList d = c.detail;
+        float y = WALK_TOP, edge = 17f, path = 1.5f;
+        // the gravel paths across, and the lawns between them
+        c.boxes.box(mx, y + 0.008f, mz, edge, 0.008f, path, null, 0xD9C7A2, DrawList.GRAVEL);
+        c.boxes.box(mx, y + 0.008f, mz, path, 0.008f, edge, null, 0xD9C7A2, DrawList.GRAVEL);
+        for (int sx = -1; sx <= 1; sx += 2)
+            for (int sz = -1; sz <= 1; sz += 2) {
+                float lx = mx + sx * (edge + path) * 0.5f, lz = mz + sz * (edge + path) * 0.5f, lh = (edge - path) * 0.5f;
+                c.boxes.box(lx, y + 0.02f, lz, lh, 0.02f, lh, null, 0x6E9A44, DrawList.GRASS);
+                // low hedges along the paths, a gap half way for the lawn
+                float a0 = path + 0.6f, a1 = edge - 0.4f, gap = (a0 + a1) * 0.5f;
+                for (int h = 0; h < 2; h++) {
+                    float f0 = h == 0 ? a0 : gap + 1f, f1 = h == 0 ? gap - 1f : a1;
+                    float hx0 = mx + sx * f0, hx1 = mx + sx * f1, hz = mz + sz * (path + 0.35f);
+                    Garden.hedge(d, Math.min(hx0, hx1), hz - 0.3f, Math.max(hx0, hx1), hz + 0.3f, y, 0.75f);
+                    c.wall(Math.min(hx0, hx1), hz - 0.3f, Math.max(hx0, hx1), hz + 0.3f, y + 0.75f);
+                    float vz0 = mz + sz * f0, vz1 = mz + sz * f1, vx = mx + sx * (path + 0.35f);
+                    Garden.hedge(d, vx - 0.3f, Math.min(vz0, vz1), vx + 0.3f, Math.max(vz0, vz1), y, 0.75f);
+                    c.wall(vx - 0.3f, Math.min(vz0, vz1), vx + 0.3f, Math.max(vz0, vz1), y + 0.75f);
+                }
+                // trees and bushes on the lawn
+                int trees = 2 + rnd.nextInt(2);
+                for (int k = 0; k < trees; k++) {
+                    float tx = mx + sx * (5f + rnd.nextFloat() * 9f), tz = mz + sz * (5f + rnd.nextFloat() * 9f);
+                    Garden.tree(d, rnd, tx, y, tz, 7.5f + rnd.nextFloat() * 3f);
+                    c.wall(tx - 0.2f, tz - 0.2f, tx + 0.2f, tz + 0.2f);
+                }
+                for (int k = 0; k < 3; k++) {
+                    float bx = mx + sx * (3.5f + rnd.nextFloat() * 12f), bz = mz + sz * (3.5f + rnd.nextFloat() * 12f);
+                    float r = 0.6f + rnd.nextFloat() * 0.5f;
+                    Garden.bush(d, rnd, bx, y, bz, r);
+                    c.wall(bx - r * 0.7f, bz - r * 0.7f, bx + r * 0.7f, bz + r * 0.7f, y + r * 1.2f);
+                }
+                // benches on the paths, their backs to the hedges
+                float bt = 9.5f;
+                Garden.bench(d, mx + sx * bt, y, mz + sz * 1.15f, sz > 0 ? (float) Math.PI : 0f);
+                c.wall(mx + sx * bt - 0.9f, mz + sz * 1.15f - 0.3f, mx + sx * bt + 0.9f, mz + sz * 1.15f + 0.3f, y + 0.48f);
+            }
+        // the fence round it, open where the paths go out
+        for (int e = -1; e <= 1; e += 2) {
+            for (int h = -1; h <= 1; h += 2) {
+                float f0 = h * (path + 0.4f), f1 = h * edge;
+                Garden.fence(d, mx + Math.min(f0, f1), mz + e * edge, mx + Math.max(f0, f1), mz + e * edge, y);
+                c.wall(mx + Math.min(f0, f1), mz + e * edge - 0.05f, mx + Math.max(f0, f1), mz + e * edge + 0.05f, y + 0.95f);
+                Garden.fence(d, mx + e * edge, mz + Math.min(f0, f1), mx + e * edge, mz + Math.max(f0, f1), y);
+                c.wall(mx + e * edge - 0.05f, mz + Math.min(f0, f1), mx + e * edge + 0.05f, mz + Math.max(f0, f1), y + 0.95f);
+            }
+        }
+        // in the middle, where the paths cross: a small fountain, flower beds round it, lamps
+        float rim = Garden.fountain(c.boxes, mx, y, mz, 2.3f);
+        c.wall(mx - 2.1f, mz - 2.1f, mx + 2.1f, mz + 2.1f, rim);
+        for (int sx = -1; sx <= 1; sx += 2)
+            for (int sz = -1; sz <= 1; sz += 2) {
+                float bx = mx + sx * 3.3f, bz = mz + sz * 3.3f;
+                Garden.pot(d, rnd, bx, y, bz, 0.4f);
+                c.wall(bx - 0.35f, bz - 0.35f, bx + 0.35f, bz + 0.35f, y + 0.85f);
+                Garden.lamp(d, mx + sx * 2.2f, y, mz + sz * (edge - 1.5f), 0f);
+                c.wall(mx + sx * 2.2f - 0.2f, mz + sz * (edge - 1.5f) - 0.2f, mx + sx * 2.2f + 0.2f, mz + sz * (edge - 1.5f) + 0.2f);
+            }
     }
 
     /**
@@ -652,16 +798,21 @@ final class City implements Ground {
             for (int s = -1; s <= 1; s += 2) {
                 if (rnd.nextInt(10) < 7) continue;
                 int paint = Cars.PAINT[rnd.nextInt(Cars.PAINT.length)];
+                // its kind from a seed of its own, so the town is laid out as it was
+                Random own = new Random(paint * 31L + (long) (t * 7f) + s * 1013L + (long) x0 * 17L + (long) z0 * 131L);
+                int kind = Cars.kind(own);
+                if (kind != Cars.SEDAN) paint = Cars.paint(own, kind);
+                float len = Cars.half(kind) + 0.1f, top = Cars.top(kind);
                 // the street running north: on its east side they face north, on its west side south
                 if (rnd.nextBoolean()) {
                     float x = x0 + s * off, z = z0 + t;
-                    Cars.car(c.parked, x, z, s > 0 ? 0f : (float) Math.PI, paint, true);
-                    c.wall(x - 0.95f, z - 2.3f, x + 0.95f, z + 2.3f, Cars.TOP);
+                    Cars.car(c.parked, x, z, s > 0 ? 0f : (float) Math.PI, paint, true, kind);
+                    c.wall(x - 0.95f, z - len, x + 0.95f, z + len, top);
                 } else {
                     // the street running east: on its south side they face east, on its north side west
                     float x = x0 + t, z = z0 + s * off;
-                    Cars.car(c.parked, x, z, s < 0 ? (float) (Math.PI / 2) : (float) (-Math.PI / 2), paint, true);
-                    c.wall(x - 2.3f, z - 0.95f, x + 2.3f, z + 0.95f, Cars.TOP);
+                    Cars.car(c.parked, x, z, s < 0 ? (float) (Math.PI / 2) : (float) (-Math.PI / 2), paint, true, kind);
+                    c.wall(x - len, z - 0.95f, x + len, z + 0.95f, top);
                 }
             }
     }

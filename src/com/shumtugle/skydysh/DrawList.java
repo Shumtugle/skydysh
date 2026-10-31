@@ -17,6 +17,8 @@ final class DrawList {
     static final int SEAMLESS = 252;
     // what a ball is: a polished one with finger holes, or a rubber one
     static final int POLISHED = 20, RUBBER = 21;
+    // green things: a mass of leaves (its seed, if any, a color of flowers in it); a lawn; a gravel path
+    static final int LEAVES = 22, GRASS = 23, GRAVEL = 24;
     // a ball of plain cloth or skin, without shine (people)
     static final int MATTE = 26;
     // clear plastic: a water bottle's skin, drawn last, over what is behind it (see Round.bottle)

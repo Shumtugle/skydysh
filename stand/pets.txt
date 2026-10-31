@@ -1,0 +1,13 @@
+# The dogs and cats: the town left a while to come alive, then her put by a dog on a lead, a
+# dog on its own, a cat; a moment each to see them go.
+screen 1096 2560
+wait 8
+pet led 4
+wait 0.5
+shot p0
+pet dog 4
+wait 0.5
+shot p1
+pet cat 3.5
+wait 0.5
+shot p2

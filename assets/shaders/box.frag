@@ -39,7 +39,7 @@ out vec4 outColor;
 const float PLAIN = 0.0, GRAIN = 1.0, STONE = 2.0, ASPHALT = 3.0, WOOD = 4.0, PAVING = 5.0, PAINT = 6.0, GOLD = 7.0;
 const float FACADE = 8.0, FROND = 9.0, TRUNK = 10.0, ROAD = 11.0, GLASS = 12.0, GLOW = 13.0, SEA = 14.0, RAIL = 15.0;
 const float PROMENADE = 16.0, AWNING = 17.0, SQUARE = 18.0, LANE = 19.0;
-const float POLISHED = 20.0, RUBBER = 21.0, MATTE = 26.0, CLEAR = 27.0;
+const float POLISHED = 20.0, RUBBER = 21.0, LEAVES = 22.0, GRASS = 23.0, GRAVEL = 24.0, MATTE = 26.0, CLEAR = 27.0;
 const float ROD = 28.0, HEAD = 29.0, FIRE = 30.0, TILES = 31.0;
 
 const vec3 INK = vec3(0.137, 0.165, 0.290);
@@ -489,6 +489,27 @@ void main() {
         k = r < 0.2 ? 0.82 : 1.0;
     } else if (mat == FROND) {
         leaf = 1.0;
+    } else if (mat == LEAVES) {
+        // a mass of leaves (a hedge, a bush, a crown, ivy): clumps, darker in the hollows between
+        // them; a seed sets flowers among them, of a color of its own
+        float clump = fbm(vWorld * 4.5), fine = vnoise(vWorld * 17.0);
+        k = 0.6 + 0.5 * clump + 0.14 * fine;
+        base *= mix(vec3(0.9, 1.0, 0.84), vec3(1.06, 1.0, 1.1), vnoise(vWorld * 0.7));
+        if (seed > 0 && seed < 252 && hash(floor(vWorld * 9.0)) > 0.84 && fine > 0.42) {
+            int f = seed % 6;
+            base = f == 0 ? rgb(0xE0484A) : f == 1 ? rgb(0xF3A0C0) : f == 2 ? rgb(0xF4D25A)
+                 : f == 3 ? rgb(0xF6F1E6) : f == 4 ? rgb(0x9C6AD8) : rgb(0xF08A3A);
+            k = 1.0;
+        }
+        leaf = 1.0;
+    } else if (mat == GRASS) {
+        // a lawn, mown in stripes, a little uneven
+        float along = vHalf.x > vHalf.z ? vWorld.z : vWorld.x;
+        k = (mod(floor(along / 1.2), 2.0) == 0.0 ? 0.93 : 1.04) * (0.86 + 0.2 * fbm(vWorld * 1.5))
+            * (0.94 + 0.1 * vnoise(vWorld * 23.0));
+    } else if (mat == GRAVEL) {
+        // a gravel path: fine stones, light and dark
+        k = 0.84 + 0.2 * hash(floor(vWorld * 22.0)) + 0.08 * vnoise(vWorld * 2.0);
     } else if (mat == GLASS) {
         glass = 1.0;
     } else if (mat == PLAIN || mat == GRAIN) {

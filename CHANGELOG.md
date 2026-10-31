@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.28
+
+- Her mallet is shorter: the handle half as long, the head as it was. It no longer trails at her
+  heels as she runs; thrown, it turns about its own middle.
+- The hunt: run a golem down to within four and a half metres and she throws at it by herself,
+  no tap needed, and it runs on as the mallet flies after it and knocks the plate off. A tap
+  still strikes or throws as before.
+- Up a ladder she goes by her arms alone: hand over hand, one hand reaching up to the next rung
+  while the other pulls her up past it, the body rising in jerks, the legs hanging still under
+  her, the toes down, swinging a little with each pull. The mallet hangs at her hip meanwhile.
+- On a roof the lift no longer takes her in when she comes by its hut: a button with the lift's
+  doors and an arrow down shows low on the right of the glass while she is near its door, and
+  only a press of it takes her down. On the street the lift's doors still open by themselves.
+- More life in the town: half as many people again on the pavements, half as many cars again on
+  the roads; dogs and cats. Some people walk a dog on a lead at their side; dogs go about on
+  their own nearer the curb; cats go round close to the house fronts, sit a while and look
+  about, and bolt when she runs at them.
+- Cars of five kinds, moving and parked: the sedan, a hatchback, a little high town car in
+  pastel, a taxi in black with yellow doors and a green lamp on its roof, a van.
+- The squares furnished, one of two kinds. Paved, round a fountain of two basins with its water
+  thrown up and falling back in a ring; benches looking at it, pots of flowers between them,
+  lamp posts with two lanterns, flower beds on the ways out. Or a garden within a low iron
+  fence: lawns mown in stripes, gravel paths across, clipped hedges along them, broad-leaved
+  trees and bushes on the lawns, benches on the paths, a small fountain where the paths cross,
+  pots round it.
+- The streets furnished: benches along the curbs looking out at the street, plane trees down
+  one street in two in iron gratings, pots of flowers either side of the middle of a front now
+  and then, ivy up the far end of a front, ragged at its top. The houses stand where they stood.
+- New surfaces: a mass of leaves (in flower, if it is given a colour), a lawn, gravel.
+- Stand: `square garden|fountain METERS`, `pet dog|cat|led METERS`; `chasebot … notap`; scenes
+  `squares.txt`, `pets.txt`, `runthrow.txt` (the hunt with no tap); `down.txt` presses the button.
+
 ## 0.27
 
 - The folder's mission is a race over the roofs. The folder lies on a house of a row with no

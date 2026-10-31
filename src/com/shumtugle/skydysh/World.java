@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.27";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.28";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -56,6 +56,7 @@ final class World {
     private float whiteOut;                  // the white of the opening going off the game, seconds left
     final Cars cars = new Cars();
     final Walkers walkers = new Walkers();
+    final Pets pets = new Pets();            // dogs on leads and on their own, cats
     private int caughtSeen, struckSeen;
     private final float[] at = new float[2];
     private final Fliers fliers = new Fliers();                     // far off in the sky, seldom
@@ -172,6 +173,16 @@ final class World {
             if (type == DOWN) dispatch.touch();
             return;
         }
+        // the button down by the lift on a roof: pressed, the finger is the button's till it is lifted
+        if (type == DOWN && liftOffer && onLiftButton(x, y)) {
+            liftPressed = true;
+            buttonHeld = true;
+            return;
+        }
+        if (buttonHeld) {
+            if (type == UP) buttonHeld = false;
+            return;
+        }
         runner.touch(type, x, y);
     }
 
@@ -237,9 +248,10 @@ final class World {
             mission.update(dt, runner, city, cars);
             chase = mission.target(chase);
         }
-        toss.update(dt, runner, golems(), city, runner.tapped());
+        toss.update(dt, runner, golems(), city, runner.tapped(), folder == null);
         cars.update(dt, runner, golems());
         walkers.update(dt, runner, chase);
+        pets.update(dt, runner, walkers);
         int caught = mission.caught(), struck = 0;
         if (folder != null) caught = 0;
         for (Chase g : golems()) struck += g.struck;
@@ -301,6 +313,8 @@ final class World {
      */
     private void doors(float dt) {
         Runner r = runner;
+        boolean offered = liftOffer;
+        liftOffer = false;
         if (swapT >= 0f) {
             float was = swapT;
             swapT += dt;
@@ -328,6 +342,23 @@ final class World {
         float px = street ? l[0] : l[8], pz = street ? l[1] : l[9];
         float wx = street ? -l[2] : l[2], wz = street ? -l[3] : l[3];
         float dx = px - r.x, dz = pz - r.z;
+        if (!street) {
+            // on a roof the way down is taken by the button only: a lift run into by chance in the
+            // race would cost the race
+            if (dx * dx + dz * dz > LIFT_OFFER * LIFT_OFFER) {
+                liftPressed = false;
+                return;
+            }
+            liftOffer = true;
+            if (!offered) liftPressed = false;
+            if (!liftPressed) return;
+            liftPressed = false;
+            System.arraycopy(l, 0, liftOf, 0, 11);
+            System.arraycopy(houseNow, 0, houseOf, 0, 8);
+            host.sound(Synth.DOOR, 0.45f, 1f);
+            go(TO_CABIN);
+            return;
+        }
         if (dx * dx + dz * dz > LIFT_NEAR * LIFT_NEAR) {
             liftWait = 0f;
             return;
@@ -340,7 +371,46 @@ final class World {
         System.arraycopy(l, 0, liftOf, 0, 11);
         System.arraycopy(houseNow, 0, houseOf, 0, 8);
         host.sound(Synth.DOOR, 0.45f, 1f);
-        go(street ? TO_HALL : TO_CABIN);
+        go(TO_HALL);
+    }
+
+    // ---- the button for the lift down from a roof ----
+    static final float LIFT_OFFER = 2.6f;    // so near the hut's door, the button is offered
+    static final int BUTTON = 22;            // half its size, frame units
+    /** Near the door of a lift's hut on a roof: the button for going down is shown. */
+    boolean liftOffer;
+    private boolean liftPressed, buttonHeld;
+
+    /** Where the button's middle is: low in the frame, to the right, under the thumb. */
+    int liftButtonX() {
+        return W - 44;
+    }
+
+    int liftButtonY() {
+        return h - 70;
+    }
+
+    private boolean onLiftButton(float x, float y) {
+        float m = BUTTON + 8;
+        return Math.abs(x - liftButtonX()) < m && Math.abs(y - liftButtonY()) < m;
+    }
+
+    /** The button: a lift's two doors under a green lamp with an arrow down in it, the frame breathing. */
+    private void liftFlat(Px f) {
+        if (!liftOffer) return;
+        int cx = liftButtonX(), cy = liftButtonY(), b = BUTTON;
+        int ink = 0xFF232A4A, face = 0xFFF4E8D2, door = 0xFF1D2730, lamp = 0xFF000000 | City.LIFT_LIGHT;
+        float pulse = 0.5f + 0.5f * (float) Math.sin(time * 5f);
+        int glow = Px.mix(0xFF5FB89A, lamp, pulse);
+        f.rect(cx - b - 2, cy - b - 2, cx + b + 2, cy + b + 2, ink);
+        f.rect(cx - b, cy - b, cx + b, cy + b, glow);
+        f.rect(cx - b + 3, cy - b + 3, cx + b - 3, cy + b - 3, face);
+        // the doors, a seam down the middle
+        f.rect(cx - 11, cy - 4, cx + 11, cy + b - 6, door);
+        f.rect(cx - 1, cy - 4, cx + 1, cy + b - 6, 0xFF9AA3A8);
+        // the lamp over them: an arrow down
+        f.rect(cx - 10, cy - b + 6, cx + 10, cy - 7, lamp);
+        for (int k = 0; k < 5; k++) f.rect(cx - 6 + k, cy - b + 9 + k, cx + 6 - k, cy - b + 10 + k, 0xFF1D3A32);
     }
 
     // ---- ladders: up a fire escape from the street, or from one roof up onto a taller one ----
@@ -708,6 +778,7 @@ final class World {
         city.draw(d, eyeX, eyeZ, ex, ez);
         cars.draw(d, eyeX, eyeZ, ex, ez);
         walkers.draw(d, eyeX, eyeZ, ex, ez);
+        pets.draw(d, eyeX, eyeZ, ex, ez, walkers);
         if ((dispatch == null || dispatch.showsHer()) && !r.hidden) {
             r.draw(d);
             toss.draw(d, r);
@@ -726,6 +797,7 @@ final class World {
         else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
         beatsFlat(f);
+        liftFlat(f);
         swapFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         // the white the opening ended on, going off

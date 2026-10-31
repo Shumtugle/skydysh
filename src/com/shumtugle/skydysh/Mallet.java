@@ -2,21 +2,21 @@ package com.shumtugle.skydysh;
 
 /**
  * Her mallet: a big head of pale planks, two laid along the top and bottom and their seams
- * showing, bound round near either end with a band of iron; a square handle of darker wood
- * through it, and on the handle's end a cap of red-brown wood, a little thicker. Its own frame:
- * the handle along x, the grip at the origin, the head out at +x; the head's length along z.
+ * showing, bound round near either end with a band of iron; a short square handle of darker
+ * wood through it, and on the handle's end a cap of red-brown wood, a little thicker. Its own
+ * frame: the handle along x, the grip at the origin, the head out at +x; the head's length along z.
  * The golden one has a head of gold burning from within.
  */
 final class Mallet {
     // the parts: middle along x, y, z; half sizes; color (meters, at size 1)
     private static final float[][] PARTS = {
             {-0.07f, 0f, 0f, 0.075f, 0.05f, 0.05f},          // the cap on the handle's end
-            {0.28f, 0f, 0f, 0.28f, 0.035f, 0.035f},          // the handle
-            {0.69f, 0.05f, 0f, 0.11f, 0.05f, 0.21f},         // the head: the top plank
-            {0.69f, -0.05f, 0f, 0.11f, 0.05f, 0.21f},        // the bottom plank
-            {0.69f, 0f, 0.125f, 0.116f, 0.106f, 0.022f},     // the iron bands
-            {0.69f, 0f, -0.125f, 0.116f, 0.106f, 0.022f},
-            {0.582f, 0f, 0f, 0.004f, 0.036f, 0.036f},        // the handle's end showing through the head
+            {0.15f, 0f, 0f, 0.15f, 0.035f, 0.035f},          // the handle
+            {0.41f, 0.05f, 0f, 0.11f, 0.05f, 0.21f},         // the head: the top plank
+            {0.41f, -0.05f, 0f, 0.11f, 0.05f, 0.21f},        // the bottom plank
+            {0.41f, 0f, 0.125f, 0.116f, 0.106f, 0.022f},     // the iron bands
+            {0.41f, 0f, -0.125f, 0.116f, 0.106f, 0.022f},
+            {0.302f, 0f, 0f, 0.004f, 0.036f, 0.036f},        // the handle's end showing through the head
     };
     private static final int[] COL = {0x8C4A2C, 0xC6894A, 0xE2B270, 0xD9A563, 0x55585F, 0x55585F, 0xB0773E};
     private static final float[] T = new float[9];
@@ -34,7 +34,7 @@ final class Mallet {
 
     // which parts are the handle, and which the head
     static final int HANDLE_FROM = 0, HEAD_FROM = 2, ALL = 7;
-    static final float HEAD_MIDDLE = 0.69f, HANDLE_MIDDLE = 0.24f;
+    static final float HEAD_MIDDLE = 0.41f, HANDLE_MIDDLE = 0.11f;
 
     /** The same, golden or not, only the parts from one to another (the handle, 0 to 2; the head, 2 to 7). */
     static void draw(DrawList d, float[] rot, float x, float y, float z, float size, float pivot, boolean golden,

@@ -415,7 +415,7 @@ final class Runner {
     }
 
     private String motion() {
-        if (state == CLIMB) return "climb";
+        if (state == CLIMB) return Frida.PULL;
         if (state == AIR && clock - beatAt < 0.35f) return "leap_air";
         if (throwing() >= 0f && state != AIR) return "throw";
         if (state == AIR && gliding && vy < 0f) return "jump_air";
@@ -428,7 +428,7 @@ final class Runner {
     }
 
     private float motionTime() {
-        if (state == CLIMB) return ((clock - stateAt) * 1.8f) % 0.62f;
+        if (state == CLIMB) return (clock - stateAt) * CLIMB_UP / (Stroll.PULL_RISE * SIZE);
         if (state == AIR && clock - beatAt < 0.35f) return 0.3f + (clock - beatAt) * 1.4f;
         if (throwing() >= 0f && state != AIR) return throwing();
         if (state == AIR && gliding && vy < 0f) return GLIDE_POSE;
