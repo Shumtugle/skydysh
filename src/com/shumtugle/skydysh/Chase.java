@@ -27,7 +27,8 @@ final class Chase {
     // struck: the fall begun past its first stagger and played faster; lying; getting up again
     static final float FALL_FROM = 0.5f, FALL_PACE = 1.5f, FALL_END = 1.25f, LIE = 1.6f, RISE_PACE = 1.3f;
 
-    static final int FLEE = 0, JOLTED = 1, LOOSE = 2, WAITING = 3, DOWN = 4, RISING = 5, STONE = 6;
+    static final int FLEE = 0, JOLTED = 1, LOOSE = 2, WAITING = 3, DOWN = 4, RISING = 5, STONE = 6, SEIZED = 7;
+    static final float SEIZED_MOST = 4f, HELD_REACH = 3.4f;   // a hunt's golem is held a little further off: she stops to throw       // held so long at most, waiting for the blow
     static final float SIDE = 5.4f;            // where one of a hunt waits: on the pavement
     static final float COOL = 1.4f, LIES = 7f, SINKS = 2f;
 
@@ -79,6 +80,20 @@ final class Chase {
         state = WAITING;
     }
 
+    private boolean seizedLying;
+
+    /** Reached by the runner: she is held where she is, startled, or lying if she was down. */
+    private void seize(boolean lying) {
+        seizedLying = lying;
+        speed = 0f;
+        set(SEIZED);
+    }
+
+    /** Whether she is held, reached by the runner and waiting for the blow. */
+    boolean seized() {
+        return state == SEIZED;
+    }
+
     /** Caught for good and fallen apart. */
     boolean done() {
         return state == STONE;
@@ -108,6 +123,14 @@ final class Chase {
             rubble(dt);
             return;
         }
+        if (state == SEIZED) {
+            // held where she was reached, waiting for the blow; if it never comes, she falls apart all the same
+            speed = 0f;
+            y += (city.ground(x, z) + 0f - y) * Math.min(1f, dt * 18f);
+            lift = Math.max(0f, lift - dt * 4f);
+            if (clock - stateAt > SEIZED_MOST) crumble(r, city);
+            return;
+        }
         float want;
         switch (state) {
             case JOLTED:
@@ -124,11 +147,11 @@ final class Chase {
                 break;
             case DOWN:
                 want = 0f;
-                if (apart < REACH && !caughtDown) {
+                if (apart < (forGood ? HELD_REACH : REACH) && !caughtDown) {
                     caught++;
                     caughtDown = true;
                     if (forGood) {
-                        crumble(r, city);
+                        seize(true);
                         return;
                     }
                 }
@@ -142,10 +165,10 @@ final class Chase {
                 }
                 break;
             default:
-                if (apart < REACH) {
+                if (apart < (forGood ? HELD_REACH : REACH)) {
                     caught++;
                     if (forGood) {
-                        crumble(r, city);
+                        seize(false);
                         return;
                     }
                     set(JOLTED);
@@ -397,6 +420,7 @@ final class Chase {
     }
 
     private String motion() {
+        if (state == SEIZED) return seizedLying ? "fall" : clock - stateAt < 0.37f ? "hit" : "idle";
         if (state == DOWN || state == RISING) return "fall";
         if (state == JOLTED) return "knockback";
         if (state == WAITING) return speed < 0.4f ? "arms_folded" : "walk";
@@ -407,6 +431,7 @@ final class Chase {
     }
 
     private float motionTime() {
+        if (state == SEIZED) return seizedLying ? FALL_END : clock - stateAt;
         if (state == DOWN) return FALL_FROM + (clock - stateAt) * FALL_PACE;
         // getting up: the fall played back
         if (state == RISING) return Math.max(0f, FALL_END - (clock - stateAt) * RISE_PACE);

@@ -213,7 +213,8 @@ public final class Stand implements World.Host {
             int caughtWas = world.mission.caught();
             int wi = 0, wj = 0;
             boolean routing = false;
-            float stuck = 0f, dodge = 0f, firstAt = -1f, lastAt = -1f;
+            float stuck = 0f, dodge = 0f, firstAt = -1f, lastAt = -1f, dodgeSide = 1f;
+            int dodges = 0;
             int nextAfter = 0, nextThrow = 0;
             float thrownAt = -1f;
             int thrownSeen = world.toss.thrown;
@@ -240,7 +241,9 @@ public final class Stand implements World.Host {
                     else break;
                 }
                 float[] goal;
-                if (ch.apart > 60f && !ch.done()) {
+                // one waiting is gone to along the streets until it is down the same street as her
+                boolean sameStreet = Math.abs(r.x - ch.x) < 8f || Math.abs(r.z - ch.z) < 8f;
+                if (!ch.done() && (ch.apart > 60f || (ch.state == Chase.WAITING && !sameStreet))) {
                     // far off: along the streets, crossing to crossing, the longer way first
                     if (!routing) {
                         wi = Math.round(r.x / City.CELL);
@@ -271,14 +274,16 @@ public final class Stand implements World.Host {
                 // held up (a car, a lamp post): a step aside to the right for a moment
                 stuck = r.speed < 1f ? stuck + DT : 0f;
                 if (stuck > 0.6f) {
-                    dodge = 1.2f;
+                    // a step aside, to the right and the left by turns, longer each time it fails
+                    dodge = 1.2f + 0.4f * (dodges % 4);
+                    dodgeSide = (dodges++ % 2 == 0) ? 1f : -1f;
                     stuck = 0f;
                 }
                 if (dodge > 0f) {
                     dodge -= DT;
-                    goal = new float[]{r.x + (float) Math.cos(r.heading) * 4f + (float) Math.sin(r.heading),
-                            r.z - (float) Math.sin(r.heading) * 4f + (float) Math.cos(r.heading)};
-                }
+                    goal = new float[]{r.x + dodgeSide * (float) Math.cos(r.heading) * 4f + (float) Math.sin(r.heading),
+                            r.z - dodgeSide * (float) Math.sin(r.heading) * 4f + (float) Math.cos(r.heading)};
+                } else if (r.speed > 5f) dodges = 0;
                 float want = (float) Math.atan2(goal[0] - r.x, goal[1] - r.z);
                 float dd = want - r.heading;
                 while (dd > Math.PI) dd -= 2f * (float) Math.PI;
@@ -301,14 +306,15 @@ public final class Stand implements World.Host {
                     thrownSeen = world.toss.thrown;
                     System.out.println(String.format("%7.2fs  hammer flies, %.1f m", time, world.chase.apart));
                 }
-                if (world.toss.thrown > 0 && thrownAt < 0f) {
-                    thrownAt = time;
+                if (thrownAt < 0f && world.chase.seized()) {
+                    // shots from the moment one is held: the stop, the swing, the mallet out
+                    thrownAt = time + 0.33f;
                     System.out.println(String.format("%7.2fs  hammer thrown, %.1f m off", time, world.chase.apart));
                 }
-                float[] afterThrow = {0.05f, 0.18f, 0.3f};
+                float[] afterThrow = {-0.3f, -0.12f, 0.06f};
                 if (thrownAt >= 0f && nextThrow < afterThrow.length && time - thrownAt >= afterThrow[nextThrow])
                     shot(prefix + "t" + nextThrow++);
-                if (once && got > 0 && (nextThrow >= afterThrow.length || thrownAt < 0f)) {
+                if (once && got > 0 && nextThrow >= afterThrow.length) {
                     caughtWas = got;
                     break;
                 }

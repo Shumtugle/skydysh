@@ -30,6 +30,8 @@ final class Runner {
     // the eye
     float eyeX, eyeY, eyeZ, eyeYaw, eyePitch;
     private boolean placed;
+    // throwing: she stops, turns to (faceX, faceZ) and throws, the finger not heard till it is over
+    private float lockAt = -1f, lockFor, faceX, faceZ;
 
     // the finger: where it was last, and where it was a moment ago, for a flick
     private float lastX, lastY, flickY, flickAt;
@@ -76,9 +78,33 @@ final class Runner {
         stateAt = clock;
     }
 
+    /** She stops where she is, turns to (fx, fz) and throws, for so many seconds. */
+    void lock(float seconds, float fx, float fz) {
+        lockAt = clock;
+        lockFor = seconds;
+        faceX = fx;
+        faceZ = fz;
+        if (state == SLIDE) {
+            state = RUN;
+            stateAt = clock;
+        }
+    }
+
+    /** How long she has been throwing, seconds; negative when she is not. */
+    float throwing() {
+        return lockAt >= 0f && clock - lockAt < lockFor ? clock - lockAt : -1f;
+    }
+
     void update(float dt, City city, Cars cars, Walkers walkers) {
         clock += dt;
-        if (holding) speed += (TOP_SPEED - speed) * Math.min(1f, dt * PICK_UP);
+        if (throwing() >= 0f) {
+            // stopped short, turned to what she throws at
+            speed = Math.max(0f, speed - 40f * dt);
+            float want = (float) Math.atan2(faceX - x, faceZ - z), d = want - heading;
+            while (d > Math.PI) d -= 2f * (float) Math.PI;
+            while (d < -Math.PI) d += 2f * (float) Math.PI;
+            heading += Math.max(-10f * dt, Math.min(10f * dt, d));
+        } else if (holding) speed += (TOP_SPEED - speed) * Math.min(1f, dt * PICK_UP);
         else speed = Math.max(0f, speed - BRAKE * dt);
         if (state == SLIDE) {
             // a slide carries her on, a little slower, then she is up and running again
@@ -129,6 +155,7 @@ final class Runner {
     }
 
     private String motion() {
+        if (throwing() >= 0f && state != AIR) return "throw";
         if (state == AIR) return "leap_air";
         if (state == SLIDE) return clock - stateAt < 0.25f ? "slide_start" : clock - stateAt < 0.7f ? "slide" : "slide_end";
         if (speed > 6f) return "sprint";
@@ -138,6 +165,7 @@ final class Runner {
     }
 
     private float motionTime() {
+        if (throwing() >= 0f && state != AIR) return throwing();
         if (state == AIR) return (clock - stateAt) * 1.4f + 0.3f;
         if (state == SLIDE) {
             float t = clock - stateAt;

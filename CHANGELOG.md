@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.12
+
+- The chase runs to its end again: a golem is to be run down until she is within reach of it.
+  Then it is held where it is, startled (or lying, if a car had knocked it down), and she
+  stops short, turns to it and throws: a wind-up, and the mallet flies at its head, knocks the
+  plate off its brow and comes back to her hand. The finger is not heard while she throws.
+- Her mallet: a big head of pale planks bound with two bands of iron, a square handle of
+  darker wood, a red-brown cap on its end. The maul is gone.
+- The icon redrawn with the mallet.
+- Stand: the bot goes round by the streets to a golem that waits until it is down the same
+  street, and steps aside to either hand by turns when held up.
+
 ## 0.11
 
 - Her hammer is now a stonemason's maul: a long ash handle, a navy band, a block of dark steel

@@ -1,15 +1,15 @@
 package com.shumtugle.skydysh;
 
 /**
- * Her maul (see Maul): carried in her right hand, hanging from the fist and trailing behind
- * her, its head low. When a golem still loose is near enough, before her and not behind a wall, the
- * hammer flies at it by itself, end over end, finding the head wherever it has got to; it
- * knocks the plate off its brow, and comes back to her hand.
+ * Her mallet (see Mallet): carried in her right hand, hanging from the fist and trailing behind
+ * her, its head low. When she has run a golem down and it is held within her reach, she stops,
+ * turns to it and throws: the mallet flies at its head end over end, knocks the plate off its
+ * brow, and comes back to her hand.
  */
 final class Toss {
-    static final float RANGE = 10f, CONE = 1.05f;          // how near, how far to either side of her way
-    static final float OUT_SPEED = 26f, BACK_TIME = 0.55f, SCALE = 1.6f, MIDDLE = 0.55f;
-    static final int HELD = 0, OUT = 1, BACK = 2;
+    static final float LOCK = 1.1f, RELEASE = 0.33f;       // how long she stands to throw; when it leaves her hand
+    static final float OUT_SPEED = 16f, BACK_TIME = 0.45f, SCALE = 1.6f, MIDDLE = 0.5f;
+    static final int HELD = 0, OUT = 1, BACK = 2, WINDUP = 3;
 
     int state = HELD;
     int thrown;
@@ -23,16 +23,23 @@ final class Toss {
     void update(float dt, Runner r, Mission m, City city) {
         clock += dt;
         if (state == HELD) {
-            Chase g = pick(r, m, city);
-            if (g == null) return;
-            aim = g;
+            for (Chase g : m.golems)
+                if (g.seized()) {
+                    aim = g;
+                    r.lock(LOCK, g.x, g.z);
+                    state = WINDUP;
+                    break;
+                }
+            return;
+        }
+        if (state == WINDUP) {
+            if (r.throwing() < RELEASE) return;
+            // out of her hand at the height of the swing
             grip(r);
-            from[0] = hand[0];
-            from[1] = hand[1];
-            from[2] = hand[2];
-            g.head(to);
+            System.arraycopy(hand, 0, from, 0, 3);
+            aim.head(to);
             float dx = to[0] - from[0], dy = to[1] - from[1], dz = to[2] - from[2];
-            flight = Math.max(0.3f, (float) Math.sqrt(dx * dx + dy * dy + dz * dz) / OUT_SPEED);
+            flight = Math.max(0.15f, (float) Math.sqrt(dx * dx + dy * dy + dz * dz) / OUT_SPEED);
             at = clock;
             spin = 0f;
             thrown++;
@@ -42,9 +49,9 @@ final class Toss {
         spin += dt * 17f;
         float u = (clock - at) / (state == OUT ? flight : BACK_TIME);
         if (state == OUT) {
-            // the head it was thrown at, wherever it has run to
+            // the head it was thrown at
             if (!aim.done()) aim.head(to);
-            flown(Math.min(1f, u), 0.12f);
+            flown(Math.min(1f, u), 0.08f);
             if (u >= 1f) {
                 aim.take(r, city, to[0] - from[0], to[2] - from[2]);
                 System.arraycopy(pos, 0, from, 0, 3);
@@ -57,34 +64,6 @@ final class Toss {
             flown(Math.min(1f, u), 0.06f);
             if (u >= 1f) state = HELD;
         }
-    }
-
-    /** The nearest golem still loose within reach, before her and in sight; none if no such. */
-    private Chase pick(Runner r, Mission m, City city) {
-        Chase best = null;
-        float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading);
-        for (Chase g : m.golems) {
-            if (g.done() || g.apart > RANGE) continue;
-            float dx = g.x - r.x, dz = g.z - r.z, l = Math.max(0.1f, g.apart);
-            if ((dx * fx + dz * fz) / l < (float) Math.cos(CONE)) continue;
-            if (!clear(city, r.x, r.z, g.x, g.z)) continue;
-            if (best == null || g.apart < best.apart) best = g;
-        }
-        return best;
-    }
-
-    /**
-     * Whether no house stands between two points on the ground: every point along the way on a
-     * street or a pavement, not within a block. Posts and palms do not stop it.
-     */
-    private static boolean clear(City city, float ax, float az, float bx, float bz) {
-        for (int k = 1; k < 10; k++) {
-            float u = k / 10f, px = ax + (bx - ax) * u, pz = az + (bz - az) * u;
-            float ox = Math.abs(px - Math.round(px / City.CELL) * City.CELL);
-            float oz = Math.abs(pz - Math.round(pz / City.CELL) * City.CELL);
-            if (Math.min(ox, oz) > City.FRONT) return false;
-        }
-        return true;
     }
 
     /** Along the way from where it set off to where it is going, a little arc over it. */
@@ -103,7 +82,14 @@ final class Toss {
 
     void draw(DrawList d, Runner r) {
         float hx, hy, hz;
-        if (state == HELD) {
+        boolean inHand = state == HELD || state == WINDUP;
+        if (inHand && state == WINDUP) {
+            // swung: the handle runs on from her forearm
+            grip(r);
+            hx = hand[0] - elbow[0];
+            hy = hand[1] - elbow[1];
+            hz = hand[2] - elbow[2];
+        } else if (inHand) {
             // hanging from the fist, trailing behind her, swung a little with her forearm
             grip(r);
             float fx = hand[0] - elbow[0], fy = hand[1] - elbow[1], fz = hand[2] - elbow[2];
@@ -131,7 +117,7 @@ final class Toss {
         base[3] = hy; base[4] = uy; base[5] = 0f;
         base[6] = hz; base[7] = uz; base[8] = bz;
         float cx, cy, cz;
-        if (state == HELD) {
+        if (inHand) {
             System.arraycopy(base, 0, turn, 0, 9);
             cx = hand[0];
             cy = hand[1];
@@ -146,6 +132,6 @@ final class Toss {
             cz = pos[2];
         }
         // held, by the grip; flying, turning about its middle
-        Maul.draw(d, turn, cx, cy, cz, SCALE, state == HELD ? 0f : MIDDLE);
+        Mallet.draw(d, turn, cx, cy, cz, SCALE, inHand ? 0f : MIDDLE);
     }
 }

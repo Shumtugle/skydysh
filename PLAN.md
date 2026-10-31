@@ -18,6 +18,7 @@ release, each seen on the stand before the phone.
   the plates won fill five slots over the frame. A new icon.
 - 0.10 The hammer thrown from nearer, within 10 meters.
 - 0.11 The hammer a stonemason's maul.
+- 0.12 Run down to the end: within reach, she stops and throws her mallet of planks and iron.
 
 ## Next
 
