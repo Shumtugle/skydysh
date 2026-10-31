@@ -49,7 +49,7 @@ final class Toss {
     void update(float dt, Runner r, Chase[] golems, City city, boolean tap) {
         clock += dt;
         if (state == HELD) {
-            if (!tap || r.inAir() || r.hidden) return;
+            if (!tap || r.inAir() || r.hidden || r.room != null || r.held) return;
             aim = pick(r, golems);
             hit = false;
             if (aim != null) {

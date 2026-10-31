@@ -444,6 +444,41 @@ public final class Stand implements World.Host {
             float out = p.length > 1 ? f(p[1]) : 6f, turn = p.length > 2 ? f(p[2]) : 0f;
             world.runner.put(l[0] + l[2] * out, City.WALK_TOP, l[1] + l[3] * out, (float) Math.atan2(-l[2], -l[3]) + turn);
             step();
+        } else if (c.equals("onhut")) {
+            // onhut: her on the roof of the lift's house nearest the folder, standing at its hut's door
+            float[] l = doorNearFolder();
+            world.runner.put(l[8], l[5], l[9], (float) Math.atan2(l[2], l[3]));
+            step();
+        } else if (c.equals("walk")) {
+            // walk SECONDS EVERY PREFIX: indoors, a finger that goes where the place says to (to the
+            // lift and in; come down, out at the front), shot so often
+            float secs = f(p[1]), every = f(p[2]), next = 0f;
+            int n = Math.round(secs / DT), k = 0;
+            float[] way = new float[2];
+            for (int i = 0; i < n; i++) {
+                Runner r = world.runner;
+                if (r.held || world.indoors == null) {
+                    if (bdown) {
+                        world.touch(World.UP, bx, by);
+                        bdown = false;
+                    }
+                } else {
+                    world.indoors.goal(r, way);
+                    lead(way[0], way[1], 10f);
+                }
+                step();
+                if (System.getenv("WALKLOG") != null && i % 15 == 0) {
+                    Runner rr = world.runner;
+                    System.out.println(String.format("%7.2fs  her %.1f %.1f %.1f h %.2f speed %.1f eye %.1f %.1f %.1f yaw %.2f %s",
+                            time, rr.x, rr.y, rr.z, rr.heading, rr.speed, rr.eyeX, rr.eyeY, rr.eyeZ, rr.eyeYaw, world.indoors != null ? "in" : "out"));
+                }
+                if (every > 0f && i * DT >= next) {
+                    shot(p[3] + (k++));
+                    next += every;
+                }
+            }
+            if (bdown) world.touch(World.UP, bx, by);
+            bdown = false;
         } else if (c.equals("onfolder")) {
             // onfolder METERS RADIANS: her put on the folder's roof so far from it, the way given round it, facing it
             Folder fo = world.folder;
@@ -562,7 +597,8 @@ public final class Stand implements World.Host {
         int wi = Math.round(world.runner.x / City.CELL), wj = Math.round(world.runner.z / City.CELL);
         int n = Math.round(secs / DT), k = 0;
         float next = every, stuck = 0f, leapAt = -9f;
-        boolean wasUp = false, wasHers = false, wasHidden = false, wasGliding = false;
+        boolean wasUp = false, wasHers = false, wasHidden = false, wasGliding = false, wasHeld = false;
+        float[] way = new float[2];
         int phase = 0;
         for (int i = 0; i < n; i++) {
             Runner r = world.runner;
@@ -571,8 +607,16 @@ public final class Stand implements World.Host {
                     world.touch(World.UP, bx, by);
                     bdown = false;
                 }
-            } else if (r.hidden) {
-                // in the lift
+            } else if (r.held) {
+                // in the lift on its way: the finger off the glass
+                if (bdown) {
+                    world.touch(World.UP, bx, by);
+                    bdown = false;
+                }
+            } else if (r.room != null) {
+                // indoors: to the lift, and in; come down, out of the front door
+                world.indoors.goal(r, way);
+                lead(way[0], way[1], 10f);
             } else if (r.y < 1f) {
                 // the street: crossing to crossing to the crossing by the door, then to the door
                 float dx = door[0] - r.x, dz = door[1] - r.z;
@@ -630,9 +674,14 @@ public final class Stand implements World.Host {
                 wasGliding = r.inAir() && r.gliding;
             }
             step();
-            if (r.hidden != wasHidden) {
-                wasHidden = r.hidden;
-                System.out.println(String.format("%7.2fs  %s", time, r.hidden ? "into the lift" : "out of the lift"));
+            boolean inside = r.room != null;
+            if (inside != wasHidden) {
+                wasHidden = inside;
+                System.out.println(String.format("%7.2fs  %s", time, inside ? "indoors" : "out of doors"));
+            }
+            if (r.held != wasHeld) {
+                wasHeld = r.held;
+                System.out.println(String.format("%7.2fs  %s", time, r.held ? "in the lift" : "out of the lift"));
             }
             boolean up = r.y > 3f;
             if (up != wasUp) {

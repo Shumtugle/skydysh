@@ -1,0 +1,9 @@
+# Down: her at the door of the hut on a roof, standing; in the cabin as it goes down, the doors
+# opening onto the hall, out of it and through the front door to the street
+screen 1096 2560
+mission 2
+onhut
+wait 1.0
+shot d0
+walk 9 0.5 w
+shot d1

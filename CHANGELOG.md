@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.22
+
+- Indoors. The door of a house with a lift (at the front, or at the back on the yard) opens for
+  her as before, and now she goes in: a moment of dark, and she is in the house's hall.
+- The hall is made from the house's seed, the same house always the same: a floor of tiles in
+  two tones, square or on the diagonal; walls in one of several colours, panelling up to a rail;
+  lamps down the ceiling; glass doors front and back that slide open as she comes to them, the
+  light of the street or the yard beyond; and along the walls, laid out by the seed, a bank of
+  letter boxes, a bench, a plant in a clay pot, a radiator, a picture, a notice board, a runner
+  of carpet. Through either glass door she is out again.
+- The lift is in one side wall, in a frame of brass or steel, a row of lamps over it, a lamp a
+  floor. Come near and its button lights by itself; the cabin is called and its doors open. In
+  the cabin she turns to the doors, the top floor's button lights, the doors close, the lamps
+  count the floors up, and she comes out of the hut on the roof. Into the hut, and she is in the
+  cabin going down; the doors open onto the hall.
+- While she rides, the eye is held across the hall on the lift's doors; walking, it is close
+  behind her, under the ceiling. Indoors the light comes from overhead, pooled in the middle; she
+  and what stands about cast their shadows on the floor.
+- The eye now backs away from her only as far as nothing is in the way, so it is never caught
+  inside a house after a door.
+- The mallet is not used indoors. The rooms are places of their own: the town is not drawn while
+  she is in one, and the clock and the rivals run on.
+- Stand: `onhut`, `walk S E P` (indoors, a finger that knows the way); the folder bot goes in and
+  through the hall. Scenes `hall.txt`, `down.txt` (in place of `lift.txt`).
+
 ## 0.21
 
 - New controls. A finger on the glass still runs her and turns her. A flick up jumps; a second

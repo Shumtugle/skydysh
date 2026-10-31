@@ -1,0 +1,10 @@
+# Indoors: her at the front door of a house with a lift, standing; in, through the hall to the
+# lift, which is called by itself and opens; in, the doors close, the floors counted; out on
+# the roof
+screen 1096 2560
+mission 2
+nearfolder 0.6 1.5708
+wait 1.0
+shot a0
+walk 9 0.5 w
+shot a1

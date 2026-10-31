@@ -14,7 +14,7 @@ import java.util.Random;
  * the rest of it is the block those streets go round. Space as in DrawList: x to the right,
  * y up, the road at y = 0.
  */
-final class City {
+final class City implements Ground {
     static final float PARKED = 3.3f;            // a parked car's middle, from the road's middle
     static final float CELL = 64f;
     // across a street from its middle: the asphalt, the curb, the pavement up to the house fronts
@@ -161,7 +161,7 @@ final class City {
      * The highest thing under (x, z) that one whose feet are at feet can stand on: the street, or
      * the top of whatever is there no higher than reach above the feet (a roof, a car, a step).
      */
-    float ground(float x, float z, float feet, float reach) {
+    public float ground(float x, float z, float feet, float reach) {
         float g = ground(x, z);
         int ci = index(x), cj = index(z);
         for (int j = cj - 1; j <= cj + 1; j++)
@@ -177,6 +177,15 @@ final class City {
         return g;
     }
 
+    /** Out of doors the eye goes where it likes, pushed out of the houses (see push). */
+    public void keepEye(float[] p) {
+    }
+
+    /** Out of doors the sky is the ceiling. */
+    public float ceiling(float x, float z) {
+        return TALL;
+    }
+
     /**
      * Pushes a round body of radius r standing at (p[0], p[1]) out of whatever it went into;
      * true if it touched something.
@@ -186,7 +195,7 @@ final class City {
     }
 
     /** The same, for one whose feet are at feet: what is lower than a step under them is not in the way. */
-    boolean push(float[] p, float r, float feet) {
+    public boolean push(float[] p, float r, float feet) {
         boolean hit = false;
         int ci = index(p[0]), cj = index(p[1]);
         for (int j = cj - 1; j <= cj + 1; j++)
@@ -391,9 +400,10 @@ final class City {
     /**
      * The nearest lift to one at (x, z) with feet at feet: in the street, by its door in the
      * front or at the back; on a roof, by its hut's door; as liftAt() tells it (the door being the
-     * one near), false if none is within reach.
+     * one near), and out[10] 1 if it is the one at the back; its house into house as the cell
+     * keeps it (see Cell.house); false if none is within reach.
      */
-    boolean liftNear(float x, float z, float feet, float reach, float[] out) {
+    boolean liftNear(float x, float z, float feet, float reach, float[] out, float[] house) {
         float best = reach * reach;
         boolean found = false;
         float[] l = new float[10];
@@ -421,6 +431,8 @@ final class City {
                         if (dd < best) {
                             best = dd;
                             System.arraycopy(l, 0, out, 0, 10);
+                            out[10] = back;
+                            System.arraycopy(c.houses, o, house, 0, Cell.HOUSE);
                             found = true;
                         }
                     }

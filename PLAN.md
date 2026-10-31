@@ -29,11 +29,13 @@ release, each seen on the stand before the phone.
 - 0.20 The folder on the roofs: lifts up, roof to roof, rival golems climbing; the tube's letters.
 - 0.21 A tap is the mallet's (strike or throw); a flick jumps, a second flick goes on up; she
   glides by herself from high up; lifts open by themselves; the folder marked green; rivals later.
+- 0.22 Indoors: places made from a seed; a house's hall, front door to yard door, with a lift
+  that calls, opens, rides and lets her out by itself.
 
 ## Next
 
-- Rooms made from a seed as the town is: in at a house's entrance, a hall with a lift whose
-  doors and buttons work by themselves, and out on the roof; then other rooms for other missions.
+- More plans indoors, of the same parts, for other missions: a stairwell, offices, a garage,
+  a hotel's lobby; a mission that starts or ends indoors.
 
 - The new look carried on: people of natural build with simple faces and big folds in their
   clothes; cars in the manner of the eighties, angular saloons, long coupes and open tops, a

@@ -25,8 +25,10 @@ final class Runner {
     static final float TAP_S = 0.22f, TAP_PX = 14f, GRACE = 0.3f;
     // the finger: frame pixels moved sideways for a quarter turn; how far and how fast a flick goes
     static final float QUARTER = 110f, FLICK_PX = 26f, FLICK_S = 0.16f;
-    // the eye: so far behind her, so high, looking so far ahead of her
+    // the eye: so far behind her, so high, looking so far ahead of her; indoors, nearer
     static final float BACK = 6f, HIGH = 3.4f, AHEAD = 16f, LOOK_UP = 2.4f;
+    static final float BACK_IN = 3.4f, HIGH_IN = 2.3f, AHEAD_IN = 8f, LOOK_UP_IN = 1.7f;
+    static final float HEAD = 2.45f;                    // her height, for the ceilings indoors
 
     float x = -1.9f, z = 6f, y, vy;
     float heading;                  // radians: 0 runs along +z
@@ -55,8 +57,12 @@ final class Runner {
     private boolean tapped;
     /** Gliding: falling slowly, arms out, till she lands. */
     boolean gliding;
-    /** Hidden: in a lift, between the street and the roof. */
+    /** Hidden: not drawn. */
     boolean hidden;
+    /** Indoors: where she is instead of the town; null out of doors. */
+    Ground room;
+    /** Held still where she stands, the finger not heard (in a lift on its way). */
+    boolean held;
 
     // going down by herself: across the roof to (autoX, autoZ) past its edge, off it, then gliding
     // down along the street (autoH); landed, she is done
@@ -77,7 +83,7 @@ final class Runner {
     }
 
     void touch(int type, float fx, float fy) {
-        if (auto) return;
+        if (auto || held) return;
         if (type == World.DOWN) {
             holding = true;
             lastX = fx;
@@ -207,8 +213,18 @@ final class Runner {
         return lockAt >= 0f && clock - lockAt < lockFor ? clock - lockAt : -1f;
     }
 
+    /** The eye put straight behind her again at once. */
+    void recenter() {
+        placed = false;
+    }
+
     void update(float dt, City city, Cars cars, Walkers walkers) {
         clock += dt;
+        Ground g = room != null ? room : city;
+        if (held) {
+            holding = false;
+            speed = 0f;
+        }
         if (throwing() >= 0f) {
             // stopped short, turned to what she throws at
             speed = Math.max(0f, speed - 40f * dt);
@@ -232,8 +248,12 @@ final class Runner {
         x += fx * speed * dt;
         z += fz * speed * dt;
         float[] p = {x, z};
-        float lift = y - city.ground(x, z);
-        if (city.push(p, RADIUS, y) | cars.push(p, RADIUS, lift) | walkers.push(p, RADIUS, lift)) {
+        boolean hit = g.push(p, RADIUS, y);
+        if (room == null) {
+            float lift = y - city.ground(x, z);
+            hit |= cars.push(p, RADIUS, lift) | walkers.push(p, RADIUS, lift);
+        }
+        if (hit) {
             // ran into something: what was across her way is lost
             float mx = (p[0] - x), mz = (p[1] - z), m = (float) Math.sqrt(mx * mx + mz * mz);
             if (m > 1e-4f) {
@@ -248,7 +268,7 @@ final class Runner {
             // gliding, once past the top of the jump, she sinks slowly
             if (gliding && vy < -(auto ? AUTO_SINK : SINK)) vy = -(auto ? AUTO_SINK : SINK);
             y += vy * dt;
-            float ground = city.ground(x, z, y - vy * dt, 0.05f);
+            float ground = g.ground(x, z, y - vy * dt, 0.05f);
             // falling, high over what is below: arms out
             if (vy < 0f && y - ground > GLIDE_ABOVE) gliding = true;
             if (y <= ground && vy < 0f) {
@@ -264,7 +284,7 @@ final class Runner {
                 }
             }
         } else {
-            float ground = city.ground(x, z, y, City.STEP);
+            float ground = g.ground(x, z, y, City.STEP);
             if (ground < y - 0.7f) {
                 // off an edge: into the air
                 state = AIR;
@@ -278,9 +298,15 @@ final class Runner {
                 y += (ground - y) * Math.min(1f, dt * 18f);
             }
         }
+        // a ceiling over her head: no higher than it
+        float ceiling = g.ceiling(x, z);
+        if (y + HEAD > ceiling) {
+            y = ceiling - HEAD;
+            if (vy > 0f) vy = 0f;
+        }
         // the stride: run on in step with the ground going by
         stride += dt * Math.max(0.3f, speed) / strideSpeed();
-        eye(dt, city);
+        eye(dt, g);
     }
 
     /** Going down by herself: to the edge at a run and off it in a leap; in the air, round along the street. */
@@ -342,7 +368,7 @@ final class Runner {
     }
 
     /** The eye: behind her, a little above, turning after her a moment late, kept out of walls. */
-    private void eye(float dt, City city) {
+    private void eye(float dt, Ground g) {
         if (!placed) {
             eyeYaw = heading;
             placed = true;
@@ -352,15 +378,34 @@ final class Runner {
         while (d < -Math.PI) d += 2f * (float) Math.PI;
         eyeYaw += d * Math.min(1f, dt * 4.5f);
         float fx = (float) Math.sin(eyeYaw), fz = (float) Math.cos(eyeYaw);
-        float[] p = {x - fx * BACK, z - fz * BACK};
-        city.push(p, 0.4f, y + HIGH - 1f);
+        boolean in = room != null;
+        float back = in ? BACK_IN : BACK, high = in ? HIGH_IN : HIGH;
+        // back from her along the way she looks, as far as nothing is in the way
+        float r = in ? 0.3f : 0.4f, feet = y + high - 1f;
+        float[] p = {x, z};
+        for (float t = EYE_STEP; ; t += EYE_STEP) {
+            float tt = Math.min(t, back), qx = x - fx * tt, qz = z - fz * tt;
+            eyeTry[0] = qx;
+            eyeTry[1] = qz;
+            g.push(eyeTry, r, feet);
+            float mx = eyeTry[0] - qx, mz = eyeTry[1] - qz;
+            if (mx * mx + mz * mz > 0.04f * 0.04f && tt > EYE_STEP) break;
+            p[0] = eyeTry[0];
+            p[1] = eyeTry[1];
+            if (tt >= back) break;
+        }
+        g.keepEye(p);
         eyeX = p[0];
         eyeZ = p[1];
-        eyeY = y + HIGH;
-        float tx = x + fx * AHEAD, tz = z + fz * AHEAD, ty = y + LOOK_UP;
+        eyeY = Math.min(y + high, g.ceiling(eyeX, eyeZ) - 0.25f);
+        float ahead = in ? AHEAD_IN : AHEAD;
+        float tx = x + fx * ahead, tz = z + fz * ahead, ty = y + (in ? LOOK_UP_IN : LOOK_UP);
         float dx = tx - eyeX, dz = tz - eyeZ;
         eyePitch = (float) Math.atan2(ty - eyeY, Math.sqrt(dx * dx + dz * dz));
     }
+
+    private static final float EYE_STEP = 0.3f;
+    private final float[] eyeTry = new float[2];
 
     /** Where one of her bones is now, into out (x, y, z). */
     void bone(String name, float[] out) {

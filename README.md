@@ -17,8 +17,11 @@ A finger on the glass makes her run; moved sideways, it turns her by as much as 
 flicked up, she jumps; flicked up again in the air, she goes on up, over a car or onto what
 stands a storey up; falling from high enough, she glides down by herself; flicked down, she
 slides; lifted, she slows to a stop. A tap is the mallet's: a golem within reach she strikes,
-one ahead and not too far she throws at; with none, she throws it ahead and it comes back. A
-lift's doors open by themselves when she comes to them or stands at them. She stands on
+one ahead and not too far she throws at; with none, she throws it ahead and it comes back. The
+door of a house with a lift opens by itself when she comes to it or stands at it: inside is
+its hall, made from the house's seed, and in its side wall the lift, which is called, opens,
+takes her up and lets her out on the roof by itself; down from the roof's hut, the cabin
+opens onto the hall again. She stands on
 whatever she comes down on, the roofs too. When a mission is done the game keeps where it is.
 
 For now, to try: a hunt. Five golems on fire that should not be are loose in the town, each

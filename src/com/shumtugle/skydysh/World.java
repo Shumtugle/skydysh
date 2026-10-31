@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.21";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.22";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -200,6 +200,12 @@ final class World {
             return;
         }
         if (over() && (overFor += dt) > BACK_TO_ROOM) {
+            // indoors when it ends: out at the front door first, the room in her head is out of doors
+            if (indoors != null) {
+                swapTo = TO_STREET;
+                swap();
+                swapT = -1f;
+            }
             save();
             String[] said = report();
             // lost, the same again, as its briefing says; won, the next; the report, then the briefing
@@ -212,8 +218,8 @@ final class World {
             return;
         }
         whiteOut = Math.max(0f, whiteOut - dt);
-        lift(dt);
-        if (liftT < 0f || liftT > LIFT_UP) runner.update(dt, city, cars, walkers);
+        doors(dt);
+        if (swapT < 0f) runner.update(dt, city, cars, walkers);
         int round = mission.round;
         if (folder != null) {
             boolean had = folder.hers;
@@ -266,43 +272,45 @@ final class World {
         runner.auto(ex, ez, (float) Math.atan2(ax, az));
     }
 
-    // ---- the lifts: in at a door in a house's front, out of the hut on its roof, and back down ----
-    static final float LIFT_SHUT = 0.45f, LIFT_UP = 2.2f, LIFT_END = 2.75f;
-    private float liftT = -1f;
-    private boolean liftDown, liftArmed = true;
-    private float liftWait;                  // how long she has stood at a lift's door
-    // near its door: so near; standing so long there, or coming at it, the doors take her in;
-    // running by faster than this, along the front, they do not
+    // ---- doors: in from the street (or the yard), or down from a roof, a place indoors; out again ----
+    static final float SWAP = 0.3f;          // the dark coming down at a door, and lifting again
+    static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5;
+    /** The place indoors she is in; null out of doors. */
+    Indoors indoors;
+    private float swapT = -1f;
+    private int swapTo;
+    private boolean liftArmed = true;
+    private float liftWait;                  // how long she has stood at a door
+    // near a door: so near; standing so long there, or coming at it, it takes her in;
+    // running by faster than this, along the front, it does not
     static final float LIFT_NEAR = 1.7f, LIFT_STAND = 0.4f, LIFT_PAST = 5f;
-    private int liftFloors;
-    private final float[] liftNow = new float[10];
+    private final float[] liftNow = new float[11], houseNow = new float[8];
+    private final float[] liftOf = new float[11], houseOf = new float[8], doorAt = new float[11];
 
     /**
-     * A lift on its way, or one setting off: the doors open by themselves for her when she comes
-     * to them or stands at them (in the street or on a roof); not when she runs by.
+     * The doors: at the door of a house with a lift, or the hut on its roof, coming to it or
+     * standing at it, she goes in (not running by); indoors, the place has its say; between, a
+     * moment of dark while one is swapped for the other.
      */
-    private void lift(float dt) {
+    private void doors(float dt) {
         Runner r = runner;
-        if (liftT >= 0f) {
-            float was = liftT;
-            liftT += dt;
-            if (was < 0.3f && liftT >= 0.3f) r.hidden = true;
-            if (was < LIFT_UP && liftT >= LIFT_UP) {
-                // out of the hut on the roof, or out of the door in the street
-                float[] l = liftNow;
-                if (liftDown) r.put(l[0], City.WALK_TOP, l[1], (float) Math.atan2(l[2], l[3]));
-                else r.put(l[4], l[5], l[6], l[7]);
-                r.hidden = false;
-                host.sound(Synth.CHIME, 0.5f, 1f);
-                host.sound(Synth.DOOR, 0.35f, 1.2f);
-                liftArmed = false;
-            }
-            if (liftT >= LIFT_END) liftT = -1f;
+        if (swapT >= 0f) {
+            float was = swapT;
+            swapT += dt;
+            if (was < SWAP && swapT >= SWAP) swap();
+            if (swapT >= 2f * SWAP) swapT = -1f;
+            return;
+        }
+        if (indoors != null) {
+            int e = indoors.update(dt, r, host);
+            if (e == Indoors.UP) go(TO_ROOF);
+            else if (e == Indoors.OUT_FRONT) go(TO_STREET);
+            else if (e == Indoors.OUT_BACK) go(TO_YARD);
             return;
         }
         if (r.inAir() || r.throwing() >= 0f || (folder != null && folder.hers)) return;
         float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading);
-        boolean near = city.liftNear(r.x, r.z, r.y, 3f, liftNow);
+        boolean near = city.liftNear(r.x, r.z, r.y, 3f, liftNow, houseNow);
         if (!near) {
             liftArmed = true;
             return;
@@ -322,38 +330,75 @@ final class World {
         liftWait = r.speed < 1.5f ? liftWait + dt : 0f;
         if (!(at && r.speed < LIFT_PAST || at && fx * wx + fz * wz > 0.7f || liftWait > LIFT_STAND)) return;
         liftWait = 0f;
-        liftT = 0f;
-        liftDown = !street;
-        liftFloors = Math.max(2, Math.round((l[5] - 0.5f) / 3.3f) - 1);
+        System.arraycopy(l, 0, liftOf, 0, 11);
+        System.arraycopy(houseNow, 0, houseOf, 0, 8);
         host.sound(Synth.DOOR, 0.45f, 1f);
+        go(street ? TO_HALL : TO_CABIN);
     }
 
-    /** The lift over the frame: dark coming down over it, the floors counted, light again. */
-    private void liftFlat(Px f) {
-        if (liftT < 0f) return;
-        float dark = liftT < LIFT_SHUT ? liftT / LIFT_SHUT : liftT < LIFT_UP ? 1f : Math.max(0f, 1f - (liftT - LIFT_UP) / (LIFT_END - LIFT_UP));
+    private void go(int to) {
+        swapTo = to;
+        swapT = 0f;
+    }
+
+    /** In the dark: the town for a place indoors, or the other way. */
+    private void swap() {
+        Runner r = runner;
+        float[] l = liftOf;
+        long seed = ((long) Math.floor(houseOf[0] * 4f) * 73856093L) ^ ((long) Math.floor(houseOf[1] * 4f) * 19349663L);
+        switch (swapTo) {
+            case TO_HALL:
+                indoors = Rooms.hall(houseOf, seed);
+                indoors.enter(r, l[10] > 0.5f);
+                break;
+            case TO_CABIN:
+                indoors = Rooms.hall(houseOf, seed);
+                indoors.comeDown(r);
+                break;
+            case TO_ROOF:
+                leave();
+                r.put(l[4], l[5], l[6], l[7]);
+                host.sound(Synth.DOOR, 0.35f, 1.2f);
+                break;
+            default: {
+                // out at the front onto the pavement, or at the back into the yard, facing away from the door
+                leave();
+                City.lift(houseOf, 0, doorAt);
+                float nx = doorAt[2], nz = doorAt[3], px = doorAt[0], pz = doorAt[1];
+                if (swapTo == TO_YARD) {
+                    float half = Math.abs(nx) * houseOf[2] + Math.abs(nz) * houseOf[3];
+                    px -= nx * (2f * half + 1.4f);
+                    pz -= nz * (2f * half + 1.4f);
+                    nx = -nx;
+                    nz = -nz;
+                }
+                r.put(px, swapTo == TO_YARD ? city.ground(px, pz) : City.WALK_TOP, pz, (float) Math.atan2(nx, nz));
+                host.sound(Synth.DOOR, 0.35f, 1.1f);
+            }
+        }
+        r.recenter();
+        // the eye put where it is to be at once, behind her in the new place
+        r.update(0f, city, cars, walkers);
+    }
+
+    /** Out of doors again. */
+    private void leave() {
+        indoors = null;
+        runner.room = null;
+        runner.held = false;
+        liftArmed = false;
+    }
+
+    /** The dark of a door over the frame, coming down and lifting. */
+    private void swapFlat(Px f) {
+        if (swapT < 0f) return;
+        float dark = swapT < SWAP ? swapT / SWAP : Math.max(0f, 1f - (swapT - SWAP) / SWAP);
         int a = Math.round(255f * Math.min(1f, dark));
         for (int i = 0; i < f.a.length; i++) {
             int old = f.a[i], oa = old >>> 24;
             if (oa == 0) f.a[i] = (a << 24) | 0x0B0A0E;
             else f.a[i] = Px.mix(old, 0xFF0B0A0E, dark);
         }
-        if (liftT < LIFT_SHUT * 0.7f || liftT > LIFT_UP) return;
-        // the panel: an arrow and the floor, going up (or down) one at a time
-        float u = Math.max(0f, Math.min(1f, (liftT - LIFT_SHUT) / (LIFT_UP - LIFT_SHUT - 0.2f)));
-        int floor = liftDown ? Math.round((1f - u) * liftFloors) : Math.round(u * liftFloors);
-        String n = String.valueOf(floor);
-        int amber = 0xFFFFB347, cx = W / 2, cy = h / 2;
-        f.rect(cx - 30, cy - 34, cx + 30, cy + 34, 0xFF17151B);
-        f.rect(cx - 28, cy - 32, cx + 28, cy + 32, 0xFF221F27);
-        // the arrow: its head of seven rows, its shaft
-        int head = liftDown ? cy - 16 : cy - 29, shaft = liftDown ? cy - 29 : cy - 22;
-        for (int k = 0; k < 7; k++) {
-            int w = liftDown ? 6 - k : k;
-            f.rect(cx - w, head + k, cx + w + 1, head + k + 1, amber);
-        }
-        f.rect(cx - 2, shaft, cx + 3, shaft + 7, amber);
-        PixelFont.draw(f, n, cx - PixelFont.width(n, 4) / 2, cy - 2, 4, amber);
     }
 
     /** Whether the back key means something here, rather than leaving the game. */
@@ -534,6 +579,36 @@ final class World {
         return (s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60);
     }
 
+    /** A frame indoors: the place and her in it, the eye behind her or held across the hall; over it, the mission's marks. */
+    private void drawIndoors(DrawList d) {
+        Runner r = runner;
+        indoors.light(d);
+        java.util.Arrays.fill(d.flat, 0);
+        if (flatPx == null || flatPx.a != d.flat) flatPx = new Px(d.w, d.h, d.flat);
+        Px f = flatPx;
+        d.hudRows = 0;
+        if (indoors.shot(eyeNow)) d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.25f, 0.03f, 80f);
+        else d.camera(r.eyeX, r.eyeY, r.eyeZ, r.eyeYaw, r.eyePitch, W * 1.2f, 0.03f, 80f);
+        indoors.draw(d);
+        if (!r.hidden) {
+            r.draw(d);
+            toss.draw(d, r);
+        }
+        if (folder != null) folderFlat(d, f);
+        else chaseFlat(d, f);
+        swapFlat(f);
+        PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
+        meter(f);
+    }
+
+    /** While the engine is young: how long a frame takes, in milliseconds, and how finely it is drawn. */
+    private void meter(Px f) {
+        if (frameMs <= 0f) return;
+        int qs = Math.round(drawScale * 100f);
+        String m = Math.round(frameMs) + " " + (qs / 100) + "." + (qs % 100 < 10 ? "0" : "") + (qs % 100);
+        PixelFont.draw(f, m, 3, h - 10, 1, 0x88FFFFFF);
+    }
+
     static final float WHITE_OUT = 0.35f;
     private final float[] eyeNow = new float[5];
 
@@ -548,6 +623,10 @@ final class World {
             return;
         }
         Runner r = runner;
+        if (indoors != null) {
+            drawIndoors(d);
+            return;
+        }
         d.fogStart = 8f;
         d.fogScale = 150f;
         // the sun's depth map laid round the ground she is heading into
@@ -595,15 +674,10 @@ final class World {
         if (dispatch != null) dispatch.draw(d, f, h);
         else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
-        liftFlat(f);
+        swapFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         // the white the opening ended on, going off
         if (whiteOut > 0f) Opening.wash(f, whiteOut / WHITE_OUT);
-        // while the engine is young: how long a frame takes, in milliseconds, and how finely it is drawn
-        if (frameMs > 0f) {
-            int qs = Math.round(drawScale * 100f);
-            String meter = Math.round(frameMs) + " " + (qs / 100) + "." + (qs % 100 < 10 ? "0" : "") + (qs % 100);
-            PixelFont.draw(f, meter, 3, h - 10, 1, 0x88FFFFFF);
-        }
+        meter(f);
     }
 }

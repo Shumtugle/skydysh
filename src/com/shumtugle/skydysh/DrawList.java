@@ -26,6 +26,8 @@ final class DrawList {
     static final int ROD = 28, HEAD = 29;
     // a burning block: hot at its heart, crusted at its edges; its seed says how hot (0 to 250)
     static final int FIRE = 30;
+    // a floor of tiles in two tones; its seed past half sets them on the diagonal
+    static final int TILES = 31;
     // per box: middle (3), half sizes (3), the turn as three columns (9), color (3), material (1)
     static final int STRIDE = 19;
 
