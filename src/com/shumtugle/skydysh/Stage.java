@@ -72,6 +72,13 @@ final class Stage extends GLSurfaceView implements GLSurfaceView.Renderer {
         return true;
     }
 
+    /** Left (another app over it, the screen off): the game is told at once when it comes back. */
+    @Override
+    public void onPause() {
+        queue(World.LEFT, 0, 0f, 0f);
+        super.onPause();
+    }
+
     private void queue(int kind, int id, float x, float y) {
         if (pendingCount >= pending.length / Q) return;
         int o = pendingCount * Q;
@@ -114,7 +121,9 @@ final class Stage extends GLSurfaceView implements GLSurfaceView.Renderer {
                 world.touch((int) pending[i * Q], (int) pending[i * Q + 1], pending[i * Q + 2], pending[i * Q + 3]);
             pendingCount = 0;
         }
-        world.update(dt);
+        // the world goes on in steps no longer than a sixtieth of a second, however slow the frame
+        int steps = (int) Math.ceil(dt * 60f - 1e-3f);
+        for (int s = 0; s < Math.max(1, steps); s++) world.update(dt / Math.max(1, steps));
         world.drawScale = q;
         world.draw(list);
         gfx.draw(list, screenW, screenH, q);

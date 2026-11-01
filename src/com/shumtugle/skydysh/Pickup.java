@@ -45,9 +45,10 @@ final class Pickup {
 
     /**
      * A frame of driving: the finger down or not, the wheel as the finger has it (-1 to 1), the
-     * brake (0 to 1); the town, the traffic and the people in its way.
+     * brake (0 to 1), the throttle held flat by hand (the driver's own care set aside); the town,
+     * the traffic and the people in its way.
      */
-    void drive(float dt, boolean throttle, float wheel, float brake, City city, Cars cars, Walkers walkers) {
+    void drive(float dt, boolean throttle, float wheel, float brake, boolean flat, City city, Cars cars, Walkers walkers) {
         steer += (wheel - steer) * Math.min(1f, dt * 14f);
         float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
         if (brake > 0.05f) {
@@ -66,7 +67,7 @@ final class Pickup {
         } else {
             still = 0f;
             if (speed < 0f) speed = Math.min(0f, speed + HARD_BRAKE * dt);
-            else accelerate(dt, target(fx, fz, city, cars));
+            else accelerate(dt, flat ? VMAX : target(fx, fz, city, cars));
         }
         // the wheel: less lock the faster it goes; the tyres hold so much, past that it runs wide
         float lock = LOCK / (1f + Math.abs(speed) / 9f);

@@ -13,8 +13,8 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.39";    // shown on screen; keep in step with versionName
-    static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
+    static final String VERSION = "0.40";    // shown on screen; keep in step with versionName
+    static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
     interface Host {
@@ -54,7 +54,7 @@ final class World {
     private Dispatch dispatch;               // the dispatcher's room, while she is in it
     private float overFor;                   // how long since the last of the five was caught
     // kept between games, saved when a mission is done
-    static final String SAVE_MISSION = "mission", SAVE_PLATES = "plates", SAVE_MONEY = "money";
+    static final String SAVE_MISSION = "mission", SAVE_PLATES = "plates", SAVE_MONEY = "money", SAVE_CONTROLS = "controls";
     int plates, money;
     static final float BACK_TO_ROOM = 3f;
     private float whiteOut;                  // the white of the opening going off the game, seconds left
@@ -80,6 +80,8 @@ final class World {
         // where the last game left off: the mission to play next, and what has been won
         int next = host.loadInt(SAVE_MISSION);
         if (next > 1) mission.round = next - 1;
+        // the way to play: one finger (as it was from the first), or two thumbs
+        Runner.classic = host.loadInt(SAVE_CONTROLS) == 0;
         plates = host.loadInt(SAVE_PLATES);
         money = host.loadInt(SAVE_MONEY);
         // every game begins at home: on the promenade across the shore road from its door, facing it
@@ -214,7 +216,7 @@ final class World {
     }
 
     // ---- the fingers: each down is the stick's, the eye's, or a button's till it is lifted ----
-    static final int NOBODY = 0, STICK = 1, LOOK = 2, BUTTONED = 3, WHEEL_FINGER = 4;
+    static final int NOBODY = 0, STICK = 1, LOOK = 2, BUTTONED = 3, WHEEL_FINGER = 4, GAS_FINGER = 5, BRAKE_FINGER = 6;
     private static final int FINGERS = 10;
     private final int[] role = new int[FINGERS];
     private final float[] fingerX = new float[FINGERS], fingerY = new float[FINGERS], fingerAt = new float[FINGERS],
@@ -233,6 +235,12 @@ final class World {
 
     void touch(int type, int id, float x, float y) {
         if (type == BACK) return;
+        if (type == LEFT) {
+            // the game left and come back to: paused, every finger let go
+            if (opening == null && dispatch == null) paused = true;
+            letGo();
+            return;
+        }
         if (id < 0 || id >= FINGERS) return;
         if (opening != null) {
             if (type == DOWN) opening.skip();
@@ -260,9 +268,11 @@ final class World {
         flickY[id] = y;
         flickAt[id] = time;
         flicked[id] = false;
-        // paused: a touch anywhere plays on
+        // paused: the way to play changed, or a touch anywhere plays on
         if (paused) {
-            paused = false;
+            if (onToggle(x, y)) toggle();
+            else paused = false;
+            role[id] = NOBODY;
             return;
         }
         if (onButton(x, y, pauseX(), pauseY())) {
@@ -273,6 +283,17 @@ final class World {
         if (driving != null) {
             if (onLiftButton(x, y)) {
                 getOut();
+                return;
+            }
+            // the pedals under the right thumb: they have the say over the driver while held
+            if (onPedal(GAS_PEDAL, x, y)) {
+                role[id] = GAS_FINGER;
+                gasHeld = true;
+                return;
+            }
+            if (onPedal(BRAKE_PEDAL, x, y)) {
+                role[id] = BRAKE_FINGER;
+                brakeHeld = true;
                 return;
             }
             if (wheelFinger >= 0) return;
@@ -372,6 +393,12 @@ final class World {
                 drivingTouch(UP, x, y);
                 wheelFinger = -1;
                 break;
+            case GAS_FINGER:
+                gasHeld = false;
+                break;
+            case BRAKE_FINGER:
+                brakeHeld = false;
+                break;
             default:
         }
         role[id] = NOBODY;
@@ -386,6 +413,72 @@ final class World {
             drivingTouch(UP, 0f, 0f);
             wheelFinger = -1;
         }
+        gasHeld = brakeHeld = false;
+    }
+
+    /**
+     * Whatever the fingers were doing, forgotten, those still on the glass heard no more till they
+     * are lifted: when she gets into the pickup or out of it, goes into her head, is left. A finger
+     * held running does not become the throttle.
+     */
+    private void letGo() {
+        letGoAll();
+        pedal = false;
+        wheelIn = brakeIn = 0f;
+        if (classicDown) {
+            runner.touch(UP, 0f, 0f);
+            buttonHeld = true;
+            classicDown = false;
+        }
+    }
+
+    // ---- the way to play, chosen while paused: one finger or two thumbs ----
+    static final float TOGGLE_HALF = 24f;
+
+    float toggleX() {
+        return W * 0.5f;
+    }
+
+    float toggleY() {
+        return h * 0.46f + 86f;
+    }
+
+    private boolean onToggle(float x, float y) {
+        float m = TOGGLE_HALF + 8f, dx = x - toggleX(), dy = y - toggleY();
+        return dx * dx + dy * dy < m * m;
+    }
+
+    /** Under the way-to-play button, paused: what it is now, in words. */
+    private void toggleFlat(Px f) {
+        String w = Lang.lines(Runner.classic ? "controls.one" : "controls.two", mission.round, null)[0];
+        shadowed(f, w, Math.round(toggleX() - PixelFont.width(w, 1) * 0.5f), Math.round(toggleY() + TOGGLE_HALF + 6f), 1,
+                0xFFF4E8D2, 0xFF232A4A);
+    }
+
+    /** One finger to two thumbs, or back; kept for the next game. */
+    private void toggle() {
+        Runner.classic = !Runner.classic;
+        host.saveInt(SAVE_CONTROLS, Runner.classic ? 0 : 1);
+        letGo();
+        host.buzz(20);
+    }
+
+    // ---- the pedals at the wheel, two thumbs: the throttle and the brake, low on the right ----
+    static final int GAS_PEDAL = 0, BRAKE_PEDAL = 1;
+    static final float GAS_HALF = 25f, BRAKE_HALF = 21f;
+    private boolean gasHeld, brakeHeld, classicDown;
+
+    float pedalX(int k) {
+        return k == GAS_PEDAL ? W - 40f : W - 100f;
+    }
+
+    float pedalY(int k) {
+        return k == GAS_PEDAL ? h - 66f : h - 42f;
+    }
+
+    private boolean onPedal(int k, float x, float y) {
+        float m = (k == GAS_PEDAL ? GAS_HALF : BRAKE_HALF) + 7f, dx = x - pedalX(k), dy = y - pedalY(k);
+        return dx * dx + dy * dy < m * m;
     }
 
     private int wheelFinger = -1;
@@ -436,10 +529,13 @@ final class World {
 
     /** The old way, with one finger (the stand's bots). */
     private void classicTouch(int type, float x, float y) {
-        // paused: a touch anywhere plays on, the finger the button's till it is lifted
+        if (type == DOWN) classicDown = true;
+        else if (type == UP) classicDown = false;
+        // paused: the way to play changed, or a touch anywhere plays on, the finger the button's till it is lifted
         if (paused) {
             if (type == DOWN) {
-                paused = false;
+                if (onToggle(x, y)) toggle();
+                else paused = false;
                 buttonHeld = true;
             }
             return;
@@ -493,6 +589,7 @@ final class World {
                 whiteOut = WHITE_OUT;
                 runner.update(0f, city, cars, walkers);      // the eye put behind her
                 dispatch = new Dispatch(host, briefing());
+                letGo();
             }
             return;
         }
@@ -521,6 +618,7 @@ final class World {
             if (again) mission.round--;
             begin(runner.x, runner.z);
             dispatch = new Dispatch(host, said).then(briefing());
+            letGo();
             again = false;
             overFor = 0f;
             return;
@@ -699,8 +797,9 @@ final class World {
     }
 
     int liftButtonY() {
-        // on foot it sits over her own buttons; at the wheel, where the jump would be
-        return driving != null ? h - 70 : h - 190;
+        // on foot it sits over her own buttons; at the wheel, where the jump would be (over the
+        // pedals, with two thumbs)
+        return driving != null && Runner.classic ? h - 70 : driving != null ? h - 130 : h - 190;
     }
 
     private boolean onLiftButton(float x, float y) {
@@ -741,11 +840,16 @@ final class World {
         }
         if (paused) {
             d.badge(W * 0.5f, h * 0.46f, 40f, Badges.PLAY, 0.95f, 0.15f + 0.15f * (float) Math.sin(time * 3f));
+            d.badge(toggleX(), toggleY(), TOGGLE_HALF, Runner.classic ? Badges.ONE_FINGER : Badges.TWO_THUMBS, 0.9f, 0f);
             d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PLAY, 0.9f, 0f);
             return;
         }
         d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PAUSE, 0.75f, 0f);
         if (driving != null) d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
+        if (driving != null && !Runner.classic) {
+            d.badge(pedalX(GAS_PEDAL), pedalY(GAS_PEDAL), GAS_HALF, Badges.GAS, 0.8f, gasHeld ? 0.8f : 0f);
+            d.badge(pedalX(BRAKE_PEDAL), pedalY(BRAKE_PEDAL), BRAKE_HALF, Badges.BRAKE, 0.8f, brakeHeld ? 0.8f : 0f);
+        }
         if (footButtons() && !Runner.classic) {
             for (int b = 0; b < 3; b++) {
                 float lit = b == pressedButton ? Math.max(0f, 1f - (time - pressedAt) / 0.3f) : 0f;
@@ -918,6 +1022,7 @@ final class World {
 
     private void getIn(Pickup p) {
         if (p == null || driving != null) return;
+        letGo();
         driving = p;
         p.driven = true;
         p.speed = 0f;
@@ -936,6 +1041,7 @@ final class World {
     private void getOut() {
         Pickup p = driving;
         if (p == null) return;
+        letGo();
         driving = null;
         p.driven = false;
         p.speed = 0f;
@@ -959,7 +1065,9 @@ final class World {
     /** A frame at the wheel: the pickup driven as the finger has it, she carried in it. */
     private void drive(float dt) {
         Pickup p = driving;
-        p.drive(dt, pedal && brakeIn < 0.05f, wheelIn, brakeIn, city, cars, walkers);
+        // the driver picks the speed while the wheel's finger is down; a pedal held has the say over him
+        float brake = brakeHeld ? 1f : brakeIn;
+        p.drive(dt, (pedal || gasHeld) && brake < 0.05f, wheelIn, brake, gasHeld, city, cars, walkers);
         p.seat(seatAt);
         runner.ride(dt, city, p.x, p.y, p.z, p.heading, p.speed, seatAt[0], seatAt[1], seatAt[2], p.steer);
     }
@@ -1614,6 +1722,7 @@ final class World {
         if (dispatch == null) {
             if (driving == null) signs(d);
             buttons(d);
+            if (paused) toggleFlat(f);
         }
         swapFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);

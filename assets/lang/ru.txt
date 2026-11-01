@@ -16,3 +16,5 @@ goal.pickup=ПИКАП
 goal.factory=ФАБРИКА
 goal.store=СКЛАД
 goal.home=ДОМОЙ
+controls.one=ОДИН ПАЛЕЦ
+controls.two=ДВА ПАЛЬЦА

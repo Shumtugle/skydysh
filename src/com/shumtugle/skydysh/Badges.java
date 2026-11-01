@@ -15,7 +15,9 @@ final class Badges {
             THROW = 8, PICK_UP = 9, MAP = 10, HELP = 11, PAUSE = 12, PLAY = 13, HOME = 14, LADDER = 15, EXIT = 16, ENTER = 17;
     // the stick: its round pane with nothing on it, and the knob in it, a white disc
     static final int BLANK = 18, KNOB = 19;
-    static final int COUNT = 20, CELLS = 5, SIZE = 160;
+    // the ways to play, one finger or two thumbs; the pedals at the wheel, the throttle and the brake
+    static final int ONE_FINGER = 20, TWO_THUMBS = 21, GAS = 22, BRAKE = 23;
+    static final int COUNT = 24, CELLS = 5, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -193,6 +195,30 @@ final class Badges {
             }
             case BLANK:
                 return 1e9f;
+            case ONE_FINGER: {
+                // a fingertip coming down, and the ring of its touch on the glass under it
+                float finger = rbox(x, y, 0f, 0.28f, 0.2f, 0.52f, 0.19f);
+                float ring = Math.abs(circle(x, y, 0f, -0.56f, 0.26f)) - 0.06f;
+                return Math.min(finger, Math.max(ring, -box(x, y, 0f, -0.3f, 0.3f, 0.16f)));
+            }
+            case TWO_THUMBS: {
+                float a = rbox(x, y, -0.4f, 0.2f, 0.19f, 0.44f, 0.18f), b = rbox(x, y, 0.4f, 0.2f, 0.19f, 0.44f, 0.18f);
+                float ra = Math.abs(circle(x, y, -0.4f, -0.56f, 0.22f)) - 0.055f, rb = Math.abs(circle(x, y, 0.4f, -0.56f, 0.22f)) - 0.055f;
+                float cut = Math.min(box(x, y, -0.4f, -0.34f, 0.26f, 0.12f), box(x, y, 0.4f, -0.34f, 0.26f, 0.12f));
+                return min(a, b, Math.max(Math.min(ra, rb), -cut));
+            }
+            case GAS: {
+                // the throttle: a tall narrow pedal, grooved across
+                float pedal = rbox(x, y, 0f, 0f, 0.3f, 0.78f, 0.12f);
+                for (int g = -2; g <= 2; g++) pedal = Math.max(pedal, -box(x, y, 0f, g * 0.28f, 0.2f, 0.045f));
+                return pedal;
+            }
+            case BRAKE: {
+                // the brake: a wide pedal, grooved across
+                float pedal = rbox(x, y, 0f, 0f, 0.7f, 0.48f, 0.14f);
+                for (int g = -1; g <= 1; g++) pedal = Math.max(pedal, -box(x, y, 0f, g * 0.26f, 0.56f, 0.05f));
+                return pedal;
+            }
             case KNOB:
                 return circle(x, y, 0f, 0f, 0.62f);
             case PAUSE:

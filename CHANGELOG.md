@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.40
+
+- Two ways to play, one finger or two thumbs, chosen under the pause button (paused, the button
+  under the large play, its name under it) and kept for the next game; one finger, as it was
+  before 0.39, unless two thumbs are chosen.
+- At the wheel with two thumbs, the pedals low on the right: the throttle and the brake. The
+  driver picks the speed as before while a finger steers; a pedal held has the say over him (the
+  throttle flat out, never minding what is ahead; the brake, and held standing, back), and let go,
+  he drives on. The way out sits over the pedals.
+- Fingers let go of whenever the way she goes changes: into the pickup and out of it, into her
+  head, and when the game is left and come back to (it comes back paused). A finger held running
+  no longer becomes the throttle, nor a held stick goes on pushing after a briefing.
+- The world goes on in steps of a sixtieth of a second at most, however slow a frame: the pickup's
+  grip and the falls do not change with the phone's speed.
+- New signs: one finger, two thumbs, the throttle, the brake.
+- Stand: scene `pedals.txt`.
+
 ## 0.39
 
 - Two thumbs on foot. The left half of the glass is a stick: its middle where the thumb comes

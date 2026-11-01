@@ -1,0 +1,30 @@
+# Two thumbs at the wheel: the pedals low on the right, the throttle held flat, then the brake held
+# till it stops; paused, the way to play changed to one finger and back.
+screen 1096 2560
+wait 0.4
+controls sticks
+mission 2
+drivein 32 1.6 1.5708
+wait 0.3
+shot p0
+down 234 574
+wait 3
+where
+shot p1
+up 234 574
+down 174 598
+wait 2.5
+up 174 598
+where
+down 24 68
+up 24 68
+wait 0.3
+shot p2
+down 137 380
+up 137 380
+wait 0.3
+shot p3
+down 137 294
+up 137 294
+wait 0.3
+shot p4

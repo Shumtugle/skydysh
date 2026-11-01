@@ -19,7 +19,11 @@ dispatcher's room, which is her head: walls of her own brick round the street se
 eyes, what is to be done typed over it; a touch, her mallet knocks a key, the walls draw back
 and the street goes on. When it is done, back into her head for the report.
 
-Two thumbs lead her. The left half of the glass is a stick: where the thumb comes down is its
+There are two ways to play, chosen under the pause button and kept: one finger, as it was from
+the first (down runs her, sideways turns her, flicks jump and slide, a tap is the mallet's; at
+the wheel, down drives, sideways steers, drawn down brakes), and two thumbs.
+
+With two thumbs, the left half of the glass is a stick: where the thumb comes down is its
 middle, and pushed a little she walks, further she jogs, all the way she runs, the way it is
 pushed being the way she goes as the eye sees it (up the glass into the frame, down it toward
 the eye); let go, she stops in a step or two. The right half turns the eye round her; left alone
@@ -40,8 +44,11 @@ takes her up and lets her out on the roof by itself. On the roof, by the hut's d
 shows; pressed, the lift takes her down and the cabin opens onto the hall again. Signs of glass
 hang over the ways in and up near her: the lifts' doors, the fire escapes, the ladders from roof
 to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
-out) by the lift. A button high on the left pauses the game. The old way with one finger (down runs her,
-sideways turns her, flicks jump and slide) is kept for the desktop stand's bots alone.
+out) by the lift. A button high on the left pauses the game.
+
+At the wheel with two thumbs, a finger down anywhere drives and steers as one finger does, the
+driver picking the speed; the pedals low on the right have the say over him while held: the
+throttle flat out, the brake (held standing, it backs).
 
 The town ends at the sea: along its southmost street a promenade with palms and a parapet, steps
 down to a beach with sunshades, and the water. Home is there, where the game begins: one large house with a tower and a lamp on
