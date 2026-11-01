@@ -36,6 +36,8 @@ public final class Stand implements World.Host {
 
     /** A new game, the opening skipped: the scenes are of the game itself unless they ask for it. */
     private World fresh() {
+        // the scenes and their bots are the one finger's on foot (the game's own default is the stick)
+        if (Runner.classic) kept.put(World.SAVE_CONTROLS, 1);
         World w = new World(this);
         w.skipOpening();
         return w;

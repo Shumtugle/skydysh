@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.47";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.48";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -54,7 +54,7 @@ final class World {
     private Dispatch dispatch;               // the dispatcher's room, while she is in it
     private float overFor;                   // how long since the last of the five was caught
     // kept between games, saved when a mission is done
-    static final String SAVE_MISSION = "mission", SAVE_PLATES = "plates", SAVE_MONEY = "money", SAVE_CONTROLS = "controls";
+    static final String SAVE_MISSION = "mission", SAVE_PLATES = "plates", SAVE_MONEY = "money", SAVE_CONTROLS = "foot";
     int plates, money;
     static final float BACK_TO_ROOM = 3f;
     private float whiteOut;                  // the white of the opening going off the game, seconds left
@@ -80,8 +80,8 @@ final class World {
         // where the last game left off: the mission to play next, and what has been won
         int next = host.loadInt(SAVE_MISSION);
         if (next > 1) mission.round = next - 1;
-        // the way to play: one finger (as it was from the first), or two thumbs
-        Runner.classic = host.loadInt(SAVE_CONTROLS) == 0;
+        // the way to play on foot: the stick and the eye by hand (two thumbs), or one finger, if chosen
+        Runner.classic = host.loadInt(SAVE_CONTROLS) == 1;
         plates = host.loadInt(SAVE_PLATES);
         money = host.loadInt(SAVE_MONEY);
         // every game begins at home: on the promenade across the shore road from its door, facing it
@@ -367,17 +367,6 @@ final class World {
                 getOut();
                 return;
             }
-            // the pedals under the right thumb: they have the say over the driver while held
-            if (onPedal(GAS_PEDAL, x, y)) {
-                role[id] = GAS_FINGER;
-                gasHeld = true;
-                return;
-            }
-            if (onPedal(BRAKE_PEDAL, x, y)) {
-                role[id] = BRAKE_FINGER;
-                brakeHeld = true;
-                return;
-            }
             if (wheelFinger >= 0) return;
             wheelFinger = id;
             role[id] = WHEEL_FINGER;
@@ -549,7 +538,7 @@ final class World {
     /** One finger to two thumbs, or back; kept for the next game. */
     private void toggle() {
         Runner.classic = !Runner.classic;
-        host.saveInt(SAVE_CONTROLS, Runner.classic ? 0 : 1);
+        host.saveInt(SAVE_CONTROLS, Runner.classic ? 1 : 0);
         letGo();
         host.buzz(20);
     }
@@ -898,7 +887,7 @@ final class World {
     int liftButtonY() {
         // on foot it sits over her own buttons; at the wheel, where the jump would be (over the
         // pedals, with two thumbs)
-        return driving != null && Runner.classic ? h - 70 : driving != null ? h - 130 : h - 190;
+        return driving != null ? h - 70 : h - 190;
     }
 
     private boolean onLiftButton(float x, float y) {
@@ -945,9 +934,11 @@ final class World {
         }
         d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PAUSE, 0.75f, 0f);
         if (driving != null) d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
-        if (driving != null && !Runner.classic) {
-            d.badge(pedalX(GAS_PEDAL), pedalY(GAS_PEDAL), GAS_HALF, Badges.GAS, 0.8f, gasHeld ? 0.8f : 0f);
-            d.badge(pedalX(BRAKE_PEDAL), pedalY(BRAKE_PEDAL), BRAKE_HALF, Badges.BRAKE, 0.8f, brakeHeld ? 0.8f : 0f);
+        if (driving != null && driver.onRoad) {
+            // where the driver will go at the next crossing, as she said: on, left, right
+            int t = driver.turn;
+            d.badge(W * 0.5f, h * 0.3f, t == 0 ? 15f : 21f, t < 0 ? Badges.LEFT : t > 0 ? Badges.RIGHT : Badges.UP, t == 0 ? 0.35f : 0.9f,
+                    t == 0 ? 0f : 0.3f + 0.3f * (float) Math.sin(time * 6f));
         }
         if (footButtons() && !Runner.classic) {
             for (int b = 0; b < 3; b++) {
@@ -1122,6 +1113,7 @@ final class World {
     private void getIn(Pickup p) {
         if (p == null || driving != null) return;
         letGo();
+        driver.start(p.x, p.z, p.heading);
         driving = p;
         p.driven = true;
         p.speed = 0f;
@@ -1141,6 +1133,7 @@ final class World {
         Pickup p = driving;
         if (p == null) return;
         letGo();
+        p.cap = -1f;
         driving = null;
         p.driven = false;
         p.speed = 0f;
@@ -1164,9 +1157,11 @@ final class World {
     /** A frame at the wheel: the pickup driven as the finger has it, she carried in it. */
     private void drive(float dt) {
         Pickup p = driving;
-        // the driver picks the speed while the wheel's finger is down; a pedal held has the say over him
-        float brake = brakeHeld ? 1f : brakeIn;
-        p.drive(dt, (pedal || gasHeld) && brake < 0.05f, wheelIn, brake, gasHeld, city, cars, walkers);
+        // she says go or stop and which way at the next crossing; the driver keeps the way and the speed
+        boolean go = pedal && brakeIn < 0.05f;
+        driver.drive(p, go, wheelIn, cars, city, runner, driven);
+        p.cap = driven[1];
+        p.drive(dt, go || p.speed > 0.3f && brakeIn < 0.05f, driven[0], brakeIn, false, city, cars, walkers);
         p.seat(seatAt);
         runner.ride(dt, city, p.x, p.y, p.z, p.heading, p.speed, seatAt[0], seatAt[1], seatAt[2], p.steer);
     }
@@ -1189,6 +1184,13 @@ final class World {
             anchorX = x;
             anchorY = y;
         } else if (type == MOVE && pedal) {
+            if (driver.onRoad && Math.abs(x - anchorX) > TURN_SWIPE) {
+                // a swipe aside: that way at the next crossing; the other way again, on
+                int w = x > anchorX ? 1 : -1;
+                driver.turn = driver.turn == -w ? 0 : w;
+                anchorX = x;
+                host.buzz(15);
+            }
             wheelIn = Math.max(-1f, Math.min(1f, (x - anchorX) / STEER_RANGE));
             brakeIn = Math.max(0f, Math.min(1f, (y - anchorY - 6f) / 24f));
         } else if (type == UP) {
@@ -1203,6 +1205,10 @@ final class World {
     private boolean errandIn;                  // through a house: she has been inside
     static final int MARK_PICKUP = 4;          // a sign's kind beside the town's (see City.marks)
     private Pickup errandPickup;
+    /** The one who really drives: she says where, it keeps the way. */
+    final Driver driver = new Driver();
+    private final float[] driven = new float[2];
+    static final float TURN_SWIPE = 22f;          // so far sideways the finger goes to say which way at the next crossing
     private int errand;
     private float errandX, errandZ, errandFor;
     private final float[] errandLadder = new float[6], way = new float[2];

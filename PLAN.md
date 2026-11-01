@@ -62,6 +62,7 @@ release, each seen on the stand before the phone.
 - 0.45 The blow with weight, the name struck in; the mallet's orange in the key; the screen torn after the blow.
 - 0.46 No cracks in the room; her eyes burning orange in the dark of the opening; the boom heard on a phone.
 - 0.47 The town minds the mallet: people step aside, turn back, run off, stare; cars drive off.
+- 0.48 The pickup's own driver keeps the way; she says go, stop and which way at the next crossing. Two thumbs on foot by default.
 
 ## Next
 

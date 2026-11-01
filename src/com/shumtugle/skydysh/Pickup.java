@@ -25,6 +25,8 @@ final class Pickup {
     static final int CREAM = 0xF1E8D4, TEAL = 0x2F8A86, CORAL = 0xE0644A, AMBER = 0xF6B54A;
 
     float x, z, heading, speed, steer;
+    /** The speed the one driving wants, if it is not the pickup's own care that picks it (-1). */
+    float cap = -1f;
     float y;                                           // the ground under it
     boolean driven;                                    // she is in it
     /** The crates in its bed, none to CRATES; and how long since the last was put on or taken off. */
@@ -67,7 +69,7 @@ final class Pickup {
         } else {
             still = 0f;
             if (speed < 0f) speed = Math.min(0f, speed + HARD_BRAKE * dt);
-            else accelerate(dt, flat ? VMAX : target(fx, fz, city, cars));
+            else accelerate(dt, flat ? VMAX : cap >= 0f ? Math.min(cap, target(fx, fz, city, cars)) : target(fx, fz, city, cars));
         }
         // the wheel: it turns the car as sharply as it says, as tight as the tightest turn when slow,
         // a little less at the top; nosed up against something with the finger down and the wheel
@@ -133,7 +135,8 @@ final class Pickup {
             float acc = ACCEL * (1.15f - 0.55f * sp);
             speed = Math.min(target, speed + acc * dt);
         } else {
-            float dec = speed - target > 1.5f ? BRAKE : COAST * 2f;
+            // slowing for what the one driving wants, as a driver slows, not as one stamps on the brake
+            float dec = speed - target > 1.5f ? (cap >= 0f ? 9f : BRAKE) : COAST * 2f;
             speed = Math.max(target, speed - dec * dt);
         }
     }

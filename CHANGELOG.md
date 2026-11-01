@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.48
+
+- She says where, and the pickup's own driver keeps the way. A finger down, it goes: down the
+  middle of its lane at up to 30 meters a second, round the corners in a curve from the lane in
+  to the lane out, slowing in time for them, out past a slower car when the other lane is clear
+  and back in, holding back behind one it cannot pass; lifted, it slows and stops. A swipe aside
+  says which way to turn at the next crossing, an arrow over the frame showing it (the other way
+  again, on); said too late to slow for that corner, the turn is kept for the next. Where the
+  street turns of itself (along the shore) it turns. Off the streets the wheel is hers, slowly.
+  Her hands turn the wheel as it does.
+- On foot the game begins with two thumbs (the stick and the eye by hand); one finger is chosen
+  under the pause button. At the wheel there are no pedals any more.
+- Stand: scene `donkey.txt` (the stand's own scenes keep the one finger).
+
 ## 0.47
 
 - The town minds what happens in it. People no longer stand frozen round her: one running at them

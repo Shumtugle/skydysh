@@ -20,9 +20,9 @@ dispatcher's room, which is her head: walls of her own brick round the street se
 eyes, what is to be done typed over it; a touch, her mallet knocks a key, the walls draw back
 and the street goes on. When it is done, back into her head for the report.
 
-There are two ways to play, chosen under the pause button and kept: one finger, as it was from
-the first (down runs her, sideways turns her, flicks jump and slide, a tap is the mallet's; at
-the wheel, down drives, sideways steers, drawn down brakes), and two thumbs.
+There are two ways to go on foot, chosen under the pause button and kept: two thumbs, as the game
+begins, and one finger (down runs her, sideways turns her, flicks jump and slide, a tap is the
+mallet's).
 
 With two thumbs, the left half of the glass is a stick: where the thumb comes down is its
 middle, and pushed a little she walks, further she jogs, all the way she runs, the way it is
@@ -47,9 +47,11 @@ hang over the ways in and up near her: the lifts' doors, the fire escapes, the l
 to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
 out) by the lift. A button high on the left pauses the game.
 
-At the wheel with two thumbs, a finger down anywhere drives and steers as one finger does, the
-driver picking the speed; the pedals low on the right have the say over him while held: the
-throttle flat out, the brake (held standing, it backs).
+At the wheel she only says where, and the one who really drives keeps the way: a finger down,
+it goes, down the middle of its lane, round the corners, past a slower car when the other lane is
+clear, slowing for a corner and for what stands in the way; lifted, it stops. A swipe aside says
+which way to turn at the next crossing (an arrow shows it; the other way again, on); said too late
+to slow for the corner, it is kept for the one after. Off the streets the wheel is hers, slowly.
 
 The town ends at the sea: along its southmost street a promenade with palms and a parapet, steps
 down to a beach with sunshades, and the water. Into the sea she wades, slowly, and where it is
@@ -58,11 +60,9 @@ she stands up and wades out. Home is there, where the game begins: one large hou
 top, the same in every town; its sign over the door takes her in.
 
 Duty pickups stand at the curbs here and there (not in a hunt). Touch the wheel over one, or
-stand at its door, and she gets in. Driving is the easy way about the town, and the fast one:
-a finger down drives it, up to some 130 kilometers an hour; sideways from where the finger came
-down turns the wheel, and the pickup goes where its nose points, as sharply as the wheel says,
-without sliding; run into a wall, it runs along it. Drawn down, the finger brakes, and held, it
-backs; lifted, it rolls to a stop. How fast it goes is shown low on the left. The button low on the right lets her out. She stands on
+stand at its door, and she gets in. Driving is the easy way about the town, and the fast one, up
+to some 110 kilometers an hour on a straight (how fast is shown low on the left). Drawn down, the
+finger brakes, and held, it backs. The button low on the right lets her out. She stands on
 whatever she comes down on, the roofs too. When a mission is done the game keeps where it is.
 
 For now, to try: a hunt. Five brums on fire that should not be are loose in the town, each

@@ -1,5 +1,5 @@
-# Two thumbs at the wheel: the pedals low on the right, the throttle held flat, then the brake held
-# till it stops; paused, the way to play changed to one finger and back.
+# Two thumbs at the wheel: a finger down low on the right drives (the driver keeps the way), then
+# lifted it stops; paused, the way to play on foot changed to one finger.
 screen 1096 2560
 wait 0.4
 controls sticks
