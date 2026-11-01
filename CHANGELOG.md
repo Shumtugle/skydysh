@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.55
+
+- The dispatch's voice: a city service, calm and plain. "Job", not "mission"; things by their own
+  names; nothing promised that the game does not show; a try again called a replay. A hunt won:
+  the brums are already being put back together in the workshop. Both languages.
+- A try again is the same task: a hunt lets its five loose the same way from the same place,
+  a folder lies where it lay; the times kept carry each kind's revision, raised when what one
+  plays changes, so that no time is set against a different task.
+- Under the pause: the language (the phone's own, Russian, English; kept, turned at once) and the
+  results, the best time of each job on the screen in her head. Paused, sitting on the sofa.
+- Parked cars are rammed off their curbs as the traffic is: off they slide, spinning, to wrecks;
+  none is left standing in a bay at the factory's or the warehouse's gate; back at the curb once
+  she is far off.
+- The opening without the cracks over the glass: the flash, the frame shaking, her fall.
+- Stand: scene `pause.txt`; `ram.txt` with a parked car.
+
 ## 0.54
 
 - After a mission, home. The report (a mission won: its time, and the mission's best: the first

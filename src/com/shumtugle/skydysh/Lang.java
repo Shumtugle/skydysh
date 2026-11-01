@@ -13,47 +13,49 @@ final class Lang {
     private static HashMap<String, String> words = EN;
 
     static {
-        EN.put("brief.first", "Dispatch \u2014 mission {n}||At sunset five brums|broke out of the foundry.|Their forged plates burn:"
-                + "|the brums burn with them,|and so will the town."
-                + "||Find them. Run them down.|Knock every plate off.|You have five minutes,|or the mission fails.||Touch to go");
-        EN.put("brief.more", "Dispatch \u2014 mission {n}||Five more have broken out|with forged plates.||Find them. Run them down."
-                + "|Knock every plate off.|You have five minutes,|or the mission fails.||Touch to go");
-        EN.put("brief.late", "Dispatch \u2014 mission {n}||The rest got away.|Five are loose again.||Five minutes once more."
-                + "|Find them. Run them down.|Knock every plate off.||Touch to go");
-        EN.put("report.late", "Dispatch \u2014 mission {n}||Five minutes are up.|Plates in: {caught} of 5.|The rest got away"
-                + "|into the streets.||Mission failed.||Touch to go on");
+        EN.put("brief.first", "Dispatch \u2014 job {n}||Five brums are out in the streets|with their plates on fire.|Forged plates, overheated."
+                + "||Catch each one.|Knock the plate off with the mallet.||Five minutes for the job.||Touch to go");
+        EN.put("brief.more", "Dispatch \u2014 job {n}||Five more brums|with overheated plates.||Catch each one."
+                + "|Knock the plate off with the mallet.||Five minutes for the job.||Touch to go");
+        EN.put("brief.late", "Dispatch \u2014 job {n}||Replay job.||Five brums. Five plates.|Five minutes.||Touch to go");
+        EN.put("report.late", "Dispatch \u2014 job {n}||Time is up.|Plates off: {caught} of 5.||Touch to go on");
         EN.put("late.short", "TIME UP");
-        EN.put("brief.delivery", "Dispatch \u2014 mission {n}||A load is waiting at the|factory with the chimney,|west along the shore."
-                + "|It is wanted at the store,|east along the shore.||Take a duty pickup.|Stand in the bay at each gate."
-                + "|Then home.||The pay: 50 000.||Touch to go");
-        EN.put("report.delivery", "Dispatch \u2014 mission {n}||The load is in the store.|The pay: {reward}.|In all: {sum}.||Time  {time}"
+        EN.put("report", "Dispatch \u2014 job {n}||All five plates are off.|The brums are already being|put back together.||Time: {time}"
+                + "||Touch to go on");
+        EN.put("brief.folder", "Dispatch \u2014 job {n}||Find the folder on the roofs.|The helicopter circles over the place."
+                + "||Three brums are after it too.|Get there first.||Up a fire escape,|then over the roofs.||Reward: 100 000.||Touch to go");
+        EN.put("brief.again", "Dispatch \u2014 job {n}||Replay job.||Find the folder on the roofs|before the others.||Reward: 100 000.||Touch to go");
+        EN.put("report.folder", "Dispatch \u2014 job {n}||The folder is ours.|Paid: {reward}.|Balance: {sum}.||Time: {time}"
+                + "||Touch to go on");
+        EN.put("report.lost", "Dispatch \u2014 job {n}||Another brum took the folder.||Touch to go on");
+        EN.put("lost.short", "TOO LATE");
+        EN.put("brief.delivery", "Dispatch \u2014 job {n}||Carry four crates|from the factory to the warehouse."
+                + "||Take a duty pickup.|The factory is west of home,|the warehouse east.||At each gate stop in the bay|and wait for the crates."
+                + "|Then home.||Pay: 50 000.||Touch to go");
+        EN.put("report.delivery", "Dispatch \u2014 job {n}||Four crates in the warehouse.|Paid: {reward}.|Balance: {sum}.||Time: {time}"
                 + "||Touch to go on");
         EN.put("goal.pickup", "PICKUP");
         EN.put("goal.factory", "FACTORY");
-        EN.put("goal.store", "STORE");
+        EN.put("goal.store", "WAREHOUSE");
         EN.put("goal.home", "HOME");
-        EN.put("home", "Dispatch \u2014 home||Which mission now?||1  The hunt|2  The folder|3  The delivery||Or go on: mission {n}");
-        EN.put("sofa", "Home. Kept.|Which mission now?||1  The hunt|2  The folder|3  The delivery|On: mission {n}|Just rest");
-        EN.put("free.after", "Now, home.|");
-        EN.put("sofa.again", "Home. Kept.|Which mission now?||1  The hunt|2  The folder|3  The delivery|Again: mission {n}|Just rest");
-        EN.put("best.first", "The mission's best.|");
-        EN.put("best.new", "A new best! Was  {time}|");
-        EN.put("best", "Best  {time}|");
-        EN.put("goal.free", "HOME, FOR A MISSION");
+        EN.put("goal.free", "HOME, FOR A JOB");
         EN.put("controls.one", "ONE FINGER");
         EN.put("controls.two", "TWO THUMBS");
-        EN.put("report", "Dispatch \u2014 mission {n}||All five plates are in.|The town is safe|for tonight.||Time  {time}"
-                + "||Touch to go on");
-        EN.put("brief.folder", "Dispatch \u2014 mission {n}||A folder of papers fell|out of a helicopter's cabin.|It lies somewhere on the roofs."
-                + "||The reward: 100 000.||Brums are after it too.|Get there first: up a fire|escape, then over the roofs.|In the air, grab a ladder;|flick up to rise higher."
-                + "||Touch to go");
-        EN.put("brief.again", "Dispatch \u2014 mission {n}||The brum dropped the folder|running over the roofs.|The helicopter saw where."
-                + "||One more try.|The reward is still 100 000.||Touch to go");
-        EN.put("report.folder", "Dispatch \u2014 mission {n}||The folder is ours.|The reward: {reward}.|In all: {sum}.||Time  {time}"
-                + "||Touch to go on");
-        EN.put("report.lost", "Dispatch \u2014 mission {n}||A brum got there first.|Not for long: it is running|over the roofs with it."
-                + "||Touch to go on");
-        EN.put("lost.short", "TOO LATE");
+        EN.put("home", "Dispatch \u2014 home||Which job now?||1  The hunt|2  The folder|3  The delivery||Or on: job {n}");
+        EN.put("sofa", "Home. Progress saved.|Which job now?||1  The hunt|2  The folder|3  The delivery|On: job {n}|Just rest");
+        EN.put("sofa.again", "Home. Progress saved.|Which job now?||1  The hunt|2  The folder|3  The delivery|Again: job {n}|Just rest");
+        EN.put("free.after", "Now, home.|");
+        EN.put("best.first", "Best time.|");
+        EN.put("best.new", "New record. Was: {time}|");
+        EN.put("best", "Best time: {time}|");
+        EN.put("pause.lang", "Language: {x}");
+        EN.put("lang.system", "system");
+        EN.put("pause.results", "Results");
+        EN.put("results", "Dispatch \u2014 results||{rows}||Touch to go back");
+        EN.put("results.none", "No times yet.");
+        EN.put("kind.1", "The hunt");
+        EN.put("kind.2", "The folder");
+        EN.put("kind.3", "The delivery");
     }
 
     private Lang() {
@@ -73,6 +75,16 @@ final class Lang {
             if (eq > 0) m.put(line.substring(0, eq).trim(), line.substring(eq + 1));
         }
         words = m;
+    }
+
+    /** A language's name in its own words (as its file gives it; English's, here). */
+    static String own(World.Host host, String code) {
+        if (code.equals("en")) return "English";
+        byte[] b = host.asset("lang/" + code + ".txt");
+        if (b != null)
+            for (String line : new String(b, StandardCharsets.UTF_8).split("\n"))
+                if (line.startsWith("lang.self=")) return line.substring(10).trim();
+        return code;
     }
 
     /** A text as its lines, with the mission's number and a time filled in. */

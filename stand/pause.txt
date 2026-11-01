@@ -1,0 +1,35 @@
+# Under the pause: the best times shown on the screen in her head (a hunt won first, to have one),
+# then the language turned (the phone's, Russian, English).
+screen 1096 2560
+wait 0.4
+lang ru
+catchall
+wait 10
+down 137 300
+up 137 300
+wait 4
+down 137 300
+up 137 300
+wait 5
+pick 4
+wait 3
+down 24 67
+up 24 67
+wait 0.3
+shot p0
+down 137 384
+up 137 384
+wait 3
+shot p1
+down 137 300
+up 137 300
+wait 2
+shot p2
+down 137 358
+up 137 358
+wait 0.3
+shot p3
+down 137 358
+up 137 358
+wait 0.3
+shot p4

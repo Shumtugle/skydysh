@@ -219,7 +219,39 @@ final class Cars {
         if (knocked[c] <= 0f || kvx[c] * kvx[c] + kvz[c] * kvz[c] < 0.04f && Math.abs(spin[c]) < 0.05f) {
             knocked[c] = 0f;
             wreck[c] = true;
+            // never left standing in a bay at the factory's gate or the warehouse's: it is towed off
+            if (City.inBay(true, x[c], z[c]) || City.inBay(false, x[c], z[c])) live[c] = false;
         }
+    }
+
+    /**
+     * A car parked at a curb, rammed off it: taken into the traffic (the one farthest from the
+     * blow, if none is free) as a car of its kind and paint at (x, z) facing yaw, and sent off.
+     */
+    void unparked(float x, float z, float yaw, int k, int p, float fx, float fz, float v, float hx, float hz) {
+        int c = -1;
+        float far = -1f;
+        for (int o = 0; o < MOST; o++) {
+            if (!live[o]) {
+                c = o;
+                break;
+            }
+            float dx = this.x[o] - hx, dz = this.z[o] - hz, dd = dx * dx + dz * dz;
+            if (dd > far) {
+                far = dd;
+                c = o;
+            }
+        }
+        this.x[c] = x;
+        this.z[c] = z;
+        heading[c] = yaw;
+        kind[c] = k;
+        paint[c] = p;
+        live[c] = true;
+        halt[c] = 0f;
+        spooked[c] = 0f;
+        speed[c] = 0f;
+        rammed(c, fx, fz, v, hx, hz);
     }
 
     /**

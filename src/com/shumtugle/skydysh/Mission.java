@@ -20,15 +20,20 @@ final class Mission {
     int round;
     /** Whether the time ran out with some still loose. */
     boolean late;
-    private final Random rnd;
+    private final long seed;
 
     Mission(long seed) {
-        rnd = new Random(seed);
+        this.seed = seed;
     }
 
-    /** Five let loose round (x, z): one a way round the compass each, further and further off. */
+    /**
+     * Five let loose round (x, z): one a way round the compass each, further and further off. The
+     * same mission begun from the same place lets them loose the same way every time: a try again
+     * is the same task, and its times can be set against each other.
+     */
     void start(float x, float z) {
         round++;
+        Random rnd = new Random(seed + round * 7919L);
         clock = 0f;
         doneAt = -1f;
         late = false;

@@ -12,3 +12,7 @@ carahead 14
 pedal 2.5 0 0 0.25 ca
 wait 1.5
 shot cb
+drivein 67.2 8 0
+pedal 4 0 0 0.5 pa
+wait 1
+shot pb

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.54";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.55";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -77,7 +77,7 @@ final class World {
         byte[] moves = host.asset("moves.bin");
         if (moves != null) Frida.use(Moves.read(moves));
         if (FolkPack.town == null) FolkPack.town = FolkPack.read(host.asset("folk.bin"));
-        Lang.use(host, host.language());
+        Lang.use(host, langCode());
         // where the last game left off: the mission to play next, and what has been won
         int next = host.loadInt(SAVE_MISSION);
         if (next > 1) mission.round = next - 1;
@@ -109,7 +109,8 @@ final class World {
             chase = nobody;
         } else if (Folder.its(n)) {
             mission.round = n;
-            folder = new Folder(0xF01DL + n * 7919L + (again ? 31L : 0L));
+            // the same folder where it was for a try again: the same task
+            folder = new Folder(0xF01DL + n * 7919L);
             folder.start(x, z, city);
             chase = folder.rivals[0];
         } else {
@@ -218,9 +219,93 @@ final class World {
      * best before, seconds (0: none before).
      */
     private float record(int n, float seconds) {
-        int was = host.loadInt(SAVE_BEST + n), now = Math.max(1, Math.round(seconds * 10f));
-        if (was <= 0 || now < was) host.saveInt(SAVE_BEST + n, now);
+        int was = host.loadInt(bestKey(n)), now = Math.max(1, Math.round(seconds * 10f));
+        if (was <= 0 || now < was) host.saveInt(bestKey(n), now);
         return was / 10f;
+    }
+
+    /**
+     * Each kind of mission, as it is made now (the hunt 1, the folder 2, the delivery 3): raised
+     * when what one plays changes (its targets, its way, where it begins), so that a time kept
+     * before is not set against one that is no longer the same task.
+     */
+    static final int[] REVISION = {0, 2, 2, 1};
+
+    /** Mission n's kind: the hunt 1, the folder 2, the delivery 3. */
+    static int kindOf(int n) {
+        return Delivery.its(n) ? 3 : Folder.its(n) ? 2 : 1;
+    }
+
+    /** Where mission n's best time is kept, as its kind is made now. */
+    static String bestKey(int n) {
+        return SAVE_BEST + n + ".r" + REVISION[kindOf(n)];
+    }
+
+    // ---- under the pause: the language, and the best times ----
+    static final String SAVE_LANG = "lang";
+    /** The language chosen: the phone's own (0), Russian (1), English (2). */
+    private int langPick;
+    private boolean resultsOpen;
+
+    private String langCode() {
+        langPick = host.loadInt(SAVE_LANG);
+        return langPick == 1 ? "ru" : langPick == 2 ? "en" : host.language();
+    }
+
+    float langRowY() {
+        return h * 0.46f + 64f;
+    }
+
+    float resultsRowY() {
+        return langRowY() + 26f;
+    }
+
+    /** A touch under the pause on one of its rows: the language turned to the next, or the best times shown. */
+    private boolean pauseRow(float x, float y) {
+        if (Math.abs(x - W * 0.5f) > 90f) return false;
+        if (Math.abs(y - langRowY()) < 11f) {
+            host.saveInt(SAVE_LANG, (langPick + 1) % 3);
+            Lang.use(host, langCode());
+            host.buzz(20);
+            return true;
+        }
+        if (Math.abs(y - resultsRowY()) < 11f) {
+            dispatch = new Dispatch(host, results());
+            resultsOpen = true;
+            host.buzz(20);
+            return true;
+        }
+        return false;
+    }
+
+    /** Under the pause, in words: the language, and the way to the best times. */
+    private void pauseFlat(Px f) {
+        String name = langPick == 1 ? Lang.own(host, "ru") : langPick == 2 ? Lang.own(host, "en") : Lang.lines("lang.system", 0, null)[0];
+        String l = Lang.lines("pause.lang", 0, null)[0].replace("{x}", name);
+        String r = Lang.lines("pause.results", 0, null)[0];
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, teal = 0xFF7FE6D2;
+        shadowed(f, l, Math.round(W * 0.5f - PixelFont.width(l, 1) * 0.5f), Math.round(langRowY() - 4f), 1, teal, ink);
+        shadowed(f, r, Math.round(W * 0.5f - PixelFont.width(r, 1) * 0.5f), Math.round(resultsRowY() - 4f), 1, cream, ink);
+    }
+
+    /** The best times kept, mission by mission, the latest last (as many as the screen holds). */
+    private String[] results() {
+        java.util.ArrayList<String> rows = new java.util.ArrayList<String>();
+        int last = Math.max(host.loadInt(SAVE_MISSION), mission.round + 1) + 3;
+        for (int n = 1; n <= last; n++) {
+            int best = host.loadInt(bestKey(n));
+            if (best <= 0) continue;
+            rows.add(n + "  " + Lang.lines("kind." + kindOf(n), 0, null)[0] + "  " + clock(best / 10f));
+        }
+        while (rows.size() > 8) rows.remove(0);
+        if (rows.isEmpty()) rows.add(Lang.lines("results.none", 0, null)[0]);
+        String[] shell = Lang.lines("results", 0, null);
+        java.util.ArrayList<String> out = new java.util.ArrayList<String>();
+        for (String line : shell) {
+            if (line.equals("{rows}")) out.addAll(rows);
+            else out.add(line);
+        }
+        return out.toArray(new String[0]);
     }
 
     /** Home, after a mission: in home's room, sitting on the sofa, where the next is offered. */
@@ -406,7 +491,12 @@ final class World {
             return;
         }
         if (seated()) {
-            if (type == DOWN && sofaAsked) standUp();
+            // sitting: the pause as ever, its rows under it; anywhere else, she gets up
+            if (type == DOWN && paused) {
+                if (!pauseRow(x, y)) paused = false;
+            } else if (type == DOWN && onButton(x, y, pauseX(), pauseY())) {
+                paused = true;
+            } else if (type == DOWN && sofaAsked) standUp();
             leadFinger = -1;
             return;
         }
@@ -440,7 +530,7 @@ final class World {
         // paused: the way to play changed, or a touch anywhere plays on
         if (paused) {
             if (onToggle(x, y)) toggle();
-            else paused = false;
+            else if (!pauseRow(x, y)) paused = false;
             role[id] = NOBODY;
             return;
         }
@@ -737,7 +827,7 @@ final class World {
         if (paused) {
             if (type == DOWN) {
                 if (onToggle(x, y)) toggle();
-                else paused = false;
+                else if (!pauseRow(x, y)) paused = false;
                 buttonHeld = true;
             }
             return;
@@ -805,7 +895,8 @@ final class World {
                 // the walls drawn back: the street goes on (the next mission, after a report)
                 dispatch = null;
                 overFor = 0f;
-                if (homeAfter) {
+                if (resultsOpen) resultsOpen = false;
+                else if (homeAfter) {
                     homeAfter = false;
                     bringHome();
                 } else if (seated() && !free) standUp();
@@ -897,6 +988,7 @@ final class World {
         }
         fliers.update(dt, true);
         felled.update(dt, runner.x, runner.z, city);
+        reparkFar();
     }
 
     /** The folder in her hands: over the edge of the roof to the street, down along it, gliding. */
@@ -1328,6 +1420,17 @@ final class World {
                 pets.alarm(fellAt[0], fellAt[1], 8f);
             }
         }
+        // a car parked at the curb in the way: off it goes, as one in the traffic does
+        if (Math.abs(p.speed) > Cars.RAM_FROM) {
+            float fx = (float) Math.sin(p.heading), fz = (float) Math.cos(p.heading), sg = Math.signum(p.speed);
+            float reach = Pickup.ENDS + Pickup.END_R * 0.6f + Math.abs(p.speed) * dt;
+            float hx = p.x + fx * sg * reach, hz = p.z + fz * sg * reach;
+            if (city.unpark(hx, hz, Pickup.END_R * 0.5f, parkedAt)) {
+                cars.unparked(parkedAt[0], parkedAt[1], parkedAt[2], (int) parkedAt[3], Float.floatToIntBits(parkedAt[4]),
+                        fx * sg, fz * sg, Math.abs(p.speed), hx, hz);
+                unparkedHere(parkedAt[0], parkedAt[1]);
+            }
+        }
         int ramsWere = cars.rams;
         p.drive(dt, go, wheel, brakeIn, false, city, cars, walkers);
         if (cars.rams != ramsWere) {
@@ -1365,6 +1468,33 @@ final class World {
     static final float WHEEL_HALF = 66f, WHEEL_TURNS = 2.2f;            // the ring at the wheel, its radius: wider than her stick on foot
     static final float SETTLE_RATE = 3.5f;     // how fast it settles along the street, the wheel let be
     final Felled felled = new Felled();
+    // parked cars rammed off their curbs: where each stood, put back once she is far off
+    private final float[] parkedAt = new float[5], unparkedX = new float[24], unparkedZ = new float[24];
+    private int unparkedN;
+
+    private void unparkedHere(float x, float z) {
+        if (unparkedN == unparkedX.length) {
+            city.repark(unparkedX[0], unparkedZ[0]);
+            System.arraycopy(unparkedX, 1, unparkedX, 0, unparkedN - 1);
+            System.arraycopy(unparkedZ, 1, unparkedZ, 0, unparkedN - 1);
+            unparkedN--;
+        }
+        unparkedX[unparkedN] = x;
+        unparkedZ[unparkedN] = z;
+        unparkedN++;
+    }
+
+    /** The parked cars rammed off put back at their curbs once she is far from where they stood. */
+    private void reparkFar() {
+        for (int k = unparkedN - 1; k >= 0; k--) {
+            float dx = unparkedX[k] - runner.x, dz = unparkedZ[k] - runner.z;
+            if (dx * dx + dz * dz < 230f * 230f) continue;
+            city.repark(unparkedX[k], unparkedZ[k]);
+            unparkedN--;
+            unparkedX[k] = unparkedX[unparkedN];
+            unparkedZ[k] = unparkedZ[unparkedN];
+        }
+    }
     private final float[] fellAt = new float[2];
     static final float SETTLE_WITHIN = 0.5f;   // radians off a street's way, at most, for the pickup to settle along it
     static final float SETTLE_WHEEL = 0.25f;   // turned so far or more, it is let go its own way
@@ -2040,6 +2170,7 @@ final class World {
         beatsFlat(f);
         speedFlat(f);
         if (dispatch == null) buttons(d);
+        if (dispatch == null && paused) pauseFlat(f);
         swapFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         meter(f);
@@ -2129,6 +2260,7 @@ final class World {
             if (driving == null) signs(d);
             buttons(d);
             if (paused && TWO_THUMBS_OFFERED) toggleFlat(f);
+            if (paused) pauseFlat(f);
         }
         swapFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);

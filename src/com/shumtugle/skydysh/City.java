@@ -146,6 +146,9 @@ final class City implements Ground {
         // the crowns of its trees and palms, round masses of leaves (x, y, z, radius): the eye keeps out of them
         float[] crowns = new float[4 * 8];
         int crownN;
+        // its parked cars: where (x, z), the way it faces, its kind, its paint; one rammed is moved off
+        float[] parkedCars = new float[5 * 8];
+        int parkedN;
         // its street lamps, where each stands (x, z): one rammed is felled
         float[] lamps = new float[2 * 8];
         int lampN;
@@ -511,6 +514,53 @@ final class City implements Ground {
                 }
             }
         return best;
+    }
+
+    // ---- the parked cars, rammed off the curb by the pickup she drives ----
+    private final java.util.HashSet<Long> moved = new java.util.HashSet<Long>();
+
+    private static void keepParked(Cell c, float x, float z, float yaw, int kind, int paint) {
+        if ((c.parkedN + 1) * 5 > c.parkedCars.length) c.parkedCars = java.util.Arrays.copyOf(c.parkedCars, c.parkedCars.length * 2);
+        int o = c.parkedN++ * 5;
+        c.parkedCars[o] = x;
+        c.parkedCars[o + 1] = z;
+        c.parkedCars[o + 2] = yaw;
+        c.parkedCars[o + 3] = kind;
+        c.parkedCars[o + 4] = Float.intBitsToFloat(paint);
+    }
+
+    /**
+     * The parked car a round body of radius r at (x, z) runs into, taken off the curb (its cell
+     * built again without it): where it stood, its heading, kind and paint into out. False if none.
+     */
+    boolean unpark(float x, float z, float r, float[] out) {
+        int ci = index(x), cj = index(z);
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                Cell c = cells.get(key(i, j));
+                if (c == null) continue;
+                for (int k = 0; k < c.parkedN; k++) {
+                    int o = k * 5;
+                    float px = c.parkedCars[o], pz = c.parkedCars[o + 1], yaw = c.parkedCars[o + 2];
+                    int kind = (int) c.parkedCars[o + 3];
+                    float fx = (float) Math.sin(yaw), fz = (float) Math.cos(yaw), ox = x - px, oz = z - pz;
+                    if (Math.abs(ox * fx + oz * fz) > Cars.half(kind) + r || Math.abs(ox * fz - oz * fx) > 0.95f + r) continue;
+                    moved.add(lampKey(px, pz));
+                    cells.remove(key(i, j));
+                    out[0] = px;
+                    out[1] = pz;
+                    out[2] = yaw;
+                    out[3] = kind;
+                    out[4] = c.parkedCars[o + 4];
+                    return true;
+                }
+            }
+        return false;
+    }
+
+    /** The parked car taken from (x, z) put back at its curb (she is far off). */
+    void repark(float x, float z) {
+        if (moved.remove(lampKey(x, z))) cells.remove(key(index(x), index(z)));
     }
 
     // ---- the street lamps, felled by the pickup she drives ----
@@ -1556,15 +1606,17 @@ final class City implements Ground {
                 // the street running north: on its east side they face north, on its west side south
                 if (rnd.nextBoolean()) {
                     float x = x0 + s * off, z = z0 + t;
-                    if (keep) continue;
+                    if (keep || moved.contains(lampKey(x, z))) continue;
                     Cars.car(c.parked, x, z, s > 0 ? 0f : (float) Math.PI, paint, true, kind);
                     c.wall(x - 0.95f, z - len, x + 0.95f, z + len, top);
+                    keepParked(c, x, z, s > 0 ? 0f : (float) Math.PI, kind, paint);
                 } else {
                     // the street running east: on its south side they face east, on its north side west
                     float x = x0 + t, z = z0 + s * off;
-                    if (keptClear(x, z) || keptClear(x + 2f, z) || keptClear(x - 2f, z)) continue;
+                    if (keptClear(x, z) || keptClear(x + 2f, z) || keptClear(x - 2f, z) || moved.contains(lampKey(x, z))) continue;
                     Cars.car(c.parked, x, z, s < 0 ? (float) (Math.PI / 2) : (float) (-Math.PI / 2), paint, true, kind);
                     c.wall(x - len, z - 0.95f, x + len, z + 0.95f, top);
+                    keepParked(c, x, z, s < 0 ? (float) (Math.PI / 2) : (float) (-Math.PI / 2), kind, paint);
                 }
             }
     }

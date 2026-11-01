@@ -21,7 +21,7 @@ eyes, what is to be done typed over it; a touch, her mallet knocks a key, the wa
 and the street goes on. When it is done, back into her head for the report (a mission won, its
 time against the mission's best, kept on the phone); then she is home, on the sofa, the game
 kept, and the screen offers the next mission, or the same again if it was lost (begun again from
-where it began, never from where it was lost), or a rest: free time, the town hers as long as she
+where it began, its targets laid out the same, never from where it was lost), or a rest: free time, the town hers as long as she
 likes, the next mission taken at home.
 
 One finger leads her: held down, she runs; moved sideways, she turns; flicked up, she jumps,
@@ -50,7 +50,9 @@ takes her up and lets her out on the roof by itself. On the roof, by the hut's d
 shows; pressed, the lift takes her down and the cabin opens onto the hall again. Signs of glass
 hang over the ways in and up near her: the lifts' doors, the fire escapes, the ladders from roof
 to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
-out) by the lift. A button high on the left pauses the game. The eye behind her keeps out of
+out) by the lift. A button high on the left pauses the game; under the pause, the language (the
+phone's own, Russian or English, kept as chosen) and the results: the best time of every job
+played, on the screen in her head. The eye behind her keeps out of
 the leaves: when a tree's crown or a palm's comes between, it drops under it, or comes in nearer.
 
 At the wheel, while a finger is down the pickup goes; a steering wheel of glass shows where the
@@ -76,7 +78,7 @@ the next one, or just a rest). A touch, and she gets up.
 Duty pickups stand at the curbs here and there (not in a hunt). Touch the wheel over one, or
 stand at its door, and she gets in. Driving is the easy way about the town, and the fast one, up
 to some 130 kilometers an hour on a straight (how fast is shown low on the left). The pickup is
-the dispatch's own and does not break: a car in its way is rammed off, sliding and spinning to a
+the dispatch's own and does not break: a car in its way, going or parked at a curb, is rammed off, sliding and spinning to a
 wreck; a street lamp in its way is felled across the road (the town puts it up again once she
 is far off). The button low on the right lets her out. She stands on
 whatever she comes down on, the roofs too. When a mission is done the game keeps where it is.

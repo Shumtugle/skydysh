@@ -11,10 +11,10 @@ import java.util.Random;
  * before home's door with a golden mallet in her right hand. Her eyes light, and a low blow of metal sounds. The town goes dark; one light is
  * left, on her, and the mallet glows of itself. She swings it back over her head, slowly, then
  * down at the eye, faster and faster, the eye stepping up to meet it; it strikes the glass of the
- * screen: thunder, the ground's boom, glass, a white flash, the frame shaking. Eight white cracks
- * run out from the blow and branch, and she falls to pieces, every block of her flung off away
- * from the blow, turning, knocking on the stones; the mallet falls, its handle and its burning
- * head apart. The eye draws back and down to see her come down; the cracks melt away. The light
+ * screen: thunder, the ground's boom, glass, a white flash, the frame shaking, and she falls to
+ * pieces, every block of her flung off away from the blow, turning, knocking on the stones; the
+ * mallet falls, its handle and its burning head apart. The eye draws back and down to see her
+ * come down. (The cracks once drawn over the glass are kept in the code, unused.) The light
  * stays on the heap, and over the frame the name is typed as the dispatcher's screen types, in the
  * letters of its tube, a white cursor before them; a high chime. The frame goes white, and at its
  * whitest the game begins, in the same town, before home.
@@ -240,7 +240,8 @@ final class Opening {
             for (int j = 0; j < 3; j++) pieceAxis[k * 3 + j] /= l;
             pieceRate[k] = k == 0 ? 7f : 4f;
         }
-        cracksFrom(World.W * 0.5f, 0f);
+        // no cracks over the glass: the flash, the frame shaking and her fall carry the blow
+        crackN = 0;
     }
 
     /** Her blocks and the mallet's pieces falling, bouncing on the stones, knocking as they land. */
