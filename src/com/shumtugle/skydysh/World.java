@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.43";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.44";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -65,7 +65,7 @@ final class World {
     /** The pickup she is driving; null on foot. */
     Pickup driving;
     private int caughtSeen, struckSeen;
-    private boolean lateSeen;
+    private boolean lateSeen, swimSeen;
     private final float[] at = new float[2];
     private final Fliers fliers = new Fliers();                     // far off in the sky, seldom
     private Px flatPx;
@@ -701,11 +701,10 @@ final class World {
         // a beat of the arms (a flick, between frames): the air through them
         if (runner.beatsLeft() < beatsWere) host.sound(Synth.WHOOSH, 0.5f, 0.8f);
         if (swapT < 0f && driving == null) runner.update(dt, city, cars, walkers);
-        // into the sea off the beach: a splash, and she is up on the sand again, facing the town
-        if (driving == null && indoors == null && City.overWater(runner.x, runner.z) && runner.y < City.WATER + 0.3f) {
-            host.sound(Synth.SPLASH, 1f, 1f);
-            runner.put(runner.x, City.SAND, City.SHORE * City.CELL + City.WATERLINE + 3f, 0f);
-        }
+        // into deep water: a splash, and she swims
+        boolean swims = runner.swimming();
+        if (swims && !swimSeen) host.sound(Synth.SPLASH, 0.8f, 1f);
+        swimSeen = swims;
         beatsWere = runner.beatsLeft();
         int round = mission.round;
         if (delivery != null) {

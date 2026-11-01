@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.44
+
+- She swims. The sea's bed shelves out from the wet sand; into the water she wades, slowly, and
+  where it is deeper than her chest she floats up and swims, her head up, in strokes (the hands
+  out ahead and swept back, the legs drawn up and kicked out), a little wake behind her; slower
+  than on foot, the same finger or stick leading her. Back in the shallows she stands up and wades
+  out. No jumps, slides or mallet in the water; the mallet is slung out of sight. The open sea
+  ends some two hundred meters out. A splash going in.
+- The pickup stops at the water's edge.
+- Stand: scene `swim.txt`.
+
 ## 0.43
 
 - Home is where the mission is chosen. In at home's front door (by its sign, or walking in), she

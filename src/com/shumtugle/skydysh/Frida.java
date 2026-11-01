@@ -273,6 +273,8 @@ final class Frida {
     static final String PULL = "pull";
     /** Another: sitting at a wheel (t, how far it is turned, -1 to 1). */
     static final String SIT = "sit";
+    /** Another: swimming, the head up (t in strokes). */
+    static final String SWIM = "swim";
 
     /** The pose of a motion at a time, into pq and pp; false if there is no such motion. */
     private static boolean pose(String motion, float t) {
@@ -282,6 +284,10 @@ final class Frida {
         }
         if (motion.equals(SIT)) {
             Stroll.sit(moves, t, pq, pp);
+            return true;
+        }
+        if (motion.equals(SWIM)) {
+            Stroll.swim(moves, t, pq, pp);
             return true;
         }
         int c = moves.motion(motion);

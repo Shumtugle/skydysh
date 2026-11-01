@@ -37,6 +37,9 @@ final class City implements Ground {
     // the beach under the quay: its sand, the wet sand by the sea, where the wet begins and where the
     // water does (from the shore road's middle); a flight of steps down from the promenade in every cell
     static final float SAND = -1.15f, WET = -1.5f, WET_FROM = -30f, WATERLINE = -35f;
+    // the bed of the sea: shelving from the water's edge down to so deep (under the water's top) so
+    // far out; and how far out one may swim
+    static final float BED = 4f, SHELF = 16f, OPEN_SEA = -220f;
     static final float STAIRS_AT = 28f, STAIRS_HALF = 1.4f, STAIR = 1f;
 
     /** Whether cell row j is out of the town: the promenade (the row next to the shore) and the sea. */
@@ -244,7 +247,11 @@ final class City implements Ground {
     /** How high the ground is here: the road, or the pavement a step up. */
     float ground(float x, float z) {
         if (z < SHORE * CELL - CURB) {
-            if (overWater(x, z)) return WATER - DEEP;
+            if (overWater(x, z)) {
+                // the sea's bed, shelving from the wet sand down
+                float out = Math.min(1f, (SHORE * CELL + WATERLINE - z) / SHELF);
+                return WET + (WATER - BED - WET) * out;
+            }
             if (!beach(x, z)) return WALK_TOP;
             return z > SHORE * CELL + WET_FROM ? SAND : WET;
         }

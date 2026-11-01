@@ -40,7 +40,12 @@ final class Runner {
     float speed;
     boolean holding;
     // what she is doing, and since when (seconds of her own clock)
-    static final int RUN = 0, AIR = 1, SLIDE = 2, CLIMB = 3;
+    static final int RUN = 0, AIR = 1, SLIDE = 2, CLIMB = 3, SWIM = 4;
+    // swimming: how deep the water must be, how fast she swims, how far under the water's top her
+    // middle is, how many strokes a meter
+    static final float SWIM_DEEP = 1.4f, SWIM_TOP = 3.4f, SWIM_LOW = 0.22f, STROKE = 0.42f;
+    private float strokes;
+    static final float WADE = 2.6f;
     // gliding, a flick up beats the arms: so fast up, so many times a flight
     static final float BEAT = 7.5f;
     static final int BEATS = 4;
@@ -272,7 +277,7 @@ final class Runner {
 
     /** A tap for the mallet, from its button or from the eye's side of the glass. */
     void tap() {
-        if (auto || held) return;
+        if (auto || held || state == SWIM) return;
         tapped = true;
     }
 
@@ -358,6 +363,7 @@ final class Runner {
      * gliding, a beat of the arms that takes her up again (so many a flight).
      */
     private void jump() {
+        if (state == SWIM) return;
         if (state == CLIMB) return;
         if (state == AIR && (gliding || boosted && clock - stateAt > 0.3f)) {
             // gliding, or the jump and the leap from it already spent: the arms out, and a beat of them
@@ -482,6 +488,7 @@ final class Runner {
     }
 
     private void slide() {
+        if (state == SWIM) return;
         if (state != RUN || speed < 3f) return;
         state = SLIDE;
         stateAt = clock;
@@ -559,9 +566,19 @@ final class Runner {
                 stateAt = clock;
             }
         }
+        if (state == SWIM) {
+            // in the water: slower, turning more slowly, strokes as she goes (slow ones treading water)
+            speed = Math.min(speed, SWIM_TOP);
+            strokes += dt * (0.35f + speed * STROKE);
+        } else if (room == null && state == RUN && City.overWater(x, z)) {
+            // wading in the shallows: slow going
+            speed = Math.min(speed, WADE);
+        }
         float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
         x += fx * speed * dt;
         z += fz * speed * dt;
+        // the open sea has an end: no farther out than this
+        if (room == null) z = Math.max(z, City.SHORE * City.CELL + City.OPEN_SEA);
         float[] p = {x, z};
         boolean hit = g.push(p, RADIUS, y);
         if (room == null) {
@@ -578,7 +595,26 @@ final class Runner {
         }
         x = p[0];
         z = p[1];
-        if (state == AIR) {
+        float bed = room == null ? city.ground(x, z) : 0f;
+        boolean deep = room == null && City.overWater(x, z) && bed < City.WATER - SWIM_DEEP;
+        if (state == SWIM) {
+            // up to the water's top, gently; where it shallows, she stands up and wades out
+            y += (City.WATER - y) * Math.min(1f, dt * 4f);
+            vy = 0f;
+            if (!deep) {
+                state = RUN;
+                stateAt = clock;
+                y = bed;
+            }
+        } else if (deep && y <= City.WATER + 0.1f) {
+            // into deep water, from the shallows or from the air: she swims
+            state = SWIM;
+            stateAt = clock;
+            vy = 0f;
+            gliding = false;
+            beats = 0;
+            speed = Math.min(speed, SWIM_TOP);
+        } else if (state == AIR) {
             vy -= GRAVITY * dt;
             // gliding, once past the top of the jump, she sinks slowly
             if (gliding && vy < -(auto ? AUTO_SINK : SINK)) vy = -(auto ? AUTO_SINK : SINK);
@@ -654,7 +690,13 @@ final class Runner {
         return 1.4f;
     }
 
+    /** Whether she is swimming. */
+    boolean swimming() {
+        return state == SWIM;
+    }
+
     private String motion() {
+        if (state == SWIM) return Frida.SWIM;
         if (state == CLIMB) return Frida.PULL;
         if (state == AIR && clock - beatAt < 0.35f) return "leap_air";
         if (throwing() >= 0f && state != AIR) return "throw";
@@ -668,6 +710,7 @@ final class Runner {
     }
 
     private float motionTime() {
+        if (state == SWIM) return strokes;
         if (state == CLIMB) return (clock - stateAt) * CLIMB_UP / (Stroll.PULL_RISE * SIZE);
         if (state == AIR && clock - beatAt < 0.35f) return 0.3f + (clock - beatAt) * 1.4f;
         if (throwing() >= 0f && state != AIR) return throwing();
@@ -818,6 +861,21 @@ final class Runner {
         // the figure faces -z at no turn: turned half round, she runs the way she is headed
         if (riding) {
             Frida.draw(d, seatX, seatY - SEAT_DROP, seatZ, heading + (float) Math.PI, SIZE, Frida.SIT, wheel);
+            return;
+        }
+        if (state == SWIM) {
+            // low in the water, the water broken round her and in a wake behind as she swims
+            Frida.draw(d, x, y - SWIM_LOW * SIZE, z, heading + (float) Math.PI, SIZE, Frida.SWIM, strokes);
+            float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
+            for (int k = 0; k < 4; k++) {
+                float back = 2f + k * 0.8f, wide = 0.7f + k * 0.3f, f = 1f - k / 4f;
+                if (k > 0 && speed < 0.5f) break;
+                float bob = 0.05f * (float) Math.sin(strokes * 6.28f + k);
+                for (int e = -1; e <= 1; e += 2) {
+                    float wx = x - fx * back + fz * e * (wide + bob), wz = z - fz * back - fx * e * (wide + bob);
+                    d.box(wx, y + 0.01f, wz, 0.05f * f + 0.03f, 0.008f, 0.09f * f + 0.04f, null, 0xBCD9D8, DrawList.PLAIN);
+                }
+            }
             return;
         }
         Frida.draw(d, x, y, z, heading + (float) Math.PI, SIZE, motion(), motionTime());

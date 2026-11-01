@@ -51,7 +51,9 @@ driver picking the speed; the pedals low on the right have the say over him whil
 throttle flat out, the brake (held standing, it backs).
 
 The town ends at the sea: along its southmost street a promenade with palms and a parapet, steps
-down to a beach with sunshades, and the water. Home is there, where the game begins: one large house with a tower and a lamp on
+down to a beach with sunshades, and the water. Into the sea she wades, slowly, and where it is
+deep enough she swims, her head up, as far out as the open sea lets her; back in the shallows
+she stands up and wades out. Home is there, where the game begins: one large house with a tower and a lamp on
 top, the same in every town; its sign over the door takes her in.
 
 Duty pickups stand at the curbs here and there (not in a hunt). Touch the wheel over one, or

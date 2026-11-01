@@ -116,6 +116,12 @@ final class Pickup {
                 }
             }
         }
+        // not into the sea: it stops at the water's edge
+        if (City.overWater(x, z)) {
+            x -= fx * speed * dt;
+            z -= fz * speed * dt;
+            speed = 0f;
+        }
         y += (city.ground(x, z) - y) * Math.min(1f, dt * 12f);
     }
 

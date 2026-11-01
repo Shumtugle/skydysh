@@ -182,6 +182,8 @@ final class Toss {
     void draw(DrawList d, Runner r) {
         // at the wheel, the mallet is left on the seat beside her, out of sight
         if (state == HELD && r.riding) return;
+        // swimming, it is slung at her hip under the water, out of sight
+        if (state == HELD && r.swimming()) return;
         if (state == HELD && r.climbing()) {
             slung(d, r);
             return;
