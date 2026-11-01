@@ -9,7 +9,8 @@ import java.util.Random;
  * to it. Whoever gets to it first has it.
  *
  * The house it lies on has no way up, nor have the houses next to it, and there is no lift in its
- * row; a house of its row two off or more has a fire escape. Up there, then along the roofs: up the ladders where the next roof stands higher, leaping, down onto
+ * row; a house of its row two off or more has a fire escape up its back, in the yard. Up there,
+ * then along the roofs: up the ladders where the next roof stands higher, leaping, down onto
  * the lower ones, gliding, beating the air to rise. Taken, she carries it, and goes down to the
  * street gliding.
  */
@@ -107,8 +108,8 @@ final class Folder {
             float cu = alongX ? o[0] : o[1], hu = alongX ? o[2] : o[3];
             float cv = alongX ? o[1] : o[0], hv = alongX ? o[3] : o[2];
             float side = alongX ? frontZ : frontX;
-            // up its fire escape, if it has one; else up the front, each a little apart
-            float along = o[7] == City.ESCAPE ? cu - hu + 1.1f : cu + (k - 1) * Math.min(1.6f, hu * 0.4f);
+            // up the front, each a little apart (the fire escapes are at the backs, in the yards)
+            float along = cu + (k - 1) * Math.min(1.6f, hu * 0.4f);
             float fv = cv + side * hv;
             float fx = alongX ? along : fv, fz = alongX ? fv : along;
             g.rival(fx, fz, frontX, frontZ, o[4], x, z, SETS_OFF[k] + rnd.nextFloat() * 4f, RIVAL_RUN + rnd.nextFloat() * 0.8f);
@@ -142,11 +143,12 @@ final class Folder {
         if (best < 0) return false;
         float[] o = row[best];
         float cu = alongX ? o[0] : o[1], hu = alongX ? o[2] : o[3], cv = alongX ? o[1] : o[0], hv = alongX ? o[3] : o[2];
-        float side = alongX ? frontZ : frontX, fv = cv + side * (hv + 0.55f), u = cu - hu + 1.1f;
+        // at the back, in the yard
+        float side = alongX ? frontZ : frontX, fv = cv - side * (hv + 0.55f), u = cu - hu + 1.1f;
         out[0] = alongX ? u : fv;
         out[1] = alongX ? fv : u;
-        out[2] = frontX;
-        out[3] = frontZ;
+        out[2] = -frontX;
+        out[3] = -frontZ;
         out[4] = cv;
         return true;
     }

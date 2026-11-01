@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.33
+
+- The yards, of two kinds. One block in two has its yard open to the street by an arch: a way
+  through a house of its south or north row, a vault over it framed in stone at either end;
+  she runs through, and the pickup drives through. The other yards are shut in, and each has a
+  fire escape up the back of a house at least (no one is shut in a yard any more); an open
+  yard has one now and then.
+- No fire escapes in the streets: they are all in the yards, up the backs of the houses.
+- Ways in: one house in four of those without a lift has a door at the front (and at the back,
+  on the yard): a hall through the house, no lift in it. Its sign over the door is a new one,
+  in (a doorway, an arrow going in); touched, she goes in, through the hall and out at the other
+  door. A lift's door has the lift's sign; most houses have no way in at all. The ways in are
+  open in a hunt too (the lifts are not).
+- The doors at the backs, on the yards, have their signs as well.
+- A thing over her (an arch's vault) is a ceiling: she passes under it, does not jump through
+  it, and the eye stays under it too.
+- The eye, with no room behind her, looks down at her rather than over her: she no longer drops
+  out of the bottom of the frame coming out of a door.
+- Led by a sign, held up a while on one side of something, she tries the other side.
+- The folder: the fire escape of its row is at the back, in the yard; the rivals climb the
+  fronts.
+- Stand: `athouse arch|door|shut METERS`, `inyard`, `tapsign enter`; scene `yards.txt`.
+
 ## 0.32
 
 - Duty pickups: the dispatch's own, open-topped, cream over teal with a coral stripe, the plate's

@@ -45,6 +45,8 @@ release, each seen on the stand before the phone.
 - 0.30 The signs touched send her where they say: up a ladder, up or down by a lift.
 - 0.31 Lifts rare and shut in a hunt; the folder got to over the roofs; ladders caught in the air.
 - 0.32 Duty pickups at the curbs: got into, driven as the old racing game drove, got out of.
+- 0.33 Yards open by an arch or shut in with a fire escape; fire escapes only in the yards; halls
+  through houses without lifts, their own sign.
 
 ## Next
 

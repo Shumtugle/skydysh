@@ -1,0 +1,32 @@
+# The yards: before an arch through a house, running in through it to the yard; a yard shut in,
+# seen from its middle, its fire escape up a back; the ladder's sign touched, up it. A house with
+# a way in: its sign touched, in at the front, through its hall (no lift) and out into the yard.
+screen 1096 2560
+mission 2
+wait 0.2
+athouse arch 6
+wait 0.3
+shot y0
+down 137 420
+wait 1.6
+where
+up 137 420
+wait 0.8
+shot y1
+athouse shut 6
+inyard
+wait 0.3
+shot y2
+turn 1.5708
+wait 0.3
+shot y3
+turn 1.5708
+wait 0.3
+shot y4
+tapsign ladder
+errand 8 2 ya
+athouse door 7
+wait 0.4
+shot y5
+tapsign enter
+errand 12 2 yb

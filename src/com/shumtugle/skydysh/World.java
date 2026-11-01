@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.32";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.33";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -374,10 +374,9 @@ final class World {
             return;
         }
         if (r.inAir() || r.climbing() || r.throwing() >= 0f || (folder != null && folder.hers)) return;
-        // in a hunt the lifts are shut: the streets are hers to learn
-        if (!liftsOpen()) return;
         float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading);
-        boolean near = city.liftNear(r.x, r.z, r.y, 3f, liftNow, houseNow);
+        // in a hunt the lifts are shut (the streets are hers to learn); the ways in are open
+        boolean near = city.liftNear(r.x, r.z, r.y, 3f, liftNow, houseNow, liftsOpen());
         if (!near) {
             liftArmed = true;
             return;
@@ -516,7 +515,7 @@ final class World {
             if (!liftsOpen() && (kind == City.MARK_STREET_LIFT || kind == City.MARK_HUT)) continue;
             // on her level: a lift's or a fire escape's in the street while she is in the street; a
             // ladder's up, or a hut's, while she is up there near its foot
-            float level = kind == City.MARK_STREET_LIFT || kind == City.MARK_ESCAPE ? City.WALK_TOP : marks[o + 1] - (kind == City.MARK_ROOF_LADDER ? 1.9f : City.HUT_HIGH + 0.8f);
+            float level = kind == City.MARK_STREET_LIFT || kind == City.MARK_ESCAPE || kind == City.MARK_DOOR ? City.WALK_TOP : marks[o + 1] - (kind == City.MARK_ROOF_LADDER ? 1.9f : City.HUT_HIGH + 0.8f);
             if (Math.abs(r.y - level) > 2.6f) continue;
             float ox = r.eyeX - x, oz = r.eyeZ - z;
             if (ox * nx + oz * nz <= 0.2f) continue;
@@ -530,7 +529,8 @@ final class World {
             signs[s] = markAt[0];
             signs[s + 1] = markAt[1];
             signs[s + 2] = Math.max(7f, Math.min(18f, W * 1.6f * 0.75f / markAt[2]));
-            signs[s + 3] = kind == City.MARK_ROOF_LADDER ? Badges.UP : kind == City.MARK_ESCAPE ? Badges.LADDER : Badges.LIFT;
+            signs[s + 3] = kind == City.MARK_ROOF_LADDER ? Badges.UP : kind == City.MARK_ESCAPE ? Badges.LADDER
+                    : kind == City.MARK_DOOR ? Badges.ENTER : Badges.LIFT;
             signs[s + 4] = shown;
             signs[s + 5] = x;
             signs[s + 6] = z;
@@ -702,7 +702,8 @@ final class World {
     }
 
     // ---- errands: a sign touched, she goes where it says by herself ----
-    static final int NO_ERRAND = 0, ERRAND_CLIMB = 1, ERRAND_UP = 2, ERRAND_DOWN = 3, ERRAND_DRIVE = 4;
+    static final int NO_ERRAND = 0, ERRAND_CLIMB = 1, ERRAND_UP = 2, ERRAND_DOWN = 3, ERRAND_DRIVE = 4, ERRAND_THROUGH = 5;
+    private boolean errandIn;                  // through a house: she has been inside
     static final int MARK_PICKUP = 4;          // a sign's kind beside the town's (see City.marks)
     private Pickup errandPickup;
     private int errand;
@@ -767,10 +768,11 @@ final class World {
             if (!city.ladderNear(fx, fz, r.y, 1f, errandLadder)) return;
             r.lead(errandLadder[0], errandLadder[1], facing);
             errand = ERRAND_CLIMB;
-        } else if (kind == City.MARK_STREET_LIFT) {
+        } else if (kind == City.MARK_STREET_LIFT || kind == City.MARK_DOOR) {
             liftArmed = true;
             r.lead(mx + nx * 0.45f, mz + nz * 0.45f, facing);
-            errand = ERRAND_UP;
+            errand = kind == City.MARK_DOOR ? ERRAND_THROUGH : ERRAND_UP;
+            errandIn = false;
         } else {
             liftArmed = true;
             r.lead(mx + nx * 0.45f, mz + nz * 0.45f, facing);
@@ -807,6 +809,16 @@ final class World {
                     getIn(errandPickup);
                     errand = NO_ERRAND;
                 } else if (!r.led()) errand = NO_ERRAND;
+                break;
+            case ERRAND_THROUGH:
+                if (indoors != null) {
+                    errandIn = true;
+                    indoors.goal(r, way);
+                    r.lead(way[0], way[1], (float) Math.atan2(way[0] - r.x, way[1] - r.z));
+                } else if (errandIn) {
+                    errand = NO_ERRAND;
+                    r.stopLead();
+                } else if (!r.led() && !arrived && errandFor > 1f && liftWait <= 0f) errand = NO_ERRAND;
                 break;
             case ERRAND_UP:
                 if (indoors != null) {
@@ -880,11 +892,11 @@ final class World {
         long seed = ((long) Math.floor(houseOf[0] * 4f) * 73856093L) ^ ((long) Math.floor(houseOf[1] * 4f) * 19349663L);
         switch (swapTo) {
             case TO_HALL:
-                indoors = Rooms.hall(houseOf, seed, city.backClear(houseOf, 0));
+                indoors = Rooms.hall(houseOf, seed, city.backClear(houseOf, 0), houseOf[7] == City.LIFT);
                 indoors.enter(r, l[10] > 0.5f);
                 break;
             case TO_CABIN:
-                indoors = Rooms.hall(houseOf, seed, city.backClear(houseOf, 0));
+                indoors = Rooms.hall(houseOf, seed, city.backClear(houseOf, 0), true);
                 indoors.comeDown(r);
                 break;
             case TO_ROOF:

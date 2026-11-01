@@ -594,6 +594,47 @@ public final class Stand implements World.Host {
             System.out.println(String.format("%7.2fs  %s, her %.1f %.1f %.1f, the folder %.0f m off", time,
                     fo.hers ? "she has the folder" : fo.theirs ? "a rival got it" : "not yet", r.x, r.y, r.z,
                     (float) Math.hypot(fo.x - r.x, fo.z - r.z)));
+        } else if (c.equals("athouse")) {
+            // athouse arch|door|shut METERS: her in the street so far out from the front of the
+            // nearest house with an arch, a way in (a hall with no lift), or before the house
+            // nearest the middle of the nearest yard shut in (no arch), facing it
+            String what = p[1];
+            float back = f(p[2]);
+            City city = world.city;
+            float[] h = new float[8], best = null;
+            float bd = 1e18f;
+            int ri = City.index(world.runner.x), rj = City.index(world.runner.z);
+            for (int j = rj - 3; j <= rj + 3; j++)
+                for (int i = ri - 3; i <= ri + 3; i++) {
+                    if (city.square(i, j)) continue;
+                    if (what.equals("shut") && city.arched(i, j)) continue;
+                    for (int k = 0; k < city.houses(i, j); k++) {
+                        city.house(i, j, k, h);
+                        if (what.equals("arch") && h[7] != City.ARCH) continue;
+                        if (what.equals("door") && h[7] != City.DOOR) continue;
+                        float dd = (h[0] - world.runner.x) * (h[0] - world.runner.x) + (h[1] - world.runner.z) * (h[1] - world.runner.z);
+                        if (dd < bd) {
+                            bd = dd;
+                            best = h.clone();
+                        }
+                    }
+                }
+            if (best == null) {
+                System.out.println("no such house about");
+                return;
+            }
+            float half = Math.abs(best[5]) * best[2] + Math.abs(best[6]) * best[3];
+            float x = best[0] + best[5] * (half + back), z = best[1] + best[6] * (half + back);
+            world.runner.put(x, world.city.ground(x, z), z, (float) Math.atan2(-best[5], -best[6]));
+            world.runner.recenter();
+            System.out.println(String.format("%7.2fs  before a house (%s) at %.1f %.1f", time, what, best[0], best[1]));
+            step();
+        } else if (c.equals("inyard")) {
+            // inyard: her in the middle of the yard of the block she is by, facing north
+            float mx = (City.index(world.runner.x) + 0.5f) * City.CELL, mz = (City.index(world.runner.z) + 0.5f) * City.CELL;
+            world.runner.put(mx, world.city.ground(mx, mz), mz, 0f);
+            world.runner.recenter();
+            step();
         } else if (c.equals("duty")) {
             // duty METERS: her put so far out from the driver's door of the nearest duty pickup, facing it
             Pickup best = null;
@@ -637,7 +678,8 @@ public final class Stand implements World.Host {
                     : String.format("%7.2fs  at the wheel: %.1f m/s, gear %d, at %.1f %.1f heading %.2f", time, q.speed, q.gear, q.x, q.z, q.heading));
         } else if (c.equals("tapsign")) {
             // tapsign lift|ladder|up: a tap on the nearest sign of the kind on the glass, told
-            int which = p[1].equals("ladder") ? Badges.LADDER : p[1].equals("up") ? Badges.UP : p[1].equals("wheel") ? Badges.WHEEL : Badges.LIFT;
+            int which = p[1].equals("ladder") ? Badges.LADDER : p[1].equals("up") ? Badges.UP : p[1].equals("wheel") ? Badges.WHEEL
+                    : p[1].equals("enter") ? Badges.ENTER : Badges.LIFT;
             float[] at = new float[2];
             if (world.signOnGlass(which, at)) {
                 System.out.println(String.format("%7.2fs  tap on the %s sign at %.0f %.0f", time, p[1], at[0], at[1]));

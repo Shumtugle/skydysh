@@ -39,8 +39,9 @@ final class City implements Ground {
         final DrawList detail = new DrawList();
         // the parked cars: nearer still
         final DrawList parked = new DrawList();
-        // x0, z0, x1, z1, and how high its top is, for each
-        float[] walls = new float[80];
+        // x0, z0, x1, z1, how high its top is, how high its bottom (0, on the ground), for each
+        static final int WALL = 6;
+        float[] walls = new float[96];
         int wallN;
         int used;
         // the houses: middle x, z, half sizes x, z, the top of the roof, the way the front faces
@@ -82,12 +83,19 @@ final class City implements Ground {
         }
 
         void wall(float x0, float z0, float x1, float z1, float top) {
-            if ((wallN + 1) * 5 > walls.length) walls = java.util.Arrays.copyOf(walls, walls.length * 2);
-            walls[wallN * 5] = Math.min(x0, x1);
-            walls[wallN * 5 + 1] = Math.min(z0, z1);
-            walls[wallN * 5 + 2] = Math.max(x0, x1);
-            walls[wallN * 5 + 3] = Math.max(z0, z1);
-            walls[wallN * 5 + 4] = top;
+            wall(x0, z0, x1, z1, top, 0f);
+        }
+
+        /** The same, standing on nothing below bottom: over an arch, on a roof. */
+        void wall(float x0, float z0, float x1, float z1, float top, float bottom) {
+            if ((wallN + 1) * WALL > walls.length) walls = java.util.Arrays.copyOf(walls, walls.length * 2);
+            int o = wallN * WALL;
+            walls[o] = Math.min(x0, x1);
+            walls[o + 1] = Math.min(z0, z1);
+            walls[o + 2] = Math.max(x0, x1);
+            walls[o + 3] = Math.max(z0, z1);
+            walls[o + 4] = top;
+            walls[o + 5] = bottom;
             wallN++;
         }
     }
@@ -140,6 +148,8 @@ final class City implements Ground {
 
     // what has no top to stand on (a palm); how high a step is taken in the stride, or pushed against
     static final float TALL = 1000f, STEP = 0.6f, LOW = 0.35f;
+    // how much room under something over her she needs to pass: her height, and a little
+    static final float HEADROOM = 2.4f;
 
     /** How high the ground is here: the road, or the pavement a step up. */
     float ground(float x, float z) {
@@ -158,9 +168,9 @@ final class City implements Ground {
             for (int i = ci - 1; i <= ci + 1; i++) {
                 Cell c = cell(i, j);
                 for (int k = 0; k < c.wallN; k++) {
-                    int o = k * 5;
+                    int o = k * Cell.WALL;
                     float top = c.walls[o + 4];
-                    if (top < 10f || top > 40f) continue;
+                    if (top < 10f || top > 40f || c.walls[o + 5] > 0f) continue;
                     float w = c.walls[o + 2] - c.walls[o], dpt = c.walls[o + 3] - c.walls[o + 1];
                     if (w < 5f || dpt < 5f) continue;
                     float mx = (c.walls[o] + c.walls[o + 2]) * 0.5f, mz = (c.walls[o + 1] + c.walls[o + 3]) * 0.5f;
@@ -189,7 +199,7 @@ final class City implements Ground {
             for (int i = ci - 1; i <= ci + 1; i++) {
                 Cell c = cell(i, j);
                 for (int k = 0; k < c.wallN; k++) {
-                    int o = k * 5;
+                    int o = k * Cell.WALL;
                     float top = c.walls[o + 4];
                     if (top <= g || top > feet + reach) continue;
                     if (x >= c.walls[o] && x <= c.walls[o + 2] && z >= c.walls[o + 1] && z <= c.walls[o + 3]) g = top;
@@ -202,9 +212,21 @@ final class City implements Ground {
     public void keepEye(float[] p) {
     }
 
-    /** Out of doors the sky is the ceiling. */
-    public float ceiling(float x, float z) {
-        return TALL;
+    /** Out of doors the sky is the ceiling, but for what stands over one whose feet are at feet: an arch. */
+    public float ceiling(float x, float z, float feet) {
+        float c0 = TALL;
+        int ci = index(x), cj = index(z);
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                Cell c = cell(i, j);
+                for (int k = 0; k < c.wallN; k++) {
+                    int o = k * Cell.WALL;
+                    float b = c.walls[o + 5];
+                    if (b <= feet || b >= c0) continue;
+                    if (x >= c.walls[o] && x <= c.walls[o + 2] && z >= c.walls[o + 1] && z <= c.walls[o + 3]) c0 = b;
+                }
+            }
+        return c0;
     }
 
     /**
@@ -223,8 +245,9 @@ final class City implements Ground {
             for (int i = ci - 1; i <= ci + 1; i++) {
                 Cell c = cell(i, j);
                 for (int k = 0; k < c.wallN; k++) {
-                    int o = k * 5;
-                    if (c.walls[o + 4] <= feet + LOW) continue;
+                    int o = k * Cell.WALL;
+                    // what is lower than a step under the feet, or high enough over the head to pass under
+                    if (c.walls[o + 4] <= feet + LOW || c.walls[o + 5] > feet + HEADROOM) continue;
                     float x0 = c.walls[o], z0 = c.walls[o + 1], x1 = c.walls[o + 2], z1 = c.walls[o + 3];
                     float nx = Math.max(x0, Math.min(p[0], x1)), nz = Math.max(z0, Math.min(p[1], z1));
                     float dx = p[0] - nx, dz = p[1] - nz, dd = dx * dx + dz * dz;
@@ -368,19 +391,59 @@ final class City implements Ground {
     private void block(Cell c, Random rnd, float x0, float z0, int i, int j) {
         float a = FRONT, b = CELL - FRONT;
         // the south and north rows run the whole way; the west and east rows fit between them
-        row(c, rnd, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH, true, -1);
-        row(c, rnd, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b, true, 1);
-        row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + a, x0 + a + DEPTH, false, -1);
-        row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b, false, 1);
+        // the yard: open, an arch through a house of the south or the north row, or shut in
+        boolean open = arched(i, j), north = ((hash(i, j, 8) >>> 9) & 1) == 0;
+        row(c, rnd, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH, true, -1, open && !north);
+        row(c, rnd, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b, true, 1, open && north);
+        row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + a, x0 + a + DEPTH, false, -1, false);
+        row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b, false, 1, false);
+        yard(c, open, new Random(hash(i, j, 9)));
+    }
+
+    /** Whether the yard of cell (i, j)'s block is open to the street by an arch: one in two. */
+    boolean arched(int i, int j) {
+        return ((hash(i, j, 8) >>> 17) & 1) == 0;
+    }
+
+    /**
+     * Fire escapes in the yard, up the backs of houses that look on it: a yard shut in has one at
+     * least (no one is shut in there), an open one now and then.
+     */
+    private void yard(Cell c, boolean open, Random rnd) {
+        int first = -1, made = 0;
+        for (int k = 0; k < c.houseN; k++) {
+            int o = k * Cell.HOUSE;
+            if (c.houses[o + 7] != 0f) continue;
+            float cx = c.houses[o], cz = c.houses[o + 1], hx = c.houses[o + 2], hz = c.houses[o + 3];
+            float nx = c.houses[o + 5], nz = c.houses[o + 6];
+            float half = Math.abs(nx) * hx + Math.abs(nz) * hz;
+            // its back on the yard, not on the end of another row
+            if (c.houseAt(cx - nx * (half + 1.2f), cz - nz * (half + 1.2f)) >= 0) continue;
+            if (first < 0) first = o;
+            if (rnd.nextInt(open ? 6 : 3) != 0) continue;
+            backEscape(c, o);
+            made++;
+        }
+        if (made == 0 && !open && first >= 0) backEscape(c, first);
+    }
+
+    /** A fire escape up the back of the house at o, near its one end, from the yard to the roof. */
+    private static void backEscape(Cell c, int o) {
+        float cx = c.houses[o], cz = c.houses[o + 1], hx = c.houses[o + 2], hz = c.houses[o + 3], top = c.houses[o + 4];
+        float nx = c.houses[o + 5], nz = c.houses[o + 6];
+        boolean alongX = Math.abs(nz) > 0.5f;
+        float x = alongX ? cx - hx + 1.1f : cx - nx * hx, z = alongX ? cz - nz * hz : cz - hz + 1.1f;
+        ladder(c, x, z, WALK_TOP, top, -nx, -nz, true);
+        c.houses[o + 7] = ESCAPE;
     }
 
     /**
      * A row of houses from u0 to u1 along x (alongX) or z, from v0 to v1 the other way; its
      * fronts face toward smaller v (side -1) or larger (side 1).
      */
-    private void row(Cell c, Random rnd, float u0, float u1, float v0, float v1, boolean alongX, int side) {
+    private void row(Cell c, Random rnd, float u0, float u1, float v0, float v1, boolean alongX, int side, boolean arch) {
         DrawList d = c.boxes;
-        float u = u0;
+        float u = u0, mid = (u0 + u1) * 0.5f;
         while (u < u1 - 0.5f) {
             int bays = 3 + rnd.nextInt(3);
             float len = bays * 2.9f;
@@ -391,23 +454,49 @@ final class City implements Ground {
             int seed = rnd.nextInt(1 << 16);
             float cu = u + len * 0.5f, cv = (v0 + v1) * 0.5f, hu = len * 0.5f, hv = (v1 - v0) * 0.5f;
             float cx = alongX ? cu : cv, cz = alongX ? cv : cu, hx = alongX ? hu : hv, hz = alongX ? hv : hu;
-            d.box(cx, height * 0.5f, cz, hx, height * 0.5f, hz, null, tint, DrawList.material(DrawList.FACADE, seed));
+            // the house the row's middle falls in, in a row given the arch: a way through it to the yard
+            boolean archHere = arch && u <= mid && u + len > mid && len > 2f * ARCH_HALF + 3f;
+            float facade = DrawList.material(DrawList.FACADE, seed);
+            if (archHere) {
+                float a0 = cu - ARCH_HALF, a1 = cu + ARCH_HALF;
+                boxUV(d, (u + a0) * 0.5f, height * 0.5f, cv, (a0 - u) * 0.5f, height * 0.5f, hv, alongX, tint, facade);
+                boxUV(d, (a1 + u + len) * 0.5f, height * 0.5f, cv, (u + len - a1) * 0.5f, height * 0.5f, hv, alongX, tint, facade);
+                boxUV(d, cu, (ARCH_HIGH + height) * 0.5f, cv, ARCH_HALF, (height - ARCH_HIGH) * 0.5f, hv, alongX, tint, facade);
+                // the passage's own vault, darker, and a frame of stone at either end
+                boxUV(d, cu, ARCH_HIGH + 0.05f, cv, ARCH_HALF, 0.05f, hv - 0.02f, alongX, Street.scale(tint, 0.7f), DrawList.PLAIN);
+                for (int end = -1; end <= 1; end += 2) {
+                    float ev = cv + end * (hv + 0.04f);
+                    for (int e = -1; e <= 1; e += 2)
+                        boxUV(d, cu + e * (ARCH_HALF + 0.12f), ARCH_HIGH * 0.5f, ev, 0.14f, ARCH_HIGH * 0.5f, 0.06f, alongX, 0xD8CDB8, DrawList.STONE);
+                    boxUV(d, cu, ARCH_HIGH + 0.18f, ev, ARCH_HALF + 0.26f, 0.2f, 0.06f, alongX, 0xD8CDB8, DrawList.STONE);
+                }
+            } else d.box(cx, height * 0.5f, cz, hx, height * 0.5f, hz, null, tint, facade);
             // the cornice along the front
             float fv = side < 0 ? v0 : v1;
             float kx = alongX ? cu : fv + side * 0.15f, kz = alongX ? fv + side * 0.15f : cu;
             d.box(kx, height - 0.2f, kz, alongX ? hu : 0.25f, 0.2f, alongX ? 0.25f : hu, null, Street.scale(tint, 1.05f), DrawList.PLAIN);
             // a lift is rare: one in ten of the taller houses has one, a door in the front, a hut on
             // the roof (and no chimneys in its way); the roofs are to be got about by the roofs
-            boolean lift = storeys >= 4 && ((seed >>> 3) % 10) == 0;
-            // of the rest, one in three has a fire escape up its front
-            boolean escape = !lift && ((seed >>> 5) % 3) == 0;
+            boolean lift = !archHere && storeys >= 4 && ((seed >>> 3) % 10) == 0;
+            // of the rest, one in four has a way in at the front, a hall through to the yard (no
+            // way up); the fire escapes are in the yards (see yard)
+            boolean door = !lift && !archHere && ((seed >>> 9) % 4) == 0;
             roof(c, d, lift ? null : c.detail, cx, height, cz, hx, hz, seed);
-            // the house, and its roof to stand on: the tiles, a step up in the middle
-            c.wall(cx - hx, cz - hz, cx + hx, cz + hz, height + 0.5f);
-            c.wall(cx - hx + 1.3f, cz - Math.max(0.4f, hz - 1.3f), cx + hx - 1.3f, cz + Math.max(0.4f, hz - 1.3f), height + 0.75f);
+            // the house, and its roof to stand on: the tiles, a step up in the middle (a wall only
+            // on the roof); a house with an arch stands on either side of it and over it
+            if (archHere) {
+                float a0 = cu - ARCH_HALF, a1 = cu + ARCH_HALF;
+                wallUV(c, u, a0, v0, v1, alongX, height + 0.5f, 0f);
+                wallUV(c, a1, u + len, v0, v1, alongX, height + 0.5f, 0f);
+                wallUV(c, a0, a1, v0, v1, alongX, height + 0.5f, ARCH_HIGH);
+            } else c.wall(cx - hx, cz - hz, cx + hx, cz + hz, height + 0.5f);
+            c.wall(cx - hx + 1.3f, cz - Math.max(0.4f, hz - 1.3f), cx + hx - 1.3f, cz + Math.max(0.4f, hz - 1.3f), height + 0.75f, height);
             float nx = alongX ? 0f : side, nz = alongX ? side : 0f;
             if (lift) lift(c, d, cu, fv, alongX, side, height, tint);
-            if (escape) escape(c, u + 1.1f, fv, alongX, side, height + 0.5f);
+            if (door) {
+                liftDoor(d, cu, fv, alongX, side);
+                liftDoor(d, cu, fv - side * DEPTH, alongX, -side);
+            }
             // ladders up from a lower roof next door, or down onto it from this one: on the
             // taller house's wall, at the middle of the row, from the one roof to the other
             for (int end = 0; end < 2; end++) {
@@ -423,24 +512,35 @@ final class City implements Ground {
             }
             // two pots of flowers either side of the middle of the front, now and then; ivy up its far end
             Random deco = new Random(seed * 0x5DEECE66DL + 11L);
-            if (((seed >>> 11) & 1) == 0)
+            if (((seed >>> 11) & 1) == 0 && !archHere)
                 for (int e = -1; e <= 1; e += 2) {
                     float pu = cu + e * 1.55f, pv = fv + side * 0.4f;
                     float px = alongX ? pu : pv, pz = alongX ? pv : pu;
                     Garden.pot(c.detail, deco, px, WALK_TOP, pz, 0.27f);
                     c.wall(px - 0.24f, pz - 0.24f, px + 0.24f, pz + 0.24f, WALK_TOP + 0.6f);
                 }
-            if (((seed >>> 12) & 3) == 0) {
+            if (((seed >>> 12) & 3) == 0 && !archHere) {
                 float iu = u + len - 1.8f, top = WALK_TOP + 3.3f * (1 + ((seed >>> 14) & 1)) + 0.8f;
                 Garden.ivy(c.detail, deco, alongX ? iu : fv, alongX ? fv : iu, nx, nz, 1.4f, WALK_TOP, Math.min(top, height));
             }
-            c.house(cx, cz, hx, hz, height + 0.5f, nx, nz, lift ? LIFT : escape ? ESCAPE : 0f);
+            c.house(cx, cz, hx, hz, height + 0.5f, nx, nz, lift ? LIFT : door ? DOOR : archHere ? ARCH : 0f);
             u += len;
         }
     }
 
-    /** What a house has to go up it by: a lift, or a fire escape. */
-    static final float LIFT = 1f, ESCAPE = 2f;
+    /**
+     * What a house has: a lift (a hall, and up to the roof), a fire escape up its back from the
+     * yard, a way in at the front (a hall through to the yard, no way up), an arch through it.
+     */
+    static final float LIFT = 1f, ESCAPE = 2f, DOOR = 3f, ARCH = 4f;
+    // the arch through a house: half its width, how high its vault
+    static final float ARCH_HALF = 1.9f, ARCH_HIGH = 4.6f;
+
+    /** A wall placed by u along a row and v across it, from u0 to u1 and v0 to v1. */
+    private static void wallUV(Cell c, float u0, float u1, float v0, float v1, boolean alongX, float top, float bottom) {
+        if (alongX) c.wall(u0, v0, u1, v1, top, bottom);
+        else c.wall(v0, u0, v1, u1, top, bottom);
+    }
     // a ladder: half its width; how far apart its rungs; its iron
     static final float LADDER_HALF = 0.32f, RUNG = 0.36f;
     static final int IRON = 0x2C2B2E;
@@ -476,12 +576,6 @@ final class City implements Ground {
             }
         }
         c.ladder(x, z, bottom, top, nx, nz);
-    }
-
-    /** A fire escape up the front at u along the row, the front at fv facing side, from the pavement to the roof's edge. */
-    private static void escape(Cell c, float u, float fv, boolean alongX, int side, float top) {
-        float x = alongX ? u : fv, z = alongX ? fv : u;
-        ladder(c, x, z, WALK_TOP, top, alongX ? 0f : side, alongX ? side : 0f, true);
     }
 
     /**
@@ -582,6 +676,11 @@ final class City implements Ground {
         boxUV(d, u, DOOR_HIGH * 0.5f + WALK_TOP, out + side * 0.05f, 0.03f, DOOR_HIGH * 0.5f, 0.05f, alongX, 0x9AA3A8, DrawList.PLAIN);
     }
 
+    private static void boxUV(DrawList d, float u, float y, float v, float hu, float hy, float hv, boolean alongX, int color, float material) {
+        if (alongX) d.box(u, y, v, hu, hy, hv, null, color, material);
+        else d.box(v, y, u, hv, hy, hu, null, color, material);
+    }
+
     /** A box placed by u along a row and v across it, so wide, high and deep. */
     private static void boxUV(DrawList d, float u, float y, float v, float hu, float hy, float hv, boolean alongX, int color, int material) {
         if (alongX) d.box(u, y, v, hu, hy, hv, null, color, material);
@@ -618,6 +717,14 @@ final class City implements Ground {
      * keeps it (see Cell.house); false if none is within reach.
      */
     boolean liftNear(float x, float z, float feet, float reach, float[] out, float[] house) {
+        return liftNear(x, z, feet, reach, out, house, true);
+    }
+
+    /**
+     * The same, the houses with a way in at the front too (their doors, front and back, as a
+     * lift's are told; no hut); the lifts left out when lifts is false.
+     */
+    boolean liftNear(float x, float z, float feet, float reach, float[] out, float[] house, boolean lifts) {
         float best = reach * reach;
         boolean found = false;
         float[] l = new float[10];
@@ -628,9 +735,10 @@ final class City implements Ground {
                 Cell c = cell(i, j);
                 for (int k = 0; k < c.houseN; k++) {
                     int o = k * Cell.HOUSE;
-                    if (c.houses[o + 7] != LIFT) continue;
+                    float kind = c.houses[o + 7];
+                    if (kind != DOOR && (kind != LIFT || !lifts)) continue;
                     lift(c.houses, o, l);
-                    boolean up = Math.abs(feet - l[5]) < 1.5f;
+                    boolean up = kind == LIFT && Math.abs(feet - l[5]) < 1.5f;
                     if (!up && feet > 1f) continue;
                     // in the street, its door in the front or the one at the back, on the yard (if
                     // the back looks on the yard and not on the end of the next row)
@@ -671,8 +779,8 @@ final class City implements Ground {
             for (int i = ci - 1; i <= ci + 1; i++) {
                 Cell c = cell(i, j);
                 for (int k = 0; k < c.wallN; k++) {
-                    int w = k * 5;
-                    if (c.walls[w + 4] < 1f) continue;
+                    int w = k * Cell.WALL;
+                    if (c.walls[w + 4] < 1f || c.walls[w + 5] > 1f) continue;
                     if (px + r > c.walls[w] && px - r < c.walls[w + 2] && pz + r > c.walls[w + 1] && pz - r < c.walls[w + 3]) return false;
                 }
             }
@@ -699,7 +807,7 @@ final class City implements Ground {
     }
 
     // the kinds of sign at the ways in and up (see marks)
-    static final int MARK_STREET_LIFT = 0, MARK_HUT = 1, MARK_ESCAPE = 2, MARK_ROOF_LADDER = 3;
+    static final int MARK_STREET_LIFT = 0, MARK_HUT = 1, MARK_ESCAPE = 2, MARK_ROOF_LADDER = 3, MARK_DOOR = 5;
 
     /**
      * The places for signs at the ways in and up within reach of (x, z), at most max of them,
@@ -714,13 +822,20 @@ final class City implements Ground {
             for (int i = ci - 1; i <= ci + 1; i++) {
                 if (square(i, j)) continue;
                 Cell c = cell(i, j);
-                for (int k = 0; k < c.houseN && n < max - 1; k++) {
+                for (int k = 0; k < c.houseN && n < max - 2; k++) {
                     int o = k * Cell.HOUSE;
-                    if (c.houses[o + 7] != LIFT) continue;
+                    float kind = c.houses[o + 7];
+                    if (kind != LIFT && kind != DOOR) continue;
+                    int sign = kind == LIFT ? MARK_STREET_LIFT : MARK_DOOR;
                     float nx = c.houses[o + 5], nz = c.houses[o + 6], top = c.houses[o + 4];
                     float half = Math.abs(nx) * c.houses[o + 2] + Math.abs(nz) * c.houses[o + 3];
                     float fx = c.houses[o] + nx * (half + 0.25f), fz = c.houses[o + 1] + nz * (half + 0.25f);
-                    if (near(fx, fz, x, z, reach)) n = mark(out, n, fx, WALK_TOP + 3.5f, fz, nx, nz, MARK_STREET_LIFT);
+                    if (near(fx, fz, x, z, reach)) n = mark(out, n, fx, WALK_TOP + 3.5f, fz, nx, nz, sign);
+                    // the door at the back, on the yard, if it looks on one
+                    float bx = c.houses[o] - nx * (half + 0.25f), bz = c.houses[o + 1] - nz * (half + 0.25f);
+                    if (n < max - 1 && near(bx, bz, x, z, reach) && backClear(c.houses, o))
+                        n = mark(out, n, bx, WALK_TOP + 3.5f, bz, -nx, -nz, sign);
+                    if (kind != LIFT) continue;
                     lift(c.houses, o, l);
                     float hx = l[8] + nx * 0.45f, hz = l[9] + nz * 0.45f;
                     if (near(hx, hz, x, z, reach)) n = mark(out, n, hx, top + HUT_HIGH + 0.8f, hz, -nx, -nz, MARK_HUT);
@@ -772,7 +887,7 @@ final class City implements Ground {
             float cx = x + ((((h >>> (9 + c * 5)) & 31) / 31f) - 0.5f) * hx;
             float cz = z + ((((h >>> (19 + c * 5)) & 31) / 31f) - 0.5f) * hz;
             small.box(cx, top + 1.1f, cz, 0.3f, 0.6f, 0.3f, null, 0xBE9C84, DrawList.STONE);
-            cell.wall(cx - 0.3f, cz - 0.3f, cx + 0.3f, cz + 0.3f, top + 1.7f);
+            cell.wall(cx - 0.3f, cz - 0.3f, cx + 0.3f, cz + 0.3f, top + 1.7f, top);
         }
     }
 

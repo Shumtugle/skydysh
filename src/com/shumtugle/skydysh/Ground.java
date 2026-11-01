@@ -11,8 +11,8 @@ interface Ground {
     /** A round body of radius r at (p[0], p[1]), feet at feet, pushed out of what it went into; true if it touched. */
     boolean push(float[] p, float r, float feet);
 
-    /** How high the ceiling is over (x, z); very high where there is none. */
-    float ceiling(float x, float z);
+    /** How high the ceiling is over (x, z) for one whose feet are at feet; very high where there is none. */
+    float ceiling(float x, float z, float feet);
 
     /** The eye at (p[0], p[1]) kept where it can see from: indoors, within the walls. */
     void keepEye(float[] p);

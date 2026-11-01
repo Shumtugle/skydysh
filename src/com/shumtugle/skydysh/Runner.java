@@ -96,7 +96,7 @@ final class Runner {
     private boolean led, arrived;
     private float leadX, leadZ, leadH, leadBest, leadSince, leadAside;
     private int leadTries;
-    private float leadSide = 1f, leadCommit;
+    private float leadSide = 1f, leadCommit, leadFlip;
 
     /** Led by herself to (tx, tz), to stop there facing h. */
     void lead(float tx, float tz, float h) {
@@ -174,9 +174,18 @@ final class Runner {
         if (d < leadBest - 0.3f) {
             leadBest = d;
             leadSince = 0f;
-        } else leadSince += dt;
-        // no nearer for a good while: she gives it up
-        if (leadSince > 6f && d > 0.5f) {
+            leadFlip = 0f;
+        } else {
+            leadSince += dt;
+            leadFlip += dt;
+        }
+        // no nearer a while: round the other side; no nearer for a good while: she gives it up
+        if (leadFlip > 1.6f) {
+            leadSide = -leadSide;
+            leadCommit = 2.5f;
+            leadFlip = 0f;
+        }
+        if (leadSince > 7f && d > 0.5f) {
             led = false;
             return;
         }
@@ -502,7 +511,7 @@ final class Runner {
             }
         }
         // a ceiling over her head: no higher than it
-        float ceiling = g.ceiling(x, z);
+        float ceiling = g.ceiling(x, z, y);
         if (y + HEAD > ceiling) {
             y = ceiling - HEAD;
             if (vy > 0f) vy = 0f;
@@ -598,7 +607,8 @@ final class Runner {
             high = RIDE_HIGH;
         }
         // back from her along the way she looks, as far as nothing is in the way
-        float r = in ? 0.3f : 0.4f, feet = y + high - 1f;
+        // what the eye bumps into: what stands round it, not what is low under it or high over it
+        float r = in ? 0.3f : 0.4f, feet = y + high - (in ? 1f : City.HEADROOM - 0.3f);
         float[] p = {x, z};
         float free = 0f;
         for (float t = EYE_STEP; ; t += EYE_STEP) {
@@ -619,16 +629,24 @@ final class Runner {
         // with her back to a wall the eye has no room behind her: it rises and looks down on her
         // instead, as far as a ceiling lets it
         float short_ = Math.max(0f, Math.min(back, NEAR_BACK) - free) / NEAR_BACK;
-        eyeY = Math.min(y + high + short_ * RISE, g.ceiling(eyeX, eyeZ) - 0.25f);
-        float ahead = up ? 0f : (in ? AHEAD_IN : riding ? RIDE_AHEAD : AHEAD) * (1f - 0.85f * short_);
-        float tx = x + fx * ahead, tz = z + fz * ahead, ty = y + (in ? LOOK_UP_IN : LOOK_UP) + (up ? CLIMB_LOOK : 0f);
+        eyeY = Math.min(y + high + short_ * RISE, g.ceiling(eyeX, eyeZ, y + 0.5f) - 0.25f);
+        // and looks down at her rather than over her, so that she stays in the frame
+        float ahead = up ? 0f : (in ? AHEAD_IN : riding ? RIDE_AHEAD : AHEAD) * (1f - short_);
+        float tx = x + fx * ahead, tz = z + fz * ahead;
+        float ty = y + ((in ? LOOK_UP_IN : LOOK_UP) + (up ? CLIMB_LOOK : 0f)) * (1f - short_) + 0.8f * short_;
         float dx = tx - eyeX, dz = tz - eyeZ;
         eyePitch = (float) Math.atan2(ty - eyeY, Math.sqrt(dx * dx + dz * dz));
+        // never so high over her, looking on, that she drops out of the bottom of the frame
+        float hx = x - eyeX, hz = z - eyeZ;
+        float below = (float) Math.atan2(eyeY - (y + 1f), Math.max(0.3f, (float) Math.sqrt(hx * hx + hz * hz)));
+        eyePitch = Math.min(eyePitch, -(below - KEEP_IN));
     }
 
     private static final float EYE_STEP = 0.3f;
     // the eye with less room behind her than this rises so much higher at most (none at all)
     static final float NEAR_BACK = 2.4f, RISE = 4.5f;
+    // how far below the middle of the frame she may be at most, radians
+    static final float KEEP_IN = 0.45f;
     // the eye with her on a ladder: so far back, so high over her feet, looking so much higher than it would
     static final float CLIMB_BACK = 10f, CLIMB_HIGH = 1.2f, CLIMB_LOOK = 2f;
     private final float[] eyeTry = new float[2];

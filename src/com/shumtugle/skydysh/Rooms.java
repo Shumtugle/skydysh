@@ -22,9 +22,10 @@ final class Rooms {
     /**
      * The hall of a house (as City keeps it: middle x, z; half sizes x, z; roof top; the way its
      * front faces, x, z; whether it has a lift), from the front door through to the yard (or,
-     * when the back looks on no yard, shut at the back), with its lift in one side wall.
+     * when the back looks on no yard, shut at the back), with its lift in one side wall; or, in a
+     * house with only a way in, no lift, the side wall whole.
      */
-    static Indoors hall(float[] house, long seed, boolean backDoor) {
+    static Indoors hall(float[] house, long seed, boolean backDoor, boolean lift) {
         Random rnd = new Random(seed);
         float cx = house[0], cz = house[1], hx = house[2], hz = house[3], top = house[4], nx = house[5], nz = house[6];
         float halfN = Math.abs(nx) * hx + Math.abs(nz) * hz;
@@ -35,6 +36,7 @@ final class Rooms {
         int floors = Math.max(2, Math.round((top - 0.5f) / 3.3f) - 1);
         Indoors in = new Indoors(cx + nx * halfN, cz + nz * halfN, nx, nz, half, deep, side, liftV, floors);
         in.backDoor = backDoor;
+        in.hasLift = lift;
         boolean chrome = rnd.nextInt(3) == 0;
         if (chrome) {
             in.frameColor = 0xAEB4B6;
@@ -44,7 +46,7 @@ final class Rooms {
         int tile = TILE[rnd.nextInt(TILE.length)], wall = WALL[rnd.nextInt(WALL.length)], low = LOW[rnd.nextInt(LOW.length)];
         float lowMat = rnd.nextInt(3) == 0 ? DrawList.PAINT : DrawList.WOOD;
         shell(in, tile, rnd.nextBoolean(), wall, low, lowMat);
-        cabin(in);
+        if (lift) cabin(in);
         lamps(in, 2 + rnd.nextInt(2));
         if (rnd.nextBoolean()) {
             // a runner of carpet along the hall
@@ -67,15 +69,21 @@ final class Rooms {
         // the wall across from the lift
         in.box(d, -s * (half + w * 0.5f), mid, deep * 0.5f, w * 0.5f, h * 0.5f, deep * 0.5f, wall, DrawList.PLAIN);
         in.solid(Math.min(-s * half, -s * (half + w)), 0f, Math.max(-s * half, -s * (half + w)), deep, tall);
-        // the lift's wall, in two, and over the lift's doors
+        // the lift's wall, in two, and over the lift's doors (whole, without a lift)
         float u0 = s * half, u1 = s * (half + w), uc = s * (half + w * 0.5f);
         float a = in.liftV - lh, b = in.liftV + lh;
-        in.box(d, uc, mid, a * 0.5f, w * 0.5f, h * 0.5f, a * 0.5f, wall, DrawList.PLAIN);
-        in.box(d, uc, mid, (b + deep) * 0.5f, w * 0.5f, h * 0.5f, (deep - b) * 0.5f, wall, DrawList.PLAIN);
-        float over = f + Indoors.LIFT_HIGH;
-        in.box(d, uc, (over + f + h) * 0.5f, in.liftV, w * 0.5f, (f + h - over) * 0.5f, lh, wall, DrawList.PLAIN);
-        in.solid(Math.min(u0, u1), 0f, Math.max(u0, u1), a, tall);
-        in.solid(Math.min(u0, u1), b, Math.max(u0, u1), deep, tall);
+        if (!in.hasLift) {
+            in.box(d, uc, mid, deep * 0.5f, w * 0.5f, h * 0.5f, deep * 0.5f, wall, DrawList.PLAIN);
+            in.solid(Math.min(u0, u1), 0f, Math.max(u0, u1), deep, tall);
+            a = b = deep * 0.5f;
+        } else {
+            in.box(d, uc, mid, a * 0.5f, w * 0.5f, h * 0.5f, a * 0.5f, wall, DrawList.PLAIN);
+            in.box(d, uc, mid, (b + deep) * 0.5f, w * 0.5f, h * 0.5f, (deep - b) * 0.5f, wall, DrawList.PLAIN);
+            float over = f + Indoors.LIFT_HIGH;
+            in.box(d, uc, (over + f + h) * 0.5f, in.liftV, w * 0.5f, (f + h - over) * 0.5f, lh, wall, DrawList.PLAIN);
+            in.solid(Math.min(u0, u1), 0f, Math.max(u0, u1), a, tall);
+            in.solid(Math.min(u0, u1), b, Math.max(u0, u1), deep, tall);
+        }
         // the front and the back, each with its doorway in the middle (the back walled up when it has none)
         if (!in.backDoor) {
             in.box(d, 0f, mid, deep - w * 0.5f, half + w, h * 0.5f, w * 0.5f, wall, DrawList.PLAIN);
@@ -110,6 +118,10 @@ final class Rooms {
             if (in.backDoor) panel(in, deep - w - 0.02f, e * dh, e * half, false, f, ph, low, lowMat);
         }
         if (!in.backDoor) panel(in, deep - w - 0.02f, -half, half, false, f, ph, low, lowMat);
+        if (!in.hasLift) {
+            in.box(d, 0f, f + 0.006f, w + 0.75f, 0.85f, 0.006f, 0.45f, 0x4A3628, DrawList.GRAIN);
+            return;
+        }
         // the lift's doors in a frame of brass (or steel)
         float fu = s * (half - 0.03f);
         for (int e = -1; e <= 1; e += 2)

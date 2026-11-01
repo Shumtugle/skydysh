@@ -178,7 +178,7 @@ final class Indoors implements Ground {
         return hit;
     }
 
-    public float ceiling(float x, float z) {
+    public float ceiling(float x, float z, float feet) {
         return FLOOR + (inCabin(u(x, z)) > 0f ? CAB_HIGH : HALL_HIGH);
     }
 
@@ -203,6 +203,7 @@ final class Indoors implements Ground {
 
     /** She comes in at the front door (or the back), a few steps in, facing into the hall. */
     void enter(Runner r, boolean atBack) {
+        cameBack = atBack;
         if (atBack) {
             back = 1f;
             r.put(wx(0f, deep - WALL - 2.6f), FLOOR, wz(0f, deep - WALL - 2.6f), heading(0f, -1f));
@@ -247,6 +248,10 @@ final class Indoors implements Ground {
         if (back > 0.85f && v > deep - WALL * 0.3f) out = OUT_BACK;
         float t = clock - liftAt;
         float callU = side * (half - 0.9f);
+        if (!hasLift) {
+            doorsInTheWay();
+            return out;
+        }
         switch (lift) {
             case SHUT:
                 if (near(u, v, callU, liftV) < CALL_NEAR) {
@@ -336,7 +341,7 @@ final class Indoors implements Ground {
         if (front < 0.85f) solid(-DOOR_HALF, 0f, DOOR_HALF, WALL, top);
         if (backDoor && back < 0.85f) solid(-DOOR_HALF, deep - WALL, DOOR_HALF, deep, top);
         float wu = side * half, wu1 = side * (half + WALL);
-        if (doors < 0.85f) solid(Math.min(wu, wu1), liftV - LIFT_HALF, Math.max(wu, wu1), liftV + LIFT_HALF, top);
+        if (hasLift && doors < 0.85f) solid(Math.min(wu, wu1), liftV - LIFT_HALF, Math.max(wu, wu1), liftV + LIFT_HALF, top);
     }
 
     /** Whether the eye is held still across the hall, and if so where and how it looks: x, y, z, yaw, pitch. */
@@ -356,6 +361,14 @@ final class Indoors implements Ground {
     /** For a player that knows the way (the desktop stand): where to go now, x and z. */
     void goal(Runner r, float[] out) {
         float u = u(r.x, r.z), v = v(r.x, r.z), gu, gv;
+        if (!hasLift) {
+            // through to the other door, or back out if there is none
+            gu = 0f;
+            gv = !cameBack && backDoor ? deep + 1f : -1f;
+            out[0] = wx(gu, gv);
+            out[1] = wz(gu, gv);
+            return;
+        }
         if (cameDown && (lift == LEAVING || lift == OPEN) && inCabin(u) > -0.8f) {
             // out of the cabin first, straight out of its doors
             gu = side * (half - 1.5f);
@@ -375,7 +388,9 @@ final class Indoors implements Ground {
         out[1] = wz(gu, gv);
     }
 
-    private boolean cameDown;
+    private boolean cameDown, cameBack;
+    /** Whether the hall has a lift; one without is a way through from the street to the yard. */
+    boolean hasLift = true;
 
     /** The light indoors: lamps overhead, the light pooled under them, no haze. */
     void light(DrawList d) {
@@ -409,6 +424,7 @@ final class Indoors implements Ground {
                 box(d, cu - s * (DOOR_HALF * 0.5f - 0.03f), top + DOOR_HIGH * 0.5f, v, 0.03f, DOOR_HIGH * 0.5f, 0.05f, frameColor, frameMat);
             }
         }
+        if (!hasLift) return;
         // the lift's doors: two leaves sliding apart into the wall
         float du = side * (half + WALL * 0.5f), slide = doors * LIFT_HALF * 0.95f;
         for (int s = -1; s <= 1; s += 2)
