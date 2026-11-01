@@ -27,6 +27,10 @@ final class Pickup {
     float x, z, heading, speed, steer;
     float y;                                           // the ground under it
     boolean driven;                                    // she is in it
+    /** The crates in its bed, none to CRATES; and how long since the last was put on or taken off. */
+    int load;
+    float loadedAgo = 10f;
+    static final int CRATES = 4;
     int gear = 1;
     private float shift, still;
     /** Where it was first parked: the cell it belongs to (see Duty). */
@@ -226,6 +230,12 @@ final class Pickup {
         part(d, 0f, 0.92f, -1.42f, 0.93f, 0.04f, 1.05f, 0f, 0x6B6258, DrawList.WOOD);
         for (int e = -1; e <= 1; e += 2) part(d, e * 0.95f, 1.1f, -1.42f, 0.04f, 0.2f, 1.05f, 0f, CREAM, plain);
         part(d, 0f, 1.1f, -2.47f, 0.95f, 0.2f, 0.04f, 0f, CREAM, plain);
+        // the load: crates of planks, two by two, the last one put on dropping into its place
+        for (int k = 0; k < load; k++) {
+            float lx = (k % 2 == 0 ? -0.45f : 0.45f), lz = k < 2 ? -0.88f : -1.92f;
+            float drop = k == load - 1 ? Math.max(0f, 0.5f - loadedAgo * 3f) : 0f;
+            crate(d, lx, 1.36f + drop, lz, k);
+        }
         // wheels, lamps, bumpers
         for (int e = -1; e <= 1; e += 2) {
             for (int end = -1; end <= 1; end += 2) {
@@ -236,6 +246,18 @@ final class Pickup {
         }
         part(d, 0f, 0.44f, 2.55f, 1f, 0.08f, 0.06f, 0f, 0xD2CEC6, plain);
         part(d, 0f, 0.44f, -2.55f, 1f, 0.08f, 0.06f, 0f, 0xD2CEC6, plain);
+    }
+
+    /** A crate of pale planks, banded, in its own frame (no skin on it: it is not the pickup's). */
+    private static void crate(DrawList d, float lx, float ly, float lz, int k) {
+        float[] f = frame;
+        float wx = px + f[0] * lx + f[1] * ly + f[2] * lz, wy = py + ly, wz = pz + f[6] * lx + f[7] * ly + f[8] * lz;
+        int wood = k % 2 == 0 ? 0xC79B5E : 0xB88A52;
+        d.box(wx, wy, wz, 0.4f, 0.4f, 0.48f, f, wood, DrawList.material(DrawList.WOOD, 40 + k));
+        for (int e = -1; e <= 1; e += 2) {
+            float bx = lz + e * 0.3f;
+            d.box(px + f[0] * lx + f[2] * bx, wy, pz + f[6] * lx + f[8] * bx, 0.41f, 0.41f, 0.05f, f, 0x6E5434, DrawList.WOOD);
+        }
     }
 
     /** A box of it in its own frame: tilted about its own x first, then turned with it. */

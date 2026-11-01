@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.38
+
+- Mission three, the delivery. A load waits at the factory, west along the shore road, and is
+  wanted at the store, east along it. Find a duty pickup and drive it to the factory; stand it in
+  the bay painted on the road before the gate, and the crates are put on its bed one by one; then
+  to the store's bay, where they are taken off; then home. Over the frame, how far off the next
+  place is and what it is, a green ring round it or a mark at the edge the way it is, the crates on
+  the pickup, the pay and the clock; over the bay, its sign. Got out with the load on, the pickup
+  waits where it was left (it is not taken in, however far off she goes), and the way is to it.
+  The pay is 50 000.
+- The missions in turn: the hunt, the folder, the delivery; then round again.
+- The factory: a hall of red brick the length of its row, a roof in teeth with glass on them, tall
+  windows high up, a great gate with a striped frame, and a tall brick chimney with white bands,
+  seen from far off. The store: a long low warehouse in pale grey-blue under a barrel roof, a coral
+  band, three great turquoise doors. Both the same in every town, their bays kept clear of parked
+  cars and lamps.
+- Stand: `drivein X Z RADIANS`, `delivery`; scene `delivery.txt`.
+
 ## 0.37
 
 - Golems are brums now, in every word of the game and of its code: the town is lived in by

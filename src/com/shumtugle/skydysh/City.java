@@ -71,9 +71,32 @@ final class City implements Ground {
     /** Home's door, in the middle of its front, on the shore road; the way out from it is -z, to the sea. */
     static final float HOME_DOOR_X = HOME_I * CELL + CELL * 0.5f, HOME_DOOR_Z = HOME_J * CELL + FRONT;
 
-    /** Whether (x, z) is on the way from home's door straight out to the sea, kept clear of lamps, cars and palms. */
-    static boolean beforeHome(float x, float z) {
-        return Math.abs(x - HOME_DOOR_X) < 4.5f && z < HOME_DOOR_Z && z > HOME_J * CELL + PARAPET;
+    /** Whether (x, z) is kept clear of lamps, parked cars and palms: the way from home's door straight out to the sea, the bays. */
+    static boolean keptClear(float x, float z) {
+        if (Math.abs(x - HOME_DOOR_X) < 4.5f && z < HOME_DOOR_Z && z > HOME_J * CELL + PARAPET) return true;
+        // and the bays before the factory's and the store's gates
+        for (int k = 0; k < 2; k++)
+            if (Math.abs(x - gateX(k == 0)) < 7f && z > SHORE * CELL - 0.5f && z < SHORE * CELL + FRONT) return true;
+        return false;
+    }
+
+    /**
+     * The factory and the store, built by hand and the same in every town, on the shore road: the
+     * factory west of home, the store east of it, each the south row of its block, a gate in its
+     * middle and a bay painted on the road before it where a pickup stands to be loaded or unloaded.
+     */
+    static final int FACTORY_I = HOME_I - 4, STORE_I = HOME_I + 5;
+    // the bay: half its length along the road, and its middle across it (in the lane by the gate)
+    static final float BAY_HALF = 4.5f, BAY_Z = 2.4f, BAY_DEEP = 1.9f;
+
+    /** The middle of the factory's gate (true) or the store's (false), along the shore road. */
+    static float gateX(boolean factory) {
+        return (factory ? FACTORY_I : STORE_I) * CELL + CELL * 0.5f;
+    }
+
+    /** Whether (x, z) is in the bay before the factory's gate (true) or the store's (false). */
+    static boolean inBay(boolean factory, float x, float z) {
+        return Math.abs(x - gateX(factory)) < BAY_HALF && Math.abs(z - (SHORE * CELL + BAY_Z)) < BAY_DEEP;
     }
 
     /** Whether (x, z) is within home's walls. */
@@ -359,6 +382,7 @@ final class City implements Ground {
         // across the street from home, a square with a fountain; the runner's own block, houses
         if (i == HOME_I - 1 && j == HOME_J) return true;
         if (i == 0 && j == 0) return false;
+        if (j == SHORE && (i == FACTORY_I || i == STORE_I)) return false;
         return (hash(i, j, 1) & 0xFF) < 30;
     }
 
@@ -559,7 +583,7 @@ final class City implements Ground {
             float rz = row == 0 ? p1 - 3.2f : p0 + 4.6f;
             for (float t = row * 6f + 3f; t < CELL; t += 12f) {
                 float px = x0 + t, h = 6.8f + deco.nextFloat() * 2f, lean = (deco.nextFloat() - 0.5f) * 0.3f;
-                if (beforeHome(px, rz) || beforeHome(px + 1.5f, rz) || beforeHome(px - 1.5f, rz)) continue;
+                if (keptClear(px, rz) || keptClear(px + 1.5f, rz) || keptClear(px - 1.5f, rz)) continue;
                 Street.palm(c.detail, deco, px, WALK_TOP, rz, h, lean, false);
                 c.wall(px - 0.25f, rz - 0.25f, px + 0.25f, rz + 0.25f);
             }
@@ -581,12 +605,134 @@ final class City implements Ground {
         // home's block has its arch, if any, on the north
         boolean mine = i == HOME_I && j == HOME_J;
         boolean open = arched(i, j), north = mine || ((hash(i, j, 8) >>> 9) & 1) == 0;
+        boolean works = j == SHORE && (i == FACTORY_I || i == STORE_I);
+        if (works) north = true;
         if (mine) home(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
+        else if (works && i == FACTORY_I) factory(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
+        else if (works) store(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else row(c, rnd, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH, true, -1, open && !north);
         row(c, rnd, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b, true, 1, open && north);
         row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + a, x0 + a + DEPTH, false, -1, false);
         row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b, false, 1, false);
         yard(c, open, new Random(hash(i, j, 9)));
+    }
+
+    /** A bay painted on the road before a gate: an amber frame, a stripe across it now and then. */
+    private static void bay(DrawList d, float gx, float z0) {
+        int amber = 0xF0B03C;
+        float bz = z0 + BAY_Z, y = 0.006f;
+        for (int e = -1; e <= 1; e += 2) {
+            d.box(gx, y, bz + e * BAY_DEEP, BAY_HALF, 0.006f, 0.09f, null, amber, DrawList.PAINT);
+            d.box(gx + e * BAY_HALF, y, bz, 0.09f, 0.006f, BAY_DEEP, null, amber, DrawList.PAINT);
+        }
+        for (float u = -BAY_HALF + 1.2f; u < BAY_HALF - 0.5f; u += 1.5f)
+            d.box(gx + u, y, bz, 0.12f, 0.005f, BAY_DEEP - 0.3f, null, amber, DrawList.PAINT);
+    }
+
+    /** A big gate in a front facing -z at (gx, fz): a dark way in, a striped frame, a door rolled half up. */
+    private static void gate(DrawList d, float gx, float fz, float half, float high, int door) {
+        d.box(gx, high * 0.5f, fz - 0.02f, half, high * 0.5f, 0.04f, null, 0x1E2226, DrawList.PLAIN);
+        float rolled = high * 0.42f;
+        d.box(gx, high - rolled * 0.5f, fz - 0.06f, half, rolled * 0.5f, 0.05f, null, door, DrawList.PAINT);
+        for (float y = high - rolled + 0.15f; y < high; y += 0.3f)
+            d.box(gx, y, fz - 0.12f, half, 0.025f, 0.02f, null, Street.scale(door, 0.8f), DrawList.PLAIN);
+        // the frame: stripes of amber and black up its sides and along its top
+        for (int e = -1; e <= 1; e += 2)
+            for (float y = 0.2f; y < high; y += 0.5f)
+                d.box(gx + e * (half + 0.2f), y + 0.12f, fz - 0.08f, 0.2f, 0.12f, 0.06f, null,
+                        ((int) (y * 2f) & 1) == 0 ? 0xF0B03C : 0x26262A, DrawList.PAINT);
+        d.box(gx, high + 0.25f, fz - 0.08f, half + 0.4f, 0.25f, 0.06f, null, 0xF0B03C, DrawList.PAINT);
+    }
+
+    /**
+     * The factory: a hall of red brick the length of the row, its roof in teeth with glass on their
+     * steep sides, tall windows high up, a great gate in the middle and a tall brick chimney at its
+     * back corner with white bands near the top, seen from far off.
+     */
+    private void factory(Cell c, float x0, float x1, float z0, float z1) {
+        DrawList d = c.boxes;
+        float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f;
+        float high = 10.5f, fz = z0;
+        int brick = 0xA8573F, dark = 0x7E3F2E, glassC = 0x2A3A44;
+        d.box(cx, high * 0.5f, cz, hx, high * 0.5f, hz, null, brick, DrawList.STONE);
+        // a darker plinth, pilasters between the bays, a band under the eaves
+        d.box(cx, 0.6f, fz - 0.05f, hx + 0.05f, 0.6f, 0.07f, null, dark, DrawList.STONE);
+        for (float u = x0; u <= x1 + 0.01f; u += (x1 - x0) / 8f)
+            if (Math.abs(u - cx) > 4f) d.box(u, high * 0.5f, fz - 0.1f, 0.35f, high * 0.5f, 0.1f, null, dark, DrawList.STONE);
+        d.box(cx, high - 0.35f, fz - 0.12f, hx + 0.1f, 0.35f, 0.14f, null, dark, DrawList.STONE);
+        // tall windows high in each bay, but over the gate
+        float bayW = (x1 - x0) / 8f;
+        for (int k = 0; k < 8; k++) {
+            float u = x0 + (k + 0.5f) * bayW;
+            if (Math.abs(u - cx) < 4f) continue;
+            d.box(u, 6.3f, fz - 0.04f, bayW * 0.3f, 2.4f, 0.04f, null, glassC, DrawList.GLASS);
+            for (float y = 4.5f; y < 8.5f; y += 1.2f)
+                d.box(u, y, fz - 0.08f, bayW * 0.3f, 0.03f, 0.03f, null, 0x2B2A2C, DrawList.PLAIN);
+        }
+        gate(d, cx, fz, 3f, 5.2f, 0xD9623E);
+        // the roof in teeth along the row, glass on the steep side of each, facing the yard
+        int teeth = 3;
+        float tooth = (z1 - z0) / teeth;
+        for (int k = 0; k < teeth; k++) {
+            float tz0 = z0 + k * tooth;
+            for (int st = 0; st < 3; st++) {
+                float h = 0.7f * (st + 1), zz = tz0 + tooth * (st / 3f);
+                d.box(cx, high + h * 0.5f, zz + tooth * 0.5f / 3f + tooth * (2 - st) / 6f, hx, h * 0.5f, tooth * (3 - st) / 6f,
+                        null, 0x6D6A66, DrawList.PLAIN);
+            }
+            d.box(cx, high + 1.05f, tz0 + tooth - 0.05f, hx - 0.3f, 1.05f, 0.05f, null, glassC, DrawList.GLASS);
+        }
+        // the chimney, at the back on the west, banded near its top
+        float chx = x0 + 4f, chz = z1 - 3f, top = 34f;
+        d.box(chx, top * 0.5f, chz, 1.3f, top * 0.5f, 1.3f, null, brick, DrawList.STONE);
+        d.box(chx, top - 3f, chz, 1.42f, 0.4f, 1.42f, null, 0xEDE2CC, DrawList.PLAIN);
+        d.box(chx, top - 1.5f, chz, 1.42f, 0.25f, 1.42f, null, 0xE9765B, DrawList.PAINT);
+        d.box(chx, top + 0.2f, chz, 1.55f, 0.2f, 1.55f, null, dark, DrawList.STONE);
+        c.wall(chx - 1.3f, chz - 1.3f, chx + 1.3f, chz + 1.3f, top + 0.4f);
+        c.wall(x0, z0, x1, z1, high + 0.5f);
+        c.wall(x0 + 0.5f, z0 + 0.5f, x1 - 0.5f, z1 - 0.5f, high + 2.1f, high);
+        c.house(cx, cz, hx, hz, high + 0.5f, 0f, -1f, 0f);
+        bay(d, cx, SHORE * CELL);
+    }
+
+    /**
+     * The store: a long low warehouse in pale grey-blue, its roof a barrel of steps, a coral band
+     * along its front, three great turquoise doors, the middle one its gate.
+     */
+    private void store(Cell c, float x0, float x1, float z0, float z1) {
+        DrawList d = c.boxes;
+        float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f;
+        float high = 8f, fz = z0;
+        int wall = 0xB9C3C4, teal = 0x3FAFA6, coral = 0xE9765B;
+        d.box(cx, high * 0.5f, cz, hx, high * 0.5f, hz, null, wall, DrawList.PLAIN);
+        d.box(cx, 0.5f, fz - 0.05f, hx + 0.05f, 0.5f, 0.07f, null, 0x8E9A9C, DrawList.STONE);
+        d.box(cx, 6.6f, fz - 0.1f, hx + 0.08f, 0.45f, 0.1f, null, coral, DrawList.PAINT);
+        // the barrel roof, in steps from the eaves to the ridge
+        int steps = 5;
+        for (int k = 0; k < steps; k++) {
+            float a = (k + 1f) / steps * (float) Math.PI * 0.5f;
+            float half = hz * (float) Math.cos(a - (float) Math.PI * 0.5f / steps * 0.5f), y = high + 3.2f * (float) Math.sin(a);
+            d.box(cx, y - 0.35f, cz, hx + 0.3f, 0.35f, Math.max(0.6f, half), null, 0x7F9A9A, DrawList.PLAIN);
+        }
+        // the three doors, the middle one the gate
+        for (int k = -1; k <= 1; k++) {
+            float gx = cx + k * 15f;
+            if (k == 0) gate(d, gx, fz, 3f, 5.2f, teal);
+            else {
+                d.box(gx, 2.4f, fz - 0.04f, 2.6f, 2.4f, 0.04f, null, teal, DrawList.PAINT);
+                for (float y = 0.3f; y < 4.8f; y += 0.3f)
+                    d.box(gx, y, fz - 0.09f, 2.6f, 0.025f, 0.02f, null, Street.scale(teal, 0.8f), DrawList.PLAIN);
+            }
+        }
+        // small square windows high along the front
+        for (float u = x0 + 3f; u < x1 - 2f; u += 3.5f) {
+            if (Math.abs(u - cx) < 4.5f || Math.abs(u - cx - 15f) < 3.5f || Math.abs(u - cx + 15f) < 3.5f) continue;
+            d.box(u, 4.6f, fz - 0.04f, 0.6f, 0.6f, 0.04f, null, 0x2A3A44, DrawList.GLASS);
+        }
+        c.wall(x0, z0, x1, z1, high + 0.5f);
+        c.wall(x0 + 0.5f, cz - hz * 0.4f, x1 - 0.5f, cz + hz * 0.4f, high + 3.2f, high);
+        c.house(cx, cz, hx, hz, high + 0.5f, 0f, -1f, 0f);
+        bay(d, cx, SHORE * CELL);
     }
 
     /**
@@ -1291,7 +1437,7 @@ final class City implements Ground {
                 } else {
                     // the street running east: on its south side they face east, on its north side west
                     float x = x0 + t, z = z0 + s * off;
-                    if (beforeHome(x, z) || beforeHome(x + 2f, z) || beforeHome(x - 2f, z)) continue;
+                    if (keptClear(x, z) || keptClear(x + 2f, z) || keptClear(x - 2f, z)) continue;
                     Cars.car(c.parked, x, z, s < 0 ? (float) (Math.PI / 2) : (float) (-Math.PI / 2), paint, true, kind);
                     c.wall(x - len, z - 0.95f, x + len, z + 0.95f, top);
                 }
@@ -1304,7 +1450,7 @@ final class City implements Ground {
         float in = CURB + 0.5f;
         for (float t = 14f; t < CELL - 8f; t += 18f) {
             lamp(c, d, x0 + in, z0 + t);
-            if (!beforeHome(x0 + t, z0 + in)) lamp(c, d, x0 + t, z0 + in);
+            if (!keptClear(x0 + t, z0 + in)) lamp(c, d, x0 + t, z0 + in);
         }
     }
 

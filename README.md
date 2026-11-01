@@ -56,12 +56,17 @@ as they are won, and the time left; at the edge of the frame, a burning mark
 the way each one out of sight is. A hunt has five minutes: when the last is caught in time, five
 more are let loose; when the time runs out first, five again.
 
-Every other mission, the folder: dropped from a helicopter somewhere on the roofs, a reward for
+The second mission, the folder: dropped from a helicopter somewhere on the roofs, a reward for
 it, and brums after it too, each climbing a house of its row and running along the roofs.
 Up by a lift or a fire escape in a house of the row, then roof to roof: up the iron ladders
 where the next roof stands higher, down onto the lower ones, leaping, gliding, beating the air
 to rise; taken, she goes down to the street with it by herself. If a brum gets there first,
 the mission is played again.
+
+The third mission, the delivery: a load waits at the factory with the chimney, west along the
+shore road, and is wanted at the store, east along it. A duty pickup to the factory's gate,
+stood in the bay painted before it while the crates go on; to the store's, while they come off;
+then home. The missions come in turn: the hunt, the folder, the delivery, and round again.
 
 What is to come is in `PLAN.md`.
 

@@ -1,0 +1,36 @@
+# The delivery: on foot at home, the way to the nearest duty pickup; at the wheel in the factory's
+# bay, the crates put on; in the store's bay, taken off; home; the report. And the two buildings.
+screen 1096 2560
+wait 0.4
+mission 3
+wait 0.5
+delivery
+shot v0
+at -224 -9 0
+wait 0.6
+shot v1
+at -170 -14 -0.75
+wait 0.6
+shot v2
+at 352 -9 0
+wait 0.6
+shot v3
+drivein -224 2.4 1.5708
+wait 0.3
+delivery
+shot v4
+wait 3.4
+delivery
+shot v5
+drivein 352 2.4 1.5708
+wait 0.3
+shot v6
+wait 3.4
+delivery
+shot v7
+drivein 30 1.6 1.5708
+wait 0.5
+delivery
+shot v8
+wait 4
+shot v9

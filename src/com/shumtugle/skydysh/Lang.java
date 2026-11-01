@@ -23,6 +23,15 @@ final class Lang {
         EN.put("report.late", "Dispatch \u2014 mission {n}||Five minutes are up.|Plates in: {caught} of 5.|The rest got away"
                 + "|into the streets.||Mission failed.||Touch to go on");
         EN.put("late.short", "TIME UP");
+        EN.put("brief.delivery", "Dispatch \u2014 mission {n}||A load is waiting at the|factory with the chimney,|west along the shore."
+                + "|It is wanted at the store,|east along the shore.||Take a duty pickup.|Stand in the bay at each gate."
+                + "|Then home.||The pay: 50 000.||Touch to go");
+        EN.put("report.delivery", "Dispatch \u2014 mission {n}||The load is in the store.|The pay: {reward}.|In all: {sum}.||Time  {time}"
+                + "||Touch to go on");
+        EN.put("goal.pickup", "PICKUP");
+        EN.put("goal.factory", "FACTORY");
+        EN.put("goal.store", "STORE");
+        EN.put("goal.home", "HOME");
         EN.put("report", "Dispatch \u2014 mission {n}||All five plates are in.|The town is safe|for tonight.||Time  {time}"
                 + "||Touch to go on");
         EN.put("brief.folder", "Dispatch \u2014 mission {n}||A folder of papers fell|out of a helicopter's cabin.|It lies somewhere on the roofs."

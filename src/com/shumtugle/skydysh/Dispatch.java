@@ -68,6 +68,7 @@ final class Dispatch {
     /** What the screen says before a mission. */
     static String[] briefing(int round) {
         if (Folder.its(round)) return Lang.lines("brief.folder", round, null);
+        if (Delivery.its(round)) return Lang.lines("brief.delivery", round, null);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
@@ -85,7 +86,12 @@ final class Dispatch {
 
     /** The folder brought in: the reward, what has been won in all, the time. */
     static String[] paid(int round, String time, int money) {
-        return fill(Lang.lines("report.folder", round, time), money);
+        return fill(Lang.lines("report.folder", round, time), Folder.REWARD, money);
+    }
+
+    /** The load brought to the store and her home: the pay, what has been won in all, the time. */
+    static String[] delivered(int round, String time, int money) {
+        return fill(Lang.lines("report.delivery", round, time), Delivery.REWARD, money);
     }
 
     /** The rivals got there first. */
@@ -93,9 +99,9 @@ final class Dispatch {
         return Lang.lines("report.lost", round, time);
     }
 
-    private static String[] fill(String[] lines, int money) {
+    private static String[] fill(String[] lines, int reward, int money) {
         for (int k = 0; k < lines.length; k++)
-            lines[k] = lines[k].replace("{reward}", World.money(Folder.REWARD)).replace("{sum}", World.money(money));
+            lines[k] = lines[k].replace("{reward}", World.money(reward)).replace("{sum}", World.money(money));
         return lines;
     }
 

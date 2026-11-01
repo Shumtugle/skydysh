@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.37";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.38";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -43,6 +43,10 @@ final class World {
     final Mission mission = new Mission(0x60E3L);
     Chase chase;                             // the nearest of them still loose
     Folder folder;                           // the mission now, when it is the folder's
+    Delivery delivery;                       // the mission now, when it is a delivery
+    private static final Chase[] NONE = new Chase[0];
+    // in a delivery no brum is about: one far off and still, for those who keep an eye on the nearest
+    private final Chase nobody = new Chase(1L, 100000, 100000, 0);
     private int beatsWere = Runner.BEATS;    // her beats left, as the last frame left them
     private boolean again;                   // the folder's mission once more, the rivals were first
     final Toss toss = new Toss();            // her hammer
@@ -84,11 +88,17 @@ final class World {
         opening = new Opening(host, city);
     }
 
-    /** The next mission, round (x, z): five brums loose, or, every other time, the folder. */
+    /** The next mission, round (x, z): in turn five brums loose, the folder, a delivery. */
     private void begin(float x, float z) {
         if (driving != null) getOut();
         int n = mission.round + 1;
-        if (Folder.its(n)) {
+        delivery = null;
+        if (Delivery.its(n)) {
+            mission.round = n;
+            folder = null;
+            delivery = new Delivery();
+            chase = nobody;
+        } else if (Folder.its(n)) {
             mission.round = n;
             folder = new Folder(0xF01DL + n * 7919L + (again ? 31L : 0L));
             folder.start(x, z, city);
@@ -102,11 +112,18 @@ final class World {
 
     /** The brums of the mission now. */
     Chase[] brums() {
+        if (delivery != null) return NONE;
         return folder != null ? folder.rivals : mission.brums;
+    }
+
+    /** Whether the mission now is a hunt. */
+    boolean hunt() {
+        return folder == null && delivery == null;
     }
 
     /** Whether the mission now is done with, won or not. */
     boolean over() {
+        if (delivery != null) return delivery.over();
         if (folder == null) return mission.over();
         return folder.theirs || folder.hers && runner.landed;
     }
@@ -118,6 +135,7 @@ final class World {
 
     /** The report on the mission just done. */
     private String[] report() {
+        if (delivery != null) return Dispatch.delivered(mission.round, clock(delivery.doneAt), money);
         if (folder == null && mission.late) return Dispatch.late(mission.round, mission.caught());
         if (folder == null) return Dispatch.report(mission.round, clock(mission.doneAt));
         if (folder.hers) return Dispatch.paid(mission.round, clock(folder.doneAt), money);
@@ -140,8 +158,9 @@ final class World {
 
     /** The mission done: the next one to play and what has been won, kept for the next game. */
     private void save() {
-        boolean lost = folder != null ? folder.theirs : mission.late;
-        if (folder == null) plates += mission.caught();
+        boolean lost = hunt() ? mission.late : folder != null && folder.theirs;
+        if (delivery != null) money += Delivery.REWARD;
+        else if (folder == null) plates += mission.caught();
         else if (folder.hers) money += Folder.REWARD;
         // lost, the same mission is played again
         host.saveInt(SAVE_MISSION, lost ? mission.round : mission.round + 1);
@@ -161,6 +180,23 @@ final class World {
     void standMission(int n) {
         mission.round = n - 1;
         begin(runner.x, runner.z);
+    }
+
+    /** For the desktop stand: her at the wheel at (x, z), facing so: the pickup she drives moved there, or a duty pickup put there. */
+    void standDrive(float x, float z, float heading) {
+        Pickup p = driving;
+        if (p == null) {
+            p = new Pickup(x, z, heading, 0x5747L);
+            duty.all.add(p);
+        }
+        p.x = x;
+        p.z = z;
+        p.heading = heading;
+        p.speed = 0f;
+        p.y = city.ground(x, z);
+        if (driving == null) getIn(p);
+        drive(0f);
+        runner.recenter();
     }
 
     /** The opening from its start (the desktop stand). */
@@ -263,7 +299,7 @@ final class World {
             save();
             String[] said = report();
             // lost, the same again, as its briefing says; won, the next; the report, then the briefing
-            again = folder != null ? folder.theirs : mission.late;
+            again = hunt() ? mission.late : folder != null && folder.theirs;
             if (again) mission.round--;
             begin(runner.x, runner.z);
             dispatch = new Dispatch(host, said).then(briefing());
@@ -291,7 +327,9 @@ final class World {
         }
         beatsWere = runner.beatsLeft();
         int round = mission.round;
-        if (folder != null) {
+        if (delivery != null) {
+            delivery.update(dt, duty, driving, runner, host);
+        } else if (folder != null) {
             boolean had = folder.hers;
             folder.update(dt, runner, city, cars);
             if (folder.hers && !had) took();
@@ -301,21 +339,21 @@ final class World {
             mission.update(dt, runner, city, cars);
             chase = mission.target(chase);
         }
-        toss.update(dt, runner, brums(), city, runner.tapped(), folder == null);
+        toss.update(dt, runner, brums(), city, runner.tapped(), hunt());
         cars.update(dt, runner, brums());
         walkers.update(dt, runner, chase, city);
         pets.update(dt, runner, walkers, city);
         int caught = mission.caught(), struck = 0;
-        if (folder != null) caught = 0;
+        if (!hunt()) caught = 0;
         for (Chase g : brums()) struck += g.struck;
         if (round != mission.round) {
             caughtSeen = 0;
             nextSlot = 0;
             struckSeen = struck;
         }
-        if (folder == null && mission.late && !lateSeen) host.buzz(300);
-        lateSeen = folder == null && mission.late;
-        if (folder == null && caught != caughtSeen) {
+        if (hunt() && mission.late && !lateSeen) host.buzz(300);
+        lateSeen = hunt() && mission.late;
+        if (hunt() && caught != caughtSeen) {
             caughtSeen = caught;
             host.buzz(caught == Mission.FIVE ? 160 : 60);
         }
@@ -497,7 +535,7 @@ final class World {
 
     /** Whether the lifts take her: not in a hunt, which is to be run in the streets. */
     boolean liftsOpen() {
-        return folder != null;
+        return !hunt();
     }
 
     // ---- signs at the ways in and up: over a lift's doors, a fire escape's foot, a ladder up a wall ----
@@ -602,7 +640,7 @@ final class World {
 
     /** Whether the duty pickups are out: in every mission but a hunt, which is run on foot. */
     boolean dutyOut() {
-        return folder != null;
+        return !hunt();
     }
 
     private Pickup pickupAt(float x, float z) {
@@ -1113,6 +1151,71 @@ final class World {
         f.disc(px, py, 2.2f, 0xFFD9FFE6);
     }
 
+    private final float[] goal = new float[3];
+
+    /**
+     * Over the frame, a delivery: how far off where the way goes now is, in meters, at the top, and
+     * under it what it is (a pickup, the factory, the store, home); a green ring round it in sight,
+     * a green mark at the edge of the frame the way it is while it is not; over a bay she is to
+     * stand in, its sign (a crate taken up at the factory, put down at the store); the pay and the
+     * clock in the corner, and the crates on the pickup she drives. Done, the pay large.
+     */
+    private void deliveryFlat(DrawList d, Px f) {
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
+        Delivery dv = delivery;
+        String clock = clock(dv.over() ? dv.doneAt : dv.clock);
+        shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        String sum = money(Delivery.REWARD);
+        shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
+        // the crates on the pickup she drives, in a row of little squares
+        Pickup p = driving != null ? driving : dv.carrying;
+        for (int k = 0; k < Pickup.CRATES; k++) {
+            boolean on = p != null && k < p.load;
+            f.rect(10 + k * 11, 12, 19 + k * 11, 21, ink);
+            f.rect(11 + k * 11, 13, 18 + k * 11, 20, on ? 0xFFC79B5E : 0xFF3A4660);
+        }
+        if (dv.over()) {
+            String big = "+" + sum;
+            shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
+            return;
+        }
+        if (!dv.goal(duty, driving, runner, goal)) return;
+        float gx = goal[0] - runner.x, gz = goal[2] - runner.z;
+        String m = String.valueOf(Math.round((float) Math.sqrt(gx * gx + gz * gz)));
+        shadowed(f, m, (W - PixelFont.width(m, 3)) / 2, 14, 3, cream, ink);
+        String w = Lang.lines(dv.goalWord(), mission.round, null)[0];
+        shadowed(f, w, (W - PixelFont.width(w, 1)) / 2, 38, 1, green, ink);
+        boolean bay = dv.step == Delivery.FACTORY || dv.step == Delivery.STORE && (dv.carrying == null || dv.carrying == driving);
+        if (bay && d.project(goal[0], City.WALK_TOP + 2.6f, goal[2], at) && at[0] > 0 && at[0] < W && at[1] > 30 && at[1] < h) {
+            // the bay's sign: what is done there
+            float near = (float) Math.sqrt(gx * gx + gz * gz);
+            float shown = Math.min(1f, Math.max(0f, (60f - near) / 15f));
+            d.badge(at[0], at[1], Math.max(8f, Math.min(16f, 300f / Math.max(1f, near))),
+                    dv.step == Delivery.FACTORY ? Badges.PICK_UP : Badges.DOWN, shown, 0.5f + 0.5f * (float) Math.sin(time * 4f));
+        }
+        goalMark(d, f, goal[0], goal[1], goal[2], green, ink);
+    }
+
+    /** Where the way goes: a green ring round it while it is in sight, a green mark at the edge the way it is while not. */
+    private void goalMark(DrawList d, Px f, float x, float y, float z, int green, int ink) {
+        boolean seen = d.project(x, y, z, at) && at[0] > 6 && at[0] < W - 6 && at[1] > 50 && at[1] < h - 6;
+        if (seen) {
+            float rr = 6.5f + 1.2f * (float) Math.sin(time * 5f);
+            ring(f, at[0], at[1], rr + 1f, rr - 3f, ink);
+            ring(f, at[0], at[1], rr, rr - 2f, green);
+            return;
+        }
+        float ax = (float) Math.sin(runner.eyeYaw), az = (float) Math.cos(runner.eyeYaw);
+        float vx = x - runner.x, vz = z - runner.z;
+        float ang = (float) Math.atan2(vx * az - vz * ax, vx * ax + vz * az);
+        float ex = (float) Math.sin(ang), ey = -(float) Math.cos(ang);
+        float k = Math.min((W * 0.5f - 12f) / Math.max(1e-3f, Math.abs(ex)), (h * 0.5f - 60f) / Math.max(1e-3f, Math.abs(ey)));
+        float px = W * 0.5f + ex * k, py = h * 0.5f + ey * k;
+        f.disc(px, py, 6.5f, ink);
+        f.disc(px, py, 5.5f, green);
+        f.disc(px, py, 2.2f, 0xFFD9FFE6);
+    }
+
     /** A ring over the frame round (cx, cy): between radii in and out, in one colour. */
     private static void ring(Px f, float cx, float cy, float out, float in, int c) {
         int r0 = (int) Math.ceil(out);
@@ -1180,7 +1283,8 @@ final class World {
             r.draw(d);
             toss.draw(d, r);
         }
-        if (folder != null) folderFlat(d, f);
+        if (delivery != null) deliveryFlat(d, f);
+        else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
         beatsFlat(f);
         buttons(d);
@@ -1262,6 +1366,7 @@ final class World {
             g.draw(d, g == lit);
         }
         if (dispatch != null) dispatch.draw(d, f, h);
+        else if (delivery != null) deliveryFlat(d, f);
         else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
         beatsFlat(f);

@@ -247,6 +247,12 @@ public final class Stand implements World.Host {
             r.put(x, world.city.ground(x, z, 100f, 0f), z, p.length > 3 ? f(p[3]) : r.heading);
             r.recenter();
             step();
+        } else if (c.equals("drivein")) {
+            // drivein X Z RADIANS: her at the wheel at (x, z), facing so (the pickup she drives, or a duty pickup put there)
+            world.standDrive(f(p[1]), f(p[2]), f(p[3]));
+            step();
+            Pickup q = world.driving;
+            System.out.println(String.format("%7.2fs  at the wheel at %.1f %.1f, %d crates on", time, q.x, q.z, q.load));
         } else if (c.equals("turn")) {
             // turn RADIANS: her turned so much from where she faces
             Runner r = world.runner;
@@ -797,6 +803,12 @@ public final class Stand implements World.Host {
                 }
             world.runner.put(bx, City.WALK_TOP, bz - f(p[2]), 0f);
             step();
+        } else if (c.equals("delivery")) {
+            // delivery: how the delivery goes, told
+            Delivery dv = world.delivery;
+            if (dv == null) System.out.println(String.format("%7.2fs  no delivery", time));
+            else System.out.println(String.format("%7.2fs  delivery: step %d, clock %.1f, %s", time, dv.step, dv.clock,
+                    world.driving != null ? world.driving.load + " crates on the pickup she drives" : "on foot"));
         } else if (c.equals("where")) {
             // where: her place, the eye's, and whether she is indoors, told
             Runner r = world.runner;

@@ -19,7 +19,8 @@ final class Duty {
     void update(float x, float z, City city, Pickup driving) {
         for (int k = all.size() - 1; k >= 0; k--) {
             Pickup p = all.get(k);
-            if (p == driving) continue;
+            // the one she drives, and one with a load on it, wherever it was left, stay out
+            if (p == driving || p.load > 0) continue;
             float dx = p.x - x, dz = p.z - z;
             if (dx * dx + dz * dz > FAR * FAR) {
                 all.remove(k);

@@ -51,6 +51,7 @@ release, each seen on the stand before the phone.
 - 0.35 The cars in painted skins of their own; round wheels.
 - 0.36 A hunt has five minutes; the town by the sea, a promenade along the shore road; home on it.
 - 0.37 Brums; a beach under the quay, a square by home; the opening flies in from the sea to home.
+- 0.38 The delivery, mission three: the factory and the store on the shore road, crates on the pickup.
 
 ## Next
 
@@ -67,9 +68,7 @@ The missions in order, each teaching a thing; then the town is hers.
 The releases toward it, one thing each:
 
 - What home is like inside; a few more known houses along the shore road by it.
-- The factory and the store, each a building of its own kind, plain to see; their signs; a
-  load on the pickup's bed.
-- The delivery as mission three; then home as the end of every mission, and the choice there.
+- Home as the end of every mission, and the choice there: the missions done again, or the next.
 - The other buttons put to work as their things come: the wheel in a car, the jet pack, the map,
   the help, a throw and a lift of a thing; buttons as part of the controls where a gesture is
   not enough.
