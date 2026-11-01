@@ -201,6 +201,51 @@ final class Stroll {
         }
     }
 
+    // ---- at the wheel ----
+
+    /** Where the wheel is before her sitting, in the figure: so far over the seat, so far ahead; its half width. */
+    private static final float WHEEL_UP = 1.16f, WHEEL_FORE = -0.4f, WHEEL_HALF = 0.17f;
+
+    /**
+     * Sitting at a wheel, the thighs level, the shins down, the back upright, both hands on the
+     * wheel and turned with it so far (-1 hard left, 1 hard right): for every bone its turn into q
+     * and its place into p, as pose() gives them, the figure as it stands (not lowered: the seat
+     * is the caller's).
+     */
+    static void sit(Moves mv, float wheel, float[] q, float[] p) {
+        int n = mv.bone.length;
+        if (turn == null || turn.length != n * 4) {
+            turn = new float[n * 4];
+            g = new float[n * 4];
+            pos = new float[n * 3];
+        }
+        for (int b = 0; b < n; b++) set(b, 0f, 0f, 0f, 1f);
+        for (int e = 0; e < 2; e++) {
+            int thigh = e == 0 ? THIGH_L : THIGH_R, calf = e == 0 ? CALF_L : CALF_R, foot = e == 0 ? FOOT_L : FOOT_R;
+            axis(thigh, 1f, 0f, 0f, 1.5f);
+            then(thigh, 0f, 0f, 1f, (e == 0 ? 1f : -1f) * 0.08f);
+            axis(calf, 1f, 0f, 0f, -1.4f);
+        }
+        axis(SPINE1, 1f, 0f, 0f, 0.06f);
+        axis(SPINE3, 0f, 1f, 0f, -0.12f * wheel);
+        axis(HEAD, 0f, 1f, 0f, -0.25f * wheel);
+        chain(mv, 0f);
+        // the hands on the rim of the wheel, a quarter round from the top either side, turned with it
+        float a = 0.9f + wheel * 0.9f;
+        for (int e = -1; e <= 1; e += 2) {
+            float ang = e * a;
+            float hx = (float) Math.sin(ang) * WHEEL_HALF, hy = (float) Math.cos(ang) * WHEEL_HALF;
+            if (e < 0) reach(mv, ARM_L, FORE_L, HAND_L, -1f, hx, WHEEL_UP + hy, WHEEL_FORE);
+            else reach(mv, ARM_R, FORE_R, HAND_R, 1f, hx, WHEEL_UP + hy, WHEEL_FORE);
+        }
+        for (int b = 0; b < n; b++) {
+            mul(g, b, mv.restQ, b, q, b);
+            p[b * 3] = pos[b * 3];
+            p[b * 3 + 1] = pos[b * 3 + 1];
+            p[b * 3 + 2] = pos[b * 3 + 2];
+        }
+    }
+
     private static final float[] dir = new float[3], pole = new float[3], elbow = new float[3], hand = new float[3];
 
     /**
@@ -209,9 +254,14 @@ final class Stroll {
      * reaches, the elbow bent out and down; the upper arm and forearm turned from rest to point so.
      */
     private static void arm(Moves mv, int upper, int fore, int handBone, float side, float high) {
+        float sy = pos[upper * 3 + 1];
+        reach(mv, upper, fore, handBone, side, side * GRIP_OUT, sy + GRIP_LOW + PULL_RISE * high, -GRIP_FORE);
+    }
+
+    /** An arm (side -1 left, 1 right) reaching for (tx, ty, tz) in the figure, or as near as it reaches. */
+    private static void reach(Moves mv, int upper, int fore, int handBone, float side, float tx, float ty, float tz) {
         float sx = pos[upper * 3], sy = pos[upper * 3 + 1], sz = pos[upper * 3 + 2];
         float a = len(mv, upper, fore), b = len(mv, fore, handBone);
-        float tx = side * GRIP_OUT, ty = sy + GRIP_LOW + (PULL_RISE) * high, tz = -GRIP_FORE;
         float dx = tx - sx, dy = ty - sy, dz = tz - sz, d = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
         dir[0] = dx / d;
         dir[1] = dy / d;

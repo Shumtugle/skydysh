@@ -94,7 +94,9 @@ final class Runner {
     // led where a sign says (see World): to (leadX, leadZ) at a run slowing to a walk, there
     // stopped and turned to leadH; a finger on the glass takes her back
     private boolean led, arrived;
-    private float leadX, leadZ, leadH, leadStuck;
+    private float leadX, leadZ, leadH, leadBest, leadSince, leadAside;
+    private int leadTries;
+    private float leadSide = 1f, leadCommit;
 
     /** Led by herself to (tx, tz), to stop there facing h. */
     void lead(float tx, float tz, float h) {
@@ -103,7 +105,11 @@ final class Runner {
         leadX = tx;
         leadZ = tz;
         leadH = h;
-        leadStuck = 0f;
+        leadBest = 1e9f;
+        leadSince = 0f;
+        leadAside = 0f;
+        leadTries = 0;
+        leadCommit = 0f;
     }
 
     void stopLead() {
@@ -123,9 +129,60 @@ final class Runner {
     }
 
     /** On her way where she was led: turned toward it, slowing as she comes; there, turned as she was told. */
-    private void guide(float dt) {
+    private final float[] probe = new float[2];
+
+    /** Whether the way from her a few steps along heading a is clear of walls and cars (so far, at most). */
+    private boolean clear(float a, float far, Ground g, Cars cars) {
+        float fx = (float) Math.sin(a), fz = (float) Math.cos(a);
+        for (float t = 0.9f; t <= far; t += 0.6f) {
+            probe[0] = x + fx * t;
+            probe[1] = z + fz * t;
+            if (g.push(probe, RADIUS * 0.8f, y)) return false;
+            if (cars != null && cars.push(probe, RADIUS * 0.8f, 0f)) return false;
+        }
+        return true;
+    }
+
+    private void guide(float dt, Ground g, Cars cars) {
         float dx = leadX - x, dz = leadZ - z, d = (float) Math.sqrt(dx * dx + dz * dz);
+        // the way straight to it blocked a little ahead: the nearest way round that is clear
+        if (d > 0.6f) {
+            float straight = (float) Math.atan2(dx, dz), far = Math.min(d, 3f);
+            leadCommit -= dt;
+            if (!clear(straight, far, g, cars)) {
+                // round it on the side taken, as long as that side has a way; the other only when it has none
+                boolean found = false;
+                for (int pass = 0; pass < 2 && !found; pass++) {
+                    float side = pass == 0 ? leadSide : -leadSide;
+                    if (pass == 1 && leadCommit > 0f) break;
+                    for (int k = 1; k <= 7; k++) {
+                        float a1 = straight + k * 0.35f * side;
+                        if (clear(a1, far, g, cars)) {
+                            dx = (float) Math.sin(a1);
+                            dz = (float) Math.cos(a1);
+                            if (pass == 1 || leadCommit <= 0f) {
+                                leadSide = side;
+                                leadCommit = 2.5f;
+                            }
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (d < leadBest - 0.3f) {
+            leadBest = d;
+            leadSince = 0f;
+        } else leadSince += dt;
+        // no nearer for a good while: she gives it up
+        if (leadSince > 6f && d > 0.5f) {
+            led = false;
+            return;
+        }
         float want = d < 0.3f ? leadH : (float) Math.atan2(dx, dz);
+        // (dx, dz) may now be the way round rather than to it; d is still the distance to it
+
         float a = want - heading;
         while (a > Math.PI) a -= 2f * (float) Math.PI;
         while (a < -Math.PI) a += 2f * (float) Math.PI;
@@ -141,9 +198,7 @@ final class Runner {
         // facing away, she turns before she runs
         float top = Math.min(TOP_SPEED * 0.7f, 0.9f + d * 2.2f) * Math.max(0.2f, (float) Math.cos(Math.min(1.5f, Math.abs(a))));
         speed += (top - speed) * Math.min(1f, dt * 4f);
-        // held up by something on the way: she gives it up
-        leadStuck = speed < 0.6f && Math.abs(a) < 0.5f ? leadStuck + dt : 0f;
-        if (leadStuck > 1.5f) led = false;
+
     }
 
     void touch(int type, float fx, float fy) {
@@ -256,6 +311,7 @@ final class Runner {
         placed = false;
         auto = false;
         led = false;
+        riding = false;
         tapped = false;
         beats = 0;
     }
@@ -379,7 +435,7 @@ final class Runner {
         } else if (auto) {
             steer(dt);
         } else if (led && state != AIR && state != SLIDE) {
-            guide(dt);
+            guide(dt, g, room == null ? cars : null);
         } else if (holding || clock - upAt < GRACE) speed += (TOP_SPEED - speed) * Math.min(1f, dt * PICK_UP);
         else if (state != AIR) speed = Math.max(0f, speed - BRAKE * dt);
         if (state == SLIDE) {
@@ -537,6 +593,10 @@ final class Runner {
             back = CLIMB_BACK;
             high = CLIMB_HIGH;
         }
+        if (riding) {
+            back = RIDE_BACK;
+            high = RIDE_HIGH;
+        }
         // back from her along the way she looks, as far as nothing is in the way
         float r = in ? 0.3f : 0.4f, feet = y + high - 1f;
         float[] p = {x, z};
@@ -560,7 +620,7 @@ final class Runner {
         // instead, as far as a ceiling lets it
         float short_ = Math.max(0f, Math.min(back, NEAR_BACK) - free) / NEAR_BACK;
         eyeY = Math.min(y + high + short_ * RISE, g.ceiling(eyeX, eyeZ) - 0.25f);
-        float ahead = up ? 0f : (in ? AHEAD_IN : AHEAD) * (1f - 0.85f * short_);
+        float ahead = up ? 0f : (in ? AHEAD_IN : riding ? RIDE_AHEAD : AHEAD) * (1f - 0.85f * short_);
         float tx = x + fx * ahead, tz = z + fz * ahead, ty = y + (in ? LOOK_UP_IN : LOOK_UP) + (up ? CLIMB_LOOK : 0f);
         float dx = tx - eyeX, dz = tz - eyeZ;
         eyePitch = (float) Math.atan2(ty - eyeY, Math.sqrt(dx * dx + dz * dz));
@@ -574,13 +634,59 @@ final class Runner {
     private final float[] eyeTry = new float[2];
 
     /** Where one of her bones is now, into out (x, y, z). */
+    // ---- at the wheel of a pickup: carried with it, the eye farther back and higher ----
+    /** In a pickup: where it is, she is; drawn sitting at its wheel. */
+    boolean riding;
+    private float seatX, seatY, seatZ, wheel;
+    static final float RIDE_BACK = 10f, RIDE_HIGH = 4.4f, RIDE_AHEAD = 20f;
+    // the seat, from the hips down: the figure stands so much lower than the seat's top
+    static final float SEAT_DROP = 1.12f;
+
+    /** Carried with the pickup: it at (px, py, pz) going along h, her seat at (sx, sy, sz), its wheel turned so. */
+    void ride(float dt, City city, float px, float py, float pz, float h, float v, float sx, float sy, float sz, float turn) {
+        if (!riding) {
+            riding = true;
+            state = RUN;
+            stateAt = clock;
+            led = false;
+            holding = false;
+            gliding = false;
+            vy = 0f;
+        }
+        clock += dt;
+        x = px;
+        y = py;
+        z = pz;
+        heading = h;
+        speed = v;
+        seatX = sx;
+        seatY = sy;
+        seatZ = sz;
+        wheel = turn;
+        eye(dt, city);
+    }
+
+    /** Out of the pickup, standing at (px, pz) facing h. */
+    void getOut(float px, float py, float pz, float h) {
+        riding = false;
+        put(px, py, pz, h);
+    }
+
     void bone(String name, float[] out) {
+        if (riding) {
+            Frida.place(name, seatX, seatY - SEAT_DROP, seatZ, heading + (float) Math.PI, SIZE, Frida.SIT, wheel, out);
+            return;
+        }
         Frida.place(name, x, y, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), out);
     }
 
     void draw(DrawList d) {
         if (hidden) return;
         // the figure faces -z at no turn: turned half round, she runs the way she is headed
+        if (riding) {
+            Frida.draw(d, seatX, seatY - SEAT_DROP, seatZ, heading + (float) Math.PI, SIZE, Frida.SIT, wheel);
+            return;
+        }
         Frida.draw(d, x, y, z, heading + (float) Math.PI, SIZE, motion(), motionTime());
     }
 }

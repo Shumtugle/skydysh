@@ -269,6 +269,23 @@ final class City implements Ground {
         return (hash(i, j, 2) & 3) == 0;
     }
 
+    /** Whether a duty pickup stands at the curb in cell (i, j): one cell in five, not by the start. */
+    boolean duty(int i, int j) {
+        if (Math.abs(i) <= 1 && Math.abs(j) <= 1) return false;
+        return ((hash(i, j, 7) >>> 24) % 5) == 0;
+    }
+
+    // a duty pickup's place: on the east side of the street along the cell's west edge, facing
+    // north, so far up from the crossing (a parked car's own place, kept free for it)
+    static final float DUTY_ALONG = 29.8f;
+
+    /** Where cell (i, j)'s duty pickup stands: x, z, heading. */
+    static void dutyPlace(int i, int j, float[] out) {
+        out[0] = i * CELL + PARKED;
+        out[1] = j * CELL + DUTY_ALONG;
+        out[2] = 0f;
+    }
+
     /** Whether one of the cell's streets has trees down it (by its salt), one in two. */
     private boolean leafy(int i, int j, int salt) {
         return (hash(i, j, salt) & 3) < 2;
@@ -324,7 +341,7 @@ final class City implements Ground {
         else block(c, rnd, x0, z0, i, j);
         lamps(c, x0, z0);
         benches(c, x0, z0);
-        parked(c, rnd, x0, z0);
+        parked(c, rnd, x0, z0, duty(i, j));
         if (!palmy(i, j) && leafy(i, j, 3)) {
             // plane trees down the street along the west edge, on both its pavements
             for (float t = 20f; t < CELL - 10f; t += 26f)
@@ -873,11 +890,14 @@ final class City implements Ground {
      * Cars left along the curbs of the two streets the cell owns, each the way its side of the
      * road goes, now and then a gap; none near the crossings.
      */
-    private void parked(Cell c, Random rnd, float x0, float z0) {
+    private void parked(Cell c, Random rnd, float x0, float z0, boolean duty) {
         float off = PARKED;
         for (float t = 13f; t < CELL - 13f; t += 5.6f)
             for (int s = -1; s <= 1; s += 2) {
                 if (rnd.nextInt(10) < 7) continue;
+                // the duty pickup's place, and the places either side of it, kept free (the dice
+                // thrown all the same, so the rest of the town stays as it was)
+                boolean keep = duty && s > 0 && Math.abs(t - DUTY_ALONG) < 6f;
                 int paint = Cars.PAINT[rnd.nextInt(Cars.PAINT.length)];
                 // its kind from a seed of its own, so the town is laid out as it was
                 Random own = new Random(paint * 31L + (long) (t * 7f) + s * 1013L + (long) x0 * 17L + (long) z0 * 131L);
@@ -887,6 +907,7 @@ final class City implements Ground {
                 // the street running north: on its east side they face north, on its west side south
                 if (rnd.nextBoolean()) {
                     float x = x0 + s * off, z = z0 + t;
+                    if (keep) continue;
                     Cars.car(c.parked, x, z, s > 0 ? 0f : (float) Math.PI, paint, true, kind);
                     c.wall(x - 0.95f, z - len, x + 0.95f, z + len, top);
                 } else {

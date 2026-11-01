@@ -92,6 +92,11 @@ final class Cars {
             // someone in the road ahead: stop short of them
             want = Math.min(want, clear(c, fx, fz, r.x, r.z));
             for (Chase g : golems) if (g.down()) want = Math.min(want, clear(c, fx, fz, g.x, g.z));
+            // a duty pickup left standing in the road
+            if (duty != null) for (int k = 0; k < duty.all.size(); k++) {
+                Pickup p = duty.all.get(k);
+                if (!p.driven) want = Math.min(want, clear(c, fx, fz, p.x, p.z));
+            }
             if (halt[c] > 0f) {
                 halt[c] -= dt;
                 want = 0f;
@@ -237,10 +242,23 @@ final class Cars {
         return push(p, rr, 0f);
     }
 
+    /** The duty pickups, pushed against as the traffic is (see Duty); none, none. */
+    Duty duty;
+
+    boolean live(int c) {
+        return live[c];
+    }
+
     /** The same, for one whose feet are this high off the road: over a car's roof is clear of it. */
     boolean push(float[] p, float rr, float lift) {
-        if (lift > TOP - 0.1f) return false;
+        return push(p, rr, lift, null);
+    }
+
+    /** The same, all but one pickup (the one that is pushing). */
+    boolean push(float[] p, float rr, float lift, Pickup but) {
         boolean hit = false;
+        if (duty != null && lift < Pickup.TOP - 0.1f) hit = duty.push(p, rr, but);
+        if (lift > TOP - 0.1f) return hit;
         for (int c = 0; c < MOST; c++) {
             if (!live[c]) continue;
             float fx = (float) Math.sin(heading[c]), fz = (float) Math.cos(heading[c]);

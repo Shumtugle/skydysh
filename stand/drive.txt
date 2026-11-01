@@ -1,0 +1,24 @@
+# The duty pickup: by one at a curb, the wheel's sign over it tapped, she goes to its door and
+# gets in. A finger down: it pulls away, changing up; held sideways: a turn at the crossing;
+# drawn down: it stops, and held, it backs. Lifted, it rolls on and slows. The button low on
+# the right: she gets out, and it stays.
+screen 1096 2560
+mission 2
+wait 0.2
+duty 6
+wait 0.5
+shot d0
+tapsign wheel
+errand 5 0 x
+shot d1
+pedal 1 0 0 0.5 da
+pedal 3 0 0 1 db
+pedal 2.5 30 0 0.8 dc
+pedal 2 0 30 0 x
+pedal 1.5 0 30 0 x
+shot d2
+wait 1
+tap 230 570
+wait 1
+shot d3
+where

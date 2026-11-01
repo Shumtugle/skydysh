@@ -68,7 +68,7 @@ final class Toss {
     void update(float dt, Runner r, Chase[] golems, City city, boolean tap, boolean hunt) {
         clock += dt;
         if (state == HELD) {
-            if (r.inAir() || r.hidden || r.room != null || r.held || r.climbing()) return;
+            if (r.inAir() || r.hidden || r.room != null || r.held || r.climbing() || r.riding) return;
             Chase run = hunt && !tap ? reached(r, golems) : null;
             if (run != null) {
                 // run down: she stops and throws, and it runs on with the mallet after it
@@ -180,6 +180,8 @@ final class Toss {
     }
 
     void draw(DrawList d, Runner r) {
+        // at the wheel, the mallet is left on the seat beside her, out of sight
+        if (state == HELD && r.riding) return;
         if (state == HELD && r.climbing()) {
             slung(d, r);
             return;

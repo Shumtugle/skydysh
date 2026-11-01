@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.31";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.32";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -57,6 +57,9 @@ final class World {
     final Cars cars = new Cars();
     final Walkers walkers = new Walkers();
     final Pets pets = new Pets();            // dogs on leads and on their own, cats
+    final Duty duty = new Duty();            // the duty pickups at the curbs
+    /** The pickup she is driving; null on foot. */
+    Pickup driving;
     private int caughtSeen, struckSeen;
     private final float[] at = new float[2];
     private final Fliers fliers = new Fliers();                     // far off in the sky, seldom
@@ -64,6 +67,7 @@ final class World {
 
     World(Host host) {
         this.host = host;
+        cars.duty = duty;
         byte[] moves = host.asset("moves.bin");
         if (moves != null) Frida.use(Moves.read(moves));
         if (FolkPack.town == null) FolkPack.town = FolkPack.read(host.asset("folk.bin"));
@@ -79,6 +83,7 @@ final class World {
 
     /** The next mission, round (x, z): five golems loose, or, every other time, the folder. */
     private void begin(float x, float z) {
+        if (driving != null) getOut();
         int n = mission.round + 1;
         if (Folder.its(n)) {
             mission.round = n;
@@ -187,6 +192,10 @@ final class World {
             runner.touch(UP, x, y);
             return;
         }
+        if (driving != null) {
+            drivingTouch(type, x, y);
+            return;
+        }
         // a sign: she goes where it says by herself
         if (type == DOWN && indoors == null) {
             int sgn = signAt(x, y);
@@ -259,12 +268,18 @@ final class World {
             return;
         }
         whiteOut = Math.max(0f, whiteOut - dt);
-        ladders(dt);
-        doors(dt);
-        errands(dt);
+        if (dutyOut()) duty.update(runner.x, runner.z, city, driving);
+        else duty.all.clear();
+        if (driving != null) drive(dt);
+        else {
+            ladders(dt);
+            doors(dt);
+            errands(dt);
+            getIn(dt);
+        }
         // a beat of the arms (a flick, between frames): the air through them
         if (runner.beatsLeft() < beatsWere) host.sound(Synth.WHOOSH, 0.5f, 0.8f);
-        if (swapT < 0f) runner.update(dt, city, cars, walkers);
+        if (swapT < 0f && driving == null) runner.update(dt, city, cars, walkers);
         beatsWere = runner.beatsLeft();
         int round = mission.round;
         if (folder != null) {
@@ -463,6 +478,7 @@ final class World {
             return;
         }
         d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PAUSE, 0.75f, 0f);
+        if (driving != null) d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
         if (liftOffer) {
             float breathe = 0.5f + 0.5f * (float) Math.sin(time * 4f);
             d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.LIFT, 1f, liftPressed ? 1f : 0.12f * breathe);
@@ -523,6 +539,30 @@ final class World {
             signs[s + 9] = kind;
             k++;
         }
+        // the duty pickups: the wheel over each, from any side
+        for (int i = 0; i < duty.all.size() && k < 16; i++) {
+            Pickup p = duty.all.get(i);
+            if (Math.abs(r.y - p.y) > 2.6f) continue;
+            float ox = r.eyeX - p.x, oz = r.eyeZ - p.z;
+            float dist = (float) Math.sqrt(ox * ox + oz * oz);
+            float shown = Math.min(1f, (SIGN_FAR - dist) / 10f) * Math.min(1f, Math.max(0f, (dist - 2.5f) / 3f));
+            if (shown <= 0.02f) continue;
+            float bob = 0.08f * (float) Math.sin(time * 2.2f + p.x * 0.7f);
+            if (!d.project(p.x, p.y + 2.7f + bob, p.z, markAt) || markAt[2] < 1f) continue;
+            if (markAt[0] < -20f || markAt[0] > W + 20f || markAt[1] < -20f || markAt[1] > h + 20f) continue;
+            int o = k * 10;
+            signs[o] = markAt[0];
+            signs[o + 1] = markAt[1];
+            signs[o + 2] = Math.max(7f, Math.min(18f, W * 1.6f * 0.75f / markAt[2]));
+            signs[o + 3] = Badges.WHEEL;
+            signs[o + 4] = shown;
+            signs[o + 5] = p.x;
+            signs[o + 6] = p.z;
+            signs[o + 7] = 0f;
+            signs[o + 8] = 0f;
+            signs[o + 9] = MARK_PICKUP;
+            k++;
+        }
         // the nearest first, as many as there is room for beside the buttons; kept for the finger
         shownN = 0;
         for (int a = 0; a < k && d.badgeN < DrawList.BADGE_MAX - 3; a++) {
@@ -541,8 +581,130 @@ final class World {
         }
     }
 
+    // ---- the duty pickups: in, driven, out ----
+    static final float STEER_RANGE = 46f;     // so far sideways the finger turns the wheel full lock
+    static final float GET_IN = 1.3f, GET_IN_STAND = 0.5f;
+    private boolean pedal;
+    private float wheelIn, brakeIn, anchorX, anchorY, doorWait;
+    private boolean doorArmed = true;         // not got in again until she has been away from the door
+    private final float[] seatAt = new float[3], doorAt2 = new float[2];
+
+    /** Whether the duty pickups are out: in every mission but a hunt, which is run on foot. */
+    boolean dutyOut() {
+        return folder != null;
+    }
+
+    private Pickup pickupAt(float x, float z) {
+        Pickup best = null;
+        float bd = 4f;
+        for (Pickup p : duty.all) {
+            float dd = (p.x - x) * (p.x - x) + (p.z - z) * (p.z - z);
+            if (dd < bd) {
+                bd = dd;
+                best = p;
+            }
+        }
+        return best;
+    }
+
+    /** Standing at a pickup's door a moment, she gets in. */
+    private void getIn(float dt) {
+        Runner r = runner;
+        if (!dutyOut() || indoors != null || swapT >= 0f || r.inAir() || r.climbing() || r.speed > 1f) {
+            doorWait = 0f;
+            return;
+        }
+        for (Pickup p : duty.all) {
+            p.door(0.9f, doorAt2);
+            float dx = doorAt2[0] - r.x, dz = doorAt2[1] - r.z;
+            if (dx * dx + dz * dz < GET_IN * GET_IN && Math.abs(r.y - p.y) < 1f) {
+                if (doorArmed && (doorWait += dt) > GET_IN_STAND) getIn(p);
+                return;
+            }
+        }
+        doorWait = 0f;
+        doorArmed = true;
+    }
+
+    private void getIn(Pickup p) {
+        if (p == null || driving != null) return;
+        driving = p;
+        p.driven = true;
+        p.speed = 0f;
+        duty.driven(p);
+        pedal = false;
+        wheelIn = brakeIn = 0f;
+        doorWait = 0f;
+        errand = NO_ERRAND;
+        runner.stopLead();
+        host.sound(Synth.DOOR, 0.5f, 0.9f);
+        host.buzz(30);
+        drive(0f);
+    }
+
+    /** Out of the pickup, by its door, or the other one if that side is shut in; it stays where it is. */
+    private void getOut() {
+        Pickup p = driving;
+        if (p == null) return;
+        driving = null;
+        p.driven = false;
+        p.speed = 0f;
+        p.steer = 0f;
+        float[] q = {0f, 0f};
+        p.door(0.9f, q);
+        float ox = q[0], oz = q[1];
+        if (city.push(q, 0.5f, p.y) || Math.abs(q[0] - ox) > 0.05f) {
+            // the far side: as far out on the right
+            float c = (float) Math.cos(p.heading), s = (float) Math.sin(p.heading);
+            q[0] = p.x + c * (Pickup.HALF_WIDE + 0.9f) + s * Pickup.SEAT_Z;
+            q[1] = p.z - s * (Pickup.HALF_WIDE + 0.9f) + c * Pickup.SEAT_Z;
+        }
+        runner.getOut(q[0], city.ground(q[0], q[1]), q[1], p.heading);
+        doorArmed = false;
+        runner.recenter();
+        buttonHeld = true;
+        host.sound(Synth.DOOR, 0.5f, 1.05f);
+    }
+
+    /** A frame at the wheel: the pickup driven as the finger has it, she carried in it. */
+    private void drive(float dt) {
+        Pickup p = driving;
+        p.drive(dt, pedal && brakeIn < 0.05f, wheelIn, brakeIn, city, cars, walkers);
+        p.seat(seatAt);
+        runner.ride(dt, city, p.x, p.y, p.z, p.heading, p.speed, seatAt[0], seatAt[1], seatAt[2], p.steer);
+    }
+
+    /**
+     * The finger at the wheel: down, the throttle; sideways from where it came down, the wheel;
+     * drawn down, the brake. The button low on the right: out.
+     */
+    private void drivingTouch(int type, float x, float y) {
+        if (type == DOWN && Math.abs(x - liftButtonX()) < BUTTON + 8 && Math.abs(y - liftButtonY()) < BUTTON + 8) {
+            getOut();
+            return;
+        }
+        if (buttonHeld) {
+            if (type == UP) buttonHeld = false;
+            return;
+        }
+        if (type == DOWN) {
+            pedal = true;
+            anchorX = x;
+            anchorY = y;
+        } else if (type == MOVE && pedal) {
+            wheelIn = Math.max(-1f, Math.min(1f, (x - anchorX) / STEER_RANGE));
+            brakeIn = Math.max(0f, Math.min(1f, (y - anchorY - 6f) / 24f));
+        } else if (type == UP) {
+            pedal = false;
+            wheelIn = 0f;
+            brakeIn = 0f;
+        }
+    }
+
     // ---- errands: a sign touched, she goes where it says by herself ----
-    static final int NO_ERRAND = 0, ERRAND_CLIMB = 1, ERRAND_UP = 2, ERRAND_DOWN = 3;
+    static final int NO_ERRAND = 0, ERRAND_CLIMB = 1, ERRAND_UP = 2, ERRAND_DOWN = 3, ERRAND_DRIVE = 4;
+    static final int MARK_PICKUP = 4;          // a sign's kind beside the town's (see City.marks)
+    private Pickup errandPickup;
     private int errand;
     private float errandX, errandZ, errandFor;
     private final float[] errandLadder = new float[6], way = new float[2];
@@ -592,7 +754,14 @@ final class World {
         errandX = mx;
         errandZ = mz;
         errandFor = 0f;
-        if (kind == City.MARK_ESCAPE || kind == City.MARK_ROOF_LADDER) {
+        if (kind == MARK_PICKUP) {
+            Pickup p = pickupAt(mx, mz);
+            if (p == null) return;
+            p.door(0.9f, way);
+            r.lead(way[0], way[1], (float) Math.atan2(p.x - way[0], p.z - way[1]));
+            errandPickup = p;
+            errand = ERRAND_DRIVE;
+        } else if (kind == City.MARK_ESCAPE || kind == City.MARK_ROOF_LADDER) {
             // the sign hangs 0.6 off the wall, the foot is 0.55 off it
             float fx = mx - nx * 0.05f, fz = mz - nz * 0.05f;
             if (!city.ladderNear(fx, fz, r.y, 1f, errandLadder)) return;
@@ -630,6 +799,12 @@ final class World {
                     float[] l = errandLadder;
                     r.climb(l[0], l[1], l[2], l[3], l[4], l[5]);
                     host.sound(Synth.CLANG, 0.25f, 1.5f);
+                    errand = NO_ERRAND;
+                } else if (!r.led()) errand = NO_ERRAND;
+                break;
+            case ERRAND_DRIVE:
+                if (arrived) {
+                    getIn(errandPickup);
                     errand = NO_ERRAND;
                 } else if (!r.led()) errand = NO_ERRAND;
                 break;
@@ -1035,6 +1210,7 @@ final class World {
         float ex = (float) Math.sin(eyeYaw), ez = (float) Math.cos(eyeYaw);
         city.draw(d, eyeX, eyeZ, ex, ez);
         cars.draw(d, eyeX, eyeZ, ex, ez);
+        duty.draw(d, eyeX, eyeZ, ex, ez, time);
         walkers.draw(d, eyeX, eyeZ, ex, ez);
         pets.draw(d, eyeX, eyeZ, ex, ez, walkers);
         if ((dispatch == null || dispatch.showsHer()) && !r.hidden) {
@@ -1056,7 +1232,7 @@ final class World {
         else chaseFlat(d, f);
         beatsFlat(f);
         if (dispatch == null) {
-            signs(d);
+            if (driving == null) signs(d);
             buttons(d);
         }
         swapFlat(f);

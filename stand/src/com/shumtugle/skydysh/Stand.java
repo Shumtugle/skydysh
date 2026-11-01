@@ -594,9 +594,50 @@ public final class Stand implements World.Host {
             System.out.println(String.format("%7.2fs  %s, her %.1f %.1f %.1f, the folder %.0f m off", time,
                     fo.hers ? "she has the folder" : fo.theirs ? "a rival got it" : "not yet", r.x, r.y, r.z,
                     (float) Math.hypot(fo.x - r.x, fo.z - r.z)));
+        } else if (c.equals("duty")) {
+            // duty METERS: her put so far out from the driver's door of the nearest duty pickup, facing it
+            Pickup best = null;
+            float bd = 1e18f;
+            for (Pickup q : world.duty.all) {
+                float dd = (q.x - world.runner.x) * (q.x - world.runner.x) + (q.z - world.runner.z) * (q.z - world.runner.z);
+                if (dd < bd) {
+                    bd = dd;
+                    best = q;
+                }
+            }
+            if (best == null) {
+                System.out.println("no duty pickup about");
+                return;
+            }
+            float[] at = new float[2];
+            best.door(f(p[1]), at);
+            world.runner.put(at[0], world.city.ground(at[0], at[1]), at[1], (float) Math.atan2(best.x - at[0], best.z - at[1]));
+            world.runner.recenter();
+            System.out.println(String.format("%7.2fs  by a duty pickup at %.1f %.1f", time, best.x, best.z));
+            step();
+        } else if (c.equals("pedal")) {
+            // pedal SECONDS SIDEWAYS DOWNWARD EVERY PREFIX: at the wheel, a finger down and held so far
+            // sideways and down from where it came down, shot so often; the speed told
+            float secs = f(p[1]), sx = f(p[2]), sy = f(p[3]), every = f(p[4]), next = 0f;
+            float fx = World.W * 0.5f, fy = 480f;
+            world.touch(World.DOWN, fx, fy);
+            step();
+            world.touch(World.MOVE, fx + sx, fy + sy);
+            int n = Math.round(secs / DT), k = 0;
+            for (int i = 0; i < n; i++) {
+                step();
+                if (every > 0f && i * DT >= next) {
+                    shot(p[5] + (k++));
+                    next += every;
+                }
+            }
+            world.touch(World.UP, fx + sx, fy + sy);
+            Pickup q = world.driving;
+            System.out.println(q == null ? String.format("%7.2fs  not at the wheel", time)
+                    : String.format("%7.2fs  at the wheel: %.1f m/s, gear %d, at %.1f %.1f heading %.2f", time, q.speed, q.gear, q.x, q.z, q.heading));
         } else if (c.equals("tapsign")) {
             // tapsign lift|ladder|up: a tap on the nearest sign of the kind on the glass, told
-            int which = p[1].equals("ladder") ? Badges.LADDER : p[1].equals("up") ? Badges.UP : Badges.LIFT;
+            int which = p[1].equals("ladder") ? Badges.LADDER : p[1].equals("up") ? Badges.UP : p[1].equals("wheel") ? Badges.WHEEL : Badges.LIFT;
             float[] at = new float[2];
             if (world.signOnGlass(which, at)) {
                 System.out.println(String.format("%7.2fs  tap on the %s sign at %.0f %.0f", time, p[1], at[0], at[1]));

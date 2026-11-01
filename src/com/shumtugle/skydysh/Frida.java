@@ -271,11 +271,17 @@ final class Frida {
 
     /** A motion worked out here rather than played: up a ladder by the arms alone (t in pulls, see Stroll). */
     static final String PULL = "pull";
+    /** Another: sitting at a wheel (t, how far it is turned, -1 to 1). */
+    static final String SIT = "sit";
 
     /** The pose of a motion at a time, into pq and pp; false if there is no such motion. */
     private static boolean pose(String motion, float t) {
         if (motion.equals(PULL)) {
             Stroll.pull(moves, t, pq, pp);
+            return true;
+        }
+        if (motion.equals(SIT)) {
+            Stroll.sit(moves, t, pq, pp);
             return true;
         }
         int c = moves.motion(motion);

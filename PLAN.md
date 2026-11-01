@@ -44,6 +44,7 @@ release, each seen on the stand before the phone.
   signs over the ways in and up.
 - 0.30 The signs touched send her where they say: up a ladder, up or down by a lift.
 - 0.31 Lifts rare and shut in a hunt; the folder got to over the roofs; ladders caught in the air.
+- 0.32 Duty pickups at the curbs: got into, driven as the old racing game drove, got out of.
 
 ## Next
 
@@ -59,10 +60,10 @@ The missions in order, each teaching a thing; then the town is hers.
 
 The releases toward it, one thing each:
 
-- A duty pickup: parked in the streets now and then, its own sign; touched (or run to), she gets
-  in; the finger drives it as it runs her; out again by a button. Its feel: mass, grip, how it
-  takes a corner.
-- Places in the town: the factory, the store, home; their signs; a load on the pickup's bed.
+- A stretch of the town fixed for ever, the same in every town grown: an embankment with a few
+  known houses, among them home, one large house; then what home is like inside.
+- The factory and the store, each a building of its own kind, plain to see; their signs; a
+  load on the pickup's bed.
 - The delivery as mission three; then home as the end of every mission, and the choice there.
 - The other buttons put to work as their things come: the wheel in a car, the jet pack, the map,
   the help, a throw and a lift of a thing; buttons as part of the controls where a gesture is

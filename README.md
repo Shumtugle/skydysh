@@ -27,7 +27,12 @@ takes her up and lets her out on the roof by itself. On the roof, by the hut's d
 shows; pressed, the lift takes her down and the cabin opens onto the hall again. Signs of glass
 hang over the ways in and up near her: the lifts' doors, the fire escapes, the ladders from roof
 to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
-out) by the lift. A button high on the left pauses the game. She stands on
+out) by the lift. A button high on the left pauses the game.
+
+Duty pickups stand at the curbs here and there (not in a hunt). Touch the wheel over one, or
+stand at its door, and she gets in. A finger down drives it: the driver picks the speed; sideways
+from where the finger came down turns the wheel; drawn down, it brakes, and held, it backs;
+lifted, it rolls to a stop. The button low on the right lets her out. She stands on
 whatever she comes down on, the roofs too. When a mission is done the game keeps where it is.
 
 For now, to try: a hunt. Five golems on fire that should not be are loose in the town, each

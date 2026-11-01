@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.32
+
+- Duty pickups: the dispatch's own, open-topped, cream over teal with a coral stripe, the plate's
+  sign on the doors, an amber lamp turning behind the cab, a bed behind. One stands at a curb in
+  about one cell in five (not in a hunt, which is run on foot); the wheel's sign over each.
+- Getting in: touch its sign and she goes round to the driver's door by herself and gets in;
+  or stand at that door a moment. She sits at the wheel, both hands on it, turning it.
+- Driving, as the old racing game drove: a finger down is the throttle and the driver picks the
+  speed (slower into a hard turn, behind a car ahead, before something standing in the way);
+  lifted, it rolls on and slows; drawn down, it brakes, and held down standing, it backs.
+  Sideways from where the finger came down, the wheel turns as far as the finger went; the
+  faster, the less it turns, and the tyres hold so much and no more. The engine pulls hard from
+  a standstill and less near its top, a short pause at each change of gear. Nosed up against
+  something, the finger down and the wheel over, it edges round.
+- The eye farther back and higher at the wheel. Out: the button low on the right; she gets out
+  at the driver's door (the other, if that side is shut in) and the pickup stays where it is.
+  The traffic stops short of one left in the road; people and the traffic stop it.
+- Led by a sign, she goes round what stands in her way (a parked car, a bench) rather than
+  straight into it: the nearest clear way, keeping to one side.
+- A new button: out (a doorway, an arrow going out through it); the sheet is five by five.
+- Stand: `duty METERS`, `pedal SECONDS SIDEWAYS DOWN EVERY PREFIX`, `tapsign wheel`; scene
+  `drive.txt`.
+
 ## 0.31
 
 - No plates on the walls by the lifts: the lamp over each hut's door and the light over each

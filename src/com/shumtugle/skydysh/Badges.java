@@ -12,8 +12,8 @@ package com.shumtugle.skydysh;
  */
 final class Badges {
     static final int LIFT = 0, DOWN = 1, UP = 2, LEFT = 3, RIGHT = 4, MALLET = 5, WHEEL = 6, JETPACK = 7,
-            THROW = 8, PICK_UP = 9, MAP = 10, HELP = 11, PAUSE = 12, PLAY = 13, HOME = 14, LADDER = 15;
-    static final int COUNT = 16, CELLS = 4, SIZE = 160;
+            THROW = 8, PICK_UP = 9, MAP = 10, HELP = 11, PAUSE = 12, PLAY = 13, HOME = 14, LADDER = 15, EXIT = 16;
+    static final int COUNT = 17, CELLS = 5, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -199,6 +199,14 @@ final class Badges {
                 float chimney = box(x, y, 0.46f, 0.5f, 0.11f, 0.26f);
                 float door = box(x, y, 0f, -0.62f, 0.17f, 0.28f);
                 return Math.max(min(body, roof, chimney), -door);
+            }
+            case EXIT: {
+                // out: a doorway, open on its right, an arrow going out through it
+                float frame = Math.abs(rbox(x, y, -0.32f, 0f, 0.44f, 0.82f, 0.06f)) - 0.08f;
+                frame = Math.max(frame, -box(x, y, 0.12f, 0f, 0.2f, 0.3f));
+                float shaft = box(x, y, 0.2f, 0f, 0.42f, 0.11f);
+                float head = poly(x, y, 0.5f, 0.36f, 0.94f, 0f, 0.5f, -0.36f);
+                return min(frame, shaft, head);
             }
             default: {
                 // a ladder: two rails, four rungs
