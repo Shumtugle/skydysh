@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.40";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.41";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -446,6 +446,15 @@ final class World {
     private boolean onToggle(float x, float y) {
         float m = TOGGLE_HALF + 8f, dx = x - toggleX(), dy = y - toggleY();
         return dx * dx + dy * dy < m * m;
+    }
+
+    /** At the wheel, low on the left: how fast, in kilometers an hour. */
+    private void speedFlat(Px f) {
+        if (driving == null || dispatch != null) return;
+        String v = String.valueOf(Math.round(Math.abs(driving.speed) * 3.6f));
+        int ink = 0xFF232A4A, y = h - 44;
+        shadowed(f, v, 12, y, 3, driving.speed > Pickup.VMAX * 0.8f ? 0xFFFFD45A : 0xFFF4E8D2, ink);
+        shadowed(f, "KM/H", 14 + PixelFont.width(v, 3), y + 14, 1, 0xFFF4E8D2, ink);
     }
 
     /** Under the way-to-play button, paused: what it is now, in words. */
@@ -976,7 +985,7 @@ final class World {
     }
 
     // ---- the duty pickups: in, driven, out ----
-    static final float STEER_RANGE = 46f;     // so far sideways the finger turns the wheel full lock
+    static final float STEER_RANGE = 34f;     // so far sideways the finger turns the wheel full lock
     static final float GET_IN = 1.3f, GET_IN_STAND = 0.5f;
     private boolean pedal;
     private float wheelIn, brakeIn, anchorX, anchorY, doorWait;
@@ -1636,6 +1645,7 @@ final class World {
         else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
         beatsFlat(f);
+        speedFlat(f);
         buttons(d);
         swapFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
@@ -1719,6 +1729,7 @@ final class World {
         else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
         beatsFlat(f);
+        speedFlat(f);
         if (dispatch == null) {
             if (driving == null) signs(d);
             buttons(d);

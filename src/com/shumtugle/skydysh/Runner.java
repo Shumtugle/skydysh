@@ -700,7 +700,8 @@ final class Runner {
         // comes round behind her, unhurried; standing, it stays. Led by herself, driving, on a
         // ladder, it is behind her as it always was
         boolean byHand = !classic && !riding && !auto && !led && state != CLIMB;
-        if (!byHand) eyeYaw += d * Math.min(1f, dt * 4.5f);
+        // driving, it keeps close behind: the car turns sharply, the eye with it
+        if (!byHand) eyeYaw += d * Math.min(1f, dt * (riding ? 9f : 4.5f));
         else if (clock - lookedAt > LOOK_HOLD && speed > 1.2f)
             eyeYaw += d * Math.min(1f, dt * COME_ROUND * Math.min(1f, speed / JOG));
         while (eyeYaw - heading > Math.PI) eyeYaw -= 2f * (float) Math.PI;
@@ -715,8 +716,10 @@ final class Runner {
             high = CLIMB_HIGH;
         }
         if (riding) {
-            back = RIDE_BACK;
-            high = RIDE_HIGH;
+            // farther back and higher the faster it goes, so what comes is seen in time
+            float fast = Math.min(1f, Math.abs(speed) / Pickup.VMAX);
+            back = RIDE_BACK + 5f * fast;
+            high = RIDE_HIGH + 1.5f * fast;
         }
         // back from her along the way she looks, as far as nothing is in the way
         // what the eye bumps into: what stands round it, not what is low under it or high over it

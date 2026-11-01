@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.41
+
+- The pickup drives as a car, not a boat: it goes where its nose points at once, as sharply as
+  the wheel says (a tight turn when slow, a little less at the top), and never slides; the wheel
+  answers the finger quicker, and full lock is nearer. Top speed 36 meters a second (some 130
+  kilometers an hour), reached in four seconds; no pause at the gears. The driver no longer
+  crawls behind the traffic: only a car close ahead in the lane holds it back, a moment.
+- Run into a wall or a car, it loses only what went into it and runs on along it, its nose turned
+  that way.
+- At the wheel the eye keeps close behind as it turns, and draws back and up the faster it goes.
+- How fast, in kilometers an hour, low on the left at the wheel; gold near the top.
+- Stand: scene `fast.txt`.
+
 ## 0.40
 
 - Two ways to play, one finger or two thumbs, chosen under the pause button (paused, the button

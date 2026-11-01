@@ -55,6 +55,7 @@ release, each seen on the stand before the phone.
 - 0.39 Two thumbs on foot: a stick on the left (a walk, a jog, a run, the way it is pushed as the
   eye sees it), the eye turned round her on the right, buttons to jump, slide and swing the mallet.
 - 0.40 One finger or two thumbs, chosen when paused; pedals at the wheel over the driver; fingers let go between modes.
+- 0.41 The pickup a car, not a boat: the wheel answered at once, no sliding, fast; a speedometer.
 
 ## Next
 

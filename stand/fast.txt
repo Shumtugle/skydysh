@@ -1,0 +1,11 @@
+# The pickup as a car: flat out along the shore road, how fast and how far; the wheel half over at
+# speed, round a corner into a street north and on up it; shot as it goes.
+screen 1096 2560
+wait 0.4
+mission 2
+drivein -340 -0.4 1.5708
+pedal 4 0 0 1 fa
+drivein -150 -0.4 1.5708
+pedal 1.5 0 0 0 x
+pedal 0.75 -17 0 0.25 fc
+pedal 2 0 0 1 fd

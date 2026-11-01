@@ -5,22 +5,22 @@ package com.shumtugle.skydysh;
  * with a coral stripe, the plate's sign on its doors and an amber lamp behind the cab; a bed
  * behind for a load. Parked, it stands at a curb; got into, she drives it.
  *
- * It drives as the old racing game's car did: the finger on the glass is the throttle and the
- * driver drives, choosing the speed by itself (slower into a hard turn, behind a car ahead,
- * before something in the way); lifted, it rolls on and slows; drawn down, it brakes, and held
- * down standing still, it backs. Sideways from where the finger came down, the wheel turns as far
- * as the finger went. The wheel turns the car the less the faster it goes, and the tyres hold so
- * much and no more: past that it runs wide. The engine pulls hard from a standstill and less as
- * it nears its top, with a short pause at each change of gear.
+ * It drives as a car in a town game should: easier than going on foot, and fast. The finger on
+ * the glass is the throttle; lifted, it rolls on and slows; drawn down, it brakes, and held down
+ * standing still, it backs. Sideways from where the finger came down, the wheel turns as far as
+ * the finger went, and the car goes where its nose points at once: it turns as sharply as the
+ * wheel says, a little less at the top of its speed, and never slides. The engine pulls hard all
+ * the way up. Run into a wall, it runs along it, losing only what went into it.
  *
  * Its own frame: x to its right, y up, its nose along +z; the road at y = 0.
  */
 final class Pickup {
-    static final float VMAX = 20f;                     // top speed, meters a second
-    static final float ACCEL = 0.32f * VMAX, BRAKE = 0.6f * VMAX, HARD_BRAKE = 0.9f * VMAX, COAST = 0.12f * VMAX;
-    static final float BACK_TOP = 4f;                  // backing, no faster than this
+    static final float VMAX = 36f;                     // top speed, meters a second
+    static final float ACCEL = 13f, BRAKE = 22f, HARD_BRAKE = 30f, COAST = 3f;
+    static final float BACK_TOP = 8f;                  // backing, no faster than this
     static final float CREEP = 1.5f;                   // the driver noses along at least this fast
-    static final float WHEELBASE = 3.1f, LOCK = 0.6f, GRIP = 8.5f;
+    // the tightest turn, its radius; how fast it may turn at a middling speed and at the top
+    static final float TIGHTEST = 4.5f, YAW_MID = 2.4f, YAW_TOP = 1.5f;
     static final float HALF_LONG = 2.5f, HALF_WIDE = 1f, TOP = 1.7f, ENDS = 1.3f, END_R = 1.05f;
     static final int CREAM = 0xF1E8D4, TEAL = 0x2F8A86, CORAL = 0xE0644A, AMBER = 0xF6B54A;
 
@@ -32,7 +32,7 @@ final class Pickup {
     float loadedAgo = 10f;
     static final int CRATES = 4;
     int gear = 1;
-    private float shift, still;
+    private float still;
     /** Where it was first parked: the cell it belongs to (see Duty). */
     final long home;
 
@@ -49,7 +49,7 @@ final class Pickup {
      * the traffic and the people in its way.
      */
     void drive(float dt, boolean throttle, float wheel, float brake, boolean flat, City city, Cars cars, Walkers walkers) {
-        steer += (wheel - steer) * Math.min(1f, dt * 14f);
+        steer += (wheel - steer) * Math.min(1f, dt * 22f);
         float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
         if (brake > 0.05f) {
             if (speed > 0.3f) {
@@ -69,13 +69,12 @@ final class Pickup {
             if (speed < 0f) speed = Math.min(0f, speed + HARD_BRAKE * dt);
             else accelerate(dt, flat ? VMAX : target(fx, fz, city, cars));
         }
-        // the wheel: less lock the faster it goes; the tyres hold so much, past that it runs wide
-        float lock = LOCK / (1f + Math.abs(speed) / 9f);
-        // nosed up against something with the finger down and the wheel over, it still edges round
-        float turning = throttle && Math.abs(speed) < 1.2f && Math.abs(steer) > 0.2f ? 1.2f : speed;
-        float yaw = turning * (float) Math.tan(lock * steer) / WHEELBASE;
-        float most = GRIP / Math.max(2f, Math.abs(speed));
-        yaw = Math.max(-most, Math.min(most, yaw));
+        // the wheel: it turns the car as sharply as it says, as tight as the tightest turn when slow,
+        // a little less at the top; nosed up against something with the finger down and the wheel
+        // over, it still edges round. It goes where its nose points: no sliding
+        float v = throttle && Math.abs(speed) < 1.2f && Math.abs(steer) > 0.2f ? 1.2f : speed;
+        float cap = YAW_MID + (YAW_TOP - YAW_MID) * Math.min(1f, Math.abs(speed) / VMAX);
+        float yaw = steer * Math.min(Math.abs(v) / TIGHTEST, cap) * Math.signum(v);
         heading += yaw * dt;
         fx = (float) Math.sin(heading);
         fz = (float) Math.cos(heading);
@@ -101,25 +100,31 @@ final class Pickup {
             z += mz * 0.5f;
             float m = (float) Math.sqrt(mx * mx + mz * mz);
             if (m > 1e-4f) {
+                // only what went into it is lost: along a wall it runs on, its nose turned along it
                 float into = -(fx * mx + fz * mz) / m * Math.signum(speed);
-                if (into > 0.2f) speed *= 1f - 0.85f * into;
+                if (into > 0.05f) {
+                    speed *= 1f - into;
+                    float ax = -mz / m, az = mx / m;
+                    if (ax * fx + az * fz < 0f) {
+                        ax = -ax;
+                        az = -az;
+                    }
+                    float to = (float) Math.atan2(ax, az), d = to - heading;
+                    while (d > Math.PI) d -= 2f * (float) Math.PI;
+                    while (d < -Math.PI) d += 2f * (float) Math.PI;
+                    if (Math.abs(d) < 1.2f) heading += d * Math.min(1f, dt * 8f) * into;
+                }
             }
         }
         y += (city.ground(x, z) - y) * Math.min(1f, dt * 12f);
     }
 
-    /** The engine: hard from a standstill, less near the top, a short pause at each change of gear. */
+    /** The engine: hard all the way up, a little less near the top. */
     private void accelerate(float dt, float target) {
         float sp = speed / VMAX;
-        int g = 1 + Math.min(4, (int) (sp * 5f));
-        if (g > gear) shift = 0.2f;
-        gear = g;
+        gear = 1 + Math.min(4, (int) (sp * 5f));
         if (speed < target) {
-            if (shift > 0f) {
-                shift -= dt;
-                return;
-            }
-            float acc = Math.max(ACCEL * 0.05f, ACCEL * (1.12f - sp));
+            float acc = ACCEL * (1.15f - 0.55f * sp);
             speed = Math.min(target, speed + acc * dt);
         } else {
             float dec = speed - target > 1.5f ? BRAKE : COAST * 2f;
@@ -128,18 +133,19 @@ final class Pickup {
     }
 
     /**
-     * The speed the driver picks: the top, less into a hard turn; no faster than it can stop
-     * short of a car ahead in its way, or of something standing in its way.
+     * The speed the driver picks: the top, a little less into a hard turn; held back by a car close
+     * ahead in its lane, and by something standing in its way.
      */
     private float target(float fx, float fz, City city, Cars cars) {
-        float t = VMAX * (1f - 0.55f * Math.abs(steer));
+        float t = VMAX * (1f - 0.3f * Math.abs(steer));
         for (int c = 0; c < Cars.MOST; c++) {
             if (!cars.live(c)) continue;
             float ox = cars.x[c] - x, oz = cars.z[c] - z;
             float along = ox * fx + oz * fz, across = Math.abs(ox * fz - oz * fx);
-            if (along < 0f || along > 30f || across > 1.8f) continue;
-            float gap = Math.max(0f, along - 6f);
-            t = Math.min(t, Math.max(0f, cars.speed[c]) + gap * 0.9f);
+            if (along < 0f || along > 18f || across > 1.8f) continue;
+            // only a car close ahead in its lane holds it back, and not for long: the way round it is the wheel's
+            float gap = Math.max(0f, along - 5f);
+            t = Math.min(t, Math.max(0f, cars.speed[c]) + gap * 2.5f);
         }
         // something standing ahead: looked for a few steps on, along the way it goes
         float[] p = new float[2];

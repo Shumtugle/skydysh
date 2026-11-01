@@ -55,9 +55,11 @@ down to a beach with sunshades, and the water. Home is there, where the game beg
 top, the same in every town; its sign over the door takes her in.
 
 Duty pickups stand at the curbs here and there (not in a hunt). Touch the wheel over one, or
-stand at its door, and she gets in. A finger down drives it: the driver picks the speed; sideways
-from where the finger came down turns the wheel; drawn down, it brakes, and held, it backs;
-lifted, it rolls to a stop. The button low on the right lets her out. She stands on
+stand at its door, and she gets in. Driving is the easy way about the town, and the fast one:
+a finger down drives it, up to some 130 kilometers an hour; sideways from where the finger came
+down turns the wheel, and the pickup goes where its nose points, as sharply as the wheel says,
+without sliding; run into a wall, it runs along it. Drawn down, the finger brakes, and held, it
+backs; lifted, it rolls to a stop. How fast it goes is shown low on the left. The button low on the right lets her out. She stands on
 whatever she comes down on, the roofs too. When a mission is done the game keeps where it is.
 
 For now, to try: a hunt. Five brums on fire that should not be are loose in the town, each
