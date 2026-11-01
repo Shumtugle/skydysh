@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.54
+
+- After a mission, home. The report (a mission won: its time, and the mission's best: the first
+  best, a new best with the one before, or the best still), then she is brought into home's
+  room, onto the sofa; the game is kept, and the screen offers the next mission, the three kinds,
+  or a rest. Lost, it offers the same again, begun from where it began (home, now), never from
+  where it was lost. The best time of each mission is kept on the phone, to a tenth of a second.
+- The eye keeps out of the leaves. The town keeps the crowns of its trees and palms; when one
+  comes between the eye and her, the eye drops under it if there is room, else comes in nearer
+  (never nearer than 2.6 m), quickly, and goes back slowly.
+- No crash sound when a car is rammed, nor its alarm: a jolt in the hand only.
+- Stand: scenes `sofa.txt` (the hunt lost, home, the same again; a hunt won, its best), `leaves.txt`.
+
 ## 0.53
 
 - The wheel at the wheel: under the finger a steering wheel of the same glass as the buttons,

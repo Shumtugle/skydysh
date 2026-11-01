@@ -143,6 +143,9 @@ final class City implements Ground {
         // the loungers on its beach, if it has one: where one lies (x, z), facing the sea
         float[] loungers = new float[2 * 8];
         int loungerN;
+        // the crowns of its trees and palms, round masses of leaves (x, y, z, radius): the eye keeps out of them
+        float[] crowns = new float[4 * 8];
+        int crownN;
         // its street lamps, where each stands (x, z): one rammed is felled
         float[] lamps = new float[2 * 8];
         int lampN;
@@ -456,6 +459,60 @@ final class City implements Ground {
         return n;
     }
 
+    // ---- the crowns of the trees and palms, which the eye keeps out of ----
+
+    private static void crown(Cell c, float x, float y, float z, float r) {
+        if ((c.crownN + 1) * 4 > c.crowns.length) c.crowns = java.util.Arrays.copyOf(c.crowns, c.crowns.length * 2);
+        int o = c.crownN++ * 4;
+        c.crowns[o] = x;
+        c.crowns[o + 1] = y;
+        c.crowns[o + 2] = z;
+        c.crowns[o + 3] = r;
+    }
+
+    /** A tree, its crown kept. */
+    private static void tree(Cell c, DrawList d, Random rnd, float x, float y, float z, float height) {
+        Garden.tree(d, rnd, x, y, z, height);
+        crown(c, x, y + height * 0.66f, z, height * 0.33f);
+    }
+
+    /** A palm, its crown kept. */
+    private static void palm(Cell c, Random rnd, float x, float y0, float z, float height, float lean, boolean far) {
+        Street.palm(c.detail, rnd, x, y0, z, height, lean, far);
+        crown(c, x + lean, y0 + height - 0.6f, z, 2.6f);
+    }
+
+    /**
+     * How far along the way from (ax, ay, az) to (bx, by, bz) it first goes into the crown of a
+     * tree or a palm, 0 to 1 (1: it does not); the crown's bottom into low[0], if it does.
+     */
+    float leavesOn(float ax, float ay, float az, float bx, float by, float bz, float[] low) {
+        float best = 1f;
+        float dx = bx - ax, dy = by - ay, dz = bz - az, ll = dx * dx + dy * dy + dz * dz;
+        if (ll < 1e-6f) return 1f;
+        int i0 = index(Math.min(ax, bx)), i1 = index(Math.max(ax, bx)), j0 = index(Math.min(az, bz)), j1 = index(Math.max(az, bz));
+        for (int j = j0; j <= j1; j++)
+            for (int i = i0; i <= i1; i++) {
+                Cell c = cells.get(key(i, j));
+                if (c == null) continue;
+                for (int k = 0; k < c.crownN; k++) {
+                    int o = k * 4;
+                    float cx = c.crowns[o], cy = c.crowns[o + 1], cz = c.crowns[o + 2], r = c.crowns[o + 3];
+                    // where the line comes nearest the crown's middle, and whether it passes within it
+                    float t = ((cx - ax) * dx + (cy - ay) * dy + (cz - az) * dz) / ll;
+                    float ex = ax + dx * t - cx, ey = ay + dy * t - cy, ez = az + dz * t - cz;
+                    float miss = ex * ex + ey * ey + ez * ez;
+                    if (miss >= r * r) continue;
+                    float in = t - (float) Math.sqrt((r * r - miss) / ll);
+                    if (in < best && t > 0f) {
+                        best = Math.max(0f, in);
+                        low[0] = cy - r;
+                    }
+                }
+            }
+        return best;
+    }
+
     // ---- the street lamps, felled by the pickup she drives ----
     private final java.util.HashSet<Long> felled = new java.util.HashSet<Long>();
 
@@ -521,7 +578,7 @@ final class City implements Ground {
     /** A tree in the pavement at (x, z), in a grating of iron. */
     private static void street(Cell c, Random rnd, float x, float z) {
         c.detail.box(x, WALK_TOP + 0.005f, z, 0.6f, 0.01f, 0.6f, null, 0x3A3530, DrawList.RAIL);
-        Garden.tree(c.detail, rnd, x, WALK_TOP, z, 7f + rnd.nextFloat() * 2.5f);
+        tree(c, c.detail, rnd, x, WALK_TOP, z, 7f + rnd.nextFloat() * 2.5f);
         c.wall(x - 0.2f, z - 0.2f, x + 0.2f, z + 0.2f);
     }
 
@@ -581,7 +638,7 @@ final class City implements Ground {
             for (float z = z0 + 10f; z < z0 + CELL - 6f; z += 12f)
                 for (int s = -1; s <= 1; s += 2) {
                     float px = x0 + s * (CURB + 1.1f);
-                    Street.palm(c.detail, rnd, px, WALK_TOP, z, 6.5f + rnd.nextFloat() * 2f, (rnd.nextFloat() - 0.5f) * 0.3f, false);
+                    palm(c, rnd, px, WALK_TOP, z, 6.5f + rnd.nextFloat() * 2f, (rnd.nextFloat() - 0.5f) * 0.3f, false);
                     c.wall(px - 0.25f, z - 0.25f, px + 0.25f, z + 0.25f);
                 }
         }
@@ -652,7 +709,7 @@ final class City implements Ground {
             for (float t = row * 6f + 3f; t < CELL; t += 12f) {
                 float px = x0 + t, h = 6.8f + deco.nextFloat() * 2f, lean = (deco.nextFloat() - 0.5f) * 0.3f;
                 if (keptClear(px, rz) || keptClear(px + 1.5f, rz) || keptClear(px - 1.5f, rz)) continue;
-                Street.palm(c.detail, deco, px, WALK_TOP, rz, h, lean, false);
+                palm(c, deco, px, WALK_TOP, rz, h, lean, false);
                 c.wall(px - 0.25f, rz - 0.25f, px + 0.25f, rz + 0.25f);
             }
         }
@@ -1380,7 +1437,7 @@ final class City implements Ground {
             for (int b = -2; b <= 2; b++) {
                 if (Math.abs(a) < 2 && Math.abs(b) < 2) continue;
                 float px = mx + a * 10f, pz = mz + b * 10f;
-                Street.palm(c.detail, rnd, px, WALK_TOP, pz, 6f + rnd.nextFloat() * 2.5f, (rnd.nextFloat() - 0.5f) * 0.35f, false);
+                palm(c, rnd, px, WALK_TOP, pz, 6f + rnd.nextFloat() * 2.5f, (rnd.nextFloat() - 0.5f) * 0.35f, false);
                 c.wall(px - 0.25f, pz - 0.25f, px + 0.25f, pz + 0.25f);
             }
         if (garden) {
@@ -1441,7 +1498,7 @@ final class City implements Ground {
                 int trees = 2 + rnd.nextInt(2);
                 for (int k = 0; k < trees; k++) {
                     float tx = mx + sx * (5f + rnd.nextFloat() * 9f), tz = mz + sz * (5f + rnd.nextFloat() * 9f);
-                    Garden.tree(d, rnd, tx, y, tz, 7.5f + rnd.nextFloat() * 3f);
+                    tree(c, d, rnd, tx, y, tz, 7.5f + rnd.nextFloat() * 3f);
                     c.wall(tx - 0.2f, tz - 0.2f, tx + 0.2f, tz + 0.2f);
                 }
                 for (int k = 0; k < 3; k++) {

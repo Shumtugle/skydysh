@@ -34,7 +34,11 @@ final class Lang {
         EN.put("goal.home", "HOME");
         EN.put("home", "Dispatch \u2014 home||Which mission now?||1  The hunt|2  The folder|3  The delivery||Or go on: mission {n}");
         EN.put("sofa", "Home. Kept.|Which mission now?||1  The hunt|2  The folder|3  The delivery|On: mission {n}|Just rest");
-        EN.put("free.after", "The town is yours.|The next mission is at home.|");
+        EN.put("free.after", "Now, home.|");
+        EN.put("sofa.again", "Home. Kept.|Which mission now?||1  The hunt|2  The folder|3  The delivery|Again: mission {n}|Just rest");
+        EN.put("best.first", "The mission's best.|");
+        EN.put("best.new", "A new best! Was  {time}|");
+        EN.put("best", "Best  {time}|");
         EN.put("goal.free", "HOME, FOR A MISSION");
         EN.put("controls.one", "ONE FINGER");
         EN.put("controls.two", "TWO THUMBS");

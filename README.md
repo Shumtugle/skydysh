@@ -18,8 +18,11 @@ screen, and the name is typed in the letters of the dispatcher's tube; a touch s
 begins before home. Then the
 dispatcher's room, which is her head: walls of her own brick round the street seen through her
 eyes, what is to be done typed over it; a touch, her mallet knocks a key, the walls draw back
-and the street goes on. When it is done, back into her head for the report; then the town is
-hers, free, as long as she likes, and the next mission is taken at home.
+and the street goes on. When it is done, back into her head for the report (a mission won, its
+time against the mission's best, kept on the phone); then she is home, on the sofa, the game
+kept, and the screen offers the next mission, or the same again if it was lost (begun again from
+where it began, never from where it was lost), or a rest: free time, the town hers as long as she
+likes, the next mission taken at home.
 
 One finger leads her: held down, she runs; moved sideways, she turns; flicked up, she jumps,
 flicked down, she slides; a tap is the mallet's. Other fingers, while it leads, press what they
@@ -47,7 +50,8 @@ takes her up and lets her out on the roof by itself. On the roof, by the hut's d
 shows; pressed, the lift takes her down and the cabin opens onto the hall again. Signs of glass
 hang over the ways in and up near her: the lifts' doors, the fire escapes, the ladders from roof
 to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
-out) by the lift. A button high on the left pauses the game.
+out) by the lift. A button high on the left pauses the game. The eye behind her keeps out of
+the leaves: when a tree's crown or a palm's comes between, it drops under it, or comes in nearer.
 
 At the wheel, while a finger is down the pickup goes; a steering wheel of glass shows where the
 finger came down, turning as the pickup's wheel turns,

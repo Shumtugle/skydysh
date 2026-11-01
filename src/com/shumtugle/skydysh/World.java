@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.53";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.54";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -95,6 +95,11 @@ final class World {
     private void begin(float x, float z) {
         if (driving != null) getOut();
         free = false;
+        lost = false;
+        // where it began, for a try again to begin there too
+        startX = x;
+        startZ = z;
+        startHome = indoors != null && indoors.home;
         int n = mission.round + 1;
         delivery = null;
         if (Delivery.its(n)) {
@@ -192,6 +197,46 @@ final class World {
      * mission's number is the one last played (one less, if it is to be played again).
      */
     boolean free;
+    /** The mission last played was lost: the one offered at home is the same again. */
+    private boolean lost;
+    /** The report read, she is to be brought home onto the sofa. */
+    private boolean homeAfter;
+    /** Where the mission now began: home's room, or out of doors at (x, z). */
+    private float startX, startZ;
+    private boolean startHome;
+    static final String SAVE_BEST = "best.";
+
+    /** How long the mission just done took, seconds. */
+    private float doneTime() {
+        if (delivery != null) return delivery.doneAt;
+        if (folder != null) return folder.doneAt;
+        return mission.doneAt;
+    }
+
+    /**
+     * Mission n done in so many seconds: kept as its best if it is (in tenths of a second); the
+     * best before, seconds (0: none before).
+     */
+    private float record(int n, float seconds) {
+        int was = host.loadInt(SAVE_BEST + n), now = Math.max(1, Math.round(seconds * 10f));
+        if (was <= 0 || now < was) host.saveInt(SAVE_BEST + n, now);
+        return was / 10f;
+    }
+
+    /** Home, after a mission: in home's room, sitting on the sofa, where the next is offered. */
+    private void bringHome() {
+        if (driving != null) getOut();
+        errand = NO_ERRAND;
+        runner.stopLead();
+        if (indoors != null) leave();
+        indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+        indoors.enter(runner, false);
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        whiteOut = WHITE_OUT;
+        sitDown();
+        letGo();
+    }
 
     /** The brums of the mission now. */
     Chase[] brums() {
@@ -346,13 +391,16 @@ final class World {
                     chooseMission(c);
                     dispatch.then(briefing());
                 } else if (c == 0 && free) {
-                    // on to the next, whatever its kind
+                    // on to the next, whatever its kind; lost, the same again, from where it began
+                    again = lost;
+                    if (lost && !startHome) runner.put(startX, City.WALK_TOP, startZ, runner.heading);
                     begin(runner.x, runner.z);
                     overFor = 0f;
                     caughtSeen = 0;
                     nextSlot = 0;
                     struckSeen = 0;
                     dispatch.then(briefing());
+                    again = false;
                 }
             } else if (type == DOWN) dispatch.touch();
             return;
@@ -757,7 +805,10 @@ final class World {
                 // the walls drawn back: the street goes on (the next mission, after a report)
                 dispatch = null;
                 overFor = 0f;
-                if (seated() && !free) standUp();
+                if (homeAfter) {
+                    homeAfter = false;
+                    bringHome();
+                } else if (seated() && !free) standUp();
             }
             return;
         }
@@ -770,15 +821,20 @@ final class World {
             }
             save();
             String[] said = report();
-            // lost, the same again when she next takes one at home; won, the next. The report, and
-            // the town is hers
+            // lost, the same again when she next takes one at home, from where it began; won, the
+            // next, and its time kept against the best. The report, and then she is brought home,
+            // onto the sofa, where the next is offered
             again = hunt() ? mission.late : folder != null && folder.theirs;
+            if (!again) said = Dispatch.timed(said, record(mission.round, doneTime()), doneTime());
+            lost = again;
             if (again) mission.round--;
+            again = false;
             free = true;
             folder = null;
             delivery = null;
             chase = nobody;
             dispatch = new Dispatch(host, Dispatch.freed(said));
+            homeAfter = true;
             letGo();
             overFor = 0f;
             return;
@@ -1275,10 +1331,8 @@ final class World {
         int ramsWere = cars.rams;
         p.drive(dt, go, wheel, brakeIn, false, city, cars, walkers);
         if (cars.rams != ramsWere) {
-            // a car rammed: the crash, its alarm going, the people off; the pickup, not a scratch
+            // a car rammed: a jolt in the hand, the people off; the pickup, not a scratch
             p.speed *= 0.9f;
-            host.sound(Synth.CRASH, 0.5f + 0.5f * cars.ramHard, 1f);
-            host.sound(Synth.ALARM, 0.35f, 1f);
             host.buzz(60 + Math.round(60f * cars.ramHard));
             walkers.alarm(cars.ramX, cars.ramZ, 10f);
             pets.alarm(cars.ramX, cars.ramZ, 10f);
@@ -1596,18 +1650,7 @@ final class World {
             // up from it, she sits again only once she has gone from it
             if (!in.atSofa(r)) in.sofaArmed = true;
             if (!in.sofaArmed || r.inAir() || r.led() && errand != ERRAND_THROUGH || !in.atSofa(r)) return false;
-            in.seated = true;
-            seatedFor = 0f;
-            sofaAsked = false;
-            errand = NO_ERRAND;
-            r.stopLead();
-            letGo();
-            // kept: the mission to play next, what has been won
-            host.saveInt(SAVE_MISSION, free ? mission.round + 1 : mission.round);
-            host.saveInt(SAVE_PLATES, plates);
-            host.saveInt(SAVE_MONEY, money);
-            host.sound(Synth.WOOD, 0.5f, 0.7f);
-            host.buzz(40);
+            sitDown();
         }
         seatedFor += dt;
         r.lounging = true;
@@ -1617,10 +1660,27 @@ final class World {
         if (in.shot(eyeNow)) r.eyeAt(eyeNow);
         if (!sofaAsked && seatedFor > SIT_FOR) {
             sofaAsked = true;
-            dispatch = new Dispatch(host, Dispatch.sofa(free ? mission.round + 1 : mission.round)).choices(Dispatch.SOFA_PICKS);
+            dispatch = new Dispatch(host, Dispatch.sofa(free ? mission.round + 1 : mission.round, free && lost)).choices(Dispatch.SOFA_PICKS);
             letGo();
         }
         return true;
+    }
+
+    /** Down on the sofa: the game kept, the screen to come on in a moment. */
+    private void sitDown() {
+        Indoors in = indoors;
+        in.seated = true;
+        seatedFor = 0f;
+        sofaAsked = false;
+        errand = NO_ERRAND;
+        runner.stopLead();
+        letGo();
+        // kept: the mission to play next, what has been won
+        host.saveInt(SAVE_MISSION, free ? mission.round + 1 : mission.round);
+        host.saveInt(SAVE_PLATES, plates);
+        host.saveInt(SAVE_MONEY, money);
+        host.sound(Synth.WOOD, 0.5f, 0.7f);
+        host.buzz(40);
     }
 
     /** Up from the sofa, a step before it, facing the door. */
@@ -1942,6 +2002,11 @@ final class World {
     }
 
     /** Seconds as minutes and seconds, m:ss. */
+    /** Seconds as minutes and seconds (the screen's words). */
+    static String clockOf(float seconds) {
+        return clock(seconds);
+    }
+
     private static String clock(float seconds) {
         int s = (int) seconds;
         return (s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60);

@@ -131,8 +131,24 @@ final class Dispatch {
     static final int REST = 4;
 
     /** On home's sofa: kept; which mission now, the three of them, on to the next, or a rest. */
-    static String[] sofa(int round) {
-        return Lang.lines("sofa", round, null);
+    static String[] sofa(int round, boolean again) {
+        return Lang.lines(again ? "sofa.again" : "sofa", round, null);
+    }
+
+    /**
+     * A report of a mission won in so many seconds, with the best time before it (0, none): before
+     * its last line (the touch to go on), that this is the first best, a new best, or the best.
+     */
+    static String[] timed(String[] report, float best, float now) {
+        String[] more = best <= 0f ? Lang.lines("best.first", 0, null)
+                : Math.round(now * 10f) < Math.round(best * 10f) ? Lang.lines("best.new", 0, World.clockOf(best))
+                : Lang.lines("best", 0, World.clockOf(best));
+        String[] out = new String[report.length + more.length];
+        int k = report.length - 1;
+        System.arraycopy(report, 0, out, 0, k);
+        System.arraycopy(more, 0, out, k, more.length);
+        out[out.length - 1] = report[k];
+        return out;
     }
 
     /** What touching each line of the sofa's screen picks (see HOME_PICKS); a rest, REST. */

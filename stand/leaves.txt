@@ -1,0 +1,16 @@
+# The eye and the leaves: on foot along a row of street trees, then at the wheel up a street with
+# trees along it; the eye comes down under the crowns or in nearer, never lost in the leaves.
+screen 1096 2560
+wait 0.4
+mission 3
+at 1.4 37.2 1.5708
+wait 1
+shot a0
+at 5.4 30 0
+wait 1
+shot a1
+at -5 34 0
+wait 1
+shot a2
+drivein 1.4 10 0
+pedal 4 0 0 1 b

@@ -802,6 +802,23 @@ final class Runner {
             back = RIDE_BACK + 5f * fast;
             high = RIDE_HIGH + 1.5f * fast;
         }
+        // leaves between the eye and her (a tree's crown, a palm's): the eye comes down under them
+        // if there is room under them, else in nearer her, so that she is never lost in them; it
+        // goes there quickly and comes back out slowly
+        if (g instanceof City && !up) {
+            float hy = y + 1.4f, ex = x - fx * back, ey = y + high, ez = z - fz * back;
+            float t = ((City) g).leavesOn(x, hy, z, ex, ey, ez, leafLow);
+            float wantHigh = 1f, wantBack = 1f;
+            if (t < 1f) {
+                float under = leafLow[0] - 0.4f - y;
+                if (under > 2.2f && under < high) wantHigh = under / high;
+                else wantBack = Math.max(MIN_BACK / back, t * 0.85f);
+            }
+            dodgeHigh += (wantHigh - dodgeHigh) * Math.min(1f, dt * (wantHigh < dodgeHigh ? 7f : 1.5f));
+            dodgeBack += (wantBack - dodgeBack) * Math.min(1f, dt * (wantBack < dodgeBack ? 7f : 1.5f));
+            high *= dodgeHigh;
+            back *= dodgeBack;
+        }
         // back from her along the way she looks, as far as nothing is in the way
         // what the eye bumps into: what stands round it, not what is low under it or high over it
         float r = in ? 0.3f : 0.4f, feet = y + high - (in ? 1f : City.HEADROOM - 0.3f);
@@ -853,6 +870,10 @@ final class Runner {
     boolean riding;
     private float seatX, seatY, seatZ, wheel;
     static final float RIDE_BACK = 10f, RIDE_HIGH = 4.4f, RIDE_AHEAD = 20f;
+    // the eye kept out of the leaves: how much of its height and of its way back it keeps now; never nearer than this
+    private float dodgeHigh = 1f, dodgeBack = 1f;
+    private final float[] leafLow = new float[1];
+    static final float MIN_BACK = 2.6f;
     // the eye on her swimming: so far back, so high over the water, looking so far on and so high there
     static final float SWIM_BACK = 4.6f, SWIM_HIGH = 3.1f, SWIM_AHEAD = 9f, SWIM_LOOK = 0.4f;
     // the seat, from the hips down: the figure stands so much lower than the seat's top
