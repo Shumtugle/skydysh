@@ -786,6 +786,33 @@ public final class Stand implements World.Host {
             Pickup q = world.driving;
             System.out.println(q == null ? String.format("%7.2fs  not at the wheel", time)
                     : String.format("%7.2fs  at the wheel: %.1f m/s, gear %d, at %.1f %.1f heading %.2f", time, q.speed, q.gear, q.x, q.z, q.heading));
+        } else if (c.equals("tremble")) {
+            // tremble SECONDS AMPLITUDE [SIDEWAYS DOWNWARD]: at the wheel, a finger held where it came
+            // down (or so far from there), shaking aside and up and down by up to so many pixels, as a
+            // thumb does; how far the heading strays told
+            float secs = f(p[1]), amp = f(p[2]), bx = p.length > 4 ? f(p[3]) : 0f, by = p.length > 4 ? f(p[4]) : 0f;
+            float fx = World.W * 0.5f, fy = 480f;
+            java.util.Random shake = new java.util.Random(7);
+            world.touch(World.DOWN, fx, fy);
+            step();
+            Pickup q = world.driving;
+            float h0 = q == null ? 0f : q.heading, x0 = q == null ? 0f : q.x, z0 = q == null ? 0f : q.z, most = 0f, sum = 0f;
+            int n = Math.round(secs / DT);
+            for (int i = 0; i < n; i++) {
+                if (i % 3 == 0) world.touch(World.MOVE, fx + bx + (shake.nextFloat() * 2f - 1f) * amp, fy + by + (shake.nextFloat() * 2f - 1f) * amp);
+                step();
+                if (q != null) {
+                    float d = Math.abs(q.heading - h0);
+                    most = Math.max(most, d);
+                    sum += d * d;
+                }
+            }
+            world.touch(World.UP, fx, fy);
+            if (q != null) {
+                float side = Math.abs((q.x - x0) * (float) Math.cos(h0) - (q.z - z0) * (float) Math.sin(h0));
+                System.out.println(String.format("%7.2fs  trembling: %.1f m/s, heading strays %.3f at most, %.3f on the whole, %.1f m aside",
+                        time, q.speed, most, (float) Math.sqrt(sum / n), side));
+            }
         } else if (c.equals("tapsign")) {
             // tapsign lift|ladder|up|wheel|enter|home: a tap on the nearest sign of the kind on the glass, told
             int which = p[1].equals("ladder") ? Badges.LADDER : p[1].equals("up") ? Badges.UP : p[1].equals("wheel") ? Badges.WHEEL

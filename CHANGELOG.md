@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.51
+
+- One finger to play, two thumbs set aside for now (kept in the code, not offered under the
+  pause). The first finger down leads; other fingers press what they come down on: the pause,
+  the way out of the pickup, a lift's button, a sign; on foot, on bare glass, the mallet.
+- At the wheel, the finger is the throttle: while it is down, the pickup goes; lifted, it slows
+  to a stop. Moved aside from where it came down, it turns the wheel by how far aside it is, not
+  by the angle it makes: a little tremble near the middle does nothing, then more and more to
+  full over at the ring's edge. Drawn down past the ring's middle, it brakes; held so standing,
+  it backs. The ring stays where the finger came down.
+- The wheel follows the hand a beat softer, and the eye behind the pickup follows it later, so
+  the street no longer swings with every touch. Held straight, the pickup settles along a street
+  from farther off it, and the less the more the wheel is turned.
+- The ring at the wheel is coloured for what she is about: coral for a hunt, turquoise for the
+  folder, amber for a delivery, cream when free.
+- Stand: scene `stick.txt` for the finger; `tremble.txt` and the command `tremble`, a thumb that
+  shakes at the wheel and how far the heading strays.
+
 ## 0.50
 
 - A stick at the wheel, the driver gone. Where the thumb comes down is the stick's middle (and

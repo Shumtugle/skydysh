@@ -15,7 +15,7 @@ uniform sampler2D uHud;     // the fine layer over the top of the frame, premult
 uniform float uHudRows;     // how many frame rows it covers from the top; none, 0
 uniform sampler2D uBadges;  // the sheet of buttons and signs, 5 by 5 cells, premultiplied
 uniform vec4 uBadge[16];    // each one shown: its middle and half its size (frame pixels), how much it shows
-uniform vec2 uBadgeOf[16];  // which cell of the sheet, how lit
+uniform vec2 uBadgeOf[16];  // which cell of the sheet; how lit, and twice its own colour over that
 uniform int uBadgeN;
 uniform vec2 uFrameSize;    // the frame, in frame pixels
 uniform vec2 uScreen;       // the screen, in its own pixels
@@ -87,7 +87,16 @@ void main() {
         float k = uBadgeOf[i].x;
         vec2 cell = vec2(mod(k, 5.0), floor(k / 5.0));
         vec4 t = texture(uBadges, (cell + d * 0.5 + 0.5) * 0.2);
-        t.rgb *= 1.0 + 0.6 * uBadgeOf[i].y;
+        float tint = floor(uBadgeOf[i].y * 0.5);
+        float lit = uBadgeOf[i].y - 2.0 * tint;
+        if (tint > 0.5) {
+            // its own colour over the rim and the glass, as bright as they were
+            vec3 hue = tint < 1.5 ? vec3(1.0, 0.45, 0.32) : tint < 2.5 ? vec3(0.25, 0.92, 0.86)
+                    : tint < 3.5 ? vec3(1.0, 0.74, 0.25) : vec3(0.98, 0.93, 0.82);
+            float luma = dot(t.rgb, vec3(0.3, 0.55, 0.15));
+            t.rgb = mix(t.rgb, hue * luma * 1.5, 0.85);
+        }
+        t.rgb *= 1.0 + 0.6 * lit;
         t *= b.w;
         c = c * (1.0 - t.a) + t.rgb;
     }

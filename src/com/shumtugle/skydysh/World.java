@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.50";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.51";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -80,9 +80,8 @@ final class World {
         // where the last game left off: the mission to play next, and what has been won
         int next = host.loadInt(SAVE_MISSION);
         if (next > 1) mission.round = next - 1;
-        // the way to play on foot: the stick and the eye by hand (two thumbs), or one finger, if chosen
-        // one finger unless two thumbs were chosen (kept as 2)
-        Runner.classic = host.loadInt(SAVE_CONTROLS) != 2;
+        // the way to play on foot: one finger, unless two thumbs are offered and were chosen (kept as 2)
+        Runner.classic = !TWO_THUMBS_OFFERED || host.loadInt(SAVE_CONTROLS) != 2;
         plates = host.loadInt(SAVE_PLATES);
         money = host.loadInt(SAVE_MONEY);
         // every game begins at home: on the promenade across the shore road from its door, facing it
@@ -334,7 +333,16 @@ final class World {
             return;
         }
         if (Runner.classic) {
-            if (id == 0) classicTouch(type, x, y);
+            // the first finger down leads; any other only presses what is under it
+            if (type == DOWN) {
+                if (leadFinger < 0) {
+                    leadFinger = id;
+                    classicTouch(DOWN, x, y);
+                } else otherFinger(x, y);
+            } else if (id == leadFinger) {
+                classicTouch(type, x, y);
+                if (type == UP) leadFinger = -1;
+            }
             return;
         }
         if (type == DOWN) down(id, x, y);
@@ -505,6 +513,8 @@ final class World {
     }
 
     // ---- the way to play, chosen while paused: one finger or two thumbs ----
+    /** Two thumbs, offered under the pause or not: for now not, one finger plays, the rest kept for later. */
+    static final boolean TWO_THUMBS_OFFERED = false;
     static final float TOGGLE_HALF = 24f;
 
     float toggleX() {
@@ -516,6 +526,7 @@ final class World {
     }
 
     private boolean onToggle(float x, float y) {
+        if (!TWO_THUMBS_OFFERED) return false;
         float m = TOGGLE_HALF + 8f, dx = x - toggleX(), dy = y - toggleY();
         return dx * dx + dy * dy < m * m;
     }
@@ -608,7 +619,39 @@ final class World {
         else runner.tap();
     }
 
-    /** The old way, with one finger (the stand's bots). */
+    /** The finger that leads, one finger to play: the first down, till it is lifted (-1: none). */
+    private int leadFinger = -1;
+
+    /**
+     * Another finger down while the first leads: it presses what it comes down on, the pause, the
+     * way out of the pickup, the button by a lift, a sign; on foot, on bare glass, the mallet.
+     */
+    private void otherFinger(float x, float y) {
+        if (paused) return;
+        if (onButton(x, y, pauseX(), pauseY())) {
+            paused = true;
+            letGo();
+            return;
+        }
+        if (driving != null) {
+            if (Math.abs(x - liftButtonX()) < BUTTON + 8 && Math.abs(y - liftButtonY()) < BUTTON + 8) getOut();
+            return;
+        }
+        if (liftOffer && onLiftButton(x, y)) {
+            liftPressed = true;
+            return;
+        }
+        if (indoors == null) {
+            int sgn = signAt(x, y);
+            if (sgn >= 0) {
+                errand(sgn);
+                return;
+            }
+        }
+        runner.tap();
+    }
+
+    /** One finger to play (the stand's bots play so too). */
     private void classicTouch(int type, float x, float y) {
         if (type == DOWN) classicDown = true;
         else if (type == UP) classicDown = false;
@@ -929,7 +972,8 @@ final class World {
         }
         if (paused) {
             d.badge(W * 0.5f, h * 0.46f, 40f, Badges.PLAY, 0.95f, 0.15f + 0.15f * (float) Math.sin(time * 3f));
-            d.badge(toggleX(), toggleY(), TOGGLE_HALF, Runner.classic ? Badges.ONE_FINGER : Badges.TWO_THUMBS, 0.9f, 0f);
+            if (TWO_THUMBS_OFFERED)
+                d.badge(toggleX(), toggleY(), TOGGLE_HALF, Runner.classic ? Badges.ONE_FINGER : Badges.TWO_THUMBS, 0.9f, 0f);
             d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PLAY, 0.9f, 0f);
             return;
         }
@@ -943,10 +987,10 @@ final class World {
                     ox *= STICK_R / m;
                     oy *= STICK_R / m;
                 }
-                d.badge(carCX, carCY, STICK_R + 6f, Badges.BLANK, 0.55f, 0f);
+                d.badge(carCX, carCY, STICK_R + 6f, Badges.BLANK, 0.6f, 0f, ringTint());
                 d.badge(carCX + ox, carCY + oy, KNOB, Badges.KNOB, 0.9f, brakeIn > 0.05f ? 0.6f : 0f);
             } else {
-                d.badge(W * 0.5f, h - 56f, STICK_R + 6f, Badges.BLANK, 0.22f, 0f);
+                d.badge(W * 0.5f, h - 56f, STICK_R + 6f, Badges.BLANK, 0.3f, 0f, ringTint());
                 d.badge(W * 0.5f, h - 56f, KNOB, Badges.KNOB, 0.3f, 0f);
             }
         }
@@ -1163,48 +1207,53 @@ final class World {
     }
 
     /**
-     * A frame at the wheel: the pickup driven as the stick has it, she carried in it. Pushed, it
-     * goes, as fast as the stick is pushed out; aside, the wheel turns, full over with the stick
-     * straight aside; drawn back, it brakes, and held back standing, it backs. Let go, it rolls on
-     * and slows. With the wheel let be, the pickup settles along the street it is nearly along.
+     * A frame at the wheel: the pickup driven as the finger has it, she carried in it. While a
+     * finger is down, it goes, as fast as the way ahead lets it; the finger moved aside from where
+     * it came down turns the wheel, gently near the middle, full over at the ring's edge; drawn down
+     * past the ring's middle, it brakes, and held so standing, it backs. Lifted, the pickup slows to
+     * a stop. With the wheel let be, it settles along the street it is nearly along.
      */
     private void drive(float dt) {
         Pickup p = driving;
         float sx = pedal ? (carTX - carCX) / STICK_R : 0f, sy = pedal ? (carTY - carCY) / STICK_R : 0f;
-        float m = Math.min(1f, (float) Math.sqrt(sx * sx + sy * sy));
-        float a = (float) Math.atan2(sx, -sy);
         float wheel = 0f;
-        boolean go = false;
         brakeIn = 0f;
-        if (m > CAR_DEAD) {
-            float push = Math.min(1f, (m - CAR_DEAD) / (CAR_FULL - CAR_DEAD));
-            if (Math.abs(a) <= CAR_BACK) {
-                go = true;
-                wheel = Math.max(-1f, Math.min(1f, a / CAR_LOCK));
-                p.cap = Pickup.VMAX * push;
-            } else {
-                brakeIn = push;
-                wheel = Math.max(-1f, Math.min(1f, Math.signum(a) * ((float) Math.PI - Math.abs(a)) / CAR_LOCK));
-            }
+        if (pedal) {
+            float u = Math.min(1f, Math.abs(sx));
+            if (u > CAR_DEAD) wheel = Math.signum(sx) * (float) Math.pow((u - CAR_DEAD) / (1f - CAR_DEAD), CAR_CURVE);
+            if (sy > CAR_BRAKE) brakeIn = Math.min(1f, 0.35f + 0.65f * (sy - CAR_BRAKE) / (1f - CAR_BRAKE));
         }
+        boolean go = pedal && brakeIn == 0f;
+        p.cap = -1f;
         wheelIn = wheel;
         p.drive(dt, go, wheel, brakeIn, false, city, cars, walkers);
-        // the wheel let be: along the street it is nearly along
-        if (Math.abs(wheel) < 0.12f && Math.abs(p.speed) > 3f) {
+        // the wheel let be, or nearly: along the street it is nearly along, the less the more it is turned
+        float let = 1f - Math.min(1f, Math.abs(p.steer) / SETTLE_WHEEL);
+        if (let > 0f && Math.abs(p.speed) > 3f) {
             float q = (float) Math.PI * 0.5f, d = Math.round(p.heading / q) * q - p.heading;
-            if (Math.abs(d) < SETTLE_WITHIN) p.heading += d * Math.min(1f, dt * 2.5f);
+            if (Math.abs(d) < SETTLE_WITHIN) p.heading += d * Math.min(1f, dt * 2.5f * let);
         }
         p.seat(seatAt);
         runner.ride(dt, city, p.x, p.y, p.z, p.heading, p.speed, seatAt[0], seatAt[1], seatAt[2], p.steer);
     }
 
-    // the stick at the wheel: no push within so far of its middle; full speed from so far out;
-    // the wheel full over so far aside (radians from straight up); drawn back past so far, the brake
-    static final float CAR_DEAD = 0.14f, CAR_FULL = 0.85f, CAR_LOCK = 1.2f, CAR_BACK = 1.9f;
-    static final float SETTLE_WITHIN = 0.35f;  // radians off a street's way, at most, for the pickup to settle along it
+    /** The ring at the wheel, coloured for what she is about: the hunt coral, the folder turquoise, a delivery amber, free cream. */
+    private int ringTint() {
+        if (over()) return DrawList.TINT_CREAM;
+        if (delivery != null) return DrawList.TINT_AMBER;
+        if (folder != null) return DrawList.TINT_TURQUOISE;
+        return DrawList.TINT_CORAL;
+    }
+
+    // the finger at the wheel, as parts of the ring's radius from where it came down: aside, no
+    // turn within so far, then more and more (so steep a curve) to full over at the edge; drawn
+    // down past so far, the brake
+    static final float CAR_DEAD = 0.1f, CAR_CURVE = 1.5f, CAR_BRAKE = 0.55f;
+    static final float SETTLE_WITHIN = 0.5f;   // radians off a street's way, at most, for the pickup to settle along it
+    static final float SETTLE_WHEEL = 0.25f;   // turned so far or more, it is let go its own way
     private float carCX, carCY, carTX, carTY;
 
-    /** The finger at the wheel: where it comes down, the stick's middle; the button low on the right: out. */
+    /** The finger at the wheel: where it comes down, the ring's middle, fixed till it is lifted; the button low on the right: out. */
     private void drivingTouch(int type, float x, float y) {
         if (type == DOWN && Math.abs(x - liftButtonX()) < BUTTON + 8 && Math.abs(y - liftButtonY()) < BUTTON + 8) {
             getOut();
@@ -1223,12 +1272,6 @@ final class World {
         } else if (type == MOVE && pedal) {
             carTX = x;
             carTY = y;
-            // past its rim, the stick's middle follows the thumb out
-            float ox = x - carCX, oy = y - carCY, m = (float) Math.sqrt(ox * ox + oy * oy);
-            if (m > STICK_R) {
-                carCX = x - ox / m * STICK_R;
-                carCY = y - oy / m * STICK_R;
-            }
         } else if (type == UP) {
             pedal = false;
         }
@@ -1859,7 +1902,7 @@ final class World {
         if (dispatch == null) {
             if (driving == null) signs(d);
             buttons(d);
-            if (paused) toggleFlat(f);
+            if (paused && TWO_THUMBS_OFFERED) toggleFlat(f);
         }
         swapFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);

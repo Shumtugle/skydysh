@@ -5,24 +5,26 @@ package com.shumtugle.skydysh;
  * with a coral stripe, the plate's sign on its doors and an amber lamp behind the cab; a bed
  * behind for a load. Parked, it stands at a curb; got into, she drives it.
  *
- * It drives as a car in a town game should: easier than going on foot, and fast. A stick under
- * the thumb: pushed, it goes as fast as the stick is pushed; aside, the wheel turns, and the car
- * goes where its nose points at once, as sharply as the wheel says, a little less at the top of
- * its speed, and never slides; hard over, it slows by itself to make the corner. Drawn back, it
- * brakes, and held back standing still, it backs; let go, it rolls on and slows. The engine pulls
- * hard all the way up. Run into a wall, it runs along it, losing only what went into it.
+ * It drives as a car in a town game should: easier than going on foot, and fast. A finger on
+ * the glass: while it is down, it goes; moved aside, the wheel turns, the car going where its nose
+ * points, as sharply as the wheel says, less at the top of its speed, and never slides; hard over,
+ * it slows by itself to make the corner. Drawn down, it brakes, and held so standing still, it
+ * backs; lifted, it slows to a stop. The engine pulls hard all the way up. Run into a wall, it runs
+ * along it, losing only what went into it.
  *
  * Its own frame: x to its right, y up, its nose along +z; the road at y = 0.
  */
 final class Pickup {
     static final float VMAX = 36f;                     // top speed, meters a second
     static final float ACCEL = 13f, BRAKE = 22f, HARD_BRAKE = 30f, COAST = 3f;
+    static final float LET_GO = 11f;                   // the finger lifted: it slows so hard to a stop
     static final float BACK_TOP = 8f;                  // backing, no faster than this
     static final float CREEP = 1.5f;
     // the wheel full over, the speed it is held to is so much less than the top; how hard it slows for it
     static final float TURN_SLOWS = 0.55f, EASE = 15f;                   // the driver noses along at least this fast
     // the tightest turn, its radius; how fast it may turn at a middling speed and at the top
     static final float TIGHTEST = 4.5f, YAW_MID = 2.4f, YAW_TOP = 1.5f;
+    static final float STEER_RATE = 18f;               // how fast the wheel follows the hand: a tremble of it is lost
     static final float HALF_LONG = 2.5f, HALF_WIDE = 1f, TOP = 1.7f, ENDS = 1.3f, END_R = 1.05f;
     static final int CREAM = 0xF1E8D4, TEAL = 0x2F8A86, CORAL = 0xE0644A, AMBER = 0xF6B54A;
 
@@ -53,7 +55,7 @@ final class Pickup {
      * the traffic and the people in its way.
      */
     void drive(float dt, boolean throttle, float wheel, float brake, boolean flat, City city, Cars cars, Walkers walkers) {
-        steer += (wheel - steer) * Math.min(1f, dt * 22f);
+        steer += (wheel - steer) * Math.min(1f, dt * STEER_RATE);
         float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
         if (brake > 0.05f) {
             if (speed > 0.3f) {
@@ -66,7 +68,7 @@ final class Pickup {
             }
         } else if (!throttle) {
             still = 0f;
-            if (speed > 0f) speed = Math.max(0f, speed - COAST * dt);
+            if (speed > 0f) speed = Math.max(0f, speed - (driven ? LET_GO : COAST) * dt);
             else speed = Math.min(0f, speed + COAST * 2f * dt);
         } else {
             still = 0f;

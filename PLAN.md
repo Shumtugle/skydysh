@@ -65,6 +65,7 @@ release, each seen on the stand before the phone.
 - 0.48 The pickup's own driver keeps the way; she says go, stop and which way at the next crossing. Two thumbs on foot by default.
 - 0.49 Up and on at once: a jump keeps her going, and clears what stands before her.
 - 0.50 A stick at the wheel, the driver gone; one finger on foot as the game begins.
+- 0.51 One finger to play; at the wheel the finger is the throttle and steers by how far aside; the ring coloured for the mission.
 
 ## Next
 

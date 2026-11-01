@@ -130,8 +130,16 @@ final class DrawList {
     final float[] badge = new float[BADGE_MAX * 4], badgeOf = new float[BADGE_MAX * 2];
     int badgeN;
 
+    // a badge's own colour, laid over its rim and glass: none, coral, turquoise, amber, cream
+    static final int TINT_NONE = 0, TINT_CORAL = 1, TINT_TURQUOISE = 2, TINT_AMBER = 3, TINT_CREAM = 4;
+
     /** A button or sign over the frame: at (x, y), so big, so much shown, lit so much. */
     void badge(float x, float y, float half, int which, float shown, float lit) {
+        badge(x, y, half, which, shown, lit, TINT_NONE);
+    }
+
+    /** A button or sign over the frame, in a colour of its own (TINT_...): it rides with how lit it is, as twice the tint over it. */
+    void badge(float x, float y, float half, int which, float shown, float lit, int tint) {
         if (badgeN >= BADGE_MAX || shown <= 0.01f) return;
         int o = badgeN * 4;
         badge[o] = x;
@@ -139,7 +147,7 @@ final class DrawList {
         badge[o + 2] = half;
         badge[o + 3] = Math.min(1f, shown);
         badgeOf[badgeN * 2] = which;
-        badgeOf[badgeN * 2 + 1] = lit;
+        badgeOf[badgeN * 2 + 1] = Math.max(0f, Math.min(1f, lit)) + 2f * tint;
         badgeN++;
     }
 

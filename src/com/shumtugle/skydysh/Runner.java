@@ -284,7 +284,7 @@ final class Runner {
         tapped = true;
     }
 
-    /** The old way is not used: the sticks lead her. Kept for the stand's bots, which drive the one finger. */
+    /** One finger leads her (and the stand's bots); not so, the stick and the eye by hand, two thumbs. */
     static boolean classic;
 
     /** How far the stick is pushed now, 0 to 1. */
@@ -768,8 +768,8 @@ final class Runner {
         // comes round behind her, unhurried; standing, it stays. Led by herself, driving, on a
         // ladder, it is behind her as it always was
         boolean byHand = !classic && !riding && !auto && !led && state != CLIMB;
-        // driving, it keeps close behind: the car turns sharply, the eye with it
-        if (!byHand) eyeYaw += d * Math.min(1f, dt * (riding ? 9f : 4.5f));
+        // driving, it follows behind a beat late: the car is seen to turn, the street does not swing with every touch
+        if (!byHand) eyeYaw += d * Math.min(1f, dt * (riding ? 4f : 4.5f));
         else if (clock - lookedAt > LOOK_HOLD && speed > 1.2f)
             eyeYaw += d * Math.min(1f, dt * COME_ROUND * Math.min(1f, speed / JOG));
         while (eyeYaw - heading > Math.PI) eyeYaw -= 2f * (float) Math.PI;

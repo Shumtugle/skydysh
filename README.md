@@ -20,11 +20,12 @@ dispatcher's room, which is her head: walls of her own brick round the street se
 eyes, what is to be done typed over it; a touch, her mallet knocks a key, the walls draw back
 and the street goes on. When it is done, back into her head for the report.
 
-There are two ways to go on foot, chosen under the pause button and kept: one finger, as the game
-begins, and two thumbs (down runs her, sideways turns her, flicks jump and slide, a tap is the
-mallet's).
+One finger leads her: held down, she runs; moved sideways, she turns; flicked up, she jumps,
+flicked down, she slides; a tap is the mallet's. Other fingers, while it leads, press what they
+come down on (the pause, the way out of the pickup, a lift's button, a sign), and on bare glass
+swing the mallet.
 
-With two thumbs, the left half of the glass is a stick: where the thumb comes down is its
+Two thumbs are set aside for now (the way they went is kept for later, not offered). The left half of the glass is a stick: where the thumb comes down is its
 middle, and pushed a little she walks, further she jogs, all the way she runs, the way it is
 pushed being the way she goes as the eye sees it (up the glass into the frame, down it toward
 the eye); let go, she stops in a step or two. The right half turns the eye round her; left alone
@@ -47,11 +48,12 @@ hang over the ways in and up near her: the lifts' doors, the fire escapes, the l
 to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
 out) by the lift. A button high on the left pauses the game.
 
-At the wheel a stick is under the thumb, wherever it comes down: pushed up, the pickup goes, as
-fast as the stick is pushed; aside, it turns, full over with the stick straight aside, slowing by
-itself to make the corner; drawn back, it brakes, and held back standing, it backs. Let go, it
-rolls on and slows. With the stick held straight, the pickup settles along the street it is
-nearly along.
+At the wheel, while a finger is down the pickup goes; a ring shows where the finger came down,
+coloured for the mission (coral for a hunt, turquoise for the folder, amber for a delivery, cream
+when free). Moved aside from the ring's middle, the finger turns the wheel, gently near the middle
+and full over at its edge, the pickup slowing by itself to make the corner; drawn down, it brakes,
+and held so standing, it backs. Lifted, the pickup slows to a stop. With the finger held
+straight, the pickup settles along the street it is nearly along.
 
 The town ends at the sea: along its southmost street a promenade with palms and a parapet, steps
 down to a beach with sunshades, and the water. Into the sea she wades, slowly, and where it is
@@ -61,8 +63,7 @@ top, the same in every town; its sign over the door takes her in.
 
 Duty pickups stand at the curbs here and there (not in a hunt). Touch the wheel over one, or
 stand at its door, and she gets in. Driving is the easy way about the town, and the fast one, up
-to some 110 kilometers an hour on a straight (how fast is shown low on the left). Drawn down, the
-finger brakes, and held, it backs. The button low on the right lets her out. She stands on
+to some 130 kilometers an hour on a straight (how fast is shown low on the left). The button low on the right lets her out. She stands on
 whatever she comes down on, the roofs too. When a mission is done the game keeps where it is.
 
 For now, to try: a hunt. Five brums on fire that should not be are loose in the town, each
