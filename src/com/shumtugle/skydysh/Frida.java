@@ -26,6 +26,10 @@ final class Frida {
 
     /** How far her eyes are lit, 0 (dark coals) to 1. */
     static float eyes = 1f;
+    /** How much bigger her eyes are drawn than they are: in the dark of the opening they must not be lost. */
+    static float eyeSize = 1f;
+    /** How hot her eyes burn, 0 (their own pale gold) to 1 (the mallet's orange): in the dark the light on her face would wash them out. */
+    static float eyeHeat = 0f;
 
     private static Moves moves;
     // the parts: bone, place and turn on it (worked out from the rest pose), half sizes, color, material
@@ -368,7 +372,7 @@ final class Frida {
                 capCol[capN++] = COL[i];
                 continue;
             }
-            int col = COL[i] == EYES ? Street.mix(0x2A1C14, EYES, eyes) : COL[i];
+            int col = COL[i] == EYES ? Street.mix(0x2A1C14, Street.mix(EYES, 0xFF6A12, eyeHeat), eyes) : COL[i];
             int mat = MAT[i];
             if (fire) {
                 int own = COL[i];
@@ -390,7 +394,8 @@ final class Frida {
                         DrawList.material(DrawList.FIRE, Math.round(Math.max(0f, Math.min(0.99f, hot)) * 250f)));
                 continue;
             }
-            d.box(wx, y + py, wz, HALF[i * 3] * size, HALF[i * 3 + 1] * size, HALF[i * 3 + 2] * size, rot, col, mat);
+            float e = COL[i] == EYES ? eyeSize : 1f;
+            d.box(wx, y + py, wz, HALF[i * 3] * size * e, HALF[i * 3 + 1] * size * e, HALF[i * 3 + 2] * size, rot, col, mat);
         }
     }
 }

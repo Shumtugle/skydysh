@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.45";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.46";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -206,6 +206,8 @@ final class World {
         opening = null;
         dispatch = null;
         Frida.eyes = 1f;
+        Frida.eyeSize = 1f;
+        Frida.eyeHeat = 0f;
     }
 
     /** The mission done: the next one to play and what has been won, kept for the next game. */
@@ -224,6 +226,8 @@ final class World {
     void standDispatch(boolean done) {
         opening = null;
         Frida.eyes = 1f;
+        Frida.eyeSize = 1f;
+        Frida.eyeHeat = 0f;
         runner.update(0f, city, cars, walkers);
         dispatch = new Dispatch(host, done ? report() : briefing());
     }
@@ -651,6 +655,8 @@ final class World {
                 // first mission on its screen
                 opening = null;
                 Frida.eyes = 1f;
+        Frida.eyeSize = 1f;
+        Frida.eyeHeat = 0f;
                 whiteOut = WHITE_OUT;
                 runner.update(0f, city, cars, walkers);      // the eye put behind her
                 dispatch = new Dispatch(host, briefing()).afterBlow();

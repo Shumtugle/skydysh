@@ -60,6 +60,7 @@ release, each seen on the stand before the phone.
 - 0.43 Home is where the mission is chosen: the screen in her head, a touch on the one wanted.
 - 0.44 She swims: wading in, swimming with her head up, wading out.
 - 0.45 The blow with weight, the name struck in; the mallet's orange in the key; the screen torn after the blow.
+- 0.46 No cracks in the room; her eyes burning orange in the dark of the opening; the boom heard on a phone.
 
 ## Next
 

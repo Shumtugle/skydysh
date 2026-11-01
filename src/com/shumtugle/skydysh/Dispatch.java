@@ -67,32 +67,13 @@ final class Dispatch {
     private int rowX0, rowX1;
 
     // just after the blow into the glass of the opening: the red key smouldering in the mallet's own
-    // orange until it is knocked; the screen coming on torn and snowing, cracked, the first lines
-    // coming in fits
+    // orange until it is knocked; the screen coming on torn and snowing, the first lines coming in fits
     private boolean ember, glitchHeard;
-    static final float GLITCH = 0.75f, CRACKED = 3f;
-    private float[] cracks;
+    static final float GLITCH = 1.1f;
 
     /** This room is the first after the blow of the opening. */
     Dispatch afterBlow() {
         ember = true;
-        java.util.Random r = new java.util.Random(0xB10EL);
-        cracks = new float[4 * 40];
-        int n = 0;
-        for (int k = 0; k < 5 && n < 40; k++) {
-            float a = k * 1.256f + r.nextFloat() * 0.6f, x = 0.5f, y = 0.48f;
-            for (int s = 0; s < 7 && n < 40; s++) {
-                a += (r.nextFloat() - 0.5f) * 0.6f;
-                float l = 0.05f + r.nextFloat() * 0.06f, nx = x + (float) Math.cos(a) * l, ny = y + (float) Math.sin(a) * l * 1.3f;
-                cracks[n * 4] = x;
-                cracks[n * 4 + 1] = y;
-                cracks[n * 4 + 2] = nx;
-                cracks[n * 4 + 3] = ny;
-                n++;
-                x = nx;
-                y = ny;
-            }
-        }
         return this;
     }
 
@@ -454,7 +435,6 @@ final class Dispatch {
             snow(f, ix0, iy0, ix1, iy1);
             return;
         }
-        if (ember && t - CLOSE < GLITCH + CRACKED) crackle(f, ix0, iy0, ix1, iy1, 1f - (t - CLOSE - GLITCH) / CRACKED);
         if (font == null) font = TubeFont.read(host.asset("tube.bin"));
         if (font == null) {
             pixelLines(f, ix0, iy0, iy1);
@@ -548,21 +528,6 @@ final class Dispatch {
         // a bright line rolling down
         int roll = y0 + (int) (((t - CLOSE) / GLITCH) * (y1 - y0) * 1.7f) % Math.max(1, y1 - y0);
         if (roll >= y0 && roll + 1 < y1) f.rect(x0, roll, x1, roll + 2, 0xFFE9DDB0);
-    }
-
-    /** The cracks in the glass from the blow, faint and fading, over the first lines. */
-    private void crackle(Px f, int x0, int y0, int x1, int y1, float fade) {
-        if (cracks == null || fade <= 0f) return;
-        int a = Math.round(150 * fade);
-        float w = x1 - x0, h = y1 - y0;
-        for (int k = 0; k < cracks.length / 4; k++) {
-            float ax = x0 + cracks[k * 4] * w, ay = y0 + cracks[k * 4 + 1] * h, bx = x0 + cracks[k * 4 + 2] * w, by = y0 + cracks[k * 4 + 3] * h;
-            int n = (int) Math.max(Math.abs(bx - ax), Math.abs(by - ay)) + 1;
-            for (int i = 0; i <= n; i++) {
-                int px = Math.round(ax + (bx - ax) * i / n), py = Math.round(ay + (by - ay) * i / n);
-                if (px >= x0 && px < x1 && py >= y0 && py < y1) f.a[py * f.w + px] = (a << 24) | 0xFFFFFF;
-            }
-        }
     }
 
     /** The dispatch in the small capitals of the frame, when the tube's own font is not to be had. */

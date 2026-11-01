@@ -97,6 +97,11 @@ final class Opening {
     void update(float dt) {
         t += dt;
         Frida.eyes = clamp((t - EYES) / 0.4f);
+        // in the dark only the light on her and her eyes are left: made bigger then, as coals are
+        // seen bigger in the dark, so they are not lost to the frame's coarseness
+        float dark = clamp((t - DARK) / 0.35f);
+        Frida.eyeSize = 1f + 0.4f * dark;
+        Frida.eyeHeat = dark;
         cue(0, 0f, Synth.WIND, 0.55f, 1f);
         cue(1, EYES + 0.05f, Synth.CLANG, 0.9f, 0.45f);
         cue(2, SWING, Synth.WHOOSH, 0.8f, 0.7f);
@@ -105,14 +110,15 @@ final class Opening {
         cue(4, BLOW, Synth.GROUND, 1f, 0.8f);
         cue(5, BLOW, Synth.GLASS, 1f, 0.9f);
         // under it all, a low blow felt more than heard
-        cue(7, BLOW + 0.02f, Synth.GROUND, 1f, 0.4f);
+        cue(7, BLOW + 0.02f, Synth.GROUND, 1f, 0.6f);
+        cue(8, BLOW + 0.04f, Synth.THUNDER, 0.8f, 0.55f);
         cue(6, NAME + TYPED, Synth.CHIME, 0.7f, 1.6f);
         // the name typed, a tick a letter
         int typed = typedNow();
         if (typed > ticks && t < WHITE_AT) {
             ticks = typed;
             // each letter struck in, as the blocks came down: a knock of stone, the eye jolted
-            host.sound(Synth.STONE, 0.7f, 0.62f + 0.05f * (typed % 2));
+            host.sound(Synth.STONE, 0.95f, 0.85f + 0.08f * (typed % 2));
             shake = Math.max(shake, 0.32f);
         }
         if (broken) fall(dt);

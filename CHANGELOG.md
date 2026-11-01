@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.46
+
+- No cracks on the dispatcher's screen after the blow: the snow and the torn bands only, a little
+  longer.
+- Her eyes are no longer lost in the dark of the opening: the light left on her washed them into
+  her pale face; now, as the dark comes, they burn up to the mallet's orange and a little bigger.
+- The blow's low boom pitched up where a phone's speaker can give it, and a second roll of thunder
+  under it; the name's letters struck in with a louder knock.
+
 ## 0.45
 
 - The opening's blow has weight: a low boom under the thunder and the glass, the eye jolted harder
