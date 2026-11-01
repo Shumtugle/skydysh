@@ -81,7 +81,10 @@ the mission is played again.
 The third mission, the delivery: a load waits at the factory with the chimney, west along the
 shore road, and is wanted at the store, east along it. A duty pickup to the factory's gate,
 stood in the bay painted before it while the crates go on; to the store's, while they come off;
-then home. The missions come in turn: the hunt, the folder, the delivery, and round again.
+then home. The missions come in turn: the hunt, the folder, the delivery, and round again; or
+come home, touch its sign, and in her head the screen asks which mission now: a touch on the
+hunt, the folder or the delivery begins it there and then, a touch on the last line goes on with
+the one now.
 
 What is to come is in `PLAN.md`.
 

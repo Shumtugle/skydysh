@@ -304,6 +304,15 @@ public final class Stand implements World.Host {
             step();
             Pickup q = world.driving;
             System.out.println(String.format("%7.2fs  at the wheel at %.1f %.1f, %d crates on", time, q.x, q.z, q.load));
+        } else if (c.equals("home")) {
+            // home: in her head, home's choice on the screen
+            world.standHome();
+            step();
+        } else if (c.equals("pick")) {
+            // pick K: a touch on the line of home's choice that picks K (1 the hunt, 2 the folder, 3 the delivery, 0 on)
+            if (world.standPick(Integer.parseInt(p[1]))) System.out.println(String.format("%7.2fs  picked %s", time, p[1]));
+            else System.out.println(String.format("%7.2fs  no such line on the screen", time));
+            step();
         } else if (c.equals("turn")) {
             // turn RADIANS: her turned so much from where she faces
             Runner r = world.runner;

@@ -32,6 +32,7 @@ final class Lang {
         EN.put("goal.factory", "FACTORY");
         EN.put("goal.store", "STORE");
         EN.put("goal.home", "HOME");
+        EN.put("home", "Dispatch \u2014 home||Which mission now?||1  The hunt|2  The folder|3  The delivery||Or go on: mission {n}");
         EN.put("controls.one", "ONE FINGER");
         EN.put("controls.two", "TWO THUMBS");
         EN.put("report", "Dispatch \u2014 mission {n}||All five plates are in.|The town is safe|for tonight.||Time  {time}"

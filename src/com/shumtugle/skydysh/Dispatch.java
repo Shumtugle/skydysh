@@ -59,6 +59,63 @@ final class Dispatch {
         ticked = 0;
     }
 
+    // a choice on the screen: for each line, what touching it picks (-1, nothing); what was picked;
+    // where each line was drawn last, top and bottom, frame pixels
+    private int[] pick;
+    private int picked = -1;
+    private int[] rowTop = new int[0], rowBottom = new int[0];
+    private int rowX0, rowX1;
+
+    /** The lines are a choice: touching line k picks picks[k] (none, if it is -1). */
+    Dispatch choices(int[] picks) {
+        pick = picks;
+        return this;
+    }
+
+    /** Whether the screen is a choice not yet made. */
+    boolean choosing() {
+        return pick != null && picked < 0;
+    }
+
+    /**
+     * A touch on a choice at (x, y): the rest typed at once, if it was not all typed yet; or what
+     * the line under it picks, the mallet then coming down on the key. -1 if nothing was picked.
+     */
+    int pickAt(float x, float y) {
+        if (t < CLOSE || knockAt >= 0f) return -1;
+        if (typed < letters) {
+            typed = letters;
+            return -1;
+        }
+        for (int k = 0; k < rowTop.length && k < pick.length; k++)
+            if (pick[k] >= 0 && y >= rowTop[k] - 3 && y < rowBottom[k] + 3 && x >= rowX0 - 10 && x <= rowX1 + 10) {
+                picked = pick[k];
+                knockAt = t;
+                host.buzz(25);
+                return picked;
+            }
+        return -1;
+    }
+
+    /** Where the line that picks c was drawn, its middle (x, y); false if it was not. */
+    boolean rowOf(int c, float[] out) {
+        for (int k = 0; k < rowTop.length && pick != null && k < pick.length; k++)
+            if (pick[k] == c) {
+                out[0] = (rowX0 + rowX1) * 0.5f;
+                out[1] = (rowTop[k] + rowBottom[k]) * 0.5f;
+                return true;
+            }
+        return false;
+    }
+
+    /** At home: which mission now, the three of them, or on with the one now. */
+    static String[] home(int round) {
+        return Lang.lines("home", round, null);
+    }
+
+    /** What touching each line of home's screen picks: the hunt 1, the folder 2, the delivery 3, on 0. */
+    static final int[] HOME_PICKS = {-1, -1, -1, -1, 1, 2, 3, -1, 0};
+
     /** After these lines, at the key, the next ones on the screen before the walls draw back. */
     Dispatch then(String[] more) {
         next = more;
@@ -373,6 +430,18 @@ final class Dispatch {
             total -= lines.length - empty;
         }
         int top = iy0 + Math.max(3, Math.round((iy1 - iy0 - total) * 0.5f)), left = ix0 + 7;
+        if (rowTop.length != lines.length) {
+            rowTop = new int[lines.length];
+            rowBottom = new int[lines.length];
+        }
+        rowX0 = ix0;
+        rowX1 = ix1;
+        for (int i = 0, yy = top; i < lines.length; i++) {
+            int lh = lines[i].isEmpty() ? half : lineH;
+            rowTop[i] = yy;
+            rowBottom[i] = yy + lh;
+            yy += lh;
+        }
         // the beam: a band a little brighter running down the glass now and then
         float sweep = (t * 0.55f) % 2.2f, beamY = iy0 + sweep * (iy1 - iy0);
         int shown = (int) typed, y = top;
@@ -386,6 +455,8 @@ final class Dispatch {
             if (y + lh > iy1 - 2) break;
             if (!(last && typed >= letters && (int) (t * 2.2f) % 2 == 1)) {
                 int col = last ? 0xFFF2C46A : 0xFFE9DDB0;
+                // a choice's lines in turquoise, the one picked white
+                if (pick != null && i < pick.length && pick[i] >= 0) col = picked == pick[i] ? 0xFFFFFFFF : last ? 0xFFF2C46A : 0xFF7FE6D2;
                 // each line its own: drifting a little brighter and weaker, and now and then
                 // dimmed a moment, as an uneven beam leaves it
                 float own = 0.84f + 0.1f * (float) Math.sin(t * (1.3f + i * 0.37f) + i * 2.1f)

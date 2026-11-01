@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.43
+
+- Home is where the mission is chosen. In at home's front door (by its sign, or walking in), she
+  goes into her head, and the screen asks which mission now: the hunt, the folder, the delivery,
+  in turquoise, or on with the one now. Touched, the line goes white, the mallet comes down on the
+  key, and the mission picked begins there and then (the next of its kind, or the one now again),
+  its briefing on the screen; out again, she stands on the promenade across from the door. The
+  missions no longer have to be played in turn.
+- A screen of the dispatcher's room can be a choice: each of its lines may pick something.
+- Stand: `home`, `pick K`; scene `choice.txt`.
+
 ## 0.42
 
 - An open door seen from inside a hall no longer blazes white: the light of the street through

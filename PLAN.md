@@ -57,6 +57,7 @@ release, each seen on the stand before the phone.
 - 0.40 One finger or two thumbs, chosen when paused; pedals at the wheel over the driver; fingers let go between modes.
 - 0.41 The pickup a car, not a boat: the wheel answered at once, no sliding, fast; a speedometer.
 - 0.42 Softer light in open doorways seen from inside.
+- 0.43 Home is where the mission is chosen: the screen in her head, a touch on the one wanted.
 
 ## Next
 
@@ -73,7 +74,7 @@ The missions in order, each teaching a thing; then the town is hers.
 The releases toward it, one thing each:
 
 - What home is like inside; a few more known houses along the shore road by it.
-- Home as the end of every mission, and the choice there: the missions done again, or the next.
+- Home as the end of every mission (the choice there is in 0.43; a mission ending at home is not yet).
 - The other buttons put to work as their things come: the wheel in a car, the jet pack, the map,
   the help, a throw and a lift of a thing; buttons as part of the controls where a gesture is
   not enough.

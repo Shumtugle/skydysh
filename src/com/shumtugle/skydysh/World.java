@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.42";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.43";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -110,6 +110,56 @@ final class World {
             mission.start(x, z);
             chase = mission.target(null);
         }
+    }
+
+    /** Home: in her head the screen asks which mission now; the one now goes on if none is picked. */
+    private void atHome() {
+        if (driving != null) getOut();
+        errand = NO_ERRAND;
+        runner.stopLead();
+        host.sound(Synth.DOOR, 0.45f, 1f);
+        // out again, she stands where every game begins: on the promenade across from the door
+        runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - 5.5f, 0f);
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        dispatch = new Dispatch(host, Dispatch.home(mission.round)).choices(Dispatch.HOME_PICKS);
+        letGo();
+    }
+
+    /**
+     * Mission of a kind (the hunt 1, the folder 2, the delivery 3) begun now where she is: the next
+     * number of that kind on from the one now, or the one now again, if it is of that kind.
+     */
+    private void chooseMission(int kind) {
+        int n = Math.max(1, mission.round);
+        while ((Delivery.its(n) ? 3 : Folder.its(n) ? 2 : 1) != kind) n++;
+        mission.round = n - 1;
+        again = false;
+        // what was left lying about from the one now: no load waits on any pickup
+        for (Pickup p : duty.all) p.load = 0;
+        begin(runner.x, runner.z);
+        overFor = 0f;
+        caughtSeen = 0;
+        nextSlot = 0;
+        struckSeen = 0;
+        host.saveInt(SAVE_MISSION, n);
+    }
+
+    /** For the desktop stand: home's choice on the screen, as if she had come in at its door. */
+    void standHome() {
+        atHome();
+    }
+
+    /** For the desktop stand: a touch on the line of home's choice that picks c; false if it is not on the screen. */
+    boolean standPick(int c) {
+        float[] at = new float[2];
+        if (dispatch == null || !dispatch.rowOf(c, at)) return false;
+        // a first touch may only type the rest
+        for (int k = 0; k < 2 && dispatch.choosing(); k++) {
+            touch(DOWN, 0, at[0], at[1]);
+            touch(UP, 0, at[0], at[1]);
+        }
+        return true;
     }
 
     /** The brums of the mission now. */
@@ -247,7 +297,13 @@ final class World {
             return;
         }
         if (dispatch != null) {
-            if (type == DOWN) dispatch.touch();
+            if (type == DOWN && dispatch.choosing()) {
+                int c = dispatch.pickAt(x, y);
+                if (c > 0) {
+                    chooseMission(c);
+                    dispatch.then(briefing());
+                }
+            } else if (type == DOWN) dispatch.touch();
             return;
         }
         if (Runner.classic) {
@@ -787,6 +843,12 @@ final class World {
         liftWait = r.speed < 1.5f ? liftWait + dt : 0f;
         if (!(at && r.speed < LIFT_PAST || at && fx * wx + fz * wz > 0.7f || liftWait > LIFT_STAND)) return;
         liftWait = 0f;
+        // home's front door: into her head, where the mission is chosen
+        if (City.home(houseNow[0], houseNow[1]) && l[1] < houseNow[1]) {
+            liftArmed = false;
+            atHome();
+            return;
+        }
         System.arraycopy(l, 0, liftOf, 0, 11);
         System.arraycopy(houseNow, 0, houseOf, 0, 8);
         host.sound(Synth.DOOR, 0.45f, 1f);
