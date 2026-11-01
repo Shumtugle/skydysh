@@ -67,6 +67,7 @@ release, each seen on the stand before the phone.
 - 0.50 A stick at the wheel, the driver gone; one finger on foot as the game begins.
 - 0.51 One finger to play; at the wheel the finger is the throttle and steers by how far aside; the ring coloured for the mission.
 - 0.52 Free after a mission, the next taken at home; home's room and its sofa, where the game is kept; swimming high; a simpler wheel.
+- 0.53 A steering wheel under the finger; the pickup rams cars off and fells lamps, unbroken; people on the beach; at ease on the sofa; a new pickup skin.
 
 ## Next
 

@@ -319,6 +319,48 @@ final class Stroll {
         }
     }
 
+    /**
+     * At ease on a sofa, after the day: leaning back into it, the knees apart and not alike, one leg
+     * out before her, the other drawn in; the arms let fall loose at her sides, not alike either,
+     * one hand on the seat beside her hip, the other along the back of the sofa; the head a little
+     * to one side, breathing slowly (t, seconds).
+     */
+    static void lounge(Moves mv, float t, float[] q, float[] p) {
+        int n = mv.bone.length;
+        if (turn == null || turn.length != n * 4) {
+            turn = new float[n * 4];
+            g = new float[n * 4];
+            pos = new float[n * 3];
+        }
+        for (int b = 0; b < n; b++) set(b, 0f, 0f, 0f, 1f);
+        float breath = 0.025f * (float) Math.sin(t * 1.3f);
+        // the left leg out before her, the right drawn in, the knees apart
+        axis(THIGH_L, 1f, 0f, 0f, 1.25f);
+        then(THIGH_L, 0f, 0f, 1f, -0.3f);
+        axis(CALF_L, 1f, 0f, 0f, -0.75f);
+        axis(FOOT_L, 1f, 0f, 0f, 0.25f);
+        axis(THIGH_R, 1f, 0f, 0f, 1.5f);
+        then(THIGH_R, 0f, 0f, 1f, 0.22f);
+        axis(CALF_R, 1f, 0f, 0f, -1.5f);
+        // leaning back, a little slumped and turned, the head to one side
+        axis(SPINE1, 1f, 0f, 0f, -0.32f - breath);
+        axis(SPINE3, 0f, 1f, 0f, 0.08f);
+        axis(NECK, 0f, 0f, 1f, 0.12f);
+        axis(HEAD, 1f, 0f, 0f, 0.1f);
+        chain(mv, 0f);
+        // the left hand on the seat out beside the hip, the right along the sofa's back
+        float hy = pos[THIGH_L * 3 + 1], hz = pos[THIGH_L * 3 + 2];
+        int sl = ARM_L * 3, sr = ARM_R * 3;
+        reach(mv, ARM_L, FORE_L, HAND_L, -1f, pos[sl] - 0.32f, hy + 0.02f, hz + 0.05f);
+        reach(mv, ARM_R, FORE_R, HAND_R, 1f, pos[sr] + 0.42f, pos[sr + 1] - 0.18f, pos[sr + 2] + 0.12f);
+        for (int b = 0; b < n; b++) {
+            mul(g, b, mv.restQ, b, q, b);
+            p[b * 3] = pos[b * 3];
+            p[b * 3 + 1] = pos[b * 3 + 1];
+            p[b * 3 + 2] = pos[b * 3 + 2];
+        }
+    }
+
     private static final float[] dir = new float[3], pole = new float[3], elbow = new float[3], hand = new float[3];
 
     /**

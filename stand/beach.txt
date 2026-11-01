@@ -1,0 +1,13 @@
+# The beach: people lying on the loungers under the sunshades and strolling the sand, along the
+# water and under the quay; she walks down the steps among them.
+screen 1096 2560
+wait 0.4
+at 20 -21 3.1416
+wait 3
+shot b0
+at 40 -24 -1.5708
+wait 2
+shot b1
+at 10 -33 1.5708
+wait 2
+shot b2

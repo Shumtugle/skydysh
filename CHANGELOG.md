@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.53
+
+- The wheel at the wheel: under the finger a steering wheel of the same glass as the buttons,
+  bigger, its rim, three spokes and a mark at the top, turning as the pickup's wheel turns; lit
+  when braking, coloured for the mission. Badges can be drawn turned (the turn rides with how
+  much one shows).
+- The pickup does not break. A car in its way, going faster than a walk, is rammed off: it
+  slides the way it was struck, spinning by where it was struck, against the walls, and stands
+  a wreck till it is out of sight; a crash, a car alarm, the people off. The pickup no longer
+  holds back behind cars. A street lamp in its way is felled: it falls the way it was struck,
+  quicker and quicker, and lies across the road; the town puts it up again once she is far off.
+- People on the beach: some lie on the loungers under the sunshades, looking out to sea, others
+  stroll to and fro along the wet sand by the water and under the quay.
+- On the sofa at ease: leaning back, one leg out, the other drawn in, the knees apart; one hand
+  on the seat by her hip, the other along the back of the sofa; the head a little to one side,
+  breathing.
+- Swimming lower in the water; still, she settles slowly lower over some seconds, never under,
+  and comes up again as she swims on.
+- The duty pickup's new skin: cream plates with rivets over teal, a palm-and-town shield on the
+  doors, a winch behind the grille, the gear of the dispatch painted in the bed (boxes, a coiled
+  cable, a cone).
+- Stand: scenes `ram.txt`, `beach.txt`, `skin.txt`.
+
 ## 0.52
 
 - Free after a mission. The report, and then no briefing: the town is hers for as long as she

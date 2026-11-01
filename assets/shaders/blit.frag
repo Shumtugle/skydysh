@@ -14,7 +14,7 @@ uniform sampler2D uFlat;
 uniform sampler2D uHud;     // the fine layer over the top of the frame, premultiplied
 uniform float uHudRows;     // how many frame rows it covers from the top; none, 0
 uniform sampler2D uBadges;  // the sheet of buttons and signs, 5 by 5 cells, premultiplied
-uniform vec4 uBadge[16];    // each one shown: its middle and half its size (frame pixels), how much it shows
+uniform vec4 uBadge[16];    // each one shown: its middle and half its size (frame pixels), how much it shows (and twice its turn's step)
 uniform vec2 uBadgeOf[16];  // which cell of the sheet; how lit, and twice its own colour over that
 uniform int uBadgeN;
 uniform vec2 uFrameSize;    // the frame, in frame pixels
@@ -84,6 +84,15 @@ void main() {
         vec4 b = uBadge[i];
         vec2 d = (fpx - b.xy) / b.z;
         if (abs(d.x) >= 1.0 || abs(d.y) >= 1.0) continue;
+        // turned: the step of the turn rides over how much it shows
+        float step = floor(b.w * 0.5);
+        b.w -= 2.0 * step;
+        if (step > 0.5) {
+            float a = (step - 128.0) / 127.0 * 3.14159265;
+            float ca = cos(a), sa = sin(a);
+            d = vec2(ca * d.x - sa * d.y, sa * d.x + ca * d.y);
+            if (abs(d.x) >= 1.0 || abs(d.y) >= 1.0) continue;
+        }
         float k = uBadgeOf[i].x;
         vec2 cell = vec2(mod(k, 5.0), floor(k / 5.0));
         vec4 t = texture(uBadges, (cell + d * 0.5 + 0.5) * 0.2);

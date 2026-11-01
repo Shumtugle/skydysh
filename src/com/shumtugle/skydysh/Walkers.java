@@ -26,8 +26,13 @@ final class Walkers {
     // a bench's seat over the pavement; the hips over the feet on the skeleton
     static final float SEAT = 0.5f, HIPS = 0.93f;
     static final float BORN_NEAR = 28f, BORN_FAR = 110f, GONE = 140f, SHY = 3.2f, KEPT = 80f, SEATED = 65f;
-    // so many go round the blocks; so many sit on the benches; so many walk about the squares
-    static final int ROUNDERS = 54, SITTERS = 24, SQUARERS = 14, MOST = ROUNDERS + SITTERS + SQUARERS;
+    // so many go round the blocks; so many sit on the benches; so many walk about the squares; on
+    // the beach, so many lie on the loungers and so many stroll along the sand
+    static final int ROUNDERS = 54, SITTERS = 24, SQUARERS = 14, LOUNGERS = 10, BATHERS = 12;
+    static final int MOST = ROUNDERS + SITTERS + SQUARERS + LOUNGERS + BATHERS;
+    private static final int FIRST_LOUNGER = ROUNDERS + SITTERS + SQUARERS, FIRST_BATHER = FIRST_LOUNGER + LOUNGERS;
+    // the beach: kept for her only so far inland; lying on a lounger, the hips so far over the sand
+    static final float BEACH_NEAR = 120f, LOUNGE_SEAT = 0.3f;
     // what one is doing: going round a block, sitting on a bench, going round a fountain, to and
     // fro along a garden's path
     static final int ROUND = 0, SITS = 1, FOUNTAIN = 2, PATH = 3, FLEE = 4;
@@ -53,6 +58,8 @@ final class Walkers {
     private final float[] mx = new float[MOST], mz = new float[MOST], far = new float[MOST], at = new float[MOST],
             lean = new float[MOST], look = new float[MOST];
     private final boolean[] alongX = new boolean[MOST];
+    // what one stands on (or, sitting, sits on): the pavement, a bench, the sand
+    private final float[] gy = new float[MOST];
     private final float[] seatBuf = new float[3 * 96];
     private float retry;
 
@@ -81,7 +88,9 @@ final class Walkers {
                 else if (city != null && (look4 || !started)) {
                     live[i] = false;
                     if (i < ROUNDERS + SITTERS) seat(i, r, city, !started);
-                    else square(i, r, city, !started);
+                    else if (i < FIRST_LOUNGER) square(i, r, city, !started);
+                    else if (i < FIRST_BATHER) lounge(i, r, city, !started);
+                    else bathe(i, r, !started);
                 }
                 continue;
             }
@@ -167,6 +176,8 @@ final class Walkers {
     }
 
     private void alarm(int i, float ax, float az) {
+        // up from the seat onto their feet
+        if (mode[i] == SITS) gy[i] -= i >= FIRST_LOUNGER ? LOUNGE_SEAT : SEAT;
         mode[i] = FLEE;
         fromX[i] = ax;
         fromZ[i] = az;
@@ -222,6 +233,8 @@ final class Walkers {
             if (taken) continue;
             looks(i);
             mode[i] = SITS;
+            gy[i] = City.WALK_TOP + SEAT;
+            lean[i] = 0f;
             x[i] = sx;
             z[i] = sz;
             yaw[i] = seatBuf[k * 3 + 2];
@@ -253,6 +266,7 @@ final class Walkers {
         float cx = (si + 0.5f) * City.CELL, cz = (sj + 0.5f) * City.CELL;
         boolean garden = city.garden(si, sj);
         looks(i);
+        gy[i] = City.WALK_TOP;
         mx[i] = cx;
         mz[i] = cz;
         dir[i] = rnd.nextBoolean() ? 1f : -1f;
@@ -269,6 +283,62 @@ final class Walkers {
         live[i] = true;
         elsewhere(i, 0f, r, dummy);
         // not in sight, close by, as it comes (but anywhere at first)
+        float dx = x[i] - r.x, dz = z[i] - r.z, dd = (float) Math.sqrt(dx * dx + dz * dz);
+        float fx = (float) Math.sin(r.eyeYaw), fz = (float) Math.cos(r.eyeYaw);
+        if (!anywhere && (dd < 12f || (dx * fx + dz * fz) / Math.max(1e-3f, dd) > 0.7f && dd < 50f)) live[i] = false;
+    }
+
+    private final float[] loungeBuf = new float[2 * 40];
+
+    /** One lying on a lounger on the beach near her, looking out to sea, where no one lies yet; none far inland. */
+    private void lounge(int i, Runner r, City city, boolean anywhere) {
+        if (r.z > City.SHORE * City.CELL + BEACH_NEAR) return;
+        int n = city.loungers(r.x, r.z, KEPT, loungeBuf, 40);
+        for (int tries = 0; tries < 10 && n > 0; tries++) {
+            int k = rnd.nextInt(n);
+            float lx = loungeBuf[k * 2], lz = loungeBuf[k * 2 + 1];
+            float dx = lx - r.x, dz = lz - r.z, dd = (float) Math.sqrt(dx * dx + dz * dz);
+            if (dd < (anywhere ? 6f : 20f)) continue;
+            float fx = (float) Math.sin(r.eyeYaw), fz = (float) Math.cos(r.eyeYaw);
+            if (!anywhere && (dx * fx + dz * fz) / dd > 0.7f && dd < 50f) continue;
+            boolean taken = false;
+            for (int o = FIRST_LOUNGER; o < FIRST_BATHER && !taken; o++)
+                if (o != i && live[o] && Math.abs(x[o] - lx) < 0.3f && Math.abs(z[o] - lz) < 0.3f) taken = true;
+            if (taken) continue;
+            looks(i);
+            mode[i] = SITS;
+            gy[i] = City.SAND + LOUNGE_SEAT;
+            x[i] = lx;
+            z[i] = lz;
+            yaw[i] = (float) Math.PI;
+            // lying well back, the head turned a little
+            lean[i] = 0.55f + rnd.nextFloat() * 0.25f;
+            ph[i] = rnd.nextFloat() * 20f;
+            live[i] = true;
+            return;
+        }
+    }
+
+    /**
+     * One strolling along the beach near her, to and fro: most on the wet sand by the water, some
+     * on the dry sand under the quay; none far inland.
+     */
+    private void bathe(int i, Runner r, boolean anywhere) {
+        if (r.z > City.SHORE * City.CELL + BEACH_NEAR) return;
+        boolean wet = rnd.nextInt(3) != 0;
+        float base = City.SHORE * City.CELL;
+        looks(i);
+        mode[i] = PATH;
+        alongX[i] = true;
+        mx[i] = r.x + (rnd.nextFloat() * 2f - 1f) * 70f;
+        mz[i] = base + (wet ? City.WATERLINE + 1.6f + rnd.nextFloat() * 2.4f : City.PARAPET - 3.2f - rnd.nextFloat() * 0.8f);
+        gy[i] = wet ? City.WET : City.SAND;
+        far[i] = 12f + rnd.nextFloat() * 14f;
+        at[i] = (rnd.nextFloat() * 2f - 1f) * far[i];
+        dir[i] = rnd.nextBoolean() ? 1f : -1f;
+        v[i] *= 0.8f;
+        live[i] = true;
+        elsewhere(i, 0f, r, dummy);
         float dx = x[i] - r.x, dz = z[i] - r.z, dd = (float) Math.sqrt(dx * dx + dz * dz);
         float fx = (float) Math.sin(r.eyeYaw), fz = (float) Math.cos(r.eyeYaw);
         if (!anywhere && (dd < 12f || (dx * fx + dz * fz) / Math.max(1e-3f, dd) > 0.7f && dd < 50f)) live[i] = false;
@@ -343,6 +413,7 @@ final class Walkers {
             float fx = (float) Math.sin(r.eyeYaw), fz = (float) Math.cos(r.eyeYaw);
             if (!anywhere && (dx * fx + dz * fz) / dd > 0.7f && dd < 60f) continue;
             looks(i);
+            gy[i] = City.WALK_TOP;
             mode[i] = ROUND;
             live[i] = true;
             return;
@@ -411,11 +482,11 @@ final class Walkers {
                 if (FolkPack.town == null || !Frida.ready()) continue;
                 int m = model[i] % FolkPack.town.count;
                 // the hips on the seat
-                float y = City.WALK_TOP + SEAT - HIPS * FolkPack.town.size[m];
+                float y = gy[i] - HIPS * FolkPack.town.size[m];
                 FolkPack.sitter(d, m, x[i], y, z[i], yaw[i] + (float) Math.PI, 1f, lean[i], look[i]);
                 continue;
             }
-            person(d, x[i], City.WALK_TOP, z[i], yaw[i], ph[i] + i, i, aside[i] > 0.3f);
+            person(d, x[i], gy[i], z[i], yaw[i], ph[i] + i, i, aside[i] > 0.3f);
         }
     }
 

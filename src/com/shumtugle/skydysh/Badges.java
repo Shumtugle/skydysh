@@ -17,7 +17,9 @@ final class Badges {
     static final int BLANK = 18, KNOB = 19;
     // the ways to play, one finger or two thumbs; the pedals at the wheel, the throttle and the brake
     static final int ONE_FINGER = 20, TWO_THUMBS = 21, GAS = 22, BRAKE = 23;
-    static final int COUNT = 24, CELLS = 5, SIZE = 160;
+    // the wheel at the wheel: a steering wheel of the same glass, no pane round it, a mark at its top
+    static final int STEER = 24;
+    static final int COUNT = 25, CELLS = 5, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -72,6 +74,7 @@ final class Badges {
 
     private static int pixel(int k, float u, float v, float px) {
         cr = cg = cb = ca = 0f;
+        if (k == STEER) return steer(u, v, px);
         float r = (float) Math.sqrt(u * u + v * v);
         // the rim's colour round it: turquoise at the top left, pink at the bottom right
         float t = r > 1e-4f ? ((u - v) / r * 0.7071f + 1f) * 0.5f : 0.5f;
@@ -95,6 +98,36 @@ final class Badges {
             if (d < 0.2f) over(mix(TURQUOISE, 0xFFFFFF, 0.4f), 0.32f * (float) Math.exp(-Math.max(0f, d) / 0.04f) * inside);
             over(WHITE, cover(d, px) * inside);
         }
+        int a = Math.round(Math.min(1f, ca) * 255f);
+        return a << 24 | Math.round(Math.min(1f, cr) * 255f) << 16 | Math.round(Math.min(1f, cg) * 255f) << 8
+                | Math.round(Math.min(1f, cb) * 255f);
+    }
+
+    /**
+     * The steering wheel: its rim, three spokes (left, right, down) and the hub, all of the dark
+     * glass with the lit edge and the glow the buttons have; a white mark at the top of the rim, so
+     * that it is seen to turn.
+     */
+    private static int steer(float u, float v, float px) {
+        float r = (float) Math.sqrt(u * u + v * v);
+        float t = r > 1e-4f ? ((u - v) / r * 0.7071f + 1f) * 0.5f : 0.5f;
+        int rim = mix(TURQUOISE, PINK, t * 1.15f - 0.08f);
+        float ring = Math.abs(r - 0.74f) - 0.11f;
+        float spokes = min(seg(u, v, 0f, 0f, -0.7f, 0.04f, 0.075f), seg(u, v, 0f, 0f, 0.7f, 0.04f, 0.075f), seg(u, v, 0f, 0f, 0f, -0.7f, 0.085f));
+        float shape = min(ring, spokes, circle(u, v, 0f, 0f, 0.2f));
+        // the glow round it
+        if (shape > -0.02f) over(rim, 0.5f * (float) Math.exp(-Math.max(0f, shape) / 0.06f));
+        float inside = cover(shape, px);
+        if (inside > 0f) {
+            over(mix(GLASS_TOP, GLASS_LOW, (0.8f - v) / 1.6f), 0.72f * inside);
+            over(rim, 0.45f * inside * (float) Math.exp(-Math.max(0f, -shape) / 0.05f));
+            // a sheen along the top of the rim
+            if (v > 0.3f && ring < 0f) over(0xFFFFFF, 0.12f * inside * (v - 0.3f));
+        }
+        // the lit edge
+        over(mix(rim, 0xFFFFFF, 0.3f), cover(Math.abs(shape) - 0.022f, px));
+        // the mark at the top
+        over(WHITE, cover(rbox(u, v, 0f, 0.74f, 0.06f, 0.12f, 0.03f), px));
         int a = Math.round(Math.min(1f, ca) * 255f);
         return a << 24 | Math.round(Math.min(1f, cr) * 255f) << 16 | Math.round(Math.min(1f, cg) * 255f) << 8
                 | Math.round(Math.min(1f, cb) * 255f);

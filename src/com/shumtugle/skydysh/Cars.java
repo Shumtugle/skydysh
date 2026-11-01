@@ -88,12 +88,26 @@ final class Cars {
     }
     // how long it has stood held up by other cars; how long more it edges out past them
     private final float[] waited = new float[MOST], edging = new float[MOST];
+    // rammed by the pickup she drives: sliding away so fast (x, z), turning so fast, for so long
+    // more; then a wreck, standing where it came to rest till it is out of sight
+    private final float[] kvx = new float[MOST], kvz = new float[MOST], spin = new float[MOST], knocked = new float[MOST];
+    private final boolean[] wreck = new boolean[MOST];
+    /** The town, for a rammed car to slide against its walls; none, none. */
+    City city;
+    /** How many times a car has been rammed, and where the last was: the world hears of it. */
+    int rams;
+    float ramX, ramZ, ramHard;
+    static final float SLIDE_DRAG = 2.2f, SPIN_DRAG = 2.4f, KNOCKED_FOR = 2.6f;
 
     void update(float dt, Runner r, Chase[] brums) {
         for (int c = 0; c < MOST; c++) {
             float rx = x[c] - r.x, rz = z[c] - r.z;
             if (!live[c] || rx * rx + rz * rz > GONE * GONE) {
                 spawn(c, r);
+                continue;
+            }
+            if (knocked[c] > 0f || wreck[c]) {
+                slide(c, dt);
                 continue;
             }
             // toward the next crossing, on the right of the road
@@ -167,6 +181,71 @@ final class Cars {
         }
     }
 
+    /** A rammed car sliding and turning to rest, against the town's walls; then a wreck. */
+    private void slide(int c, float dt) {
+        speed[c] = 0f;
+        if (knocked[c] <= 0f) return;
+        knocked[c] -= dt;
+        float ox = x[c], oz = z[c];
+        x[c] += kvx[c] * dt;
+        z[c] += kvz[c] * dt;
+        heading[c] += spin[c] * dt;
+        float slow = (float) Math.exp(-SLIDE_DRAG * dt);
+        kvx[c] *= slow;
+        kvz[c] *= slow;
+        spin[c] *= (float) Math.exp(-SPIN_DRAG * dt);
+        if (city != null) {
+            float fx = (float) Math.sin(heading[c]), fz = (float) Math.cos(heading[c]);
+            float[] p = {0f, 0f};
+            for (int e = -1; e <= 1; e += 2) {
+                p[0] = x[c] + fx * e * 1.2f;
+                p[1] = z[c] + fz * e * 1.2f;
+                float px0 = p[0], pz0 = p[1];
+                if (city.push(p, 1.05f, 0f)) {
+                    // against a wall: it stops there, what is left of the slide lost
+                    x[c] += p[0] - px0;
+                    z[c] += p[1] - pz0;
+                    kvx[c] *= 0.3f;
+                    kvz[c] *= 0.3f;
+                    spin[c] *= 0.5f;
+                }
+            }
+            if (City.overWater(x[c], z[c])) {
+                x[c] = ox;
+                z[c] = oz;
+                kvx[c] = kvz[c] = 0f;
+            }
+        }
+        if (knocked[c] <= 0f || kvx[c] * kvx[c] + kvz[c] * kvz[c] < 0.04f && Math.abs(spin[c]) < 0.05f) {
+            knocked[c] = 0f;
+            wreck[c] = true;
+        }
+    }
+
+    /**
+     * Car c rammed by the pickup she drives, going so fast along (fx, fz), the blow at (hx, hz): off
+     * it slides the way it was struck, turning by where it was struck, and stands a wreck.
+     */
+    private void rammed(int c, float fx, float fz, float v, float hx, float hz) {
+        float push = Math.max(v * 0.85f, 3f);
+        // away from the blow as much as along the pickup's way
+        float ax = x[c] - hx, az = z[c] - hz, al = (float) Math.sqrt(ax * ax + az * az) + 1e-3f;
+        kvx[c] = fx * push * 0.75f + ax / al * push * 0.35f + speed[c] * (float) Math.sin(heading[c]) * 0.5f;
+        kvz[c] = fz * push * 0.75f + az / al * push * 0.35f + speed[c] * (float) Math.cos(heading[c]) * 0.5f;
+        // turned by where along it the blow came: struck at an end, it spins
+        float cfx = (float) Math.sin(heading[c]), cfz = (float) Math.cos(heading[c]);
+        float along = (hx - x[c]) * cfx + (hz - z[c]) * cfz;
+        float across = fx * cfz - fz * cfx;
+        spin[c] = Math.max(-4f, Math.min(4f, -along * across * push * 0.35f + (rnd.nextFloat() - 0.5f) * 0.6f));
+        knocked[c] = KNOCKED_FOR;
+        wreck[c] = false;
+        speed[c] = 0f;
+        rams++;
+        ramX = hx;
+        ramZ = hz;
+        ramHard = Math.min(1f, v / 20f);
+    }
+
     /** How fast car c may go with someone at (px, pz): no faster than it can stop short of them. */
     private float clear(int c, float fx, float fz, float px, float pz) {
         float ox = px - x[c], oz = pz - z[c];
@@ -202,6 +281,8 @@ final class Cars {
             kind[c] = kind(rnd);
             paint[c] = paint(rnd, kind[c]);
             choose(c);
+            knocked[c] = 0f;
+            wreck[c] = false;
             live[c] = true;
             return;
         }
@@ -287,6 +368,11 @@ final class Cars {
         }
     }
 
+    /** Whether car c is a wreck, or sliding to become one. */
+    boolean wrecked(int c) {
+        return wreck[c] || knocked[c] > 0f;
+    }
+
     /**
      * The car, if any, running into a round body of radius rr at (px, pz): touching it at its
      * nose or its side, and coming at it fast enough to knock it down; -1 if none.
@@ -332,11 +418,15 @@ final class Cars {
         return push(p, rr, lift, null);
     }
 
-    /** The same, all but one pickup (the one that is pushing). */
+    /**
+     * The same, all but one pickup (the one that is pushing). The one she drives is not stopped by
+     * a car going fast enough: the car is rammed out of its way (the pickup does not break).
+     */
     boolean push(float[] p, float rr, float lift, Pickup but) {
         boolean hit = false;
         if (duty != null && lift < Pickup.TOP - 0.1f) hit = duty.push(p, rr, but);
         if (lift > TOP - 0.1f) return hit;
+        boolean rams = but != null && but.driven && Math.abs(but.speed) > RAM_FROM;
         for (int c = 0; c < MOST; c++) {
             if (!live[c]) continue;
             float fx = (float) Math.sin(heading[c]), fz = (float) Math.cos(heading[c]);
@@ -345,6 +435,17 @@ final class Cars {
                 float dx = p[0] - cx, dz = p[1] - cz, dd = dx * dx + dz * dz, m = rr + 1.05f;
                 if (dd >= m * m || dd < 1e-8f) continue;
                 float l = (float) Math.sqrt(dd);
+                if (rams) {
+                    // the car shoved out of the way by what overlapped, and sent off
+                    float over = m - l;
+                    x[c] -= dx / l * over;
+                    z[c] -= dz / l * over;
+                    if (knocked[c] < KNOCKED_FOR - 0.25f) {
+                        float bf = (float) Math.sin(but.heading), bz = (float) Math.cos(but.heading);
+                        rammed(c, bf * Math.signum(but.speed), bz * Math.signum(but.speed), Math.abs(but.speed), p[0], p[1]);
+                    }
+                    continue;
+                }
                 p[0] = cx + dx / l * m;
                 p[1] = cz + dz / l * m;
                 hit = true;
@@ -352,6 +453,9 @@ final class Cars {
         }
         return hit;
     }
+
+    // the pickup she drives rams a car out of its way going faster than this (meters a second)
+    static final float RAM_FROM = 3f;
 
     void draw(DrawList d, float ex, float ez, float fx, float fz) {
         for (int c = 0; c < MOST; c++) {

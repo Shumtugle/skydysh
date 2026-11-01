@@ -146,20 +146,12 @@ final class Pickup {
     }
 
     /**
-     * The speed the driver picks: the top, a little less into a hard turn; held back by a car close
-     * ahead in its lane, and by something standing in its way.
+     * The speed the driver picks: the top, a little less into a hard turn; held back by something
+     * standing in its way (a wall, not a car: a car is rammed).
      */
     private float target(float fx, float fz, City city, Cars cars) {
         float t = VMAX * (1f - TURN_SLOWS * Math.abs(steer));
-        for (int c = 0; c < Cars.MOST; c++) {
-            if (!cars.live(c)) continue;
-            float ox = cars.x[c] - x, oz = cars.z[c] - z;
-            float along = ox * fx + oz * fz, across = Math.abs(ox * fz - oz * fx);
-            if (along < 0f || along > 18f || across > 1.8f) continue;
-            // only a car close ahead in its lane holds it back, and not for long: the way round it is the wheel's
-            float gap = Math.max(0f, along - 5f);
-            t = Math.min(t, Math.max(0f, cars.speed[c]) + gap * 2.5f);
-        }
+        // a car ahead does not hold it back: it is rammed out of the way (see Cars.push)
         // something standing ahead: looked for a few steps on, along the way it goes
         float[] p = new float[2];
         for (float d = 4f; d <= 16f; d += 3f) {

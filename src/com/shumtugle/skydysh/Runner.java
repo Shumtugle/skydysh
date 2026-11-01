@@ -43,7 +43,10 @@ final class Runner {
     static final int RUN = 0, AIR = 1, SLIDE = 2, CLIMB = 3, SWIM = 4;
     // swimming: how deep the water must be, how fast she swims, how far under the water's top her
     // middle is, how many strokes a meter
-    static final float SWIM_DEEP = 1.4f, SWIM_TOP = 3.4f, SWIM_LOW = 0.28f, STROKE = 0.42f;
+    static final float SWIM_DEEP = 1.4f, SWIM_TOP = 3.4f, SWIM_LOW = 0.36f, STROKE = 0.42f;
+    // still in the water: how much lower she settles at last, and in how many seconds
+    static final float SWIM_SETTLE = 0.16f, SETTLE_S = 6f;
+    private float settled;
     private float strokes;
     static final float WADE = 2.6f;
     // gliding, a flick up beats the arms: so fast up, so many times a flight
@@ -595,6 +598,9 @@ final class Runner {
             // in the water: slower, turning more slowly, strokes as she goes (slow ones treading water)
             speed = Math.min(speed, SWIM_TOP);
             strokes += dt * (0.35f + speed * STROKE);
+            // still, she settles slowly lower, never under; swimming on, she comes up again
+            if (speed < 0.4f) settled = Math.min(1f, settled + dt / SETTLE_S);
+            else settled = Math.max(0f, settled - dt * 1.5f);
         } else if (room == null && state == RUN && City.overWater(x, z)) {
             // wading in the shallows: slow going
             speed = Math.min(speed, WADE);
@@ -637,6 +643,7 @@ final class Runner {
             stateAt = clock;
             vy = 0f;
             gliding = false;
+            settled = 0f;
             beats = 0;
             speed = Math.min(speed, SWIM_TOP);
         } else if (state == AIR) {
@@ -884,15 +891,20 @@ final class Runner {
         eyePitch = e[4];
     }
 
+    /** Sitting at ease (on a sofa), not at a wheel. */
+    boolean lounging;
+
     /** Out of the pickup, standing at (px, pz) facing h. */
     void getOut(float px, float py, float pz, float h) {
         riding = false;
+        lounging = false;
         put(px, py, pz, h);
     }
 
     void bone(String name, float[] out) {
         if (riding) {
-            Frida.place(name, seatX, seatY - SEAT_DROP, seatZ, heading + (float) Math.PI, SIZE, Frida.SIT, wheel, out);
+            Frida.place(name, seatX, seatY - SEAT_DROP, seatZ, heading + (float) Math.PI, SIZE, lounging ? Frida.LOUNGE : Frida.SIT,
+                    lounging ? clock : wheel, out);
             return;
         }
         Frida.place(name, x, y, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), out);
@@ -902,14 +914,16 @@ final class Runner {
         if (hidden) return;
         // the figure faces -z at no turn: turned half round, she runs the way she is headed
         if (riding) {
-            Frida.draw(d, seatX, seatY - SEAT_DROP, seatZ, heading + (float) Math.PI, SIZE, Frida.SIT, wheel);
+            if (lounging) Frida.draw(d, seatX, seatY - SEAT_DROP, seatZ, heading + (float) Math.PI, SIZE, Frida.LOUNGE, clock);
+            else Frida.draw(d, seatX, seatY - SEAT_DROP, seatZ, heading + (float) Math.PI, SIZE, Frida.SIT, wheel);
             return;
         }
         if (state == SWIM) {
             // low in the water, the water broken round her and in a wake behind as she swims
             // upright, bobbing a little with each stroke
             float rise = 0.04f * (float) Math.sin(strokes * 6.28f - 1f);
-            Frida.draw(d, x, y - SWIM_LOW * SIZE + rise, z, heading + (float) Math.PI, SIZE, Frida.SWIM, strokes);
+            float low = SWIM_LOW + SWIM_SETTLE * settled * settled * (3f - 2f * settled);
+            Frida.draw(d, x, y - low * SIZE + rise, z, heading + (float) Math.PI, SIZE, Frida.SWIM, strokes);
             float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
             for (int k = 0; k < 4; k++) {
                 float back = 2f + k * 0.8f, wide = 0.7f + k * 0.3f, f = 1f - k / 4f;

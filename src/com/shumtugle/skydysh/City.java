@@ -140,6 +140,12 @@ final class City implements Ground {
 
         // the benches: middle x, z, the way one sitting on it faces (a heading)
         float[] benches = new float[3 * 8];
+        // the loungers on its beach, if it has one: where one lies (x, z), facing the sea
+        float[] loungers = new float[2 * 8];
+        int loungerN;
+        // its street lamps, where each stands (x, z): one rammed is felled
+        float[] lamps = new float[2 * 8];
+        int lampN;
         int benchN;
 
         void ladder(float x, float z, float bottom, float top, float nx, float nz) {
@@ -450,6 +456,57 @@ final class City implements Ground {
         return n;
     }
 
+    // ---- the street lamps, felled by the pickup she drives ----
+    private final java.util.HashSet<Long> felled = new java.util.HashSet<Long>();
+
+    private static long lampKey(float x, float z) {
+        return key(Math.round(x * 4f), Math.round(z * 4f));
+    }
+
+    /**
+     * The lamp standing within reach of (x, z), felled: gone from the town (its cell built again
+     * without it), its place into out (x, z). False if none stands there.
+     */
+    boolean fell(float x, float z, float reach, float[] out) {
+        int ci = index(x), cj = index(z);
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                Cell c = cells.get(key(i, j));
+                if (c == null) continue;
+                for (int k = 0; k < c.lampN; k++) {
+                    float lx = c.lamps[k * 2], lz = c.lamps[k * 2 + 1];
+                    if ((lx - x) * (lx - x) + (lz - z) * (lz - z) > reach * reach) continue;
+                    felled.add(lampKey(lx, lz));
+                    cells.remove(key(i, j));
+                    out[0] = lx;
+                    out[1] = lz;
+                    return true;
+                }
+            }
+        return false;
+    }
+
+    /** The lamp felled at (x, z) put up again (she is far off): its cell built again with it. */
+    void raise(float x, float z) {
+        if (felled.remove(lampKey(x, z))) cells.remove(key(index(x), index(z)));
+    }
+
+    /** The loungers on the beach within reach of (x, z): two floats each into out (where), at most max. How many. */
+    int loungers(float x, float z, float reach, float[] out, int max) {
+        int n = 0, ci = index(x);
+        for (int i = ci - 2; i <= ci + 2; i++) {
+            Cell c = cell(i, SHORE - 1);
+            for (int k = 0; k < c.loungerN && n < max; k++) {
+                float lx = c.loungers[k * 2], lz = c.loungers[k * 2 + 1];
+                if ((lx - x) * (lx - x) + (lz - z) * (lz - z) > reach * reach) continue;
+                out[n * 2] = lx;
+                out[n * 2 + 1] = lz;
+                n++;
+            }
+        }
+        return n;
+    }
+
     /** Whether one of the cell's streets has trees down it (by its salt), one in two. */
     private boolean leafy(int i, int j, int salt) {
         return (hash(i, j, salt) & 3) < 2;
@@ -583,6 +640,10 @@ final class City implements Ground {
                 c.detail.box(lx, SAND + 0.22f, uz - 0.3f, 0.32f, 0.05f, 0.95f, null, 0xF4E8D2, DrawList.WOOD);
                 c.detail.box(lx, SAND + 0.45f, uz + 0.55f, 0.32f, 0.05f, 0.3f, null, 0xF4E8D2, DrawList.WOOD);
                 c.wall(lx - 0.32f, uz - 1.25f, lx + 0.32f, uz + 0.85f, SAND + 0.3f, low);
+                if ((c.loungerN + 1) * 2 > c.loungers.length) c.loungers = java.util.Arrays.copyOf(c.loungers, c.loungers.length * 2);
+                c.loungers[c.loungerN * 2] = lx;
+                c.loungers[c.loungerN * 2 + 1] = uz + 0.1f;
+                c.loungerN++;
             }
         }
         // palms in two rows down the promenade, a little out of step
@@ -1461,7 +1522,12 @@ final class City implements Ground {
         }
     }
 
-    private static void lamp(Cell c, DrawList d, float x, float z) {
+    private void lamp(Cell c, DrawList d, float x, float z) {
+        if (felled.contains(lampKey(x, z))) return;
+        if ((c.lampN + 1) * 2 > c.lamps.length) c.lamps = java.util.Arrays.copyOf(c.lamps, c.lamps.length * 2);
+        c.lamps[c.lampN * 2] = x;
+        c.lamps[c.lampN * 2 + 1] = z;
+        c.lampN++;
         int iron = 0x2B2F3A;
         d.box(x, WALK_TOP + 2.2f, z, 0.07f, 2.2f, 0.07f, null, iron, DrawList.PLAIN);
         d.box(x, WALK_TOP + 0.25f, z, 0.14f, 0.25f, 0.14f, null, iron, DrawList.PLAIN);

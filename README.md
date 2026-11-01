@@ -49,7 +49,8 @@ hang over the ways in and up near her: the lifts' doors, the fire escapes, the l
 to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
 out) by the lift. A button high on the left pauses the game.
 
-At the wheel, while a finger is down the pickup goes; a ring shows where the finger came down,
+At the wheel, while a finger is down the pickup goes; a steering wheel of glass shows where the
+finger came down, turning as the pickup's wheel turns,
 coloured for the mission (coral for a hunt, turquoise for the folder, amber for a delivery, cream
 when free). Moved aside from the ring's middle, the finger turns the wheel (not at all near the middle, then more and more)
 and full over at its edge, the pickup slowing by itself to make the corner; drawn down, it brakes,
@@ -57,9 +58,11 @@ and held so standing, it backs. Lifted, the pickup slows to a stop. With the fin
 straight, the pickup settles along the street it is nearly along.
 
 The town ends at the sea: along its southmost street a promenade with palms and a parapet, steps
-down to a beach with sunshades, and the water. Into the sea she wades, slowly, and where it is
+down to a beach with sunshades, people lying on the loungers and strolling the sand, and the
+water. Into the sea she wades, slowly, and where it is
 deep enough she swims high in the water, upright, her head and shoulders out, a slow breast
-stroke at the water's top, as far out as the open sea lets her; back in the shallows
+stroke at the water's top (still, she settles slowly a little lower, never under), as far out
+as the open sea lets her; back in the shallows
 she stands up and wades out. Home is there, where the game begins: one large house with a tower and a lamp on
 top, the same in every town; its sign over the door takes her in, to a room of her own: a sofa
 against the back wall, lamps either side, the sea in a frame over it, books, plants. Come up to
@@ -68,7 +71,10 @@ the next one, or just a rest). A touch, and she gets up.
 
 Duty pickups stand at the curbs here and there (not in a hunt). Touch the wheel over one, or
 stand at its door, and she gets in. Driving is the easy way about the town, and the fast one, up
-to some 130 kilometers an hour on a straight (how fast is shown low on the left). The button low on the right lets her out. She stands on
+to some 130 kilometers an hour on a straight (how fast is shown low on the left). The pickup is
+the dispatch's own and does not break: a car in its way is rammed off, sliding and spinning to a
+wreck; a street lamp in its way is felled across the road (the town puts it up again once she
+is far off). The button low on the right lets her out. She stands on
 whatever she comes down on, the roofs too. When a mission is done the game keeps where it is.
 
 For now, to try: a hunt. Five brums on fire that should not be are loose in the town, each

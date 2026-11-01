@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.52";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.53";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -73,6 +73,7 @@ final class World {
     World(Host host) {
         this.host = host;
         cars.duty = duty;
+        cars.city = city;
         byte[] moves = host.asset("moves.bin");
         if (moves != null) Frida.use(Moves.read(moves));
         if (FolkPack.town == null) FolkPack.town = FolkPack.read(host.asset("folk.bin"));
@@ -839,6 +840,7 @@ final class World {
             host.buzz(30);
         }
         fliers.update(dt, true);
+        felled.update(dt, runner.x, runner.z, city);
     }
 
     /** The folder in her hands: over the edge of the roof to the street, down along it, gliding. */
@@ -1018,19 +1020,11 @@ final class World {
         d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PAUSE, 0.75f, 0f);
         if (driving != null) d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
         if (driving != null) {
-            // the wheel's stick: under the thumb while it is down; a faint one where it would go
-            if (pedal) {
-                float ox = carTX - carCX, oy = carTY - carCY, m = (float) Math.sqrt(ox * ox + oy * oy);
-                if (m > CAR_R) {
-                    ox *= CAR_R / m;
-                    oy *= CAR_R / m;
-                }
-                d.badge(carCX, carCY, CAR_R + 6f, Badges.BLANK, 0.6f, 0f, ringTint());
-                d.badge(carCX + ox, carCY + oy, KNOB, Badges.KNOB, 0.9f, brakeIn > 0.05f ? 0.6f : 0f);
-            } else {
-                d.badge(W * 0.5f, h - 66f, CAR_R + 6f, Badges.BLANK, 0.3f, 0f, ringTint());
-                d.badge(W * 0.5f, h - 66f, KNOB, Badges.KNOB, 0.3f, 0f);
-            }
+            // the wheel: a steering wheel under the finger while it is down, turned as the pickup's is;
+            // a faint one where it would go
+            float turn = driving.steer * WHEEL_TURNS;
+            if (pedal) d.badge(carCX, carCY, WHEEL_HALF, Badges.STEER, 0.85f, brakeIn > 0.05f ? 0.7f : 0.1f, ringTint(), turn);
+            else d.badge(W * 0.5f, h - WHEEL_HALF - 12f, WHEEL_HALF, Badges.STEER, 0.35f, 0f, ringTint(), turn);
         }
         if (footButtons() && !Runner.classic) {
             for (int b = 0; b < 3; b++) {
@@ -1264,7 +1258,32 @@ final class World {
         boolean go = pedal && brakeIn == 0f;
         p.cap = -1f;
         wheelIn = wheel;
+        // a street lamp in the way, going fast enough: down it goes, the pickup hardly slowed
+        if (Math.abs(p.speed) > Cars.RAM_FROM) {
+            float fx = (float) Math.sin(p.heading), fz = (float) Math.cos(p.heading), sg = Math.signum(p.speed);
+            float reach = Pickup.ENDS + Pickup.END_R * 0.6f + Math.abs(p.speed) * dt;
+            if (city.fell(p.x + fx * sg * reach, p.z + fz * sg * reach, Pickup.END_R + 0.25f, fellAt)) {
+                felled.fell(fellAt[0], fellAt[1], fx * sg, fz * sg, city);
+                p.speed *= 0.93f;
+                host.sound(Synth.CLANG, 0.8f, 0.8f);
+                host.sound(Synth.GLASS, 0.4f, 1.2f);
+                host.buzz(40);
+                walkers.alarm(fellAt[0], fellAt[1], 8f);
+                pets.alarm(fellAt[0], fellAt[1], 8f);
+            }
+        }
+        int ramsWere = cars.rams;
         p.drive(dt, go, wheel, brakeIn, false, city, cars, walkers);
+        if (cars.rams != ramsWere) {
+            // a car rammed: the crash, its alarm going, the people off; the pickup, not a scratch
+            p.speed *= 0.9f;
+            host.sound(Synth.CRASH, 0.5f + 0.5f * cars.ramHard, 1f);
+            host.sound(Synth.ALARM, 0.35f, 1f);
+            host.buzz(60 + Math.round(60f * cars.ramHard));
+            walkers.alarm(cars.ramX, cars.ramZ, 10f);
+            pets.alarm(cars.ramX, cars.ramZ, 10f);
+            cars.alarm(cars.ramX, cars.ramZ, 14f);
+        }
         // the wheel let be, or nearly: along the street it is nearly along, the less the more it is turned
         float let = 1f - Math.min(1f, Math.abs(p.steer) / SETTLE_WHEEL);
         if (let > 0f && Math.abs(p.speed) > 3f) {
@@ -1287,8 +1306,12 @@ final class World {
     // turn within so far, then more and more (so steep a curve) to full over at the edge; drawn
     // down past so far, the brake
     static final float CAR_DEAD = 0.3f, CAR_CURVE = 1.3f, CAR_BRAKE = 0.55f;
-    static final float CAR_R = 44f;            // the ring at the wheel, its radius: wider than her stick on foot
+    static final float CAR_R = 44f;
+    // the steering wheel drawn under the finger: half its size, frame pixels; turned so far at full lock (radians)
+    static final float WHEEL_HALF = 66f, WHEEL_TURNS = 2.2f;            // the ring at the wheel, its radius: wider than her stick on foot
     static final float SETTLE_RATE = 3.5f;     // how fast it settles along the street, the wheel let be
+    final Felled felled = new Felled();
+    private final float[] fellAt = new float[2];
     static final float SETTLE_WITHIN = 0.5f;   // radians off a street's way, at most, for the pickup to settle along it
     static final float SETTLE_WHEEL = 0.25f;   // turned so far or more, it is let go its own way
     private float carCX, carCY, carTX, carTY;
@@ -1305,8 +1328,10 @@ final class World {
         }
         if (type == DOWN) {
             pedal = true;
-            carCX = Math.max(CAR_R + 4f, Math.min(W - CAR_R - 4f, x));
-            carCY = Math.max(h * 0.3f, Math.min(h - CAR_R - 6f, y));
+            // the wheel's middle where the finger came down, as near the edges as it can be drawn whole
+            float m = WHEEL_HALF * 0.85f;
+            carCX = Math.max(m, Math.min(W - m, x));
+            carCY = Math.max(h * 0.3f, Math.min(h - m, y));
             carTX = x;
             carTY = y;
         } else if (type == MOVE && pedal) {
@@ -1585,6 +1610,7 @@ final class World {
             host.buzz(40);
         }
         seatedFor += dt;
+        r.lounging = true;
         in.seat(sofaAt);
         r.ride(dt, in, sofaAt[0], sofaAt[1], sofaAt[2], in.seatHeading(), 0f, sofaAt[0], sofaAt[1] - 0.03f, sofaAt[2], 0f);
         // the eye where the room is seen from while she sits (the screen in her head comes on from there)
@@ -2009,6 +2035,7 @@ final class World {
         float ex = (float) Math.sin(eyeYaw), ez = (float) Math.cos(eyeYaw);
         city.draw(d, eyeX, eyeZ, ex, ez);
         cars.draw(d, eyeX, eyeZ, ex, ez);
+        felled.draw(d, eyeX, eyeZ, ex, ez);
         duty.draw(d, eyeX, eyeZ, ex, ez, time);
         walkers.draw(d, eyeX, eyeZ, ex, ez);
         pets.draw(d, eyeX, eyeZ, ex, ez, walkers);

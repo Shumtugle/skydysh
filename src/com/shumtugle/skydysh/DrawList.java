@@ -140,12 +140,21 @@ final class DrawList {
 
     /** A button or sign over the frame, in a colour of its own (TINT_...): it rides with how lit it is, as twice the tint over it. */
     void badge(float x, float y, float half, int which, float shown, float lit, int tint) {
+        badge(x, y, half, which, shown, lit, tint, 0f);
+    }
+
+    /**
+     * The same, turned so far (radians, clockwise on the glass, at most half round either way): the
+     * turn rides with how much it shows, as twice a step of 1 to 255 over it (none: no turn).
+     */
+    void badge(float x, float y, float half, int which, float shown, float lit, int tint, float turn) {
         if (badgeN >= BADGE_MAX || shown <= 0.01f) return;
         int o = badgeN * 4;
         badge[o] = x;
         badge[o + 1] = y;
         badge[o + 2] = half;
-        badge[o + 3] = Math.min(1f, shown);
+        int step = turn == 0f ? 0 : 128 + Math.round(Math.max(-1f, Math.min(1f, turn / (float) Math.PI)) * 127f);
+        badge[o + 3] = Math.min(1f, shown) + 2f * step;
         badgeOf[badgeN * 2] = which;
         badgeOf[badgeN * 2 + 1] = Math.max(0f, Math.min(1f, lit)) + 2f * tint;
         badgeN++;
