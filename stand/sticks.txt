@@ -1,0 +1,50 @@
+# The stick and the buttons (0.39): standing, the stick pushed a little (a walk), half way (a
+# jog), all the way (a run); pushed to the side, she turns that way and the eye comes round
+# after her; the right thumb turns the eye round her as she stands; pushed toward the eye, she
+# turns and runs at it; the jump button, a second press in the air; the slide; the mallet.
+screen 1096 2560
+controls sticks
+face 1.5708
+wait 0.4
+shot s0_stand
+stick 0 -10
+wait 1.2
+shot s1_walk
+stick 0 -22
+wait 1.2
+shot s2_jog
+stick 0 -34
+wait 1.6
+shot s3_run
+stick 34 0
+wait 0.5
+shot s4_side
+wait 1.5
+shot s5_round
+stick off
+wait 1.0
+shot s6_stopped
+look 120 0.5
+wait 0.2
+shot s7_looked
+stick 0 34
+wait 0.6
+shot s8_toward
+wait 1.2
+shot s9_away
+press jump
+wait 0.25
+shot s10_jump
+press jump
+wait 0.3
+shot s11_leap
+wait 1.2
+press slide
+wait 0.2
+shot s12_slide
+stick off
+wait 1.0
+press mallet
+wait 0.4
+shot s13_mallet
+wait 1.0

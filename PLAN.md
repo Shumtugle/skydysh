@@ -52,6 +52,8 @@ release, each seen on the stand before the phone.
 - 0.36 A hunt has five minutes; the town by the sea, a promenade along the shore road; home on it.
 - 0.37 Brums; a beach under the quay, a square by home; the opening flies in from the sea to home.
 - 0.38 The delivery, mission three: the factory and the store on the shore road, crates on the pickup.
+- 0.39 Two thumbs on foot: a stick on the left (a walk, a jog, a run, the way it is pushed as the
+  eye sees it), the eye turned round her on the right, buttons to jump, slide and swing the mallet.
 
 ## Next
 

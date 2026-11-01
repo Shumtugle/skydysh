@@ -13,7 +13,9 @@ package com.shumtugle.skydysh;
 final class Badges {
     static final int LIFT = 0, DOWN = 1, UP = 2, LEFT = 3, RIGHT = 4, MALLET = 5, WHEEL = 6, JETPACK = 7,
             THROW = 8, PICK_UP = 9, MAP = 10, HELP = 11, PAUSE = 12, PLAY = 13, HOME = 14, LADDER = 15, EXIT = 16, ENTER = 17;
-    static final int COUNT = 18, CELLS = 5, SIZE = 160;
+    // the stick: its round pane with nothing on it, and the knob in it, a white disc
+    static final int BLANK = 18, KNOB = 19;
+    static final int COUNT = 20, CELLS = 5, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -189,6 +191,10 @@ final class Badges {
                 d = Math.min(d, seg(x, y, pxp, pyp, 0f, -0.2f, 0.14f));
                 return Math.min(d, circle(x, y, 0f, -0.66f, 0.16f));
             }
+            case BLANK:
+                return 1e9f;
+            case KNOB:
+                return circle(x, y, 0f, 0f, 0.62f);
             case PAUSE:
                 return Math.min(rbox(x, y, -0.32f, 0f, 0.17f, 0.7f, 0.06f), rbox(x, y, 0.32f, 0f, 0.17f, 0.7f, 0.06f));
             case PLAY:

@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.39
+
+- Two thumbs on foot. The left half of the glass is a stick: its middle where the thumb comes
+  down (following the thumb out past its rim), pushed a little a walk, further a jog, all the way
+  a run; the way it is pushed is the way she goes as the eye sees it, so she can turn where she
+  stands, run at the eye, or circle. Let go, she stops in a step or two. On a ladder, pulled down,
+  she lets go.
+- The right half turns the eye round her, by hand; left alone for a moment, it comes round
+  behind her again as she goes, unhurried, and stands where it is while she stands.
+- Her buttons, low on the right: the jump (a second press in the air goes on up; gliding, a beat
+  of the arms, lit while beats are left), the slide over it, the mallet beside it. A flick up or
+  down on the right half still jumps or slides; a tap there is the mallet's.
+- Every finger heard on its own: the stick, the eye and a button at once.
+- The lift's button on a roof sits higher, over her buttons; at the wheel, nothing changes yet.
+- The old one-finger way is kept for the stand's bots only (`controls classic`, the stand's
+  default); `controls sticks`, `stick DX DY`, `stick off`, `look DX SECONDS`, `press
+  jump|slide|mallet`; scene `sticks.txt`.
+
 ## 0.38
 
 - Mission three, the delivery. A load waits at the factory, west along the shore road, and is

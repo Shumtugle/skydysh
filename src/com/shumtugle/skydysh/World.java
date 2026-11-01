@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.38";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.39";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -208,8 +208,32 @@ final class World {
         h = Math.max(1, Math.round(W * (float) screenH / Math.max(1, screenW)));
     }
 
+    /** A touch by the one finger (the desktop stand's scenes): the finger numbered 0. */
     void touch(int type, float x, float y) {
+        touch(type, 0, x, y);
+    }
+
+    // ---- the fingers: each down is the stick's, the eye's, or a button's till it is lifted ----
+    static final int NOBODY = 0, STICK = 1, LOOK = 2, BUTTONED = 3, WHEEL_FINGER = 4;
+    private static final int FINGERS = 10;
+    private final int[] role = new int[FINGERS];
+    private final float[] fingerX = new float[FINGERS], fingerY = new float[FINGERS], fingerAt = new float[FINGERS],
+            fingerMoved = new float[FINGERS], flickY = new float[FINGERS], flickAt = new float[FINGERS];
+    private final boolean[] flicked = new boolean[FINGERS];
+    // the stick: where its middle is (it comes down where the thumb does, and follows it out past
+    // its rim), and where the thumb is; how far out its rim is, frame pixels
+    static final float STICK_R = 34f, KNOB = 15f;
+    private float stickCX, stickCY, stickTX, stickTY;
+    private int stickFinger = -1;
+    // a tap on the eye's side, and a flick there
+    static final float TAP_S = 0.22f, TAP_PX = 14f, FLICK_PX = 26f, FLICK_S = 0.16f;
+    // a button just pressed, lit a moment: which, and when
+    private int pressedButton = -1;
+    private float pressedAt = -9f;
+
+    void touch(int type, int id, float x, float y) {
         if (type == BACK) return;
+        if (id < 0 || id >= FINGERS) return;
         if (opening != null) {
             if (type == DOWN) opening.skip();
             return;
@@ -218,6 +242,200 @@ final class World {
             if (type == DOWN) dispatch.touch();
             return;
         }
+        if (Runner.classic) {
+            if (id == 0) classicTouch(type, x, y);
+            return;
+        }
+        if (type == DOWN) down(id, x, y);
+        else if (type == MOVE) moved(id, x, y);
+        else if (type == UP) lifted(id, x, y);
+    }
+
+    private void down(int id, float x, float y) {
+        role[id] = BUTTONED;
+        fingerX[id] = x;
+        fingerY[id] = y;
+        fingerAt[id] = time;
+        fingerMoved[id] = 0f;
+        flickY[id] = y;
+        flickAt[id] = time;
+        flicked[id] = false;
+        // paused: a touch anywhere plays on
+        if (paused) {
+            paused = false;
+            return;
+        }
+        if (onButton(x, y, pauseX(), pauseY())) {
+            paused = true;
+            letGoAll();
+            return;
+        }
+        if (driving != null) {
+            if (onLiftButton(x, y)) {
+                getOut();
+                return;
+            }
+            if (wheelFinger >= 0) return;
+            wheelFinger = id;
+            role[id] = WHEEL_FINGER;
+            drivingTouch(DOWN, x, y);
+            return;
+        }
+        // a sign: she goes where it says by herself
+        if (indoors == null) {
+            int sgn = signAt(x, y);
+            if (sgn >= 0) {
+                errand(sgn);
+                return;
+            }
+        }
+        errand = NO_ERRAND;
+        if (liftOffer && onLiftButton(x, y)) {
+            liftPressed = true;
+            return;
+        }
+        // her own buttons, under the right thumb
+        int b = footButton(x, y);
+        if (b >= 0) {
+            press(b);
+            return;
+        }
+        if (x < W * 0.5f && stickFinger < 0) {
+            role[id] = STICK;
+            stickFinger = id;
+            // never so near the edge that the stick has no room to be pushed that way
+            stickCX = Math.max(STICK_R + 4f, Math.min(W * 0.5f - STICK_R * 0.5f, x));
+            stickCY = Math.max(h * 0.3f, Math.min(h - STICK_R - 6f, y));
+            stickTX = x;
+            stickTY = y;
+            runner.stick((x - stickCX) / STICK_R, (y - stickCY) / STICK_R, true);
+            return;
+        }
+        role[id] = LOOK;
+    }
+
+    private void moved(int id, float x, float y) {
+        float dx = x - fingerX[id], dy = y - fingerY[id];
+        fingerMoved[id] += Math.abs(dx) + Math.abs(dy);
+        switch (role[id]) {
+            case STICK: {
+                stickTX = x;
+                stickTY = y;
+                // past its rim, the stick's middle follows the thumb out
+                float ox = x - stickCX, oy = y - stickCY, m = (float) Math.sqrt(ox * ox + oy * oy);
+                if (m > STICK_R) {
+                    stickCX = x - ox / m * STICK_R;
+                    stickCY = y - oy / m * STICK_R;
+                }
+                runner.stick((x - stickCX) / STICK_R, (y - stickCY) / STICK_R, true);
+                break;
+            }
+            case LOOK:
+                runner.look(dx);
+                // a flick up or down on the eye's side: a jump, a slide
+                if (flicked[id]) {
+                    if (Math.abs(y - flickY[id]) < 3f) flicked[id] = false;
+                    flickY[id] = y;
+                    flickAt[id] = time;
+                } else if (time - flickAt[id] > FLICK_S) {
+                    flickY[id] = y;
+                    flickAt[id] = time;
+                } else if (flickY[id] - y > FLICK_PX && Math.abs(dx) < Math.abs(dy) * 2f + 2f) {
+                    runner.jumpButton();
+                    flicked[id] = true;
+                    flickY[id] = y;
+                } else if (y - flickY[id] > FLICK_PX && Math.abs(dx) < Math.abs(dy) * 2f + 2f) {
+                    runner.slideButton();
+                    flicked[id] = true;
+                    flickY[id] = y;
+                }
+                break;
+            case WHEEL_FINGER:
+                drivingTouch(MOVE, x, y);
+                break;
+            default:
+        }
+        fingerX[id] = x;
+        fingerY[id] = y;
+    }
+
+    private void lifted(int id, float x, float y) {
+        switch (role[id]) {
+            case STICK:
+                runner.stick(0f, 0f, false);
+                stickFinger = -1;
+                break;
+            case LOOK:
+                if (time - fingerAt[id] < TAP_S && fingerMoved[id] < TAP_PX) runner.tap();
+                break;
+            case WHEEL_FINGER:
+                drivingTouch(UP, x, y);
+                wheelFinger = -1;
+                break;
+            default:
+        }
+        role[id] = NOBODY;
+    }
+
+    /** Every finger let go of at once: paused, in or out of a car. */
+    private void letGoAll() {
+        for (int i = 0; i < FINGERS; i++) role[i] = NOBODY;
+        stickFinger = -1;
+        runner.stick(0f, 0f, false);
+        if (wheelFinger >= 0) {
+            drivingTouch(UP, 0f, 0f);
+            wheelFinger = -1;
+        }
+    }
+
+    private int wheelFinger = -1;
+
+    // ---- her own buttons, low on the right: jump, slide, the mallet ----
+    static final int JUMP_BUTTON = 0, SLIDE_BUTTON = 1, MALLET_BUTTON = 2;
+    static final float JUMP_HALF = 25f, SLIDE_HALF = 17f, MALLET_HALF = 20f;
+
+    /** Whether her buttons are out: on foot, in the town or indoors, nothing taking her anywhere. */
+    boolean footButtons() {
+        return driving == null && swapT < 0f && !paused;
+    }
+
+    float buttonX(int b) {
+        return b == JUMP_BUTTON ? W - 40f : b == SLIDE_BUTTON ? W - 36f : W - 98f;
+    }
+
+    float buttonY(int b) {
+        return b == JUMP_BUTTON ? h - 62f : b == SLIDE_BUTTON ? h - 128f : h - 40f;
+    }
+
+    private float buttonHalf(int b) {
+        return b == JUMP_BUTTON ? JUMP_HALF : b == SLIDE_BUTTON ? SLIDE_HALF : MALLET_HALF;
+    }
+
+    /** Her button under a finger at (x, y), a little wider than it is drawn; -1 if none. */
+    private int footButton(float x, float y) {
+        if (!footButtons()) return -1;
+        int best = -1;
+        float bd = 1e9f;
+        for (int b = 0; b < 3; b++) {
+            float m = buttonHalf(b) + 7f, dx = x - buttonX(b), dy = y - buttonY(b), dd = dx * dx + dy * dy;
+            if (dd < m * m && dd < bd) {
+                bd = dd;
+                best = b;
+            }
+        }
+        return best;
+    }
+
+    private void press(int b) {
+        pressedButton = b;
+        pressedAt = time;
+        if (b == JUMP_BUTTON) runner.jumpButton();
+        else if (b == SLIDE_BUTTON) runner.slideButton();
+        else runner.tap();
+    }
+
+    /** The old way, with one finger (the stand's bots). */
+    private void classicTouch(int type, float x, float y) {
         // paused: a touch anywhere plays on, the finger the button's till it is lifted
         if (paused) {
             if (type == DOWN) {
@@ -481,7 +699,8 @@ final class World {
     }
 
     int liftButtonY() {
-        return h - 70;
+        // on foot it sits over her own buttons; at the wheel, where the jump would be
+        return driving != null ? h - 70 : h - 190;
     }
 
     private boolean onLiftButton(float x, float y) {
@@ -527,6 +746,28 @@ final class World {
         }
         d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PAUSE, 0.75f, 0f);
         if (driving != null) d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
+        if (footButtons() && !Runner.classic) {
+            for (int b = 0; b < 3; b++) {
+                float lit = b == pressedButton ? Math.max(0f, 1f - (time - pressedAt) / 0.3f) : 0f;
+                int sign = b == JUMP_BUTTON ? Badges.UP : b == SLIDE_BUTTON ? Badges.DOWN : Badges.MALLET;
+                // gliding, the jump is a beat of the arms: it says so while there are beats left
+                if (b == JUMP_BUTTON && runner.gliding && runner.beatsLeft() > 0) lit = Math.max(lit, 0.25f);
+                d.badge(buttonX(b), buttonY(b), buttonHalf(b), sign, 0.8f, lit);
+            }
+            // the stick: under the thumb while it is down; a faint one where the thumb would go
+            if (stickFinger >= 0) {
+                float ox = stickTX - stickCX, oy = stickTY - stickCY, m = (float) Math.sqrt(ox * ox + oy * oy);
+                if (m > STICK_R) {
+                    ox *= STICK_R / m;
+                    oy *= STICK_R / m;
+                }
+                d.badge(stickCX, stickCY, STICK_R + 6f, Badges.BLANK, 0.55f, 0f);
+                d.badge(stickCX + ox, stickCY + oy, KNOB, Badges.KNOB, 0.9f, runner.pushed() >= Runner.JOG_TO ? 0.6f : 0f);
+            } else {
+                d.badge(58f, h - 92f, STICK_R + 6f, Badges.BLANK, 0.22f, 0f);
+                d.badge(58f, h - 92f, KNOB, Badges.KNOB, 0.3f, 0f);
+            }
+        }
         if (liftOffer) {
             float breathe = 0.5f + 0.5f * (float) Math.sin(time * 4f);
             d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.LIFT, 1f, liftPressed ? 1f : 0.12f * breathe);

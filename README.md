@@ -19,13 +19,18 @@ dispatcher's room, which is her head: walls of her own brick round the street se
 eyes, what is to be done typed over it; a touch, her mallet knocks a key, the walls draw back
 and the street goes on. When it is done, back into her head for the report.
 
-A finger on the glass makes her run; moved sideways, it turns her by as much as it moved;
-flicked up, she jumps; flicked up again in the air, she goes on up, over a car or onto what
-stands a storey up; falling from high enough, she glides down by herself, and gliding, a flick
-up beats her arms and lifts her (four times a flight, the wings at the bottom of the glass
-telling how many are left); run at a ladder, she takes hold and climbs it hand over hand; flicked down, she
-slides; lifted, she slows to a stop. A tap is the mallet's: a brum within reach she strikes,
-one ahead and not too far she throws at; with none, she throws it ahead and it comes back. Half the blocks
+Two thumbs lead her. The left half of the glass is a stick: where the thumb comes down is its
+middle, and pushed a little she walks, further she jogs, all the way she runs, the way it is
+pushed being the way she goes as the eye sees it (up the glass into the frame, down it toward
+the eye); let go, she stops in a step or two. The right half turns the eye round her; left alone
+a while, it comes round behind her again as she goes. Low on the right are her buttons: the
+jump (pressed again in the air, she goes on up, over a car or onto what stands a storey up;
+gliding, it beats her arms and lifts her, four times a flight), the slide over it, and the
+mallet's beside it; a flick up or down on the right half jumps or slides her too. Falling from
+high enough, she glides down by herself; run at a ladder, she takes hold and climbs it hand over
+hand, and pulled down, the stick lets her go. The mallet, by its button or a tap on the right
+half: a brum within reach she strikes, one ahead and not too far she throws at; with none, she
+throws it ahead and it comes back. Half the blocks
 have a yard open to the street by an arch; the others are shut in, with a fire escape up the back
 of a house; the fire escapes are all in the yards. Some houses have a way in, a hall through to
 the yard; a few have a lift. The
@@ -35,7 +40,8 @@ takes her up and lets her out on the roof by itself. On the roof, by the hut's d
 shows; pressed, the lift takes her down and the cabin opens onto the hall again. Signs of glass
 hang over the ways in and up near her: the lifts' doors, the fire escapes, the ladders from roof
 to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
-out) by the lift. A button high on the left pauses the game.
+out) by the lift. A button high on the left pauses the game. The old way with one finger (down runs her,
+sideways turns her, flicks jump and slide) is kept for the desktop stand's bots alone.
 
 The town ends at the sea: along its southmost street a promenade with palms and a parapet, steps
 down to a beach with sunshades, and the water. Home is there, where the game begins: one large house with a tower and a lamp on

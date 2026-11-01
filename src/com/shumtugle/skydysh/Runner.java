@@ -1,13 +1,18 @@
 package com.shumtugle.skydysh;
 
 /**
- * Freedie on foot, and the eye that follows her: she runs while a finger is on the glass and
- * slows to a stop when it lifts (not at once: a quick lift and touch again keeps her going); the
- * finger leads her: moved sideways, she turns by as much as it moved, wherever it lies on the
- * glass. Flicked up, she jumps; flicked up again while she is in the air, she goes on up as high
- * as a leap would have taken her, over a car or onto what is a storey up; flicked down, she
- * slides. Falling from high enough, she puts her arms out and glides down by herself. A tap is
- * not hers: it is the mallet's (see Toss).
+ * Freedie on foot, and the eye that follows her. She is led by a stick under the left thumb (see
+ * World): pushed a little, she walks; further, she jogs; all the way, she runs; the way it is
+ * pushed is the way she goes as the eye sees it, up the glass into the frame, down it toward the
+ * eye; let go, she stops in a step or two. The right thumb turns the eye round her; left alone
+ * a while, it comes round behind her again as she goes. A press of the jump button jumps her,
+ * a second in the air takes her on up as high as a leap would have, over a car or onto what is a
+ * storey up; the slide button slides her. Falling from high enough, she puts her arms out and
+ * glides down by herself. The mallet's button, or a tap where the eye is turned, is the mallet's
+ * (see Toss).
+ *
+ * The old way, kept for the stand's bots: one finger runs her while it is down, sideways turns
+ * her by as much as it moved, a flick up jumps, a flick down slides (see touch).
  * Houses, lamp posts, palms, cars and people stop her, unless she is over them; she stands on
  * whatever she comes down on, the roofs too, and runs off their edges into the air; the curb is
  * a step she takes in her stride.
@@ -210,6 +215,102 @@ final class Runner {
 
     }
 
+    // ---- the sticks ----
+    // the stick: so far pushed, as a part of the way to its rim (x to the right, y down the glass)
+    private float stickX, stickY;
+    private boolean stickOn;
+    // a stick pushed less than this is not heard; walking, jogging, running up to these
+    static final float DEAD = 0.14f, WALK_TO = 0.5f, JOG_TO = 0.82f;
+    static final float WALK = 1.7f, JOG = 5.2f;
+    // how fast she turns to the way she is sent, radians a second; on the ground and in the air
+    static final float TURN = 11f, TURN_AIR = 3.5f;
+    // how quickly she gets up to the pace wanted, and down from it, a second
+    static final float GAIN = 4.5f, LOSE = 9f;
+    // the eye turned by hand: so many frame pixels a quarter turn; held so long before it comes
+    // round behind her again by itself, at so much a second
+    static final float LOOK_QUARTER = 120f, LOOK_HOLD = 1.6f, COME_ROUND = 1.5f;
+    private float lookedAt = -9f;
+
+    /** The stick as the left thumb has it: so far each way, as parts of the way to its rim; on or let go. */
+    void stick(float sx, float sy, boolean on) {
+        if (auto || held) {
+            stickOn = false;
+            return;
+        }
+        float m = (float) Math.sqrt(sx * sx + sy * sy);
+        if (m > 1f) {
+            sx /= m;
+            sy /= m;
+        }
+        stickX = sx;
+        stickY = sy;
+        stickOn = on;
+        if (on && m > DEAD) led = false;
+        // on a ladder, pulled down hard: she lets go
+        if (on && state == CLIMB && sy > 0.6f) letGo();
+    }
+
+    /** The eye turned round her by hand, so many frame pixels across the glass. */
+    void look(float dx) {
+        eyeYaw += dx / LOOK_QUARTER * (float) (Math.PI / 2);
+        lookedAt = clock;
+    }
+
+    /** The jump button: up off the ground; in the air, on up; gliding, a beat of the arms. */
+    void jumpButton() {
+        if (auto || held) return;
+        led = false;
+        jump();
+    }
+
+    /** The slide button: a slide at a run; on a ladder, she lets go. */
+    void slideButton() {
+        if (auto || held) return;
+        if (state == CLIMB) letGo();
+        else slide();
+    }
+
+    /** A tap for the mallet, from its button or from the eye's side of the glass. */
+    void tap() {
+        if (auto || held) return;
+        tapped = true;
+    }
+
+    /** The old way is not used: the sticks lead her. Kept for the stand's bots, which drive the one finger. */
+    static boolean classic;
+
+    /** How far the stick is pushed now, 0 to 1. */
+    float pushed() {
+        return stickOn ? (float) Math.sqrt(stickX * stickX + stickY * stickY) : 0f;
+    }
+
+    /** The pace the stick asks for: nothing, a walk, a jog or a run. */
+    private float paceWanted() {
+        float m = pushed();
+        if (m < DEAD) return 0f;
+        if (m < WALK_TO) return WALK;
+        if (m < JOG_TO) return JOG;
+        return TOP_SPEED;
+    }
+
+    /** A frame led by the stick: turned toward the way it is pushed (as the eye sees it), at the pace it asks. */
+    private void sticks(float dt) {
+        float want = paceWanted();
+        if (want > 0f) {
+            float to = eyeYaw + (float) Math.atan2(stickX, -stickY), a = to - heading;
+            while (a > Math.PI) a -= 2f * (float) Math.PI;
+            while (a < -Math.PI) a += 2f * (float) Math.PI;
+            float rate = (state == AIR ? TURN_AIR : TURN) * dt;
+            heading += Math.max(-rate, Math.min(rate, a));
+            // sent back the way she came: she turns before she picks up again
+            if (state != AIR && Math.abs(a) > 1.8f) want *= 0.25f;
+        }
+        if (state == AIR) return;
+        if (state == SLIDE) return;
+        speed += (want - speed) * Math.min(1f, dt * (want > speed ? GAIN : LOSE));
+        if (want == 0f && speed < 0.15f) speed = 0f;
+    }
+
     void touch(int type, float fx, float fy) {
         if (auto || held) return;
         if (type == World.DOWN) led = false;
@@ -323,6 +424,7 @@ final class Runner {
         riding = false;
         tapped = false;
         beats = 0;
+        stickOn = false;
     }
 
     /** Onto a ladder: standing at (fx, fz) before its wall (facing nx, nz), up from bottom to top. */
@@ -445,6 +547,8 @@ final class Runner {
             steer(dt);
         } else if (led && state != AIR && state != SLIDE) {
             guide(dt, g, room == null ? cars : null);
+        } else if (!classic) {
+            sticks(dt);
         } else if (holding || clock - upAt < GRACE) speed += (TOP_SPEED - speed) * Math.min(1f, dt * PICK_UP);
         else if (state != AIR) speed = Math.max(0f, speed - BRAKE * dt);
         if (state == SLIDE) {
@@ -592,7 +696,15 @@ final class Runner {
         float d = heading - eyeYaw;
         while (d > Math.PI) d -= 2f * (float) Math.PI;
         while (d < -Math.PI) d += 2f * (float) Math.PI;
-        eyeYaw += d * Math.min(1f, dt * 4.5f);
+        // led by the sticks, the eye stays where the hand turned it a while; then, as she goes, it
+        // comes round behind her, unhurried; standing, it stays. Led by herself, driving, on a
+        // ladder, it is behind her as it always was
+        boolean byHand = !classic && !riding && !auto && !led && state != CLIMB;
+        if (!byHand) eyeYaw += d * Math.min(1f, dt * 4.5f);
+        else if (clock - lookedAt > LOOK_HOLD && speed > 1.2f)
+            eyeYaw += d * Math.min(1f, dt * COME_ROUND * Math.min(1f, speed / JOG));
+        while (eyeYaw - heading > Math.PI) eyeYaw -= 2f * (float) Math.PI;
+        while (heading - eyeYaw > Math.PI) eyeYaw += 2f * (float) Math.PI;
         float fx = (float) Math.sin(eyeYaw), fz = (float) Math.cos(eyeYaw);
         boolean in = room != null;
         float back = in ? BACK_IN : BACK, high = in ? HIGH_IN : HIGH;

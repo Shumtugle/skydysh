@@ -23,8 +23,9 @@ final class Stage extends GLSurfaceView implements GLSurfaceView.Renderer {
     private float q = 2f;
     private float slowFor, quickFor;
 
-    // touches waiting for the GL thread: kind, x, y in frame pixels
-    private final float[] pending = new float[3 * 64];
+    // touches waiting for the GL thread: kind, which finger, x, y in frame pixels
+    private static final int Q = 4;
+    private final float[] pending = new float[Q * 128];
     private int pendingCount;
 
     Stage(Context context, World.Host host) {
@@ -37,38 +38,55 @@ final class Stage extends GLSurfaceView implements GLSurfaceView.Renderer {
         setRenderMode(RENDERMODE_CONTINUOUSLY);
     }
 
+    /**
+     * Every finger on its own: one coming down or going up is heard as such, by its own number;
+     * a move is heard for every finger that is down.
+     */
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        int kind;
-        switch (e.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN: kind = World.DOWN; break;
-            case MotionEvent.ACTION_MOVE: kind = World.MOVE; break;
-            case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL: kind = World.UP; break;
-            default: return true;
-        }
         float k = World.W / (float) Math.max(1, getWidth());
+        int act = e.getActionMasked();
         synchronized (pending) {
-            if (pendingCount < 64) {
-                pending[pendingCount * 3] = kind;
-                pending[pendingCount * 3 + 1] = e.getX() * k;
-                pending[pendingCount * 3 + 2] = e.getY() * k;
-                pendingCount++;
+            switch (act) {
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_POINTER_DOWN: {
+                    int i = e.getActionIndex();
+                    queue(World.DOWN, e.getPointerId(i), e.getX(i) * k, e.getY(i) * k);
+                    break;
+                }
+                case MotionEvent.ACTION_MOVE:
+                    for (int i = 0; i < e.getPointerCount(); i++) queue(World.MOVE, e.getPointerId(i), e.getX(i) * k, e.getY(i) * k);
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_POINTER_UP: {
+                    int i = e.getActionIndex();
+                    queue(World.UP, e.getPointerId(i), e.getX(i) * k, e.getY(i) * k);
+                    break;
+                }
+                case MotionEvent.ACTION_CANCEL:
+                    for (int i = 0; i < e.getPointerCount(); i++) queue(World.UP, e.getPointerId(i), e.getX(i) * k, e.getY(i) * k);
+                    break;
+                default:
             }
         }
         return true;
+    }
+
+    private void queue(int kind, int id, float x, float y) {
+        if (pendingCount >= pending.length / Q) return;
+        int o = pendingCount * Q;
+        pending[o] = kind;
+        pending[o + 1] = id;
+        pending[o + 2] = x;
+        pending[o + 3] = y;
+        pendingCount++;
     }
 
     /** The back key: true when the world takes it (nothing here takes it now), false to leave the game. */
     boolean back() {
         if (!world.wantsBack()) return false;
         synchronized (pending) {
-            if (pendingCount < 64) {
-                pending[pendingCount * 3] = World.BACK;
-                pending[pendingCount * 3 + 1] = 0f;
-                pending[pendingCount * 3 + 2] = 0f;
-                pendingCount++;
-            }
+            queue(World.BACK, 0, 0f, 0f);
         }
         return true;
     }
@@ -93,7 +111,7 @@ final class Stage extends GLSurfaceView implements GLSurfaceView.Renderer {
         last = now;
         synchronized (pending) {
             for (int i = 0; i < pendingCount; i++)
-                world.touch((int) pending[i * 3], pending[i * 3 + 1], pending[i * 3 + 2]);
+                world.touch((int) pending[i * Q], (int) pending[i * Q + 1], pending[i * Q + 2], pending[i * Q + 3]);
             pendingCount = 0;
         }
         world.update(dt);

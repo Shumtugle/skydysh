@@ -28,6 +28,12 @@ public final class Stand implements World.Host {
     private final java.util.HashMap<String, Integer> kept = new java.util.HashMap<String, Integer>();
     private World world = fresh();
 
+    // the scenes and their bots were written for the one finger: it stays theirs unless a scene
+    // asks for the sticks (controls sticks)
+    static {
+        Runner.classic = true;
+    }
+
     /** A new game, the opening skipped: the scenes are of the game itself unless they ask for it. */
     private World fresh() {
         World w = new World(this);
@@ -38,6 +44,9 @@ public final class Stand implements World.Host {
     private final File out;
     private float time;
     private String shotDown;
+    // the stick's thumb, when a scene holds it down
+    private float stickX, stickY;
+    private boolean stickHeld;
 
     private Stand(File out) {
         this.out = out;
@@ -183,6 +192,48 @@ public final class Stand implements World.Host {
                 step();
             }
             world.touch(World.UP, x1, y1);
+            step();
+        } else if (c.equals("controls")) {
+            // controls sticks|classic: the stick and the buttons, or the old one finger
+            Runner.classic = !p[1].equals("sticks");
+        } else if (c.equals("stick")) {
+            // stick DX DY: the left thumb down where the stick rests and held pushed so far (frame
+            // pixels from there); stick off: lifted
+            if (p[1].equals("off")) {
+                world.touch(World.UP, 1, stickX, stickY);
+                stickHeld = false;
+            } else {
+                float x = 58f + f(p[1]), y = world.h - 92f + f(p[2]);
+                if (!stickHeld) {
+                    stickX = 58f;
+                    stickY = world.h - 92f;
+                    world.touch(World.DOWN, 1, stickX, stickY);
+                    stickHeld = true;
+                }
+                stickX = x;
+                stickY = y;
+                world.touch(World.MOVE, 1, x, y);
+            }
+            step();
+        } else if (c.equals("look")) {
+            // look DX SECONDS: the right thumb drawn across the eye's side so far, over so long
+            float dx = f(p[1]);
+            int n = Math.max(2, Math.round(f(p[2]) / DT));
+            float x0 = World.W * 0.75f, y0 = world.h * 0.5f;
+            world.touch(World.DOWN, 2, x0, y0);
+            step();
+            for (int i = 1; i <= n; i++) {
+                world.touch(World.MOVE, 2, x0 + dx * i / n, y0);
+                step();
+            }
+            world.touch(World.UP, 2, x0 + dx, y0);
+            step();
+        } else if (c.equals("press")) {
+            // press jump|slide|mallet: her button, down and up
+            int b = p[1].equals("jump") ? World.JUMP_BUTTON : p[1].equals("slide") ? World.SLIDE_BUTTON : World.MALLET_BUTTON;
+            world.touch(World.DOWN, 3, world.buttonX(b), world.buttonY(b));
+            step();
+            world.touch(World.UP, 3, world.buttonX(b), world.buttonY(b));
             step();
         } else if (c.equals("sounds")) {
             Synth syn = new Synth();

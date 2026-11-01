@@ -14,8 +14,8 @@ uniform sampler2D uFlat;
 uniform sampler2D uHud;     // the fine layer over the top of the frame, premultiplied
 uniform float uHudRows;     // how many frame rows it covers from the top; none, 0
 uniform sampler2D uBadges;  // the sheet of buttons and signs, 5 by 5 cells, premultiplied
-uniform vec4 uBadge[12];    // each one shown: its middle and half its size (frame pixels), how much it shows
-uniform vec2 uBadgeOf[12];  // which cell of the sheet, how lit
+uniform vec4 uBadge[16];    // each one shown: its middle and half its size (frame pixels), how much it shows
+uniform vec2 uBadgeOf[16];  // which cell of the sheet, how lit
 uniform int uBadgeN;
 uniform vec2 uFrameSize;    // the frame, in frame pixels
 uniform vec2 uScreen;       // the screen, in its own pixels
@@ -79,7 +79,7 @@ void main() {
 
     // the buttons and signs, each its cell of the sheet laid over where it is
     vec2 fpx = vec2(uv.x, 1.0 - uv.y) * uFrameSize;
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 16; i++) {
         if (i >= uBadgeN) break;
         vec4 b = uBadge[i];
         vec2 d = (fpx - b.xy) / b.z;

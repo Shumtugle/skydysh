@@ -126,7 +126,7 @@ final class DrawList {
 
     // the buttons and signs over the frame (see Badges): each its middle and half its size
     // (frame pixels), how much it shows (0 to 1), which of the sheet's cells, how lit (0 to 1)
-    static final int BADGE_MAX = 12;
+    static final int BADGE_MAX = 16;
     final float[] badge = new float[BADGE_MAX * 4], badgeOf = new float[BADGE_MAX * 2];
     int badgeN;
 
