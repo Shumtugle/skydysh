@@ -41,6 +41,19 @@ final class Cars {
     }
 
     /** How high the roof of a car of a kind is. */
+    /** How high the roof of the car standing over (px, pz) is, if one is; 0 if none. */
+    float topAt(float px, float pz) {
+        float best = 0f;
+        for (int c = 0; c < MOST; c++) {
+            if (!live[c]) continue;
+            float fx = (float) Math.sin(heading[c]), fz = (float) Math.cos(heading[c]);
+            float ox = px - x[c], oz = pz - z[c];
+            if (Math.abs(ox * fx + oz * fz) < half(kind[c]) + 0.2f && Math.abs(ox * fz - oz * fx) < 1.15f)
+                best = Math.max(best, top(kind[c]));
+        }
+        return best;
+    }
+
     static float top(int kind) {
         return kind == VAN ? 2.1f : kind == SMALL ? 1.5f : TOP;
     }

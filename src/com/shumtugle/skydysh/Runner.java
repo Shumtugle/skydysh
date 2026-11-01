@@ -71,6 +71,9 @@ final class Runner {
     // the jump now: where it set off from, and whether it has been flicked on up already
     private float jumpFrom, offEdgeAt = -9f;
     private boolean boosted;
+    // a jump just taken from the ground: looked at what is before her, to clear it
+    private boolean vault;
+    static final float VAULT_LOOK = 1.4f, VAULT_OVER = 0.7f;
     static final float LATE = 0.2f;                    // a flick so soon after running off an edge is still a jump
     /** A tap not yet heard by the mallet. */
     private boolean tapped;
@@ -310,7 +313,11 @@ final class Runner {
             // sent back the way she came: she turns before she picks up again
             if (state != AIR && Math.abs(a) > 1.8f) want *= 0.25f;
         }
-        if (state == AIR) return;
+        // in the air the stick still sends her on (never back)
+        if (state == AIR) {
+            if (want > speed) speed += (want - speed) * Math.min(1f, dt * 2.5f);
+            return;
+        }
         if (state == SLIDE) return;
         speed += (want - speed) * Math.min(1f, dt * (want > speed ? GAIN : LOSE));
         if (want == 0f && speed < 0.15f) speed = 0f;
@@ -394,6 +401,10 @@ final class Runner {
         jumpFrom = y;
         boosted = false;
         vy = JUMP;
+        vault = true;
+        // pushing on, she goes on: a jump keeps the way she was being sent, even pressed against a car
+        if (!classic && stickOn) speed = Math.max(speed, paceWanted() * 0.9f);
+        else if (classic && holding) speed = Math.max(speed, TOP_SPEED * 0.6f);
     }
 
     /** High, at once: from the ground or on up from a jump (going down by herself). */
@@ -565,6 +576,20 @@ final class Runner {
                 state = RUN;
                 stateAt = clock;
             }
+        }
+        if (vault) {
+            // over what stands just before her (a car, a bench, a fence, a wall no higher than a
+            // storey): high enough to come down on it or past it
+            vault = false;
+            float fx0 = (float) Math.sin(heading), fz0 = (float) Math.cos(heading);
+            float top = 0f;
+            for (float d = 0.6f; d <= VAULT_LOOK; d += 0.4f) {
+                float qx = x + fx0 * d, qz = z + fz0 * d;
+                top = Math.max(top, g.ground(qx, qz, y, 3.2f));
+                if (room == null) top = Math.max(top, cars.topAt(qx, qz));
+            }
+            float over = top - y + VAULT_OVER;
+            if (over > 0.9f) vy = Math.max(vy, (float) Math.sqrt(2f * GRAVITY * over));
         }
         if (state == SWIM) {
             // in the water: slower, turning more slowly, strokes as she goes (slow ones treading water)

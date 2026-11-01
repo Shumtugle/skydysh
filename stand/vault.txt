@@ -1,0 +1,22 @@
+# Over a car with two thumbs: the stick pushed on, against a car standing across her way, the jump
+# pressed: she goes up and over it (or onto it), on the way she was pushed.
+screen 1096 2560
+wait 0.4
+controls sticks
+at 32 -9 0
+wait 0.3
+carahead 3
+stick 0 -34
+wait 0.8
+where
+shot v0
+press jump
+wait 0.25
+shot v1
+wait 0.35
+where
+shot v2
+wait 0.8
+where
+shot v3
+stick off

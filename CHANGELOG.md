@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.49
+
+- Up and on at once. A jump keeps the way she is being sent: pushed on by the stick (or a finger
+  held), she goes on forward even from a standstill against a car; in the air the stick still
+  sends her on (never back).
+- Over what stands before her: jumping from the ground with something close ahead (a car, parked
+  or going, a bench, a fence, a wall no higher than a storey), she jumps high enough to come down
+  on it or past it.
+- Stand: scene `vault.txt`.
+
 ## 0.48
 
 - She says where, and the pickup's own driver keeps the way. A finger down, it goes: down the
