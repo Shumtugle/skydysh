@@ -71,4 +71,12 @@ bitmap. The typeface carries this notice:
 Changes made: rasterized at 11 pixels, thresholded to one bit a pixel; only the Latin and
 Cyrillic letters, the digits and a few signs are kept. It is not distributed as a font.
 
+Cars (assets/cars.png, assets/cars.txt)
+=======================================
+
+The cars and their skins were made for this game: the shapes are its own code, and the skins
+were painted on drawings of those shapes for it. No one else's models or pictures are in them.
+They are under the terms in LICENSE, as the code is.
+
+
 Everything else in this project stays under the terms in LICENSE.

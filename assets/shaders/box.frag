@@ -29,10 +29,12 @@ uniform float uFogStart;
 uniform float uFogScale;
 uniform float uTime;          // seconds, for what moves on its own
 uniform float uNight;         // how far into the night: windows lit
-uniform float uClear;
+uniform float uClear;         // the see-through pass: only clear plastic is drawn, over what is there
 uniform vec4 uSpot;           // the one light left in the dark: where, and how far it reaches
 uniform float uDark;          // how far the rest has gone into the dark (0, not at all)
-uniform vec4 uFire;           // something burning: where, and how bright its light on what is near (0, none)         // the see-through pass: only clear plastic is drawn, over what is there
+uniform sampler2D uCars;      // the cars' painted skins, side by side (see DrawList.skin)
+uniform vec4 uCarMap[36];     // for each car and view, where its skin lies; then each car's own paint
+uniform vec4 uFire;           // something burning: where, and how bright its light on what is near (0, none)
 
 out vec4 outColor;
 
@@ -40,7 +42,7 @@ const float PLAIN = 0.0, GRAIN = 1.0, STONE = 2.0, ASPHALT = 3.0, WOOD = 4.0, PA
 const float FACADE = 8.0, FROND = 9.0, TRUNK = 10.0, ROAD = 11.0, GLASS = 12.0, GLOW = 13.0, SEA = 14.0, RAIL = 15.0;
 const float PROMENADE = 16.0, AWNING = 17.0, SQUARE = 18.0, LANE = 19.0;
 const float POLISHED = 20.0, RUBBER = 21.0, LEAVES = 22.0, GRASS = 23.0, GRAVEL = 24.0, MATTE = 26.0, CLEAR = 27.0;
-const float ROD = 28.0, HEAD = 29.0, FIRE = 30.0, TILES = 31.0;
+const float ROD = 28.0, HEAD = 29.0, FIRE = 30.0, TILES = 31.0, CAR = 32.0, TYRE = 25.0;
 
 const vec3 INK = vec3(0.137, 0.165, 0.290);
 
@@ -224,6 +226,30 @@ vec3 road(float across, float along, float hw, vec3 base) {
     return c;
 }
 
+/**
+ * A car's skin, painted on its five flat views (from the left, the right, the front, the back,
+ * above): the face looks it up in the view it faces. Where the skin is the car's paint, the
+ * paint of this car is laid on in its place, as light or dark as the skin is there. A face
+ * turned inward (an open cab's insides) or downward keeps the colour the box brought.
+ */
+vec3 carSkin(int kind) {
+    vec3 packed = floor(vColor + 0.5);
+    vec3 cm = floor(packed / 256.0);
+    vec3 tone = (packed - cm * 256.0) / 255.0;
+    vec3 mid = (cm - 400.0) * 0.01;
+    vec3 p = mid + vLocal;
+    vec3 n = vFace;
+    if (n.y < -0.5) return tone * 0.35;
+    if (n.y < 0.5 && dot(mid + n * vHalf, n) < 0.05) return tone * 0.8;
+    int view = n.x < -0.5 ? 0 : n.x > 0.5 ? 1 : n.z > 0.5 ? 2 : n.z < -0.5 ? 3 : 4;
+    vec2 st = view == 0 ? p.zy : view == 1 ? vec2(-p.z, p.y) : view == 2 ? p.xy : view == 3 ? vec2(-p.x, p.y) : p.xz;
+    vec4 m = uCarMap[kind * 5 + view];
+    vec4 t = texture(uCars, vec2(m.x * st.x + m.y, m.z * st.y + m.w));
+    if (t.a < 0.9) return t.rgb;
+    const vec3 L = vec3(0.3, 0.59, 0.11);
+    return tone * clamp(dot(t.rgb, L) / max(dot(uCarMap[30 + kind].rgb, L), 0.05), 0.0, 2.4);
+}
+
 /** The warm light thrown by what burns on what is near it, falling off within some nine meters. */
 vec3 fireLight(vec3 p, vec3 n) {
     if (uFire.w <= 0.0) return vec3(0.0);
@@ -354,8 +380,20 @@ void sphere(float mat) {
     vec3 rd = normalize(back * (vWorld - uEye) / hs);
     vec3 l, nl;
     vec3 base = vColor;
-    if (mat == ROD || mat == HEAD) {
+    if (mat == ROD || mat == HEAD || mat == TYRE) {
         if (!rod(ro, rd, l, nl)) discard;
+        if (mat == TYRE) {
+            float rr = length(l.yz);
+            if (nl.x != 0.0) {
+                // the wheel's face: a pale rim, its middle brighter, holes round it, the tyre's wall outside
+                float a = fract(atan(l.z, l.y) * 0.95493);          // six about the axle
+                if (rr < 0.6) base = rr < 0.2 ? rgb(0xD2CEC6) : (rr > 0.27 && rr < 0.48 && a < 0.42) ? rgb(0x3A3A3E) : rgb(0xACA8A0);
+                else if (rr < 0.66) base = rgb(0x45444A);
+            } else {
+                // the tread, in ribs across
+                base *= 0.85 + 0.2 * step(0.5, fract(atan(l.z, l.y) * 3.8197));
+            }
+        }
         if (mat == HEAD && nl.x == 0.0) {
             // the head's own paint: a band of scallops round its lower half, in the dark of the caps
             // (the band runs along the barrel; the scallops rise out of the dark half into the paint)
@@ -388,13 +426,13 @@ void sphere(float mat) {
     // a flat spot of shine, cut clean, where the sun glances off it
     if (!hole && mat != MATTE) {
         float sp = dot(n, normalize(uSun + v));
-        float cut = polished ? 0.975 : mat == RUBBER ? 0.95 : 0.985;
+        float cut = polished ? 0.975 : mat == RUBBER || mat == TYRE ? 0.95 : 0.985;
         if (sp > cut && sh > 0.5) c = mix(c, vec3(1.0, 0.98, 0.92), 0.85);
     }
     c = haze(c, world);
     c = darken(c, world);
     // a ball is one thing whichever way it faces; a rod's ends are faces of their own
-    outColor = vec4(c, ident(vColor, mat, mat == ROD || mat == HEAD ? abs(nl.x) * vec3(1.0, 0.0, 0.0) : vec3(0.0)));
+    outColor = vec4(c, ident(vColor, mat, mat == ROD || mat == HEAD || mat == TYRE ? abs(nl.x) * vec3(1.0, 0.0, 0.0) : vec3(0.0)));
 }
 #endif
 
@@ -438,7 +476,9 @@ void main() {
         outColor = vec4(haze(heat(t), vWorld), ident(vColor, mat, face));
         return;
     }
-    if (mat == ROAD) {
+    if (mat == CAR) {
+        base = carSkin(seed);
+    } else if (mat == ROAD) {
         // the long way of the stretch is the way it runs; dashes counted from the world, so stretches meet in step
         base = vHalf.x > vHalf.z ? road(vLocal.z, vWorld.x, vHalf.z, vColor) : road(vLocal.x, vWorld.z, vHalf.x, vColor);
     } else if (mat == WOOD) {
@@ -542,7 +582,7 @@ void main() {
         c = mix(rgb(0x2E5664), rgb(0x9CC6CC), 0.35 + 0.35 * n.y + 0.25 * smoothstep(0.55, 0.9, fract(s * 1.3)));
     }
     // a soft sheen where the low sun glances off painted metal and glass
-    if (mat == PLAIN || mat == GLASS) {
+    if (mat == PLAIN || mat == GLASS || mat == CAR) {
         float sp = pow(max(dot(n, normalize(uSun + v)), 0.0), mat == GLASS ? 60.0 : 24.0);
         c += vec3(1.0, 0.86, 0.66) * sp * sh * (mat == GLASS ? 0.5 : 0.22);
     }

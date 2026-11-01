@@ -41,6 +41,32 @@ function program(gl, vs, fs) {
   return p;
 }
 
+// the cars' painted skins (cars.png) and where each car's views lie in it (cars.txt), as on the
+// phone; without them, one grey texel, so the cars come out in their paint
+async function skins(gl, dir) {
+  const map = new Float32Array(36 * 4);
+  for (let k = 30; k < 36; k++) map.set([0.5, 0.5, 0.5, 1], k * 4);
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+  try {
+    const nums = (await text(dir + 'cars.txt')).trim().split(/\s+/).map(Number);
+    const r = await fetch(dir + 'cars.png');
+    if (!r.ok || nums.length !== map.length) throw new Error('no skins');
+    const img = await createImageBitmap(await r.blob(), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    map.set(nums);
+  } catch (e) {
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([128, 128, 128, 255]));
+  }
+  gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return { tex, map };
+}
+
 // the people's meshes (folk.bin, see FolkPack) into one buffer of corners and one of indices, and
 // their shared picture into a texture; null if the game has none
 async function meshes(gl, dir) {
@@ -154,6 +180,7 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q, b
   const meshShadowP = program(gl, src['mesh.vert'].replace('\n', '\n#define SHADOW\n'), src['meshshadow.frag']);
   // the town's people as meshes, when the frame has any and the game has them (next to the shaders)
   const folk = (frame.folkN || 0) > 0 ? await meshes(gl, shaderDir + '../') : null;
+  const cars = await skins(gl, shaderDir + '../');
 
   // the cube and the instances: the boxes, and the balls apart
   const cube = gl.createBuffer();
@@ -295,6 +322,12 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q, b
     const spot = frame.spot || [0, 0, 0, 0, 0];
     gl.uniform4fv(u(p, 'uSpot'), spot.slice(0, 4));
     gl.uniform1f(u(p, 'uDark'), spot[4]);
+    // the cars' skins (only the boxes read them)
+    gl.activeTexture(gl.TEXTURE4);
+    gl.bindTexture(gl.TEXTURE_2D, cars.tex);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.uniform1i(u(p, 'uCars'), 4);
+    gl.uniform4fv(u(p, 'uCarMap'), cars.map);
   };
 
   // 2. the sky, then the boxes, at the drawing size

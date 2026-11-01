@@ -30,6 +30,8 @@ final class DrawList {
     static final int FIRE = 30;
     // a floor of tiles in two tones; its seed past half sets them on the diagonal
     static final int TILES = 31;
+    // a car's painted skin (see skin()): its seed says which car; a tyre, a ball round about its own x
+    static final int CAR = 32, TYRE = 25;
     // per box: middle (3), half sizes (3), the turn as three columns (9), color (3), material (1)
     static final int STRIDE = 19;
 
@@ -191,12 +193,27 @@ final class DrawList {
         count = kept;
     }
 
+    /**
+     * The last box made part of a car's painted skin: the car's kind, where the box's middle sits
+     * in the car's own frame (meters, x right, y up, z ahead; its turn must be the car's), and a
+     * colour for what the skin does not cover (its inner faces), or the car's paint where the
+     * skin is paint. All of it rides in the box's colour: centimeters shifted by 400, times 256,
+     * plus the colour's byte.
+     */
+    void skin(int kind, float lx, float ly, float lz, int rgb) {
+        int o = (count - 1) * STRIDE;
+        boxes[o + 15] = (Math.round(lx * 100f) + 400) * 256 + ((rgb >> 16) & 0xFF);
+        boxes[o + 16] = (Math.round(ly * 100f) + 400) * 256 + ((rgb >> 8) & 0xFF);
+        boxes[o + 17] = (Math.round(lz * 100f) + 400) * 256 + (rgb & 0xFF);
+        boxes[o + 18] = material(CAR, kind);
+    }
+
     /** A material with a number of its own, 0 to 255, that the shader reads as a seed or a flag. */
     static float material(int material, int seed) {
         return material + (seed & 0xFF) / 256f;
     }
 
-    /** Every box of another list, added to this one: the still part of a scene, built once. */
+    /** Every box and ball of another list, added to this one: the still part of a scene, built once. */
     void append(DrawList o) {
         int n = o.count * STRIDE;
         while ((count * STRIDE) + n > boxes.length) {
@@ -206,6 +223,14 @@ final class DrawList {
         }
         System.arraycopy(o.boxes, 0, boxes, count * STRIDE, n);
         count += o.count;
+        n = o.ballCount * STRIDE;
+        while ((ballCount * STRIDE) + n > balls.length) {
+            float[] more = new float[balls.length * 2];
+            System.arraycopy(balls, 0, more, 0, balls.length);
+            balls = more;
+        }
+        System.arraycopy(o.balls, 0, balls, ballCount * STRIDE, n);
+        ballCount += o.ballCount;
     }
 
     /** Where a point lands in the frame, in frame pixels; false behind the eye. */

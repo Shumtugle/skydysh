@@ -212,6 +212,18 @@ final class Cars {
         live[0] = true;
     }
 
+    /** Car c put standing at (x, z) facing so, of a kind and paint, held there (the stand's show). */
+    void stand(int c, float px, float pz, float yaw, int k, int p) {
+        x[c] = px;
+        z[c] = pz;
+        heading[c] = yaw;
+        speed[c] = 0f;
+        halt[c] = 1000f;
+        paint[c] = p;
+        kind[c] = k;
+        live[c] = true;
+    }
+
     /** What car c does at the crossing after the one it is going to: on, mostly; left or right now and then. */
     private void choose(int c) {
         int roll = rnd.nextInt(5);
@@ -305,6 +317,10 @@ final class Cars {
 
     private static float px, py, pz;
     private static final float[] frame = new float[9], t = new float[9];
+    // the car being drawn: its kind for the skin, and its paint where the skin is paint
+    private static int skinKind, skinPaint;
+    /** Which skin a pickup wears (the skins of the five kinds come first). */
+    static final int PICKUP_SKIN = 5;
 
     /** A sedan standing on the road (see the other). */
     static void car(DrawList d, float x, float z, float yaw, int paint, boolean lean) {
@@ -323,6 +339,8 @@ final class Cars {
         frame[0] = cy; frame[1] = 0f; frame[2] = sy;
         frame[3] = 0f; frame[4] = 1f; frame[5] = 0f;
         frame[6] = -sy; frame[7] = 0f; frame[8] = cy;
+        skinKind = kind;
+        skinPaint = paint;
         if (kind == HATCH) hatch(d, paint, lean);
         else if (kind == SMALL) small(d, paint, lean);
         else if (kind == VAN) van(d, paint, lean);
@@ -342,8 +360,7 @@ final class Cars {
         float plain = DrawList.PLAIN;
         for (int side = -1; side <= 1; side += 2) {
             for (int end = -1; end <= 1; end += 2) {
-                part(d, side * (w - 0.05f), wheel, end * wheelAt, 0.12f, wheel, wheel, 0f, 0x1C1B1D, plain);
-                if (!lean) part(d, side * (w + 0.075f), wheel, end * wheelAt, 0.01f, wheel * 0.47f, wheel * 0.47f, 0f, 0xB8B4AC, plain);
+                wheel(d, side * (w - 0.05f), wheel, end * wheelAt, 0.12f, wheel);
             }
             part(d, side * (w - 0.3f), lampY, half + 0.005f, 0.15f, 0.07f, 0.01f, 0f, 0xFFF0C2, plain);
             part(d, side * (w - 0.26f), lampY + 0.02f, -half - 0.005f, 0.15f, 0.07f, 0.01f, 0f, 0xD43A2E, plain);
@@ -415,8 +432,7 @@ final class Cars {
         for (int side = -1; side <= 1; side += 2) {
             if (!lean) part(d, side * 0.795f, mid, -0.25f, 0.01f, 0.22f, 0.07f, 0f, paint, plain);
             for (int end = -1; end <= 1; end += 2) {
-                part(d, side * 0.85f, 0.32f, end * 1.38f, 0.12f, 0.32f, 0.32f, 0f, 0x1C1B1D, plain);
-                if (!lean) part(d, side * 0.975f, 0.32f, end * 1.38f, 0.01f, 0.15f, 0.15f, 0f, 0xB8B4AC, plain);
+                wheel(d, side * 0.85f, 0.32f, end * 1.38f, 0.12f, 0.32f);
             }
             part(d, side * 0.6f, 0.68f, 2.205f, 0.17f, 0.07f, 0.01f, 0f, 0xFFF0C2, plain);
             part(d, side * 0.64f, 0.7f, -2.205f, 0.17f, 0.07f, 0.01f, 0f, 0xD43A2E, plain);
@@ -428,6 +444,25 @@ final class Cars {
         part(d, 0f, 0.64f, 2.205f, 0.3f, 0.08f, 0.01f, 0f, 0x2A2A2C, plain);
         part(d, 0f, 0.43f, 2.3f, 0.24f, 0.06f, 0.01f, 0f, 0xF2F0E6, plain);
         part(d, 0f, 0.43f, -2.3f, 0.24f, 0.06f, 0.01f, 0f, 0xF2F0E6, plain);
+    }
+
+    /** A wheel at (lx, ly, lz) in the car's frame: round about the axle, so wide, of radius r. */
+    private static void wheel(DrawList d, float lx, float ly, float lz, float hx, float r) {
+        wheel(d, px, py, pz, frame, lx, ly, lz, hx, r);
+    }
+
+    /** A wheel of a car standing at (x, y, z) and turned by f (row by row). */
+    static void wheel(DrawList d, float x, float y, float z, float[] f, float lx, float ly, float lz, float hx, float r) {
+        d.ellipsoid(x + f[0] * lx + f[1] * ly + f[2] * lz, y + f[3] * lx + f[4] * ly + f[5] * lz,
+                z + f[6] * lx + f[7] * ly + f[8] * lz, hx, r, r, f, 0x1C1B1D, DrawList.TYRE);
+    }
+
+    /**
+     * Whether a box of a car wears the painted skin: all of it but what glows and what is set
+     * at a slant (the sloping glass keeps its own shine).
+     */
+    static boolean skinned(float tilt, float material) {
+        return tilt == 0f && material != DrawList.GLOW;
     }
 
     /** A box of the car in its own frame: tilted about its own x first (sloping glass), then turned with it. */
@@ -442,5 +477,6 @@ final class Cars {
         }
         d.box(px + f[0] * lx + f[1] * ly + f[2] * lz, py + f[3] * lx + f[4] * ly + f[5] * lz,
                 pz + f[6] * lx + f[7] * ly + f[8] * lz, hx, hy, hz, t, color, material);
+        if (skinned(tilt, material)) d.skin(skinKind, lx, ly, lz, skinKind == TAXI ? color : skinPaint);
     }
 }

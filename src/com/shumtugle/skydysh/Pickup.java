@@ -229,8 +229,7 @@ final class Pickup {
         // wheels, lamps, bumpers
         for (int e = -1; e <= 1; e += 2) {
             for (int end = -1; end <= 1; end += 2) {
-                part(d, e * 0.9f, 0.37f, end * 1.62f, 0.14f, 0.37f, 0.37f, 0f, 0x1C1B1D, plain);
-                part(d, e * 1.045f, 0.37f, end * 1.62f, 0.01f, 0.17f, 0.17f, 0f, 0xB8B4AC, plain);
+                Cars.wheel(d, px, py, pz, frame, e * 0.9f, 0.37f, end * 1.62f, 0.14f, 0.37f);
             }
             part(d, e * 0.66f, 0.8f, 2.505f, 0.17f, 0.08f, 0.01f, 0f, 0xFFF0C2, DrawList.GLOW);
             part(d, e * 0.72f, 0.82f, -2.515f, 0.14f, 0.07f, 0.01f, 0f, 0xD43A2E, plain);
@@ -251,5 +250,6 @@ final class Pickup {
         }
         d.box(px + f[0] * lx + f[1] * ly + f[2] * lz, py + f[3] * lx + f[4] * ly + f[5] * lz,
                 pz + f[6] * lx + f[7] * ly + f[8] * lz, hx, hy, hz, t, color, material);
+        if (Cars.skinned(tilt, material)) d.skin(Cars.PICKUP_SKIN, lx, ly, lz, color);
     }
 }

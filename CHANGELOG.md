@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.35
+
+- The cars wear painted skins: paint with its seams and handles, chrome, lamps and grilles, glass
+  with the sky in it, a little road dust. Each kind has its skin painted on its five flat views
+  (from the left, the right, the front, the back, above); a face of the car looks it up in the
+  view it faces. Where the skin is paint, the car's own paint is laid on, as light or dark as the
+  skin is there, so the colours of the town's cars still vary. The taxi keeps its black and its
+  chequered stripe, the duty pickup its cream, teal and coral, its seat and its ribbed bed.
+- Round wheels: a tyre round about its axle with ribs on its tread, a pale rim with holes round
+  the hub; the arches over them round as well.
+- Fixed: what was drawn as balls in the still part of the town (built once, added each frame)
+  was left out; the parked cars' wheels are drawn now.
+- Stand: `carshow METERS YAW`, the five kinds in a row before her.
+
 ## 0.34
 
 - Fixed: the traffic tied itself in knots. At a crossing two cars each waited for the other, and

@@ -216,6 +216,18 @@ public final class Stand implements World.Host {
         } else if (c.equals("carahead")) {
             // carahead METERS: a car standing across her way so far ahead
             world.cars.standAcross(world.runner, f(p[1]));
+        } else if (c.equals("carshow")) {
+            // carshow METERS YAW: the five kinds of car standing in a row across her way so far
+            // ahead, three meters apart, each turned YAW from her way; the other cars gone
+            Runner r = world.runner;
+            float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading), ahead = f(p[1]);
+            int[] paints = {0x3E6FB0, 0xB5352C, 0xE8C547, Cars.TAXI_BLACK, 0x2F6B4A};
+            for (int k = 0; k < Cars.MOST; k++) world.cars.stand(k, 1e5f + k * 50f, 1e5f, 0f, 0, 0);
+            for (int k = 0; k < 5; k++) {
+                float side = (k - 2) * 3f;
+                world.cars.stand(k, r.x + fx * ahead + fz * side, r.z + fz * ahead - fx * side,
+                        r.heading + (float) Math.PI + f(p[2]), k, paints[k]);
+            }
         } else if (c.equals("roof")) {
             // roof: her put on the roof of the house nearest, at its middle, facing along its long side
             float[] at = new float[3], half = new float[2];

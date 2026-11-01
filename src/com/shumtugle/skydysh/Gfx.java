@@ -37,6 +37,8 @@ final class Gfx {
     private final int[] hudTexs = new int[2], hudSizeW = new int[2], hudSizeH = new int[2];
     private int hudSlot;
     private int badgesTex;                    // the sheet of buttons and signs, sent once
+    private int carsTex;                      // the cars' painted skins, and where each lies in it
+    private final float[] carMap = new float[36 * 4];
     private int[] hudSwizzled;
     private int[] swizzled;
 
@@ -52,6 +54,7 @@ final class Gfx {
         meshP = program(read(assets, "mesh.vert"), read(assets, "mesh.frag"));
         meshShadowP = program(define(read(assets, "mesh.vert"), "SHADOW"), read(assets, "meshshadow.frag"));
         meshes(assets);
+        skins(assets);
         int[] ids = new int[3];
         GLES30.glGenVertexArrays(3, ids, 0);
         vao = ids[0];
@@ -412,6 +415,60 @@ final class Gfx {
         GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
     }
 
+    /**
+     * The cars' painted skins into a texture, and where each car's views lie in it (cars.txt,
+     * see DrawList.skin); without them, one grey texel, so the cars come out in their paint.
+     */
+    private void skins(AssetManager assets) {
+        int w = 1, h = 1;
+        int[] px = {0xFF808080};
+        java.util.Arrays.fill(carMap, 0f);
+        for (int k = 30; k < 36; k++) {
+            carMap[k * 4] = carMap[k * 4 + 1] = carMap[k * 4 + 2] = 0.5f;
+            carMap[k * 4 + 3] = 1f;
+        }
+        try (InputStream in = assets.open("cars.png")) {
+            android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
+            o.inPremultiplied = false;
+            android.graphics.Bitmap b = android.graphics.BitmapFactory.decodeStream(in, null, o);
+            float[] map = new float[36 * 4];
+            java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(assets.open("cars.txt")));
+            int at = 0;
+            for (String line; (line = r.readLine()) != null && at < map.length; )
+                for (String v : line.trim().split("\\s+")) if (!v.isEmpty() && at < map.length) map[at++] = Float.parseFloat(v);
+            r.close();
+            if (b != null && at == map.length) {
+                w = b.getWidth();
+                h = b.getHeight();
+                px = new int[w * h];
+                b.getPixels(px, 0, w, 0, 0, w, h);
+                System.arraycopy(map, 0, carMap, 0, map.length);
+            }
+            if (b != null) b.recycle();
+        } catch (IOException | RuntimeException e) {
+            // no skins: the cars in their paint
+        }
+        ByteBuffer buf = ByteBuffer.allocateDirect(w * h * 4).order(ByteOrder.nativeOrder());
+        for (int c : px) {
+            buf.put((byte) (c >> 16));
+            buf.put((byte) (c >> 8));
+            buf.put((byte) c);
+            buf.put((byte) (c >>> 24));
+        }
+        buf.position(0);
+        int[] t = new int[1];
+        GLES30.glGenTextures(1, t, 0);
+        carsTex = t[0];
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, carsTex);
+        GLES30.glPixelStorei(GLES30.GL_UNPACK_ALIGNMENT, 4);
+        GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, w, h, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, buf);
+        GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR_MIPMAP_LINEAR);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
+    }
+
     /** The town's people into buffers, and their picture into a texture; nothing if the game has none. */
     private void meshes(AssetManager assets) {
         meshFirst = null;
@@ -545,6 +602,12 @@ final class Gfx {
         GLES30.glUniform4fv(u(p, "uFire"), 1, d.fire, 0);
         GLES30.glUniform4fv(u(p, "uSpot"), 1, d.spot, 0);
         GLES30.glUniform1f(u(p, "uDark"), d.spot[4]);
+        // the cars' skins (only the boxes read them)
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE4);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, carsTex);
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+        GLES30.glUniform1i(u(p, "uCars"), 4);
+        GLES30.glUniform4fv(u(p, "uCarMap"), 36, carMap, 0);
     }
 
     // ---- helpers ----

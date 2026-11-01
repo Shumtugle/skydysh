@@ -48,6 +48,7 @@ release, each seen on the stand before the phone.
 - 0.33 Yards open by an arch or shut in with a fire escape; fire escapes only in the yards; halls
   through houses without lifts, their own sign.
 - 0.34 The traffic untangled; people on the benches and about the squares, dogs and cats there.
+- 0.35 The cars in painted skins of their own; round wheels.
 
 ## Next
 
@@ -82,9 +83,9 @@ are waiting for the work below. Each item is one release or a few.
 - Greenery: trees along the streets, hedges and low bushes round the squares and along the
   promenade, flower beds, a green maze in a park; summer here, the other seasons for another
   town.
-- Cars as meshes instead of boxes, their wheels turning on their own: ordinary saloons,
-  hatchbacks, estates, taxis, the police; then an ambulance, a fire engine, a dustcart, vans and
-  lorries about the town; cones and wreckage after a crash.
+- More cars of our own, drawn and painted the same way (shapes in the code, a skin painted on
+  their five flat views): estates, the police; then an ambulance, a fire engine, a dustcart and
+  lorries about the town; the wheels turning as they go; cones and wreckage after a crash.
 - Rooms furnished: a hotel's corridors and stairs built from wall, door and ceiling sections into
   the room generator's plans; flats with a kitchen, a sitting room, a bathroom; a lobby.
 - Animals, each on a skeleton of its own with motions of its own (the pack's renderer taking any
