@@ -1,0 +1,19 @@
+# Home: the large house on the shore road, the same in every town; its sign at the door, touched,
+# and she goes in, through the hall to the yard.
+screen 1096 2560
+wait 0.4
+at 32 -16 0
+wait 0.6
+shot m0
+at 110 -10 -1.5708
+wait 0.6
+shot m1
+at -40 -6 1.2
+wait 0.6
+shot m2
+at 32 -2 0
+wait 0.6
+shot m3
+tapsign home
+errand 12 2 me
+shot m4

@@ -32,6 +32,10 @@ hang over the ways in and up near her: the lifts' doors, the fire escapes, the l
 to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
 out) by the lift. A button high on the left pauses the game.
 
+The town ends at the sea: along its southmost street a promenade with palms, a parapet and the
+water below. Home is there, where the game begins: one large house with a tower and a lamp on
+top, the same in every town; its sign over the door takes her in.
+
 Duty pickups stand at the curbs here and there (not in a hunt). Touch the wheel over one, or
 stand at its door, and she gets in. A finger down drives it: the driver picks the speed; sideways
 from where the finger came down turns the wheel; drawn down, it brakes, and held, it backs;
@@ -43,8 +47,9 @@ waiting somewhere far off on a pavement of its own; come near one and it runs. R
 close enough and she stops and throws her mallet by itself (a tap throws sooner, or, within
 reach, strikes); it knocks the plate off its brow, and the golem goes out and falls apart.
 At the top, how far off the nearest still loose is, in meters; in the corners, the five plates
-as they are won, and the clock; at the edge of the frame, a burning mark
-the way each one out of sight is. When the last is caught, five more are let loose.
+as they are won, and the time left; at the edge of the frame, a burning mark
+the way each one out of sight is. A hunt has five minutes: when the last is caught in time, five
+more are let loose; when the time runs out first, five again.
 
 Every other mission, the folder: dropped from a helicopter somewhere on the roofs, a reward for
 it, and golems after it too, each climbing a house of its row and running along the roofs.

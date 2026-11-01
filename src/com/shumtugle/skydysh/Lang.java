@@ -13,11 +13,16 @@ final class Lang {
     private static HashMap<String, String> words = EN;
 
     static {
-        EN.put("brief.first", "Dispatch \u2014 mission {n}||At sunset five golems|broke out of the foundry.|Their plates are forged."
-                + "|Forged plates burn:|the golems burn with them,|and so will the town.||They hide about the streets."
-                + "|Find them. Run them down.|Knock every plate off.||Touch to go");
+        EN.put("brief.first", "Dispatch \u2014 mission {n}||At sunset five golems|broke out of the foundry.|Their forged plates burn:"
+                + "|the golems burn with them,|and so will the town."
+                + "||Find them. Run them down.|Knock every plate off.|You have five minutes,|or the mission fails.||Touch to go");
         EN.put("brief.more", "Dispatch \u2014 mission {n}||Five more have broken out|with forged plates.||Find them. Run them down."
-                + "|Knock every plate off.||Touch to go");
+                + "|Knock every plate off.|You have five minutes,|or the mission fails.||Touch to go");
+        EN.put("brief.late", "Dispatch \u2014 mission {n}||The rest got away.|Five are loose again.||Five minutes once more."
+                + "|Find them. Run them down.|Knock every plate off.||Touch to go");
+        EN.put("report.late", "Dispatch \u2014 mission {n}||Five minutes are up.|Plates in: {caught} of 5.|The rest got away"
+                + "|into the streets.||Mission failed.||Touch to go on");
+        EN.put("late.short", "TIME UP");
         EN.put("report", "Dispatch \u2014 mission {n}||All five plates are in.|The town is safe|for tonight.||Time  {time}"
                 + "||Touch to go on");
         EN.put("brief.folder", "Dispatch \u2014 mission {n}||A folder of papers fell|out of a helicopter's cabin.|It lies somewhere on the roofs."

@@ -1,0 +1,22 @@
+# The hunt's five minutes: the time running out in the corner, TIME UP, the report in the room
+# and the briefing of the same mission again.
+screen 1096 2560
+wait 0.4
+wait 245
+shot l0
+wait 50
+shot l1
+wait 5.5
+shot l2
+wait 1.5
+down 137 300
+up 137 300
+wait 0.3
+shot l3
+down 137 300
+up 137 300
+wait 2.5
+down 137 300
+up 137 300
+wait 0.3
+shot l4

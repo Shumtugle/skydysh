@@ -1,0 +1,18 @@
+# The shore: the shore road, the promenade along it, the parapet and the sea; into the water off
+# the parapet, and up on the promenade again.
+screen 1096 2560
+wait 0.4
+at 0 6 3.1416
+wait 0.6
+shot s0
+at 20 -10 1.5708
+wait 0.6
+shot s1
+at 30 -12 0
+wait 0.6
+shot s2
+at 10 -19.5 3.1416
+wait 0.05
+where
+wait 0.6
+shot s3

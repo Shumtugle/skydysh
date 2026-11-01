@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.35";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.36";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -61,6 +61,7 @@ final class World {
     /** The pickup she is driving; null on foot. */
     Pickup driving;
     private int caughtSeen, struckSeen;
+    private boolean lateSeen;
     private final float[] at = new float[2];
     private final Fliers fliers = new Fliers();                     // far off in the sky, seldom
     private Px flatPx;
@@ -115,6 +116,7 @@ final class World {
 
     /** The report on the mission just done. */
     private String[] report() {
+        if (folder == null && mission.late) return Dispatch.late(mission.round, mission.caught());
         if (folder == null) return Dispatch.report(mission.round, clock(mission.doneAt));
         if (folder.hers) return Dispatch.paid(mission.round, clock(folder.doneAt), money);
         return Dispatch.lost(mission.round, clock(folder.doneAt));
@@ -136,8 +138,8 @@ final class World {
 
     /** The mission done: the next one to play and what has been won, kept for the next game. */
     private void save() {
-        boolean lost = folder != null && folder.theirs;
-        if (folder == null) plates += Mission.FIVE;
+        boolean lost = folder != null ? folder.theirs : mission.late;
+        if (folder == null) plates += mission.caught();
         else if (folder.hers) money += Folder.REWARD;
         // lost, the same mission is played again
         host.saveInt(SAVE_MISSION, lost ? mission.round : mission.round + 1);
@@ -259,7 +261,7 @@ final class World {
             save();
             String[] said = report();
             // lost, the same again, as its briefing says; won, the next; the report, then the briefing
-            again = folder != null && folder.theirs;
+            again = folder != null ? folder.theirs : mission.late;
             if (again) mission.round--;
             begin(runner.x, runner.z);
             dispatch = new Dispatch(host, said).then(briefing());
@@ -280,6 +282,11 @@ final class World {
         // a beat of the arms (a flick, between frames): the air through them
         if (runner.beatsLeft() < beatsWere) host.sound(Synth.WHOOSH, 0.5f, 0.8f);
         if (swapT < 0f && driving == null) runner.update(dt, city, cars, walkers);
+        // over the parapet into the sea: a splash, and she is up on the promenade again, facing the town
+        if (driving == null && indoors == null && City.overWater(runner.x, runner.z) && runner.y < City.WATER + 0.3f) {
+            host.sound(Synth.SPLASH, 1f, 1f);
+            runner.put(runner.x, City.WALK_TOP, City.SHORE * City.CELL + City.PARAPET + 2.6f, 0f);
+        }
         beatsWere = runner.beatsLeft();
         int round = mission.round;
         if (folder != null) {
@@ -304,6 +311,8 @@ final class World {
             nextSlot = 0;
             struckSeen = struck;
         }
+        if (folder == null && mission.late && !lateSeen) host.buzz(300);
+        lateSeen = folder == null && mission.late;
         if (folder == null && caught != caughtSeen) {
             caughtSeen = caught;
             host.buzz(caught == Mission.FIVE ? 160 : 60);
@@ -515,7 +524,7 @@ final class World {
             if (!liftsOpen() && (kind == City.MARK_STREET_LIFT || kind == City.MARK_HUT)) continue;
             // on her level: a lift's or a fire escape's in the street while she is in the street; a
             // ladder's up, or a hut's, while she is up there near its foot
-            float level = kind == City.MARK_STREET_LIFT || kind == City.MARK_ESCAPE || kind == City.MARK_DOOR ? City.WALK_TOP : marks[o + 1] - (kind == City.MARK_ROOF_LADDER ? 1.9f : City.HUT_HIGH + 0.8f);
+            float level = kind == City.MARK_STREET_LIFT || kind == City.MARK_ESCAPE || kind == City.MARK_DOOR || kind == City.MARK_HOME ? City.WALK_TOP : marks[o + 1] - (kind == City.MARK_ROOF_LADDER ? 1.9f : City.HUT_HIGH + 0.8f);
             if (Math.abs(r.y - level) > 2.6f) continue;
             float ox = r.eyeX - x, oz = r.eyeZ - z;
             if (ox * nx + oz * nz <= 0.2f) continue;
@@ -530,7 +539,7 @@ final class World {
             signs[s + 1] = markAt[1];
             signs[s + 2] = Math.max(7f, Math.min(18f, W * 1.6f * 0.75f / markAt[2]));
             signs[s + 3] = kind == City.MARK_ROOF_LADDER ? Badges.UP : kind == City.MARK_ESCAPE ? Badges.LADDER
-                    : kind == City.MARK_DOOR ? Badges.ENTER : Badges.LIFT;
+                    : kind == City.MARK_DOOR ? Badges.ENTER : kind == City.MARK_HOME ? Badges.HOME : Badges.LIFT;
             signs[s + 4] = shown;
             signs[s + 5] = x;
             signs[s + 6] = z;
@@ -768,10 +777,10 @@ final class World {
             if (!city.ladderNear(fx, fz, r.y, 1f, errandLadder)) return;
             r.lead(errandLadder[0], errandLadder[1], facing);
             errand = ERRAND_CLIMB;
-        } else if (kind == City.MARK_STREET_LIFT || kind == City.MARK_DOOR) {
+        } else if (kind == City.MARK_STREET_LIFT || kind == City.MARK_DOOR || kind == City.MARK_HOME) {
             liftArmed = true;
             r.lead(mx + nx * 0.45f, mz + nz * 0.45f, facing);
-            errand = kind == City.MARK_DOOR ? ERRAND_THROUGH : ERRAND_UP;
+            errand = kind == City.MARK_STREET_LIFT ? ERRAND_UP : ERRAND_THROUGH;
             errandIn = false;
         } else {
             liftArmed = true;
@@ -999,8 +1008,19 @@ final class World {
             float flip = Math.abs((float) Math.cos(g.plateSpin() * 0.5f)) * (1f - e) + e;
             plate(f, px, py, size, Math.max(0.15f, flip), 0xFF8FF5DF, 0xFF1E3A40, ink);
         }
-        String clock = clock(mission.over() ? mission.doneAt : mission.clock);
-        shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        // the time the hunt still has, in the corner: in fire for its last minute, blinking for its last seconds
+        float left = mission.left();
+        String rest = clock(left);
+        boolean blink = left > 0f && left < 10f && (time * 2f) % 1f > 0.5f;
+        if (!blink) shadowed(f, rest, W - PixelFont.width(rest, 2) - 8, 14, 2, left < 60f ? fire : cream, ink);
+        String clock = clock(mission.doneAt);
+        if (mission.late) {
+            String w = Lang.lines("late.short", mission.round, null)[0];
+            shadowed(f, w, (W - PixelFont.width(w, 3)) / 2, h / 2 - 60, 3, fire, ink);
+            String cc = got + "/" + Mission.FIVE;
+            shadowed(f, cc, (W - PixelFont.width(cc, 4)) / 2, h / 2 - 10, 4, cream, ink);
+            return;
+        }
         if (mission.over()) {
             int tw = PixelFont.width(c, 6);
             shadowed(f, c, (W - tw) / 2, h / 2 - 60, 6, fire, ink);

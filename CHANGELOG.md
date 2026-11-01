@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.36
+
+- A hunt has five minutes. The briefing says so; the time left runs down in the corner, in fire
+  for its last minute, blinking for its last seconds. When it is out with some still loose,
+  TIME UP and the count over the frame, a report of how many plates came in, and the same
+  mission again with five more loose (the plates that did come in are kept).
+- The town is by the sea. Its southmost street is the shore road; south of it a promenade of big
+  pale stones with two rows of palms, lamps and benches looking out to sea, a stone parapet on
+  the quay's face, and the water. No street goes on into the sea: the traffic, the golems, the
+  rivals, the people and their dogs keep to the town, and a hunt's five are let loose inland.
+  Over the parapet she falls into the water, and is up on the promenade again at once.
+- Home: one large house, built by hand and the same in every town, on the shore road where the
+  game begins. Cream stone, eight storeys on a darker plinth with tall windows, a coral band, a
+  turquoise cornice; over its door a tower two storeys higher with a balcony across it, a
+  stepped turquoise cap and an amber lamp on top. Its sign over the door is the house; touched,
+  she goes in through the hall to the yard.
+- Fixed: a long text on the dispatcher's screen lost its last line, the call to go on; the lines
+  close up now to fit the glass.
+- Stand: `at X Z [RADIANS]`, `tapsign home`; scenes `shore.txt`, `home.txt`, `late.txt`.
+
 ## 0.35
 
 - The cars wear painted skins: paint with its seams and handles, chrome, lamps and grilles, glass

@@ -102,7 +102,8 @@ final class Folder {
             float a = turned + k * 6.2832f / RIVALS;
             int gi = Math.round((x + (float) Math.sin(a) * RIVALS_FROM) / City.CELL);
             int gj = Math.round((z + (float) Math.cos(a) * RIVALS_FROM) / City.CELL);
-            Chase g = new Chase(rnd.nextLong(), gi, gj, rnd.nextInt(4));
+            if (gj < City.SHORE) gj = 2 * City.SHORE - gj;
+            Chase g = new Chase(rnd.nextLong(), gi, gj, City.way(gj, rnd.nextInt(4)));
             int s = fn > 0 ? from[k % fn] : mine;
             float[] o = row[s];
             float cu = alongX ? o[0] : o[1], hu = alongX ? o[2] : o[3];

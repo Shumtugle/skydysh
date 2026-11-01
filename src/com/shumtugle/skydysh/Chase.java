@@ -178,6 +178,7 @@ final class Chase {
         } else {
             int[][] ways = {{di, dj}, {-dj, di}, {dj, -di}, {-di, -dj}};
             for (int[] w : ways) {
+                if (!City.road(tj, w[1])) continue;
                 int ci = ti + w[0], cj = tj + w[1];
                 int far = Math.min(Math.abs(ci - ai) + Math.abs(cj - aj), Math.abs(ci - bi) + Math.abs(cj - bj));
                 // turning back only if nothing else will do
@@ -603,6 +604,16 @@ final class Chase {
         } else if (roll == 3) {
             ni = dj;
             nj = -di;
+        }
+        // none out to sea from the shore road: straight on, or a turn that is a street
+        if (!City.road(tj, nj)) {
+            int[][] ways = {{di, dj}, {-dj, di}, {dj, -di}, {-di, -dj}};
+            for (int[] w : ways)
+                if (City.road(tj, w[1])) {
+                    ni = w[0];
+                    nj = w[1];
+                    break;
+                }
         }
         di = ni;
         dj = nj;

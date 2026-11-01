@@ -240,6 +240,13 @@ public final class Stand implements World.Host {
             Runner r = world.runner;
             r.put(r.x, r.y, r.z, f(p[1]));
             step();
+        } else if (c.equals("at")) {
+            // at X Z [RADIANS]: her put down at (x, z) on whatever is there, facing so, the eye behind her
+            Runner r = world.runner;
+            float x = f(p[1]), z = f(p[2]);
+            r.put(x, world.city.ground(x, z, 100f, 0f), z, p.length > 3 ? f(p[3]) : r.heading);
+            r.recenter();
+            step();
         } else if (c.equals("turn")) {
             // turn RADIANS: her turned so much from where she faces
             Runner r = world.runner;
@@ -710,9 +717,9 @@ public final class Stand implements World.Host {
             System.out.println(q == null ? String.format("%7.2fs  not at the wheel", time)
                     : String.format("%7.2fs  at the wheel: %.1f m/s, gear %d, at %.1f %.1f heading %.2f", time, q.speed, q.gear, q.x, q.z, q.heading));
         } else if (c.equals("tapsign")) {
-            // tapsign lift|ladder|up: a tap on the nearest sign of the kind on the glass, told
+            // tapsign lift|ladder|up|wheel|enter|home: a tap on the nearest sign of the kind on the glass, told
             int which = p[1].equals("ladder") ? Badges.LADDER : p[1].equals("up") ? Badges.UP : p[1].equals("wheel") ? Badges.WHEEL
-                    : p[1].equals("enter") ? Badges.ENTER : Badges.LIFT;
+                    : p[1].equals("enter") ? Badges.ENTER : p[1].equals("home") ? Badges.HOME : Badges.LIFT;
             float[] at = new float[2];
             if (world.signOnGlass(which, at)) {
                 System.out.println(String.format("%7.2fs  tap on the %s sign at %.0f %.0f", time, p[1], at[0], at[1]));

@@ -142,6 +142,7 @@ final class Cars {
         for (int tries = 0; tries < 20; tries++) {
             int ci = City.index(r.x) + rnd.nextInt(5) - 2, cj = City.index(r.z) + rnd.nextInt(5) - 2;
             int dir = rnd.nextInt(4);
+            if (!City.road(cj, dir == 2 ? 1 : dir == 3 ? -1 : 0)) continue;
             int a = dir == 0 ? 1 : dir == 1 ? -1 : 0, b = dir == 2 ? 1 : dir == 3 ? -1 : 0;
             float half = City.CELL * 0.5f;
             float px = ci * City.CELL + a * half + b * LANE, pz = cj * City.CELL + b * half - a * LANE;
@@ -235,6 +236,16 @@ final class Cars {
         } else if (roll == 4) {
             ni[c] = dj[c];
             nj[c] = -di[c];
+        }
+        // no street out to sea from the shore road: straight on, or a turn that is a street
+        if (!City.road(tj[c], nj[c])) {
+            int[][] ways = {{di[c], dj[c]}, {-dj[c], di[c]}, {dj[c], -di[c]}, {-di[c], -dj[c]}};
+            for (int[] w : ways)
+                if (City.road(tj[c], w[1])) {
+                    ni[c] = w[0];
+                    nj[c] = w[1];
+                    break;
+                }
         }
     }
 

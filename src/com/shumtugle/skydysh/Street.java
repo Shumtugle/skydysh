@@ -229,7 +229,7 @@ final class Street {
     }
 
     /** An awning out from the wall over a shop window, sloping down, with a flap along its edge. */
-    private static void awning(DrawList d, boolean alongX, float wall, int out, float top, float c, float half,
+    static void awning(DrawList d, boolean alongX, float wall, int out, float top, float c, float half,
                                int cloth, boolean stripes) {
         float a = (float) Math.atan2(0.4, 1.1), ca = (float) Math.cos(a), sa = (float) Math.sin(a);
         float len = 0.6f;

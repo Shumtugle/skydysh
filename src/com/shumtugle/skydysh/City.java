@@ -13,6 +13,10 @@ import java.util.Random;
  * south) and its south edge (z = j * CELL, east and west), crossing at its south-west corner;
  * the rest of it is the block those streets go round. Space as in DrawList: x to the right,
  * y up, the road at y = 0.
+ *
+ * The town is by the sea: its southmost street, along z = SHORE * CELL, is the shore road, and
+ * south of it there are no more streets, only a promenade along it, a stone parapet at its edge
+ * and the water below.
  */
 final class City implements Ground {
     static final float PARKED = 3.3f;            // a parked car's middle, from the road's middle
@@ -24,6 +28,43 @@ final class City implements Ground {
     static final float DEPTH = 12f;
     // the cells drawn round the eye, each way
     static final int REACH = 3;
+
+    /** The row of crossings the shore road runs through; the town north of it, the sea south. */
+    static final int SHORE = 0;
+    // the parapet along the promenade (where its middle is, half its thickness, how high over the
+    // pavement), the water's top, and how deep under it one who falls in goes
+    static final float PARAPET = -18f, PARAPET_HALF = 0.3f, PARAPET_HIGH = 0.95f, WATER = -1.7f, DEEP = 1.4f;
+
+    /** Whether cell row j is out of the town: the promenade (the row next to the shore) and the sea. */
+    static boolean sea(int j) {
+        return j < SHORE;
+    }
+
+    /** Whether a street runs from a crossing in row j one step along dj (north 1, south -1): none out to sea. */
+    static boolean road(int j, int dj) {
+        return j >= SHORE && j + dj >= SHORE;
+    }
+
+    /** A way out of a crossing in row j (0 +x, 1 -x, 2 +z, 3 -z), one that is a street: inland, not out to sea. */
+    static int way(int j, int dir) {
+        return dir == 3 && !road(j, -1) ? 2 : dir;
+    }
+
+    /** Whether (x, z) is over the water, past the parapet. */
+    static boolean overWater(float x, float z) {
+        return z < SHORE * CELL + PARAPET - PARAPET_HALF;
+    }
+
+    /** Where home is: the south row of the block by the shore road where the game begins. */
+    static final int HOME_I = 0, HOME_J = SHORE;
+    static final int HOME_STOREYS = 8;
+    static final float HOME_TOWER = 7f;
+
+    /** Whether (x, z) is within home's walls. */
+    static boolean home(float x, float z) {
+        float x0 = HOME_I * CELL + FRONT, z0 = HOME_J * CELL + FRONT;
+        return x > x0 && x < x0 + CELL - 2f * FRONT && z > z0 && z < z0 + DEPTH;
+    }
 
     private final long seed;
     private final HashMap<Long, Cell> cells = new HashMap<Long, Cell>();
@@ -144,6 +185,12 @@ final class City implements Ground {
                 if (dist < CELL * 1.6f) d.append(c.detail);
                 if (dist < CELL * 1.2f) d.append(c.parked);
             }
+        // the sea, one sheet out to the haze from the foot of the parapet
+        float edge = SHORE * CELL + PARAPET - PARAPET_HALF;
+        if (z - edge < (REACH + 2) * CELL) {
+            float mx = Math.round(x / CELL) * CELL, far = 1500f;
+            d.box(mx, WATER - 0.25f, edge - far * 0.5f, far, 0.25f, far * 0.5f, null, 0x2D6990, DrawList.SEA);
+        }
         if (cells.size() > (2 * REACH + 3) * (2 * REACH + 3)) {
             java.util.Iterator<Cell> it = cells.values().iterator();
             while (it.hasNext()) if (frame - it.next().used > 120) it.remove();
@@ -157,6 +204,7 @@ final class City implements Ground {
 
     /** How high the ground is here: the road, or the pavement a step up. */
     float ground(float x, float z) {
+        if (z < SHORE * CELL - CURB) return overWater(x, z) ? WATER - DEEP : WALK_TOP;
         float ox = x - Math.round(x / CELL) * CELL, oz = z - Math.round(z / CELL) * CELL;
         return Math.abs(ox) < CURB || Math.abs(oz) < CURB ? 0f : WALK_TOP;
     }
@@ -287,6 +335,7 @@ final class City implements Ground {
 
     /** What a cell's block is: houses, mostly; now and then a square. The one the runner starts by is houses. */
     boolean square(int i, int j) {
+        if (sea(j)) return false;
         if (i == 0 && j == 0 || i == -1 && j == 0) return false;
         return (hash(i, j, 1) & 0xFF) < 30;
     }
@@ -298,6 +347,7 @@ final class City implements Ground {
 
     /** Whether a duty pickup stands at the curb in cell (i, j): one cell in five, not by the start. */
     boolean duty(int i, int j) {
+        if (sea(j)) return false;
         if (Math.abs(i) <= 1 && Math.abs(j) <= 1) return false;
         return ((hash(i, j, 7) >>> 24) % 5) == 0;
     }
@@ -377,6 +427,8 @@ final class City implements Ground {
 
     private Cell build(int i, int j) {
         Cell c = new Cell();
+        if (j == SHORE - 1) promenade(c, i * CELL, j * CELL);
+        if (sea(j)) return c;
         DrawList d = c.boxes;
         Random rnd = new Random(hash(i, j, 0));
         float x0 = i * CELL, z0 = j * CELL, half = CELL * 0.5f;
@@ -425,17 +477,130 @@ final class City implements Ground {
         return c;
     }
 
+    /**
+     * The promenade along the shore road, a cell of it: the curb, the big pale stones out to the
+     * parapet, the parapet on the stone face of the quay going down into the water; two rows of
+     * palms, lamps along the parapet, benches by it looking out to sea.
+     */
+    private void promenade(Cell c, float x0, float z0) {
+        DrawList d = c.boxes;
+        Random deco = new Random(hash(Math.round(x0 / CELL), Math.round(z0 / CELL), 10));
+        float top = z0 + CELL, cw = CURB - ROAD, cy = (CURB_TOP - 0.25f) * 0.5f, ch = (CURB_TOP + 0.25f) * 0.5f;
+        float mx = x0 + CELL * 0.5f, hx = CELL * 0.5f;
+        d.box(mx, cy, top - ROAD - cw * 0.5f, hx, ch, cw * 0.5f, null, 0xC9BFAE, DrawList.STONE);
+        float p0 = z0 + CELL + PARAPET + PARAPET_HALF, p1 = top - CURB;
+        d.box(mx, (WALK_TOP - 0.25f) * 0.5f, (p0 + p1) * 0.5f, hx, (WALK_TOP + 0.25f) * 0.5f, (p1 - p0) * 0.5f,
+                null, 0xDCCDB2, DrawList.PROMENADE);
+        // the parapet: the quay's stone face from under the water up past the pavement, a cap on it
+        float pz = z0 + CELL + PARAPET, low = WATER - 1.2f, high = WALK_TOP + PARAPET_HIGH;
+        d.box(mx, (low + high) * 0.5f, pz, hx, (high - low) * 0.5f, PARAPET_HALF, null, 0xE2D4BA, DrawList.STONE);
+        d.box(mx, high + 0.06f, pz, hx, 0.06f, PARAPET_HALF + 0.08f, null, 0xEDE2CC, DrawList.PLAIN);
+        c.wall(x0, pz - PARAPET_HALF, x0 + CELL, pz + PARAPET_HALF, high + 0.12f);
+        // palms in two rows down the promenade, a little out of step
+        for (int row = 0; row < 2; row++) {
+            float rz = row == 0 ? p1 - 3.2f : p0 + 4.6f;
+            for (float t = row * 6f + 3f; t < CELL; t += 12f) {
+                float px = x0 + t, h = 6.8f + deco.nextFloat() * 2f, lean = (deco.nextFloat() - 0.5f) * 0.3f;
+                Street.palm(c.detail, deco, px, WALK_TOP, rz, h, lean, false);
+                c.wall(px - 0.25f, rz - 0.25f, px + 0.25f, rz + 0.25f);
+            }
+        }
+        // lamps along the parapet, benches between them looking out to sea
+        for (float t = 8f; t < CELL; t += 16f) {
+            lamp(c, c.detail, x0 + t, pz + PARAPET_HALF + 0.6f);
+            float bx = x0 + t + 8f, bz = pz + PARAPET_HALF + 1.3f;
+            bench(c, bx, WALK_TOP, bz, (float) Math.PI);
+            c.wall(bx - 0.9f, bz - 0.3f, bx + 0.9f, bz + 0.3f, WALK_TOP + 0.48f);
+        }
+    }
+
     /** A block of houses round its four sides, their fronts on the streets, a yard hidden in the middle. */
     private void block(Cell c, Random rnd, float x0, float z0, int i, int j) {
         float a = FRONT, b = CELL - FRONT;
         // the south and north rows run the whole way; the west and east rows fit between them
         // the yard: open, an arch through a house of the south or the north row, or shut in
-        boolean open = arched(i, j), north = ((hash(i, j, 8) >>> 9) & 1) == 0;
-        row(c, rnd, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH, true, -1, open && !north);
+        // home's block has its arch, if any, on the north
+        boolean mine = i == HOME_I && j == HOME_J;
+        boolean open = arched(i, j), north = mine || ((hash(i, j, 8) >>> 9) & 1) == 0;
+        if (mine) home(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
+        else row(c, rnd, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH, true, -1, open && !north);
         row(c, rnd, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b, true, 1, open && north);
         row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + a, x0 + a + DEPTH, false, -1, false);
         row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b, false, 1, false);
         yard(c, open, new Random(hash(i, j, 9)));
+    }
+
+    /**
+     * Home, built by hand and never grown, the same in every town: one large house the length of the
+     * row, looking over the shore road to the sea. Cream stone, eight storeys on a plinth of darker
+     * stone with tall dark windows, a coral band over the ground floor, a turquoise cornice. In the
+     * middle, over the door, a tower two storeys higher, a balcony across it, a stepped turquoise cap
+     * and an amber lamp on top. A way in at the front under a coral awning, a hall through to the yard.
+     */
+    private void home(Cell c, float x0, float x1, float z0, float z1) {
+        DrawList d = c.boxes, small = c.detail;
+        float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f;
+        float height = 3.3f * (HOME_STOREYS + 1) + 0.5f, fz = z0;
+        int cream = 0xF1E6CF, plinth = 0xD9CBB0, coral = 0xE9765B, teal = 0x3FAFA6, amber = 0xFFB347;
+        d.box(cx, height * 0.5f, cz, hx, height * 0.5f, hz, null, cream, DrawList.material(DrawList.FACADE, 0x4D));
+        // the plinth, the ground floor's tall windows in it, either side of the door
+        float pl = 4.2f;
+        d.box(cx, pl * 0.5f, fz - 0.06f, hx + 0.06f, pl * 0.5f, 0.08f, null, plinth, DrawList.STONE);
+        for (float u = x0 + 3f; u < x1 - 2f; u += 4.2f) {
+            if (Math.abs(u - cx) < 3.4f) continue;
+            d.box(u, 2.15f, fz - 0.15f, 1f, 1.55f, 0.04f, null, 0x24323A, DrawList.GLASS);
+            d.box(u, 3.85f, fz - 0.17f, 1.15f, 0.12f, 0.05f, null, cream, DrawList.STONE);
+        }
+        d.box(cx, pl + 0.22f, fz - 0.16f, hx + 0.08f, 0.22f, 0.12f, null, coral, DrawList.PAINT);
+        // pilasters at the corners, the turquoise cornice
+        for (int e = -1; e <= 1; e += 2)
+            d.box(cx + e * (hx - 0.35f), height * 0.5f, fz - 0.1f, 0.4f, height * 0.5f, 0.12f, null, plinth, DrawList.STONE);
+        d.box(cx, height - 0.3f, fz - 0.2f, hx + 0.12f, 0.3f, 0.26f, null, teal, DrawList.PLAIN);
+        roof(c, d, null, cx, height, cz, hx, hz, 0x4D);
+        // the tower over the door: two storeys more, a balcony across it, a stepped cap, the lamp
+        float tw = 5.6f, td = 4.4f, tz = fz + td, top = height + HOME_TOWER;
+        d.box(cx, (height + top) * 0.5f, tz, tw, (top - height) * 0.5f, td, null, 0xE8DBC1, DrawList.PLAIN);
+        // its windows, two storeys of them: three tall ones across the front, two down each side
+        for (int st = 0; st < 2; st++) {
+            float wy = height + 1.9f + st * 3.3f;
+            for (int k = -1; k <= 1; k++) {
+                d.box(cx + k * 3.4f, wy, fz - 0.03f, 0.7f, 1.15f, 0.04f, null, 0x24323A, DrawList.GLASS);
+                d.box(cx + k * 3.4f, wy + 1.3f, fz - 0.07f, 0.85f, 0.12f, 0.06f, null, plinth, DrawList.STONE);
+                for (int e = -1; e <= 1; e += 2)
+                    d.box(cx + k * 3.4f + e * 1.05f, wy, fz - 0.08f, 0.3f, 1.1f, 0.05f, null, teal, DrawList.PAINT);
+            }
+            for (int e = -1; e <= 1; e += 2)
+                for (int k = -1; k <= 1; k += 2)
+                    d.box(cx + e * (tw + 0.03f), wy, tz + k * 1.9f, 0.04f, 1.15f, 0.6f, null, 0x24323A, DrawList.GLASS);
+        }
+        d.box(cx, top - 0.3f, fz - 0.2f, tw + 0.12f, 0.3f, 0.26f, null, teal, DrawList.PLAIN);
+        float cap = top + 0.5f;
+        d.box(cx, cap + 0.35f, tz, tw + 0.3f, 0.35f, td + 0.3f, null, teal, DrawList.TILES);
+        d.box(cx, cap + 1.2f, tz, tw - 1.2f, 0.5f, td - 1.2f, null, teal, DrawList.TILES);
+        d.box(cx, cap + 2.0f, tz, tw - 2.6f, 0.3f, td - 2.6f, null, teal, DrawList.TILES);
+        d.box(cx, cap + 2.75f, tz, 0.55f, 0.45f, 0.55f, null, amber, DrawList.GLOW);
+        d.box(cx, cap + 3.3f, tz, 0.75f, 0.1f, 0.75f, null, 0x2B2F3A, DrawList.PLAIN);
+        // the balcony on the second storey: a slab and an iron rail
+        float by = 3.3f * 2f + 1.1f;
+        small.box(cx, by, fz - 0.7f, tw, 0.08f, 0.7f, null, plinth, DrawList.STONE);
+        small.box(cx, by + 1.0f, fz - 1.35f, tw, 0.03f, 0.03f, null, 0x2B2A2C, DrawList.RAIL);
+        for (float u = -tw; u <= tw + 0.01f; u += 0.5f)
+            small.box(cx + u, by + 0.5f, fz - 1.35f, 0.02f, 0.5f, 0.02f, null, 0x2B2A2C, DrawList.RAIL);
+        // the door: a frame of stone, the coral awning over it, big pots either side
+        liftDoor(d, cx, fz, true, -1);
+        liftDoor(d, cx, z1, true, 1);
+        Street.awning(small, true, fz, -1, 3.4f, cx, 1.8f, coral, true);
+        Random deco = new Random(0x4D0EL);
+        for (int e = -1; e <= 1; e += 2) {
+            float px = cx + e * 2.6f, pz = fz - 0.55f;
+            Garden.pot(small, deco, px, WALK_TOP, pz, 0.42f);
+            c.wall(px - 0.4f, pz - 0.4f, px + 0.4f, pz + 0.4f, WALK_TOP + 0.9f);
+        }
+        // to stand on: the house, its roof, the tower
+        c.wall(x0, z0, x1, z1, height + 0.5f);
+        c.wall(x0 + 1.3f, cz - Math.max(0.4f, hz - 1.3f), x1 - 1.3f, cz + Math.max(0.4f, hz - 1.3f), height + 0.75f, height);
+        c.wall(cx - tw, tz - td, cx + tw, tz + td, cap + 0.7f, height);
+        c.house(cx, cz, hx, hz, height + 0.5f, 0f, -1f, DOOR);
     }
 
     /** Whether the yard of cell (i, j)'s block is open to the street by an arch: one in two. */
@@ -845,7 +1010,7 @@ final class City implements Ground {
     }
 
     // the kinds of sign at the ways in and up (see marks)
-    static final int MARK_STREET_LIFT = 0, MARK_HUT = 1, MARK_ESCAPE = 2, MARK_ROOF_LADDER = 3, MARK_DOOR = 5;
+    static final int MARK_STREET_LIFT = 0, MARK_HUT = 1, MARK_ESCAPE = 2, MARK_ROOF_LADDER = 3, MARK_DOOR = 5, MARK_HOME = 6;
 
     /**
      * The places for signs at the ways in and up within reach of (x, z), at most max of them,
@@ -865,10 +1030,11 @@ final class City implements Ground {
                     float kind = c.houses[o + 7];
                     if (kind != LIFT && kind != DOOR) continue;
                     int sign = kind == LIFT ? MARK_STREET_LIFT : MARK_DOOR;
+                    boolean mine = home(c.houses[o], c.houses[o + 1]);
                     float nx = c.houses[o + 5], nz = c.houses[o + 6], top = c.houses[o + 4];
                     float half = Math.abs(nx) * c.houses[o + 2] + Math.abs(nz) * c.houses[o + 3];
                     float fx = c.houses[o] + nx * (half + 0.25f), fz = c.houses[o + 1] + nz * (half + 0.25f);
-                    if (near(fx, fz, x, z, reach)) n = mark(out, n, fx, WALK_TOP + 3.5f, fz, nx, nz, sign);
+                    if (near(fx, fz, x, z, reach)) n = mark(out, n, fx, WALK_TOP + 3.5f, fz, nx, nz, mine ? MARK_HOME : sign);
                     // the door at the back, on the yard, if it looks on one
                     float bx = c.houses[o] - nx * (half + 0.25f), bz = c.houses[o + 1] - nz * (half + 0.25f);
                     if (n < max - 1 && near(bx, bz, x, z, reach) && backClear(c.houses, o))

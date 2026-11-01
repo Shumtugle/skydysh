@@ -71,9 +71,16 @@ final class Dispatch {
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
-    /** Before the folder's mission again, after the rivals got there first. */
+    /** Before a mission again: the folder, after the rivals got there first; a hunt, after the time ran out. */
     static String[] again(int round) {
-        return Lang.lines("brief.again", round, null);
+        return Lang.lines(Folder.its(round) ? "brief.again" : "brief.late", round, null);
+    }
+
+    /** The time ran out with some of the five still loose: how many were caught. */
+    static String[] late(int round, int caught) {
+        String[] lines = Lang.lines("report.late", round, null);
+        for (int k = 0; k < lines.length; k++) lines[k] = lines[k].replace("{caught}", String.valueOf(caught));
+        return lines;
     }
 
     /** The folder brought in: the reward, what has been won in all, the time. */
@@ -343,8 +350,22 @@ final class Dispatch {
             return;
         }
         // a line a row of letters; an empty line half that
-        int lineH = font.rows - 1, half = lineH / 2, total = 0;
-        for (String l : lines) total += l.isEmpty() ? half : lineH;
+        int lineH = font.rows - 1, half = lineH / 2, total = 0, empty = 0;
+        for (String l : lines) {
+            total += l.isEmpty() ? half : lineH;
+            if (l.isEmpty()) empty++;
+        }
+        // a long text closes up to fit the glass, the call to go on with it: the empty lines first,
+        // then the rows a little
+        int room = iy1 - iy0 - 6;
+        while (total > room && half > 2) {
+            half--;
+            total -= empty;
+        }
+        while (total > room && lineH > font.rows - 3) {
+            lineH--;
+            total -= lines.length - empty;
+        }
         int top = iy0 + Math.max(3, Math.round((iy1 - iy0 - total) * 0.5f)), left = ix0 + 7;
         // the beam: a band a little brighter running down the glass now and then
         float sweep = (t * 0.55f) % 2.2f, beamY = iy0 + sweep * (iy1 - iy0);

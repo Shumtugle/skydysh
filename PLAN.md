@@ -49,6 +49,7 @@ release, each seen on the stand before the phone.
   through houses without lifts, their own sign.
 - 0.34 The traffic untangled; people on the benches and about the squares, dogs and cats there.
 - 0.35 The cars in painted skins of their own; round wheels.
+- 0.36 A hunt has five minutes; the town by the sea, a promenade along the shore road; home on it.
 
 ## Next
 
@@ -64,8 +65,7 @@ The missions in order, each teaching a thing; then the town is hers.
 
 The releases toward it, one thing each:
 
-- A stretch of the town fixed for ever, the same in every town grown: an embankment with a few
-  known houses, among them home, one large house; then what home is like inside.
+- What home is like inside; a few more known houses along the shore road by it.
 - The factory and the store, each a building of its own kind, plain to see; their signs; a
   load on the pickup's bed.
 - The delivery as mission three; then home as the end of every mission, and the choice there.
