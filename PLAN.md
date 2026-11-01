@@ -64,6 +64,7 @@ release, each seen on the stand before the phone.
 - 0.47 The town minds the mallet: people step aside, turn back, run off, stare; cars drive off.
 - 0.48 The pickup's own driver keeps the way; she says go, stop and which way at the next crossing. Two thumbs on foot by default.
 - 0.49 Up and on at once: a jump keeps her going, and clears what stands before her.
+- 0.50 A stick at the wheel, the driver gone; one finger on foot as the game begins.
 
 ## Next
 

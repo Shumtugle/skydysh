@@ -20,8 +20,8 @@ dispatcher's room, which is her head: walls of her own brick round the street se
 eyes, what is to be done typed over it; a touch, her mallet knocks a key, the walls draw back
 and the street goes on. When it is done, back into her head for the report.
 
-There are two ways to go on foot, chosen under the pause button and kept: two thumbs, as the game
-begins, and one finger (down runs her, sideways turns her, flicks jump and slide, a tap is the
+There are two ways to go on foot, chosen under the pause button and kept: one finger, as the game
+begins, and two thumbs (down runs her, sideways turns her, flicks jump and slide, a tap is the
 mallet's).
 
 With two thumbs, the left half of the glass is a stick: where the thumb comes down is its
@@ -47,11 +47,11 @@ hang over the ways in and up near her: the lifts' doors, the fire escapes, the l
 to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
 out) by the lift. A button high on the left pauses the game.
 
-At the wheel she only says where, and the one who really drives keeps the way: a finger down,
-it goes, down the middle of its lane, round the corners, past a slower car when the other lane is
-clear, slowing for a corner and for what stands in the way; lifted, it stops. A swipe aside says
-which way to turn at the next crossing (an arrow shows it; the other way again, on); said too late
-to slow for the corner, it is kept for the one after. Off the streets the wheel is hers, slowly.
+At the wheel a stick is under the thumb, wherever it comes down: pushed up, the pickup goes, as
+fast as the stick is pushed; aside, it turns, full over with the stick straight aside, slowing by
+itself to make the corner; drawn back, it brakes, and held back standing, it backs. Let go, it
+rolls on and slows. With the stick held straight, the pickup settles along the street it is
+nearly along.
 
 The town ends at the sea: along its southmost street a promenade with palms and a parapet, steps
 down to a beach with sunshades, and the water. Into the sea she wades, slowly, and where it is

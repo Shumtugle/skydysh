@@ -1,0 +1,12 @@
+# The stick at the wheel: from home east along the shore road, pushed straight up; aside left at
+# the crossing and round into the street north; let be, it settles along the street; drawn back,
+# it brakes; held back, it backs.
+screen 1096 2560
+wait 0.4
+mission 2
+drivein 30 -1.35 1.5708
+pedal 2 0 -34 1 sa
+pedal 1 -34 -6 0.33 sb
+pedal 2 0 -34 1 sc
+pedal 1.5 0 34 0 x
+pedal 1.5 0 34 0.75 sd

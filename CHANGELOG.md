@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.50
+
+- A stick at the wheel, the driver gone. Where the thumb comes down is the stick's middle (and
+  past its rim the middle follows the thumb): pushed up, the pickup goes, as fast as the stick is
+  pushed out, up to its top; aside, the wheel turns, full over with the stick straight aside;
+  hard over, it slows by itself to make a corner. Drawn back, it brakes; held back standing, it
+  backs. Let go, it rolls on and slows. With the stick held straight, it settles along the street
+  it is nearly along. The same in both ways to play.
+- On foot, one finger as the game begins; two thumbs under the pause button, kept as chosen.
+- Stand: scene `stick.txt`.
+
 ## 0.49
 
 - Up and on at once. A jump keeps the way she is being sent: pushed on by the stick (or a finger
