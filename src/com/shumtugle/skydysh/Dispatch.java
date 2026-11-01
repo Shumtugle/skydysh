@@ -127,6 +127,28 @@ final class Dispatch {
     /** What touching each line of home's screen picks: the hunt 1, the folder 2, the delivery 3, on 0. */
     static final int[] HOME_PICKS = {-1, -1, -1, -1, 1, 2, 3, -1, 0};
 
+    /** A pick that takes no mission: she stays as she is (on the sofa, free). */
+    static final int REST = 4;
+
+    /** On home's sofa: kept; which mission now, the three of them, on to the next, or a rest. */
+    static String[] sofa(int round) {
+        return Lang.lines("sofa", round, null);
+    }
+
+    /** What touching each line of the sofa's screen picks (see HOME_PICKS); a rest, REST. */
+    static final int[] SOFA_PICKS = {-1, -1, -1, 1, 2, 3, 0, REST};
+
+    /** A report, and before its last line (the touch to go on) that the town is hers till home. */
+    static String[] freed(String[] report) {
+        String[] more = Lang.lines("free.after", 0, null);
+        String[] out = new String[report.length + more.length];
+        int k = report.length - 1;
+        System.arraycopy(report, 0, out, 0, k);
+        System.arraycopy(more, 0, out, k, more.length);
+        out[out.length - 1] = report[k];
+        return out;
+    }
+
     /** After these lines, at the key, the next ones on the screen before the walls draw back. */
     Dispatch then(String[] more) {
         next = more;

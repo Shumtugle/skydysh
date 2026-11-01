@@ -346,6 +346,17 @@ final class Indoors implements Ground {
 
     /** Whether the eye is held still across the hall, and if so where and how it looks: x, y, z, yaw, pitch. */
     boolean shot(float[] eye) {
+        if (home && seated) {
+            // from near the door, a little to one side, down the room at her on the sofa
+            float eu = half * 0.45f, ev = WALL + 1.2f, ey = FLOOR + 2.6f, tv = sofaV, ty = FLOOR + 1.2f;
+            eye[0] = wx(eu, ev);
+            eye[1] = ey;
+            eye[2] = wz(eu, ev);
+            float dx = wx(0f, tv) - eye[0], dz = wz(0f, tv) - eye[2];
+            eye[3] = (float) Math.atan2(dx, dz);
+            eye[4] = (float) Math.atan2(ty - ey, Math.sqrt(dx * dx + dz * dz));
+            return true;
+        }
         if (lift != ABOARD && lift != RISING && lift != SINKING && lift != LEAVING) return false;
         float eu = -side * (half - 1.1f), ev = liftV + 1.3f, ey = FLOOR + 2.7f;
         float tu = side * (half + WALL + CAB_DEEP * 0.45f), tv = liftV, ty = FLOOR + 1.75f;
@@ -361,6 +372,11 @@ final class Indoors implements Ground {
     /** For a player that knows the way (the desktop stand): where to go now, x and z. */
     void goal(Runner r, float[] out) {
         float u = u(r.x, r.z), v = v(r.x, r.z), gu, gv;
+        if (home) {
+            out[0] = wx(0f, sofaV - SOFA_NEAR + 0.3f);
+            out[1] = wz(0f, sofaV - SOFA_NEAR + 0.3f);
+            return;
+        }
         if (!hasLift) {
             // through to the other door, or back out if there is none
             gu = 0f;
@@ -391,6 +407,44 @@ final class Indoors implements Ground {
     private boolean cameDown, cameBack;
     /** Whether the hall has a lift; one without is a way through from the street to the yard. */
     boolean hasLift = true;
+
+    // ---- home: a room of her own behind the front door, the sofa against its back wall ----
+    /** Whether this is home's room; how far in the sofa's seat is; whether she sits on it now. */
+    boolean home;
+    float sofaV;
+    boolean seated, sofaArmed = true;
+    static final float SOFA_HALF = 1.45f, SOFA_SEAT = 0.55f, SOFA_NEAR = 1.5f;
+
+    /** Whether (x, z) is within the walls. */
+    boolean holds(float x, float z) {
+        float u = u(x, z), v = v(x, z);
+        return Math.abs(u) < half && v > WALL && v < deep - WALL;
+    }
+
+    /** Whether she has come up to the sofa, before it and near enough to sit. */
+    boolean atSofa(Runner r) {
+        if (!home) return false;
+        float u = u(r.x, r.z), v = v(r.x, r.z);
+        return Math.abs(u) < SOFA_HALF && v > sofaV - SOFA_NEAR - 0.6f;
+    }
+
+    /** Where she sits, the seat's middle (x, y, z into out), facing the room. */
+    void seat(float[] out) {
+        out[0] = wx(0f, sofaV);
+        out[1] = FLOOR + SOFA_SEAT;
+        out[2] = wz(0f, sofaV);
+    }
+
+    /** The way she faces sitting: out into the room, to the door. */
+    float seatHeading() {
+        return heading(0f, -1f);
+    }
+
+    /** Where she stands up to, a step before the sofa (x, z into out). */
+    void beforeSofa(float[] out) {
+        out[0] = wx(0f, sofaV - SOFA_NEAR);
+        out[1] = wz(0f, sofaV - SOFA_NEAR);
+    }
 
     /** The light indoors: lamps overhead, the light pooled under them, no haze. */
     void light(DrawList d) {

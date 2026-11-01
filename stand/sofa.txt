@@ -1,0 +1,39 @@
+# The town free after a mission, then home's room and its sofa. The hunt's five minutes run out:
+# the report, and no briefing after it; the town hers, home marked. In at home's door, through the
+# room to the sofa; she sits, it is kept, the screen asks which mission; the delivery taken, she
+# gets up and goes out to it. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+wait 300
+wait 5.5
+shot f0
+down 137 300
+up 137 300
+wait 0.3
+down 137 300
+up 137 300
+wait 2.5
+at 40 -30 0
+wait 1
+shot f1
+at 32 -2 0
+wait 0.3
+tapsign home
+errand 10 1 h
+wait 0.5
+shot s0
+wait 1.2
+shot s1
+wait 2.5
+shot s2
+pick 3
+wait 2
+down 137 300
+up 137 300
+wait 0.3
+down 137 300
+up 137 300
+wait 2.5
+where
+shot s3

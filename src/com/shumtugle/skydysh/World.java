@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.51";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.52";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -93,6 +93,7 @@ final class World {
     /** The next mission, round (x, z): in turn five brums loose, the folder, a delivery. */
     private void begin(float x, float z) {
         if (driving != null) getOut();
+        free = false;
         int n = mission.round + 1;
         delivery = null;
         if (Delivery.its(n)) {
@@ -144,16 +145,17 @@ final class World {
         runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - 5.5f, 0f);
         runner.recenter();
         runner.update(0f, city, cars, walkers);
-        dispatch = new Dispatch(host, Dispatch.home(mission.round)).choices(Dispatch.HOME_PICKS);
+        dispatch = new Dispatch(host, Dispatch.home(free ? mission.round + 1 : mission.round)).choices(Dispatch.HOME_PICKS);
         letGo();
     }
 
     /**
      * Mission of a kind (the hunt 1, the folder 2, the delivery 3) begun now where she is: the next
-     * number of that kind on from the one now, or the one now again, if it is of that kind.
+     * number of that kind on from the one now, or the one now again, if it is of that kind (free,
+     * on from the one last played).
      */
     private void chooseMission(int kind) {
-        int n = Math.max(1, mission.round);
+        int n = Math.max(1, free ? mission.round + 1 : mission.round);
         while ((Delivery.its(n) ? 3 : Folder.its(n) ? 2 : 1) != kind) n++;
         mission.round = n - 1;
         again = false;
@@ -184,15 +186,21 @@ final class World {
         return true;
     }
 
+    /**
+     * No mission now: the last one done with, the town hers till she goes home for the next. The
+     * mission's number is the one last played (one less, if it is to be played again).
+     */
+    boolean free;
+
     /** The brums of the mission now. */
     Chase[] brums() {
-        if (delivery != null) return NONE;
+        if (free || delivery != null) return NONE;
         return folder != null ? folder.rivals : mission.brums;
     }
 
     /** Whether the mission now is a hunt. */
     boolean hunt() {
-        return folder == null && delivery == null;
+        return !free && folder == null && delivery == null;
     }
 
     /** Whether the mission now is done with, won or not. */
@@ -252,6 +260,14 @@ final class World {
         Frida.eyeHeat = 0f;
         runner.update(0f, city, cars, walkers);
         dispatch = new Dispatch(host, done ? report() : briefing());
+    }
+
+    /** No mission now, the town hers (the desktop stand). */
+    void standFree() {
+        free = true;
+        folder = null;
+        delivery = null;
+        chase = nobody;
     }
 
     /** Mission n now, round where she is (the desktop stand). */
@@ -325,11 +341,24 @@ final class World {
         if (dispatch != null) {
             if (type == DOWN && dispatch.choosing()) {
                 int c = dispatch.pickAt(x, y);
-                if (c > 0) {
+                if (c > 0 && c < Dispatch.REST) {
                     chooseMission(c);
+                    dispatch.then(briefing());
+                } else if (c == 0 && free) {
+                    // on to the next, whatever its kind
+                    begin(runner.x, runner.z);
+                    overFor = 0f;
+                    caughtSeen = 0;
+                    nextSlot = 0;
+                    struckSeen = 0;
                     dispatch.then(briefing());
                 }
             } else if (type == DOWN) dispatch.touch();
+            return;
+        }
+        if (seated()) {
+            if (type == DOWN && sofaAsked) standUp();
+            leadFinger = -1;
             return;
         }
         if (Runner.classic) {
@@ -727,10 +756,11 @@ final class World {
                 // the walls drawn back: the street goes on (the next mission, after a report)
                 dispatch = null;
                 overFor = 0f;
+                if (seated() && !free) standUp();
             }
             return;
         }
-        if (over() && (overFor += dt) > BACK_TO_ROOM) {
+        if (!free && over() && (overFor += dt) > BACK_TO_ROOM) {
             // indoors when it ends: out at the front door first, the room in her head is out of doors
             if (indoors != null) {
                 swapTo = TO_STREET;
@@ -739,13 +769,16 @@ final class World {
             }
             save();
             String[] said = report();
-            // lost, the same again, as its briefing says; won, the next; the report, then the briefing
+            // lost, the same again when she next takes one at home; won, the next. The report, and
+            // the town is hers
             again = hunt() ? mission.late : folder != null && folder.theirs;
             if (again) mission.round--;
-            begin(runner.x, runner.z);
-            dispatch = new Dispatch(host, said).then(briefing());
+            free = true;
+            folder = null;
+            delivery = null;
+            chase = nobody;
+            dispatch = new Dispatch(host, Dispatch.freed(said));
             letGo();
-            again = false;
             overFor = 0f;
             return;
         }
@@ -761,14 +794,16 @@ final class World {
         }
         // a beat of the arms (a flick, between frames): the air through them
         if (runner.beatsLeft() < beatsWere) host.sound(Synth.WHOOSH, 0.5f, 0.8f);
-        if (swapT < 0f && driving == null) runner.update(dt, city, cars, walkers);
+        if (swapT < 0f && driving == null && !seated()) runner.update(dt, city, cars, walkers);
         // into deep water: a splash, and she swims
         boolean swims = runner.swimming();
         if (swims && !swimSeen) host.sound(Synth.SPLASH, 0.8f, 1f);
         swimSeen = swims;
         beatsWere = runner.beatsLeft();
         int round = mission.round;
-        if (delivery != null) {
+        if (free) {
+            chase = nobody;
+        } else if (delivery != null) {
             delivery.update(dt, duty, driving, runner, host);
         } else if (folder != null) {
             boolean had = folder.hers;
@@ -827,7 +862,7 @@ final class World {
 
     // ---- doors: in from the street (or the yard), or down from a roof, a place indoors; out again ----
     static final float SWAP = 0.3f;          // the dark coming down at a door, and lifting again
-    static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5;
+    static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5, TO_HOME = 6;
     /** The place indoors she is in; null out of doors. */
     Indoors indoors;
     private float swapT = -1f;
@@ -857,6 +892,7 @@ final class World {
             if (swapT >= 2f * SWAP) swapT = -1f;
             return;
         }
+        if (indoors != null && indoors.home && sofa(dt)) return;
         if (indoors != null) {
             int e = indoors.update(dt, r, host);
             if (e == Indoors.UP) go(TO_ROOF);
@@ -904,10 +940,12 @@ final class World {
         liftWait = r.speed < 1.5f ? liftWait + dt : 0f;
         if (!(at && r.speed < LIFT_PAST || at && fx * wx + fz * wz > 0.7f || liftWait > LIFT_STAND)) return;
         liftWait = 0f;
-        // home's front door: into her head, where the mission is chosen
+        // home's front door: into home's room
         if (City.home(houseNow[0], houseNow[1]) && l[1] < houseNow[1]) {
             liftArmed = false;
-            atHome();
+            if (driving != null) getOut();
+            host.sound(Synth.DOOR, 0.45f, 1f);
+            go(TO_HOME);
             return;
         }
         System.arraycopy(l, 0, liftOf, 0, 11);
@@ -983,15 +1021,15 @@ final class World {
             // the wheel's stick: under the thumb while it is down; a faint one where it would go
             if (pedal) {
                 float ox = carTX - carCX, oy = carTY - carCY, m = (float) Math.sqrt(ox * ox + oy * oy);
-                if (m > STICK_R) {
-                    ox *= STICK_R / m;
-                    oy *= STICK_R / m;
+                if (m > CAR_R) {
+                    ox *= CAR_R / m;
+                    oy *= CAR_R / m;
                 }
-                d.badge(carCX, carCY, STICK_R + 6f, Badges.BLANK, 0.6f, 0f, ringTint());
+                d.badge(carCX, carCY, CAR_R + 6f, Badges.BLANK, 0.6f, 0f, ringTint());
                 d.badge(carCX + ox, carCY + oy, KNOB, Badges.KNOB, 0.9f, brakeIn > 0.05f ? 0.6f : 0f);
             } else {
-                d.badge(W * 0.5f, h - 56f, STICK_R + 6f, Badges.BLANK, 0.3f, 0f, ringTint());
-                d.badge(W * 0.5f, h - 56f, KNOB, Badges.KNOB, 0.3f, 0f);
+                d.badge(W * 0.5f, h - 66f, CAR_R + 6f, Badges.BLANK, 0.3f, 0f, ringTint());
+                d.badge(W * 0.5f, h - 66f, KNOB, Badges.KNOB, 0.3f, 0f);
             }
         }
         if (footButtons() && !Runner.classic) {
@@ -1215,7 +1253,7 @@ final class World {
      */
     private void drive(float dt) {
         Pickup p = driving;
-        float sx = pedal ? (carTX - carCX) / STICK_R : 0f, sy = pedal ? (carTY - carCY) / STICK_R : 0f;
+        float sx = pedal ? (carTX - carCX) / CAR_R : 0f, sy = pedal ? (carTY - carCY) / CAR_R : 0f;
         float wheel = 0f;
         brakeIn = 0f;
         if (pedal) {
@@ -1231,7 +1269,7 @@ final class World {
         float let = 1f - Math.min(1f, Math.abs(p.steer) / SETTLE_WHEEL);
         if (let > 0f && Math.abs(p.speed) > 3f) {
             float q = (float) Math.PI * 0.5f, d = Math.round(p.heading / q) * q - p.heading;
-            if (Math.abs(d) < SETTLE_WITHIN) p.heading += d * Math.min(1f, dt * 2.5f * let);
+            if (Math.abs(d) < SETTLE_WITHIN) p.heading += d * Math.min(1f, dt * SETTLE_RATE * let);
         }
         p.seat(seatAt);
         runner.ride(dt, city, p.x, p.y, p.z, p.heading, p.speed, seatAt[0], seatAt[1], seatAt[2], p.steer);
@@ -1239,7 +1277,7 @@ final class World {
 
     /** The ring at the wheel, coloured for what she is about: the hunt coral, the folder turquoise, a delivery amber, free cream. */
     private int ringTint() {
-        if (over()) return DrawList.TINT_CREAM;
+        if (free) return DrawList.TINT_CREAM;
         if (delivery != null) return DrawList.TINT_AMBER;
         if (folder != null) return DrawList.TINT_TURQUOISE;
         return DrawList.TINT_CORAL;
@@ -1248,7 +1286,9 @@ final class World {
     // the finger at the wheel, as parts of the ring's radius from where it came down: aside, no
     // turn within so far, then more and more (so steep a curve) to full over at the edge; drawn
     // down past so far, the brake
-    static final float CAR_DEAD = 0.1f, CAR_CURVE = 1.5f, CAR_BRAKE = 0.55f;
+    static final float CAR_DEAD = 0.3f, CAR_CURVE = 1.3f, CAR_BRAKE = 0.55f;
+    static final float CAR_R = 44f;            // the ring at the wheel, its radius: wider than her stick on foot
+    static final float SETTLE_RATE = 3.5f;     // how fast it settles along the street, the wheel let be
     static final float SETTLE_WITHIN = 0.5f;   // radians off a street's way, at most, for the pickup to settle along it
     static final float SETTLE_WHEEL = 0.25f;   // turned so far or more, it is let go its own way
     private float carCX, carCY, carTX, carTY;
@@ -1265,8 +1305,8 @@ final class World {
         }
         if (type == DOWN) {
             pedal = true;
-            carCX = Math.max(STICK_R + 4f, Math.min(W - STICK_R - 4f, x));
-            carCY = Math.max(h * 0.3f, Math.min(h - STICK_R - 6f, y));
+            carCX = Math.max(CAR_R + 4f, Math.min(W - CAR_R - 4f, x));
+            carCY = Math.max(h * 0.3f, Math.min(h - CAR_R - 6f, y));
             carTX = x;
             carTY = y;
         } else if (type == MOVE && pedal) {
@@ -1475,12 +1515,24 @@ final class World {
                 indoors = Rooms.hall(houseOf, seed, city.backClear(houseOf, 0), true);
                 indoors.comeDown(r);
                 break;
+            case TO_HOME:
+                indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+                indoors.enter(r, false);
+                break;
             case TO_ROOF:
                 leave();
                 r.put(l[4], l[5], l[6], l[7]);
                 host.sound(Synth.DOOR, 0.35f, 1.2f);
                 break;
             default: {
+                if (indoors != null && indoors.home) {
+                    // out of home's door onto the promenade side of the pavement, facing the sea
+                    leave();
+                    r.put(City.HOME_DOOR_X, City.WALK_TOP, City.HOME_DOOR_Z - OUT_STEP - 0.6f, (float) Math.PI);
+                    liftArmed = false;
+                    host.sound(Synth.DOOR, 0.35f, 1.1f);
+                    break;
+                }
                 // out at the front onto the pavement, or at the back into the yard, facing away from the door
                 leave();
                 City.lift(houseOf, 0, doorAt);
@@ -1503,6 +1555,64 @@ final class World {
         r.recenter();
         // the eye put where it is to be at once, behind her in the new place
         r.update(0f, city, cars, walkers);
+    }
+
+    // ---- home's sofa: come up to it, she sits; it is kept, and the screen asks which mission ----
+    private float seatedFor;
+    private boolean sofaAsked;
+    private final float[] sofaAt = new float[3];
+    static final float SIT_FOR = 1.3f;       // sat so long, the screen comes on
+
+    /** Seated, a frame of it (true); or come up to it, down she sits (true); or not near it (false). */
+    private boolean sofa(float dt) {
+        Indoors in = indoors;
+        Runner r = runner;
+        if (!in.seated) {
+            // up from it, she sits again only once she has gone from it
+            if (!in.atSofa(r)) in.sofaArmed = true;
+            if (!in.sofaArmed || r.inAir() || r.led() && errand != ERRAND_THROUGH || !in.atSofa(r)) return false;
+            in.seated = true;
+            seatedFor = 0f;
+            sofaAsked = false;
+            errand = NO_ERRAND;
+            r.stopLead();
+            letGo();
+            // kept: the mission to play next, what has been won
+            host.saveInt(SAVE_MISSION, free ? mission.round + 1 : mission.round);
+            host.saveInt(SAVE_PLATES, plates);
+            host.saveInt(SAVE_MONEY, money);
+            host.sound(Synth.WOOD, 0.5f, 0.7f);
+            host.buzz(40);
+        }
+        seatedFor += dt;
+        in.seat(sofaAt);
+        r.ride(dt, in, sofaAt[0], sofaAt[1], sofaAt[2], in.seatHeading(), 0f, sofaAt[0], sofaAt[1] - 0.03f, sofaAt[2], 0f);
+        // the eye where the room is seen from while she sits (the screen in her head comes on from there)
+        if (in.shot(eyeNow)) r.eyeAt(eyeNow);
+        if (!sofaAsked && seatedFor > SIT_FOR) {
+            sofaAsked = true;
+            dispatch = new Dispatch(host, Dispatch.sofa(free ? mission.round + 1 : mission.round)).choices(Dispatch.SOFA_PICKS);
+            letGo();
+        }
+        return true;
+    }
+
+    /** Up from the sofa, a step before it, facing the door. */
+    private void standUp() {
+        Indoors in = indoors;
+        if (in == null || !in.seated) return;
+        in.seated = false;
+        in.sofaArmed = false;
+        in.beforeSofa(sofaAt);
+        runner.getOut(sofaAt[0], Indoors.FLOOR, sofaAt[1], in.seatHeading());
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        letGo();
+    }
+
+    /** Whether she sits on home's sofa. */
+    boolean seated() {
+        return indoors != null && indoors.seated;
     }
 
     /** Out of doors again. */
@@ -1723,6 +1833,22 @@ final class World {
         goalMark(d, f, goal[0], goal[1], goal[2], green, ink);
     }
 
+    /** Free: what has been won, and where home is (the next mission is taken there), quietly. */
+    private void freeFlat(DrawList d, Px f) {
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
+        String sum = money(money);
+        shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 14, 1, gold, ink);
+        if (indoors != null) return;
+        float gx = City.HOME_DOOR_X - runner.x, gz = City.HOME_DOOR_Z - runner.z;
+        float far = (float) Math.sqrt(gx * gx + gz * gz);
+        if (far < 12f) return;
+        String w = Lang.lines("goal.free", mission.round, null)[0];
+        shadowed(f, w, (W - PixelFont.width(w, 1)) / 2, 14, 1, cream, ink);
+        String m = String.valueOf(Math.round(far));
+        shadowed(f, m, (W - PixelFont.width(m, 2)) / 2, 26, 2, green, ink);
+        goalMark(d, f, City.HOME_DOOR_X, City.WALK_TOP + 1.5f, City.HOME_DOOR_Z, green, ink);
+    }
+
     /** Where the way goes: a green ring round it while it is in sight, a green mark at the edge the way it is while not. */
     private void goalMark(DrawList d, Px f, float x, float y, float z, int green, int ink) {
         boolean seen = d.project(x, y, z, at) && at[0] > 6 && at[0] < W - 6 && at[1] > 50 && at[1] < h - 6;
@@ -1803,19 +1929,26 @@ final class World {
         if (flatPx == null || flatPx.a != d.flat) flatPx = new Px(d.w, d.h, d.flat);
         Px f = flatPx;
         d.hudRows = 0;
-        if (indoors.shot(eyeNow)) d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.25f, 0.03f, 80f);
+        if (dispatch != null) {
+            // the room in her head, or the eye on its way there
+            dispatch.eye(r, eyeNow);
+            d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.2f, 0.03f, 80f);
+        } else if (indoors.shot(eyeNow)) d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.25f, 0.03f, 80f);
         else d.camera(r.eyeX, r.eyeY, r.eyeZ, r.eyeYaw, r.eyePitch, W * 1.2f, 0.03f, 80f);
-        indoors.draw(d);
-        if (!r.hidden) {
+        // the room, unless the eye has gone back into her head past its walls (she sits against one)
+        if (dispatch == null || indoors.holds(eyeNow[0], eyeNow[2])) indoors.draw(d);
+        if (!r.hidden && (dispatch == null || dispatch.showsHer())) {
             r.draw(d);
             toss.draw(d, r);
         }
-        if (delivery != null) deliveryFlat(d, f);
+        if (dispatch != null) dispatch.draw(d, f, h);
+        else if (free) freeFlat(d, f);
+        else if (delivery != null) deliveryFlat(d, f);
         else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
         beatsFlat(f);
         speedFlat(f);
-        buttons(d);
+        if (dispatch == null) buttons(d);
         swapFlat(f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         meter(f);
@@ -1894,6 +2027,7 @@ final class World {
             g.draw(d, g == lit);
         }
         if (dispatch != null) dispatch.draw(d, f, h);
+        else if (free) freeFlat(d, f);
         else if (delivery != null) deliveryFlat(d, f);
         else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);

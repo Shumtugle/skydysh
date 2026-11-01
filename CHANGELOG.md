@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.52
+
+- Free after a mission. The report, and then no briefing: the town is hers for as long as she
+  likes. Quietly over the frame, what has been won and how far home is, a green mark the way;
+  the ring at the wheel cream. The next mission is taken at home (lost, the same one again).
+- Home's room. In at home's door is a room of her own: boards and a coral rug, panelling in
+  teal, a wide teal sofa against the back wall with a lamp at either end, the sea in a frame
+  over it, a shelf of books, a radiator, plants. The sign over the door leads her in and to the
+  sofa. Come up to it, she sits: the game is kept, and after a moment the screen in her head
+  asks which mission now, the next one, or just a rest. A mission taken, she gets up; resting,
+  she sits on till a touch.
+- Swimming high. Upright in the water, her head, shoulders and the top of her back out, leaning
+  a little into the way she goes, bobbing with each stroke; the hands sweep out and round at the
+  water's top and push forward again, the legs kick slowly under. The eye nearer and looking
+  down on her.
+- The wheel simpler: a wider ring, nothing at all within its middle third, then more and more to
+  full over at its edge; the pickup settles along the street more firmly with the finger held
+  straight.
+- Stand: scenes `sofa.txt` (free after the hunt, home, the sofa, a delivery taken) and
+  `rest.txt` (the sofa, a rest); the command `free`.
+
 ## 0.51
 
 - One finger to play, two thumbs set aside for now (kept in the code, not offered under the

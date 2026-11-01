@@ -43,7 +43,7 @@ final class Runner {
     static final int RUN = 0, AIR = 1, SLIDE = 2, CLIMB = 3, SWIM = 4;
     // swimming: how deep the water must be, how fast she swims, how far under the water's top her
     // middle is, how many strokes a meter
-    static final float SWIM_DEEP = 1.4f, SWIM_TOP = 3.4f, SWIM_LOW = 0.22f, STROKE = 0.42f;
+    static final float SWIM_DEEP = 1.4f, SWIM_TOP = 3.4f, SWIM_LOW = 0.28f, STROKE = 0.42f;
     private float strokes;
     static final float WADE = 2.6f;
     // gliding, a flick up beats the arms: so fast up, so many times a flight
@@ -783,6 +783,12 @@ final class Runner {
             back = CLIMB_BACK;
             high = CLIMB_HIGH;
         }
+        boolean swims = state == SWIM && !riding;
+        if (swims) {
+            // swimming: nearer and looking down on her a little, her shoulders and hands in the frame
+            back = SWIM_BACK;
+            high = SWIM_HIGH;
+        }
         if (riding) {
             // farther back and higher the faster it goes, so what comes is seen in time
             float fast = Math.min(1f, Math.abs(speed) / Pickup.VMAX);
@@ -814,9 +820,9 @@ final class Runner {
         float short_ = Math.max(0f, Math.min(back, NEAR_BACK) - free) / NEAR_BACK;
         eyeY = Math.min(y + high + short_ * RISE, g.ceiling(eyeX, eyeZ, y + 0.5f) - 0.25f);
         // and looks down at her rather than over her, so that she stays in the frame
-        float ahead = up ? 0f : (in ? AHEAD_IN : riding ? RIDE_AHEAD : AHEAD) * (1f - short_);
+        float ahead = up ? 0f : (in ? AHEAD_IN : riding ? RIDE_AHEAD : swims ? SWIM_AHEAD : AHEAD) * (1f - short_);
         float tx = x + fx * ahead, tz = z + fz * ahead;
-        float ty = y + ((in ? LOOK_UP_IN : LOOK_UP) + (up ? CLIMB_LOOK : 0f)) * (1f - short_) + 0.8f * short_;
+        float ty = y + ((in ? LOOK_UP_IN : swims ? SWIM_LOOK : LOOK_UP) + (up ? CLIMB_LOOK : 0f)) * (1f - short_) + 0.8f * short_;
         float dx = tx - eyeX, dz = tz - eyeZ;
         eyePitch = (float) Math.atan2(ty - eyeY, Math.sqrt(dx * dx + dz * dz));
         // never so high over her, looking on, that she drops out of the bottom of the frame
@@ -840,11 +846,13 @@ final class Runner {
     boolean riding;
     private float seatX, seatY, seatZ, wheel;
     static final float RIDE_BACK = 10f, RIDE_HIGH = 4.4f, RIDE_AHEAD = 20f;
+    // the eye on her swimming: so far back, so high over the water, looking so far on and so high there
+    static final float SWIM_BACK = 4.6f, SWIM_HIGH = 3.1f, SWIM_AHEAD = 9f, SWIM_LOOK = 0.4f;
     // the seat, from the hips down: the figure stands so much lower than the seat's top
     static final float SEAT_DROP = 1.12f;
 
     /** Carried with the pickup: it at (px, py, pz) going along h, her seat at (sx, sy, sz), its wheel turned so. */
-    void ride(float dt, City city, float px, float py, float pz, float h, float v, float sx, float sy, float sz, float turn) {
+    void ride(float dt, Ground city, float px, float py, float pz, float h, float v, float sx, float sy, float sz, float turn) {
         if (!riding) {
             riding = true;
             state = RUN;
@@ -865,6 +873,15 @@ final class Runner {
         seatZ = sz;
         wheel = turn;
         eye(dt, city);
+    }
+
+    /** The eye put where it is told (x, y, z, yaw, pitch): a fixed view, while she sits. */
+    void eyeAt(float[] e) {
+        eyeX = e[0];
+        eyeY = e[1];
+        eyeZ = e[2];
+        eyeYaw = e[3];
+        eyePitch = e[4];
     }
 
     /** Out of the pickup, standing at (px, pz) facing h. */
@@ -890,7 +907,9 @@ final class Runner {
         }
         if (state == SWIM) {
             // low in the water, the water broken round her and in a wake behind as she swims
-            Frida.draw(d, x, y - SWIM_LOW * SIZE, z, heading + (float) Math.PI, SIZE, Frida.SWIM, strokes);
+            // upright, bobbing a little with each stroke
+            float rise = 0.04f * (float) Math.sin(strokes * 6.28f - 1f);
+            Frida.draw(d, x, y - SWIM_LOW * SIZE + rise, z, heading + (float) Math.PI, SIZE, Frida.SWIM, strokes);
             float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
             for (int k = 0; k < 4; k++) {
                 float back = 2f + k * 0.8f, wide = 0.7f + k * 0.3f, f = 1f - k / 4f;

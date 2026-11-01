@@ -786,6 +786,10 @@ public final class Stand implements World.Host {
             Pickup q = world.driving;
             System.out.println(q == null ? String.format("%7.2fs  not at the wheel", time)
                     : String.format("%7.2fs  at the wheel: %.1f m/s, gear %d, at %.1f %.1f heading %.2f", time, q.speed, q.gear, q.x, q.z, q.heading));
+        } else if (c.equals("free")) {
+            // free: no mission now, the town hers till she goes home for the next
+            world.standFree();
+            System.out.println(String.format("%7.2fs  free", time));
         } else if (c.equals("tremble")) {
             // tremble SECONDS AMPLITUDE [SIDEWAYS DOWNWARD]: at the wheel, a finger held where it came
             // down (or so far from there), shaking aside and up and down by up to so many pixels, as a

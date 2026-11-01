@@ -1,0 +1,20 @@
+# Home's sofa, free: in at the door by its sign, through the room; she sits, it is kept, the
+# screen asks; a rest picked, she stays sitting; a touch, she gets up. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+free
+at 32 -2 0
+wait 0.3
+tapsign home
+errand 7 0.5 h
+wait 4
+shot r0
+pick 4
+wait 2.5
+shot r1
+down 137 300
+up 137 300
+wait 1
+where
+shot r2

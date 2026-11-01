@@ -18,7 +18,8 @@ screen, and the name is typed in the letters of the dispatcher's tube; a touch s
 begins before home. Then the
 dispatcher's room, which is her head: walls of her own brick round the street seen through her
 eyes, what is to be done typed over it; a touch, her mallet knocks a key, the walls draw back
-and the street goes on. When it is done, back into her head for the report.
+and the street goes on. When it is done, back into her head for the report; then the town is
+hers, free, as long as she likes, and the next mission is taken at home.
 
 One finger leads her: held down, she runs; moved sideways, she turns; flicked up, she jumps,
 flicked down, she slides; a tap is the mallet's. Other fingers, while it leads, press what they
@@ -50,16 +51,20 @@ out) by the lift. A button high on the left pauses the game.
 
 At the wheel, while a finger is down the pickup goes; a ring shows where the finger came down,
 coloured for the mission (coral for a hunt, turquoise for the folder, amber for a delivery, cream
-when free). Moved aside from the ring's middle, the finger turns the wheel, gently near the middle
+when free). Moved aside from the ring's middle, the finger turns the wheel (not at all near the middle, then more and more)
 and full over at its edge, the pickup slowing by itself to make the corner; drawn down, it brakes,
 and held so standing, it backs. Lifted, the pickup slows to a stop. With the finger held
 straight, the pickup settles along the street it is nearly along.
 
 The town ends at the sea: along its southmost street a promenade with palms and a parapet, steps
 down to a beach with sunshades, and the water. Into the sea she wades, slowly, and where it is
-deep enough she swims, her head up, as far out as the open sea lets her; back in the shallows
+deep enough she swims high in the water, upright, her head and shoulders out, a slow breast
+stroke at the water's top, as far out as the open sea lets her; back in the shallows
 she stands up and wades out. Home is there, where the game begins: one large house with a tower and a lamp on
-top, the same in every town; its sign over the door takes her in.
+top, the same in every town; its sign over the door takes her in, to a room of her own: a sofa
+against the back wall, lamps either side, the sea in a frame over it, books, plants. Come up to
+the sofa and she sits; the game is kept, and the screen in her head asks which mission now (or
+the next one, or just a rest). A touch, and she gets up.
 
 Duty pickups stand at the curbs here and there (not in a hunt). Touch the wheel over one, or
 stand at its door, and she gets in. Driving is the easy way about the town, and the fast one, up

@@ -204,10 +204,12 @@ final class Stroll {
     // ---- swimming ----
 
     /**
-     * Swimming, the head up out of the water, in strokes (t, one a stroke): the body lying along the
-     * water, the hands out ahead together, sweeping out and back to the chest, then forward again;
-     * the legs drawn up and kicked out behind as the hands come forward. For every bone its turn
-     * into q and its place into p, as pose() gives them, the pelvis at the figure's origin.
+     * Swimming, high in the water: she has air enough in her shoulders to float upright, her head,
+     * her shoulders and the top of her chest out, leaning a little into the way she goes. The hands
+     * at the water's top before her, together, sweep out round and back to the chest, then push
+     * forward again, a stroke after the breast stroke's; under the water the legs draw up and kick
+     * out, slowly. In strokes (t, one a stroke). For every bone its turn into q and its place into
+     * p, as pose() gives them, the pelvis at the figure's origin.
      */
     static void swim(Moves mv, float strokes, float[] q, float[] p) {
         int n = mv.bone.length;
@@ -218,27 +220,27 @@ final class Stroll {
         }
         for (int b = 0; b < n; b++) set(b, 0f, 0f, 0f, 1f);
         float u = strokes - (float) Math.floor(strokes);
-        // the pull (the hands out and back) the first half, the kick (the legs) the second
+        // the sweep out and round (the hands) the first half, the kick the second
         float pull = (float) Math.sin(Math.PI * Math.min(1f, u * 2f)), kick = u < 0.5f ? 0f : (float) Math.sin(Math.PI * (u - 0.5f) * 2f);
         float draw = u < 0.5f ? u * 2f : 1f - (u - 0.5f) * 2f;
-        axis(PELVIS, 1f, 0f, 0f, 1.08f + 0.08f * pull);
-        axis(SPINE3, 1f, 0f, 0f, -0.15f);
-        axis(NECK, 1f, 0f, 0f, -0.55f);
-        axis(HEAD, 1f, 0f, 0f, -0.45f);
+        axis(PELVIS, 1f, 0f, 0f, SWIM_LEAN + 0.05f * pull);
+        axis(SPINE3, 1f, 0f, 0f, 0.04f);
+        axis(NECK, 1f, 0f, 0f, -0.18f);
+        axis(HEAD, 1f, 0f, 0f, -0.12f - 0.04f * pull);
         for (int e = 0; e < 2; e++) {
             int thigh = e == 0 ? THIGH_L : THIGH_R, calf = e == 0 ? CALF_L : CALF_R, foot = e == 0 ? FOOT_L : FOOT_R;
             float side = e == 0 ? 1f : -1f;
-            axis(thigh, 1f, 0f, 0f, 0.15f + 0.75f * draw * (1f - kick));
-            then(thigh, 0f, 0f, 1f, side * (0.1f + 0.35f * draw));
-            axis(calf, 1f, 0f, 0f, -0.1f - 1.4f * draw * (1f - kick));
-            axis(foot, 1f, 0f, 0f, -0.9f);
+            axis(thigh, 1f, 0f, 0f, 0.3f + 0.5f * draw * (1f - kick));
+            then(thigh, 0f, 0f, 1f, side * (0.12f + 0.3f * draw));
+            axis(calf, 1f, 0f, 0f, -0.35f - 1.0f * draw * (1f - kick));
+            axis(foot, 1f, 0f, 0f, -0.7f);
         }
         chain(mv, 0f);
-        // the hands: out ahead, together; out and back to the chest; forward again
+        // the hands at the water's top: pushed forward together, out and round, back to the chest
         for (int e = -1; e <= 1; e += 2) {
             int up = e < 0 ? ARM_L : ARM_R;
             float sx = pos[up * 3], sy = pos[up * 3 + 1], sz = pos[up * 3 + 2];
-            float spread = 0.12f + 0.42f * pull, ahead = 0.62f - 0.5f * draw, low = -0.12f - 0.12f * pull;
+            float spread = 0.14f + 0.42f * pull, ahead = 0.5f - 0.32f * draw, low = SWIM_HANDS - 0.04f * pull;
             if (e < 0) reach(mv, ARM_L, FORE_L, HAND_L, -1f, sx - spread, sy + low, sz - ahead);
             else reach(mv, ARM_R, FORE_R, HAND_R, 1f, sx + spread, sy + low, sz - ahead);
         }
@@ -250,6 +252,9 @@ final class Stroll {
             p[b * 3 + 2] = pos[b * 3 + 2];
         }
     }
+
+    // swimming high: how far she leans into the way she goes (radians); the hands, so far under the shoulders
+    static final float SWIM_LEAN = 0.3f, SWIM_HANDS = -0.24f;
 
     // ---- at the wheel ----
 
