@@ -101,6 +101,15 @@ final class FolkPack {
         put(d, m, x, y, z, yaw, scale, mv);
     }
 
+    /** Person m sitting at ease (on a bench), leaning back so much, the head turned so much; y is the figure's foot, not the seat. */
+    static void sitter(DrawList d, int m, float x, float y, float z, float yaw, float scale, float lean, float look) {
+        Moves mv = Frida.moves();
+        if (town == null || mv == null || mv.bone.length != BONES) return;
+        ready();
+        Stroll.seated(mv, lean, look, pq, pp);
+        put(d, m, x, y, z, yaw, scale, mv);
+    }
+
     /** Whether model m is a woman. */
     boolean woman(int m) {
         return kind[m] == WOMAN || kind[m] == POLICEWOMAN || kind[m] == DANCER;

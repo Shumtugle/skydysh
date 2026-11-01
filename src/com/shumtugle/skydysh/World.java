@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.33";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.34";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -294,8 +294,8 @@ final class World {
         }
         toss.update(dt, runner, golems(), city, runner.tapped(), folder == null);
         cars.update(dt, runner, golems());
-        walkers.update(dt, runner, chase);
-        pets.update(dt, runner, walkers);
+        walkers.update(dt, runner, chase, city);
+        pets.update(dt, runner, walkers, city);
         int caught = mission.caught(), struck = 0;
         if (folder != null) caught = 0;
         for (Chase g : golems()) struck += g.struck;

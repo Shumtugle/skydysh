@@ -47,6 +47,7 @@ release, each seen on the stand before the phone.
 - 0.32 Duty pickups at the curbs: got into, driven as the old racing game drove, got out of.
 - 0.33 Yards open by an arch or shut in with a fire escape; fire escapes only in the yards; halls
   through houses without lifts, their own sign.
+- 0.34 The traffic untangled; people on the benches and about the squares, dogs and cats there.
 
 ## Next
 

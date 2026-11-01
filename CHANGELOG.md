@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.34
+
+- Fixed: the traffic tied itself in knots. At a crossing two cars each waited for the other, and
+  cars coming the other way stopped for each other; behind them the rest stood for good. A car
+  now keeps back only from one going its way or crossing it, and one held up by the other cars
+  alone for a few seconds edges out past them (never past someone in the road). Two minutes of
+  the town left to itself on the stand: eleven cars standing at once before, none now.
+- People on the benches, in the squares first and in the streets: sitting at ease, the hands on
+  the thighs, leaning back, looking about.
+- People in the squares: round the fountain, the one way or the other; to and fro along the
+  garden's paths. Dogs running round the fountain or along the paths; cats sitting by the
+  benches. They are kept near her, so that wherever she is there are some.
+- Stand: `traffic SECONDS`; scenes `plaza.txt`, `traffic.txt`.
+
 ## 0.33
 
 - The yards, of two kinds. One block in two has its yard open to the street by an arch: a way

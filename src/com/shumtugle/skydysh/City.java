@@ -55,6 +55,10 @@ final class City implements Ground {
         float[] ladders = new float[LADDER * 8];
         int ladderN;
 
+        // the benches: middle x, z, the way one sitting on it faces (a heading)
+        float[] benches = new float[3 * 8];
+        int benchN;
+
         void ladder(float x, float z, float bottom, float top, float nx, float nz) {
             if ((ladderN + 1) * LADDER > ladders.length) ladders = java.util.Arrays.copyOf(ladders, ladders.length * 2);
             float[] l = {x, z, bottom, top, nx, nz};
@@ -309,6 +313,40 @@ final class City implements Ground {
         out[2] = 0f;
     }
 
+    /** A bench, drawn among the small things and kept, for those who sit on it. */
+    private static void bench(Cell c, float x, float y, float z, float yaw) {
+        Garden.bench(c.detail, x, y, z, yaw);
+        if ((c.benchN + 1) * 3 > c.benches.length) c.benches = java.util.Arrays.copyOf(c.benches, c.benches.length * 2);
+        c.benches[c.benchN * 3] = x;
+        c.benches[c.benchN * 3 + 1] = z;
+        c.benches[c.benchN * 3 + 2] = yaw;
+        c.benchN++;
+    }
+
+    /**
+     * The places to sit within reach of (x, z): two to a bench, at most max of them, three floats
+     * each into out: where (x, z), and the way one sitting there faces (a heading). How many.
+     */
+    int seats(float x, float z, float reach, float[] out, int max) {
+        int n = 0, ci = index(x), cj = index(z);
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                Cell c = cell(i, j);
+                for (int k = 0; k < c.benchN && n < max; k++) {
+                    float bx = c.benches[k * 3], bz = c.benches[k * 3 + 1], yaw = c.benches[k * 3 + 2];
+                    if ((bx - x) * (bx - x) + (bz - z) * (bz - z) > reach * reach) continue;
+                    float co = (float) Math.cos(yaw), si = (float) Math.sin(yaw);
+                    for (int e = -1; e <= 1 && n < max; e += 2) {
+                        out[n * 3] = bx + co * e * 0.42f + si * 0.04f;
+                        out[n * 3 + 1] = bz - si * e * 0.42f + co * 0.04f;
+                        out[n * 3 + 2] = yaw;
+                        n++;
+                    }
+                }
+            }
+        return n;
+    }
+
     /** Whether one of the cell's streets has trees down it (by its salt), one in two. */
     private boolean leafy(int i, int j, int salt) {
         return (hash(i, j, salt) & 3) < 2;
@@ -330,9 +368,9 @@ final class City implements Ground {
     private void benches(Cell c, float x0, float z0) {
         float in = CURB + 0.85f;
         for (float t = 23f; t < CELL - 8f; t += 18f) {
-            Garden.bench(c.detail, x0 + in, WALK_TOP, z0 + t, (float) (-Math.PI / 2));
+            bench(c, x0 + in, WALK_TOP, z0 + t, (float) (-Math.PI / 2));
             c.wall(x0 + in - 0.3f, z0 + t - 0.9f, x0 + in + 0.3f, z0 + t + 0.9f, WALK_TOP + 0.48f);
-            Garden.bench(c.detail, x0 + t, WALK_TOP, z0 + in, (float) Math.PI);
+            bench(c, x0 + t, WALK_TOP, z0 + in, (float) Math.PI);
             c.wall(x0 + t - 0.9f, z0 + in - 0.3f, x0 + t + 0.9f, z0 + in + 0.3f, WALK_TOP + 0.48f);
         }
     }
@@ -916,7 +954,7 @@ final class City implements Ground {
         for (int k = 0; k < 8; k++) {
             float a = k * (float) (Math.PI / 4) + (float) (Math.PI / 8), ca = (float) Math.cos(a), sa = (float) Math.sin(a);
             float bx = mx + ca * 8f, bz = mz + sa * 8f;
-            Garden.bench(d, bx, y, bz, (float) Math.atan2(-ca, -sa));
+            bench(c, bx, y, bz, (float) Math.atan2(-ca, -sa));
             c.wall(bx - 0.75f, bz - 0.75f, bx + 0.75f, bz + 0.75f, y + 0.48f);
             float pa = a + (float) (Math.PI / 8), px = mx + (float) Math.cos(pa) * 8.4f, pz = mz + (float) Math.sin(pa) * 8.4f;
             Garden.pot(d, deco, px, y, pz, 0.32f);
@@ -975,7 +1013,7 @@ final class City implements Ground {
                 }
                 // benches on the paths, their backs to the hedges
                 float bt = 9.5f;
-                Garden.bench(d, mx + sx * bt, y, mz + sz * 1.15f, sz > 0 ? (float) Math.PI : 0f);
+                bench(c, mx + sx * bt, y, mz + sz * 1.15f, sz > 0 ? (float) Math.PI : 0f);
                 c.wall(mx + sx * bt - 0.9f, mz + sz * 1.15f - 0.3f, mx + sx * bt + 0.9f, mz + sz * 1.15f + 0.3f, y + 0.48f);
             }
         // the fence round it, open where the paths go out

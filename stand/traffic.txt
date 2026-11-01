@@ -1,0 +1,5 @@
+# The traffic left to itself two minutes, her standing on the pavement: no knots of cars left standing.
+screen 1096 2560
+athouse door 0.5
+wait 1
+traffic 120

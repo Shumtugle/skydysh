@@ -13,7 +13,9 @@ import java.util.Random;
  */
 final class Pets {
     static final int DOG = 0, CAT = 1;
-    static final int MOST = 16;
+    // so many about the blocks; so many in the squares: dogs running round the fountain or along
+    // the garden's paths, cats sitting by the benches
+    static final int ABOUT = 16, MOST = 22;
     // the rings round a block they keep to: so far in from each street's middle
     static final float DOG_RING = 5.5f, CAT_RING = 6.75f;
     static final float BORN_NEAR = 26f, BORN_FAR = 100f, GONE = 130f, SHY = 4.5f;
@@ -28,14 +30,30 @@ final class Pets {
     final float[] x = new float[MOST], z = new float[MOST], yaw = new float[MOST];
     private final boolean[] live = new boolean[MOST];
     private boolean started;
+    private final boolean[] inSquare = new boolean[MOST];
+    private final float[] sqX = new float[MOST], sqZ = new float[MOST], sqFar = new float[MOST], sqAt = new float[MOST];
+    private final boolean[] sqRound = new boolean[MOST], sqAlongX = new boolean[MOST];
+    private final float[] seats = new float[3 * 96];
+    private float retry;
 
     private static float side(float ring) {
         return City.CELL - 2f * ring;
     }
 
-    void update(float dt, Runner r, Walkers people) {
+    void update(float dt, Runner r, Walkers people, City city) {
+        retry -= dt;
+        boolean look4 = retry <= 0f;
+        if (look4) retry = 1.3f;
         for (int i = 0; i < MOST; i++) {
             float rx = x[i] - r.x, rz = z[i] - r.z;
+            if (i >= ABOUT) {
+                if (!live[i] || rx * rx + rz * rz > 80f * 80f) {
+                    if (look4 || !started) square(i, r, city, !started);
+                    continue;
+                }
+                inSquare(i, dt, r);
+                continue;
+            }
             if (!live[i] || rx * rx + rz * rz > GONE * GONE || owner[i] >= 0 && !people.walking(owner[i])) {
                 spawn(i, r, people, !started);
                 continue;
@@ -77,6 +95,96 @@ final class Pets {
         started = true;
     }
 
+    /** One in a square: a dog running round or to and fro, a cat sitting by a bench, washing, looking about. */
+    private void inSquare(int i, float dt, Runner r) {
+        float px = x[i], pz = z[i];
+        float dx0 = x[i] - r.x, dz0 = z[i] - r.z;
+        if (dx0 * dx0 + dz0 * dz0 < SHY * SHY && r.speed > 2f) fright[i] = 1.5f;
+        fright[i] = Math.max(0f, fright[i] - dt);
+        if (kind[i] == CAT) {
+            sit[i] = fright[i] > 0f ? 0f : 1f;
+            walked[i] = 0f;
+            return;
+        }
+        float v = pace[i] * (fright[i] > 0f ? 1.6f : 1f) * dt;
+        if (sqRound[i]) {
+            sqAt[i] += dir[i] * v / sqFar[i];
+            x[i] = sqX[i] + (float) Math.cos(sqAt[i]) * sqFar[i];
+            z[i] = sqZ[i] + (float) Math.sin(sqAt[i]) * sqFar[i];
+            yaw[i] = (float) Math.atan2(-(float) Math.sin(sqAt[i]) * dir[i], (float) Math.cos(sqAt[i]) * dir[i]);
+        } else {
+            sqAt[i] += dir[i] * v;
+            if (Math.abs(sqAt[i]) > sqFar[i]) {
+                sqAt[i] = Math.signum(sqAt[i]) * sqFar[i];
+                dir[i] = -dir[i];
+            }
+            x[i] = sqX[i] + (sqAlongX[i] ? sqAt[i] : 0f);
+            z[i] = sqZ[i] + (sqAlongX[i] ? 0f : sqAt[i]);
+            yaw[i] = sqAlongX[i] ? (dir[i] > 0f ? 1.5708f : -1.5708f) : (dir[i] > 0f ? 0f : 3.1416f);
+        }
+        float dx = x[i] - px, dz = z[i] - pz, moved = (float) Math.sqrt(dx * dx + dz * dz);
+        walked[i] = moved / Math.max(dt, 1e-4f);
+        ph[i] += moved / (0.42f * size[i]);
+    }
+
+    /** One put in a square near her: a dog in it, or a cat by one of its benches; not before her eyes. */
+    private void square(int i, Runner r, City city, boolean anywhere) {
+        live[i] = false;
+        int ci = City.index(r.x), cj = City.index(r.z), si = 0, sj = 0;
+        float bd = 80f * 80f;
+        boolean found = false;
+        for (int j = cj - 2; j <= cj + 2; j++)
+            for (int k = ci - 2; k <= ci + 2; k++) {
+                if (!city.square(k, j)) continue;
+                float qx = (k + 0.5f) * City.CELL - r.x, qz = (j + 0.5f) * City.CELL - r.z, dd = qx * qx + qz * qz;
+                if (dd < bd) {
+                    bd = dd;
+                    si = k;
+                    sj = j;
+                    found = true;
+                }
+            }
+        if (!found) return;
+        float cx = (si + 0.5f) * City.CELL, cz = (sj + 0.5f) * City.CELL;
+        boolean dog = (i % 3) != 2;
+        kind[i] = dog ? DOG : CAT;
+        owner[i] = -1;
+        inSquare[i] = true;
+        looks(i);
+        dir[i] = rnd.nextBoolean() ? 1f : -1f;
+        if (dog) {
+            pace[i] = 2f + rnd.nextFloat() * 1.5f;
+            sqX[i] = cx;
+            sqZ[i] = cz;
+            sqRound[i] = !city.garden(si, sj);
+            if (sqRound[i]) {
+                sqFar[i] = 13f + rnd.nextFloat() * 2f;
+                sqAt[i] = rnd.nextFloat() * 6.283f;
+            } else {
+                sqAlongX[i] = rnd.nextBoolean();
+                sqFar[i] = 15.5f;
+                sqAt[i] = (rnd.nextFloat() * 2f - 1f) * sqFar[i];
+            }
+            inSquare(i, 0f, r);
+        } else {
+            // by the end of a bench in the square
+            int n = city.seats(cx, cz, 28f, seats, 96);
+            if (n == 0) return;
+            int k = rnd.nextInt(n);
+            float yaw0 = seats[k * 3 + 2], co = (float) Math.cos(yaw0), si2 = (float) Math.sin(yaw0);
+            float e = rnd.nextBoolean() ? 1f : -1f;
+            x[i] = seats[k * 3] + co * e * 0.85f + si2 * 0.5f;
+            z[i] = seats[k * 3 + 1] - si2 * e * 0.85f + co * 0.5f;
+            yaw[i] = yaw0 + (rnd.nextFloat() - 0.5f);
+            sit[i] = 1f;
+            walked[i] = 0f;
+        }
+        float dx = x[i] - r.x, dz = z[i] - r.z, dd = (float) Math.sqrt(dx * dx + dz * dz);
+        float fx = (float) Math.sin(r.eyeYaw), fz = (float) Math.cos(r.eyeYaw);
+        if (!anywhere && (dd < 12f || (dx * fx + dz * fz) / Math.max(1e-3f, dd) > 0.7f && dd < 50f)) return;
+        live[i] = true;
+    }
+
     /** Where one going round its block stands and which way it faces, from how far round it is. */
     private void place(int i, float ring) {
         float s = side(ring), w = u[i];
@@ -96,6 +204,7 @@ final class Pets {
     /** One put round the runner, out of her sight (or anywhere, the first time): a dog on a lead, a stray, a cat. */
     private void spawn(int i, Runner r, Walkers people, boolean anywhere) {
         live[i] = false;
+        inSquare[i] = false;
         int roll = rnd.nextInt(10);
         kind[i] = roll < 6 ? DOG : CAT;
         owner[i] = -1;
@@ -229,7 +338,7 @@ final class Pets {
     private void cat(DrawList d, int i, float go) {
         begin(i);
         int k = coat[i];
-        boolean sitting = go < 0.05f && sit[i] > 0f;
+        boolean sitting = go < 0.05f && (sit[i] > 0f || inSquare[i]);
         if (sitting) {
             ball(d, 0f, 0.13f, -0.04f, 0.09f, 0.12f, 0.11f, k);
             ball(d, 0f, 0.2f, 0.05f, 0.07f, 0.1f, 0.06f, patch[i]);

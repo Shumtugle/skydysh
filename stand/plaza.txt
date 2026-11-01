@@ -1,0 +1,19 @@
+# Life in the squares: by a square with a fountain a while (looking away, as people and animals
+# come), then looking into it: people on the benches, walking round the fountain, a dog running
+# round, a cat by a bench. Then a garden: people to and fro along its paths. And the traffic at
+# a crossing a while, no knots left standing.
+screen 1096 2560
+square fountain 22
+turn 3.1416
+wait 8
+turn 3.1416
+wait 0.3
+shot p0
+wait 3
+shot p1
+square garden 20
+turn 3.1416
+wait 8
+turn 3.1416
+wait 0.3
+shot p2

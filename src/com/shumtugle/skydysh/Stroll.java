@@ -213,6 +213,18 @@ final class Stroll {
      * is the caller's).
      */
     static void sit(Moves mv, float wheel, float[] q, float[] p) {
+        sit(mv, wheel, true, 0f, q, p);
+    }
+
+    /**
+     * Sitting on a bench, at ease: the hands on the thighs, leaning back so much (a person's own),
+     * the head turned so much: as sit() gives it.
+     */
+    static void seated(Moves mv, float lean, float look, float[] q, float[] p) {
+        sit(mv, look, false, lean, q, p);
+    }
+
+    private static void sit(Moves mv, float wheel, boolean atWheel, float lean, float[] q, float[] p) {
         int n = mv.bone.length;
         if (turn == null || turn.length != n * 4) {
             turn = new float[n * 4];
@@ -226,13 +238,19 @@ final class Stroll {
             then(thigh, 0f, 0f, 1f, (e == 0 ? 1f : -1f) * 0.08f);
             axis(calf, 1f, 0f, 0f, -1.4f);
         }
-        axis(SPINE1, 1f, 0f, 0f, 0.06f);
+        axis(SPINE1, 1f, 0f, 0f, atWheel ? 0.06f : -lean);
         axis(SPINE3, 0f, 1f, 0f, -0.12f * wheel);
         axis(HEAD, 0f, 1f, 0f, -0.25f * wheel);
         chain(mv, 0f);
+        if (!atWheel) {
+            // the hands resting on the thighs, half way to the knees
+            float ty = pos[THIGH_L * 3 + 1] + 0.08f, tz = pos[THIGH_L * 3 + 2] - 0.22f;
+            reach(mv, ARM_L, FORE_L, HAND_L, -1f, -0.13f, ty, tz);
+            reach(mv, ARM_R, FORE_R, HAND_R, 1f, 0.13f, ty, tz);
+        }
         // the hands on the rim of the wheel, a quarter round from the top either side, turned with it
         float a = 0.9f + wheel * 0.9f;
-        for (int e = -1; e <= 1; e += 2) {
+        for (int e = -1; e <= 1 && atWheel; e += 2) {
             float ang = e * a;
             float hx = (float) Math.sin(ang) * WHEEL_HALF, hy = (float) Math.cos(ang) * WHEEL_HALF;
             if (e < 0) reach(mv, ARM_L, FORE_L, HAND_L, -1f, hx, WHEEL_UP + hy, WHEEL_FORE);

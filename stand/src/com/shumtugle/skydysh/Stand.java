@@ -594,6 +594,27 @@ public final class Stand implements World.Host {
             System.out.println(String.format("%7.2fs  %s, her %.1f %.1f %.1f, the folder %.0f m off", time,
                     fo.hers ? "she has the folder" : fo.theirs ? "a rival got it" : "not yet", r.x, r.y, r.z,
                     (float) Math.hypot(fo.x - r.x, fo.z - r.z)));
+        } else if (c.equals("traffic")) {
+            // traffic SECONDS: the town left to itself so long, the cars counted every ten seconds:
+            // how many are about, and how many have stood still a while
+            float secs = f(p[1]);
+            int n = Math.round(secs / DT);
+            float[] still = new float[Cars.MOST];
+            int worst = 0;
+            for (int i = 0; i < n; i++) {
+                step();
+                int stuck = 0, about = 0;
+                for (int k = 0; k < Cars.MOST; k++) {
+                    if (!world.cars.live(k)) continue;
+                    about++;
+                    still[k] = world.cars.speed[k] < 0.3f ? still[k] + DT : 0f;
+                    if (still[k] > 6f) stuck++;
+                }
+                worst = Math.max(worst, stuck);
+                if (i % Math.round(10f / DT) == 0)
+                    System.out.println(String.format("%7.2fs  cars about %d, standing six seconds and more %d", time, about, stuck));
+            }
+            System.out.println(String.format("%7.2fs  the most standing at once: %d", time, worst));
         } else if (c.equals("athouse")) {
             // athouse arch|door|shut METERS: her in the street so far out from the front of the
             // nearest house with an arch, a way in (a hall with no lift), or before the house

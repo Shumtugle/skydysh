@@ -56,6 +56,8 @@ final class Cars {
     private final int[] ni = new int[MOST], nj = new int[MOST], paint = new int[MOST], kind = new int[MOST];
     private final boolean[] live = new boolean[MOST];
     private final float[] halt = new float[MOST];       // stopped short after striking her, seconds left
+    // how long it has stood held up by other cars; how long more it edges out past them
+    private final float[] waited = new float[MOST], edging = new float[MOST];
 
     void update(float dt, Runner r, Chase[] golems) {
         for (int c = 0; c < MOST; c++) {
@@ -82,21 +84,35 @@ final class Cars {
             boolean turns = ni[c] != di[c] || nj[c] != dj[c];
             float want = turns && left < 14f ? TURNING : CRUISE;
             float fx = (float) Math.sin(heading[c]), fz = (float) Math.cos(heading[c]);
-            // a car ahead in the same way: keep back from it
+            // someone in the road ahead: stop short of them (the runner, a golem down, a pickup left)
+            float others = clear(c, fx, fz, r.x, r.z);
+            for (Chase g : golems) if (g.down()) others = Math.min(others, clear(c, fx, fz, g.x, g.z));
+            if (duty != null) for (int k = 0; k < duty.all.size(); k++) {
+                Pickup p = duty.all.get(k);
+                if (!p.driven) others = Math.min(others, clear(c, fx, fz, p.x, p.z));
+            }
+            // a car ahead going the same way, or across it: keep back from it; not one coming the
+            // other way, nor any while it is edging out of a knot of them
+            float byCars = CRUISE;
             for (int o = 0; o < MOST; o++) {
                 if (o == c || !live[o]) continue;
                 float ox = x[o] - x[c], oz = z[o] - z[c];
                 float along = ox * fx + oz * fz, across = Math.abs(ox * fz - oz * fx);
-                if (along > 0f && along < GAP && across < 2.2f) want = Math.min(want, Math.max(0f, (along - 6f) * 1.2f));
+                if (along <= 0f || along >= GAP || across >= 2.2f) continue;
+                if ((float) Math.cos(heading[o] - heading[c]) < -0.3f) continue;
+                byCars = Math.min(byCars, Math.max(0f, (along - 6f) * 1.2f));
             }
-            // someone in the road ahead: stop short of them
-            want = Math.min(want, clear(c, fx, fz, r.x, r.z));
-            for (Chase g : golems) if (g.down()) want = Math.min(want, clear(c, fx, fz, g.x, g.z));
-            // a duty pickup left standing in the road
-            if (duty != null) for (int k = 0; k < duty.all.size(); k++) {
-                Pickup p = duty.all.get(k);
-                if (!p.driven) want = Math.min(want, clear(c, fx, fz, p.x, p.z));
-            }
+            // held up by the other cars alone a good while (a knot at a crossing, one stopped
+            // after a knock): it edges out past them, never minding them a moment
+            edging[c] -= dt;
+            if (byCars < 0.5f && others > 1f && speed[c] < 0.5f && halt[c] <= 0f) {
+                if ((waited[c] += dt) > 2.5f) {
+                    edging[c] = 2f;
+                    waited[c] = 0f;
+                }
+            } else waited[c] = 0f;
+            if (edging[c] > 0f) byCars = Math.max(byCars, TURNING * 0.6f);
+            want = Math.min(want, Math.min(byCars, others));
             if (halt[c] > 0f) {
                 halt[c] -= dt;
                 want = 0f;
@@ -143,6 +159,7 @@ final class Cars {
             heading[c] = (float) Math.atan2(a, b);
             speed[c] = CRUISE;
             halt[c] = 0f;
+            waited[c] = edging[c] = 0f;
             kind[c] = kind(rnd);
             paint[c] = paint(rnd, kind[c]);
             choose(c);
