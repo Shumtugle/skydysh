@@ -718,6 +718,8 @@ public final class Stand implements World.Host {
                         city.house(i, j, k, h);
                         if (what.equals("arch") && h[7] != City.ARCH) continue;
                         if (what.equals("door") && h[7] != City.DOOR) continue;
+                        // not home: its door takes her into her head
+                        if (City.home(h[0], h[1])) continue;
                         float dd = (h[0] - world.runner.x) * (h[0] - world.runner.x) + (h[1] - world.runner.z) * (h[1] - world.runner.z);
                         if (dd < bd) {
                             bd = dd;
