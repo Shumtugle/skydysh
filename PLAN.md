@@ -56,6 +56,7 @@ release, each seen on the stand before the phone.
   eye sees it), the eye turned round her on the right, buttons to jump, slide and swing the mallet.
 - 0.40 One finger or two thumbs, chosen when paused; pedals at the wheel over the driver; fingers let go between modes.
 - 0.41 The pickup a car, not a boat: the wheel answered at once, no sliding, fast; a speedometer.
+- 0.42 Softer light in open doorways seen from inside.
 
 ## Next
 

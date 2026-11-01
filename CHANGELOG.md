@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.42
+
+- An open door seen from inside a hall no longer blazes white: the light of the street through
+  it is a soft warm one, of the yard a soft cool one.
+
 ## 0.41
 
 - The pickup drives as a car, not a boat: it goes where its nose points at once, as sharply as

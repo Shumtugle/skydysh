@@ -103,10 +103,10 @@ final class Rooms {
             for (int e = -1; e <= 1; e += 2)
                 in.box(d, e * (dh + 0.07f), f + Indoors.DOOR_HIGH * 0.5f, iv, 0.07f, Indoors.DOOR_HIGH * 0.5f + 0.07f, 0.03f, 0xD8CDB8, DrawList.STONE);
             in.box(d, 0f, dtop + 0.07f, iv, dh + 0.14f, 0.07f, 0.03f, 0xD8CDB8, DrawList.STONE);
-            // outside: the light of the street, or of the yard
+            // outside: the light of the street, or of the yard, soft (not a white blaze in the doorway)
             float ov = k == 0 ? -0.35f : deep + 0.35f;
             in.box(d, 0f, f + Indoors.DOOR_HIGH * 0.5f, ov, dh + 0.4f, Indoors.DOOR_HIGH * 0.5f + 0.3f, 0.05f,
-                    k == 0 ? 0xFFEBD0 : 0xDCEFF2, DrawList.GLOW);
+                    k == 0 ? 0xA8977C : 0x8E9FA6, DrawList.GLOW);
         }
         // the panelling below a rail, round the hall, broken by the doorways
         float rail = 1.15f, ph = rail * 0.5f;
