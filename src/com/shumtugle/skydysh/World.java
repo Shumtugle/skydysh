@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.46";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.47";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -109,6 +109,28 @@ final class World {
             folder = null;
             mission.start(x, z);
             chase = mission.target(null);
+        }
+    }
+
+    private int thrownSeen, struckBySeen;
+    private final float[] flyingAt = new float[3];
+
+    /**
+     * The town minds the mallet: those it flies past, people, dogs and cats, are off at a run, and the
+     * cars drive off fast; a blow struck, or one thrown, frightens those about her too.
+     */
+    private void frighten() {
+        if (toss.thrown != thrownSeen || toss.struck != struckBySeen) {
+            thrownSeen = toss.thrown;
+            struckBySeen = toss.struck;
+            walkers.alarm(runner.x, runner.z, 7f);
+            pets.alarm(runner.x, runner.z, 8f);
+            cars.alarm(runner.x, runner.z, 10f);
+        }
+        if (toss.flying(flyingAt)) {
+            walkers.alarm(flyingAt[0], flyingAt[2], 4.5f);
+            pets.alarm(flyingAt[0], flyingAt[2], 5f);
+            if (cars.alarm(flyingAt[0], flyingAt[2], 5f) > 0) host.sound(Synth.ALARM, 0.4f, 1f);
         }
     }
 
@@ -726,6 +748,7 @@ final class World {
             chase = mission.target(chase);
         }
         toss.update(dt, runner, brums(), city, runner.tapped(), hunt());
+        frighten();
         cars.update(dt, runner, brums());
         walkers.update(dt, runner, chase, city);
         pets.update(dt, runner, walkers, city);

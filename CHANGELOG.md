@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.47
+
+- The town minds what happens in it. People no longer stand frozen round her: one running at them
+  steps aside and slows, one standing in their way they turn back from, and they walk on. A mallet
+  thrown, a blow struck, the mallet flying past, a burning brum running by, she running into them:
+  they are off at a run, away from it and from her, round what is in the way, until they are gone
+  (others come in their place); one in five turns first and stares at her a moment. Those on the
+  benches get up and go too. Dogs and cats bolt.
+- Cars the mallet flies past drive off fast down their road, minding only what is right before
+  them; a car alarm goes off.
+- Stand: scene `fright.txt`.
+
 ## 0.46
 
 - No cracks on the dispatcher's screen after the blow: the snow and the torn bands only, a little

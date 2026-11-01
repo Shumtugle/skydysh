@@ -40,6 +40,18 @@ final class Pets {
         return City.CELL - 2f * ring;
     }
 
+    /** Every dog and cat within reach of (ax, az) frightened off: a mallet flying past, a blow struck. */
+    void alarm(float ax, float az, float reach) {
+        for (int i = 0; i < MOST; i++) {
+            if (!live[i]) continue;
+            float dx = x[i] - ax, dz = z[i] - az;
+            if (dx * dx + dz * dz < reach * reach) {
+                fright[i] = kind[i] == CAT ? 3f : 2.4f;
+                sit[i] = 0f;
+            }
+        }
+    }
+
     void update(float dt, Runner r, Walkers people, City city) {
         retry -= dt;
         boolean look4 = retry <= 0f;

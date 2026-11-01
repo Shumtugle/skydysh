@@ -3,7 +3,8 @@
 A game for Android: races through an open town, a southern seaside town on a summer evening
 seen as town games were drawn early in the century,
 its streets grown from a seed without end as they are come to, cars going about them,
-people out on the pavements with their dogs, cats by the walls; squares with fountains or
+people out on the pavements with their dogs, cats by the walls (who mind what she does: a mallet
+thrown near them and they are off); squares with fountains or
 gardens, trees, benches and pots of flowers along the streets. For now on foot: a brum, a giant of
 brick and stone in a maid's dress runs, turns, jumps and slides through it; a car, a boat and
 a plane are to come.

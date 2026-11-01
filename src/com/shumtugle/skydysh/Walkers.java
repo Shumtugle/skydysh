@@ -4,8 +4,11 @@ import java.util.Random;
 
 /**
  * People out for the evening on the pavements: each goes round a block, one way or the other,
- * along the middle of the pavement. Someone running at them makes them stop and step aside
- * toward the houses. Like the traffic, they come and go out of sight round the runner.
+ * along the middle of the pavement. Someone running at them makes them step aside toward the
+ * houses and slow, not stop; one standing in their way, they turn back from. A mallet thrown
+ * past them, a blow struck near, a burning brum running by, and they are off: away from it at a
+ * run, round what is in the way, until they are gone; one in five turns first and stares a moment,
+ * as one does at whoever did it. Like the traffic, they come and go out of sight round the runner.
  *
  * A person is one of the town's meshes when the game has them (see FolkPack), walking with the
  * skeleton's own walk; otherwise round parts, the stride swinging the legs, the arms against them.
@@ -27,7 +30,11 @@ final class Walkers {
     static final int ROUNDERS = 54, SITTERS = 24, SQUARERS = 14, MOST = ROUNDERS + SITTERS + SQUARERS;
     // what one is doing: going round a block, sitting on a bench, going round a fountain, to and
     // fro along a garden's path
-    static final int ROUND = 0, SITS = 1, FOUNTAIN = 2, PATH = 3;
+    static final int ROUND = 0, SITS = 1, FOUNTAIN = 2, PATH = 3, FLEE = 4;
+    // off at a run: from where, how long now, how long the stare first, how fast; gone after so long
+    private final float[] fromX = new float[MOST], fromZ = new float[MOST], fleeFor = new float[MOST],
+            stare = new float[MOST], runs = new float[MOST], turned = new float[MOST];
+    static final float FLEE_GONE = 7f, FLEE_FAR = 45f, STARTLED = 1.3f;
 
     private final Random rnd = new Random(0x5EE7L);
     private final int[] bi = new int[MOST], bj = new int[MOST], top = new int[MOST], legs = new int[MOST],
@@ -78,19 +85,36 @@ final class Walkers {
                 }
                 continue;
             }
+            turned[i] -= dt;
+            if (mode[i] == FLEE) {
+                flee(i, dt, r, city);
+                continue;
+            }
+            // a burning brum running by, or she running into them: off at a run
+            if (ch.speed > 3f && dist(i, ch.x, ch.z) < 5f) {
+                alarm(i, ch.x, ch.z);
+                continue;
+            }
+            float near = dist(i, r.x, r.z);
+            if (near < STARTLED && r.speed > 5f) {
+                alarm(i, r.x, r.z);
+                continue;
+            }
             if (mode[i] != ROUND) {
                 elsewhere(i, dt, r, ch);
                 continue;
             }
-            // someone running at them: they stop and step aside
-            float near = Math.min(dist(i, r.x, r.z), dist(i, ch.x, ch.z));
-            boolean shy = near < SHY;
-            float want = shy ? 0.55f : 0f;
-            aside[i] += (want - aside[i]) * Math.min(1f, dt * 5f);
-            if (!shy) {
-                u[i] = (u[i] + dir[i] * v[i] * dt + len) % len;
-                ph[i] += dt * v[i] * 3.2f;
+            // someone running at them: they step aside and slow; one standing in the way, they turn back from
+            boolean shy = near < SHY && r.speed > 2f;
+            if (near < 1.3f && turned[i] <= 0f) {
+                dir[i] = -dir[i];
+                turned[i] = 3f;
             }
+            float want = near < SHY ? 0.55f : 0f;
+            aside[i] += (want - aside[i]) * Math.min(1f, dt * 5f);
+            float pace = shy ? 0.4f : 1f;
+            u[i] = (u[i] + dir[i] * v[i] * pace * dt + len) % len;
+            ph[i] += dt * v[i] * pace * 3.2f;
             place(i);
         }
         started = true;
@@ -102,8 +126,14 @@ final class Walkers {
             look[i] = 0.5f * (float) Math.sin(ph[i] += dt * 0.3f);
             return;
         }
-        boolean shy = Math.min(dist(i, r.x, r.z), dist(i, ch.x, ch.z)) < SHY;
-        float step = shy ? 0f : v[i] * dt;
+        // someone running at them: slower; one standing in the way: they turn back
+        float near = dist(i, r.x, r.z);
+        boolean shy = near < SHY && r.speed > 2f;
+        if (near < 1.3f && turned[i] <= 0f) {
+            dir[i] = -dir[i];
+            turned[i] = 3f;
+        }
+        float step = (shy ? 0.4f : 1f) * v[i] * dt;
         ph[i] += step * 3.2f;
         if (mode[i] == FOUNTAIN) {
             at[i] += dir[i] * step / far[i];
@@ -123,6 +153,54 @@ final class Walkers {
             z[i] = mz[i] + (alongX[i] ? off : at[i]);
             yaw[i] = alongX[i] ? (dir[i] > 0f ? (float) (Math.PI / 2) : (float) (-Math.PI / 2)) : (dir[i] > 0f ? 0f : (float) Math.PI);
         }
+    }
+
+    /**
+     * Whoever is within reach of (ax, az) off at a run away from it: a mallet flying past, a blow
+     * struck, a car hit. Those sitting get up and go too.
+     */
+    void alarm(float ax, float az, float reach) {
+        for (int i = 0; i < MOST; i++) {
+            if (!live[i] || mode[i] == FLEE) continue;
+            if (dist(i, ax, az) < reach) alarm(i, ax, az);
+        }
+    }
+
+    private void alarm(int i, float ax, float az) {
+        mode[i] = FLEE;
+        fromX[i] = ax;
+        fromZ[i] = az;
+        fleeFor[i] = 0f;
+        // one in five turns and stares first, as at whoever did it
+        stare[i] = rnd.nextInt(5) == 0 ? 0.9f + rnd.nextFloat() * 0.8f : 0f;
+        runs[i] = 3.8f + rnd.nextFloat() * 1.4f;
+        aside[i] = 0f;
+    }
+
+    /** Off at a run, away from what frightened them and from her, round what stands in the way; gone after a while. */
+    private void flee(int i, float dt, Runner r, City city) {
+        fleeFor[i] += dt;
+        if (fleeFor[i] < stare[i]) {
+            // a stare at her, standing
+            yaw[i] = (float) Math.atan2(r.x - x[i], r.z - z[i]);
+            aside[i] = 1f;
+            return;
+        }
+        aside[i] = 0f;
+        float ax = x[i] - fromX[i], az = z[i] - fromZ[i], al = (float) Math.sqrt(ax * ax + az * az) + 1e-3f;
+        float bx = x[i] - r.x, bz = z[i] - r.z, bl = (float) Math.sqrt(bx * bx + bz * bz) + 1e-3f;
+        float wx = ax / al + 0.6f * bx / bl, wz = az / al + 0.6f * bz / bl, wl = (float) Math.sqrt(wx * wx + wz * wz) + 1e-3f;
+        float want = (float) Math.atan2(wx / wl, wz / wl), d = want - yaw[i];
+        while (d > Math.PI) d -= 2f * (float) Math.PI;
+        while (d < -Math.PI) d += 2f * (float) Math.PI;
+        yaw[i] += Math.max(-6f * dt, Math.min(6f * dt, d));
+        float step = runs[i] * Math.min(1f, (fleeFor[i] - stare[i]) * 3f) * dt;
+        float[] p = {x[i] + (float) Math.sin(yaw[i]) * step, z[i] + (float) Math.cos(yaw[i]) * step};
+        if (city != null && city.push(p, 0.35f, City.WALK_TOP)) yaw[i] += 1.2f * dt * (i % 2 == 0 ? 1f : -1f) * 4f;
+        x[i] = p[0];
+        z[i] = p[1];
+        ph[i] += step * 3.2f;
+        if (fleeFor[i] > FLEE_GONE || bl > FLEE_FAR) live[i] = false;
     }
 
     /** One put on a bench near her, not before her eyes (but anywhere at first), where no one sits yet. */

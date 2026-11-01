@@ -21,6 +21,15 @@ final class Toss {
 
     int state = HELD;
     int thrown;
+    /** Blows struck at arm's length, so far. */
+    int struck;
+
+    /** Where it is while it is out of her hand, into out (x, y, z); false while she holds it. */
+    boolean flying(float[] out) {
+        if (state != OUT && state != BACK) return false;
+        System.arraycopy(pos, 0, out, 0, 3);
+        return true;
+    }
     private float clock, at;
     private Chase aim;
     private boolean near, hit;
@@ -108,6 +117,7 @@ final class Toss {
                     aim.head(to);
                     grip(r);
                     aim.take(r, city, to[0] - hand[0], to[2] - hand[2]);
+                    struck++;
                 }
                 if (r.throwing() < 0f) state = HELD;
                 return;

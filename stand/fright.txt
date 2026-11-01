@@ -1,0 +1,16 @@
+# The town minds the mallet: by a square with a fountain, people about it; the mallet thrown into
+# it; those it flies past off at a run (one now and then staring first), the dogs and cats too.
+screen 1096 2560
+square fountain 14
+turn 3.1416
+wait 8
+turn 3.1416
+wait 0.3
+shot f0
+tap 137 300
+wait 0.5
+shot f1
+wait 1.2
+shot f2
+wait 2.5
+shot f3

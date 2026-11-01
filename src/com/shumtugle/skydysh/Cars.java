@@ -56,6 +56,23 @@ final class Cars {
     private final int[] ni = new int[MOST], nj = new int[MOST], paint = new int[MOST], kind = new int[MOST];
     private final boolean[] live = new boolean[MOST];
     private final float[] halt = new float[MOST];       // stopped short after striking her, seconds left
+    // frightened by the mallet: off down the road fast for so long, not waiting for anyone farther off than a few meters
+    private final float[] spooked = new float[MOST];
+
+    /** Every car within reach of (ax, az) frightened off: fast away down its road. How many. */
+    int alarm(float ax, float az, float reach) {
+        int n = 0;
+        for (int c = 0; c < MOST; c++) {
+            if (!live[c]) continue;
+            float dx = x[c] - ax, dz = z[c] - az;
+            if (dx * dx + dz * dz < reach * reach) {
+                if (spooked[c] <= 0f) n++;
+                spooked[c] = 5f;
+                halt[c] = 0f;
+            }
+        }
+        return n;
+    }
     // how long it has stood held up by other cars; how long more it edges out past them
     private final float[] waited = new float[MOST], edging = new float[MOST];
 
@@ -112,6 +129,14 @@ final class Cars {
                 }
             } else waited[c] = 0f;
             if (edging[c] > 0f) byCars = Math.max(byCars, TURNING * 0.6f);
+            spooked[c] -= dt;
+            if (spooked[c] > 0f) {
+                // frightened: away fast, minding only what is right before it
+                want = Math.max(want, CRUISE * 1.7f);
+                byCars = Math.max(byCars, CRUISE * 1.7f);
+                if (others > 3.3f) others = CRUISE * 1.7f;
+                halt[c] = 0f;
+            }
             want = Math.min(want, Math.min(byCars, others));
             if (halt[c] > 0f) {
                 halt[c] -= dt;
