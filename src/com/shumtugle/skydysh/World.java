@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.44";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.45";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -653,7 +653,7 @@ final class World {
                 Frida.eyes = 1f;
                 whiteOut = WHITE_OUT;
                 runner.update(0f, city, cars, walkers);      // the eye put behind her
-                dispatch = new Dispatch(host, briefing());
+                dispatch = new Dispatch(host, briefing()).afterBlow();
                 letGo();
             }
             return;

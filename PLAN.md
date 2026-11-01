@@ -59,6 +59,7 @@ release, each seen on the stand before the phone.
 - 0.42 Softer light in open doorways seen from inside.
 - 0.43 Home is where the mission is chosen: the screen in her head, a touch on the one wanted.
 - 0.44 She swims: wading in, swimming with her head up, wading out.
+- 0.45 The blow with weight, the name struck in; the mallet's orange in the key; the screen torn after the blow.
 
 ## Next
 

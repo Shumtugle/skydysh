@@ -86,7 +86,7 @@ final class Opening {
 
     private boolean skipped;
     private int ticks;
-    static final float TYPED = 0.7f;                  // how long the name takes to type
+    static final float TYPED = 1.05f;                  // how long the name takes to type
 
     /** How many letters of the name are typed by now. */
     private int typedNow() {
@@ -104,15 +104,19 @@ final class Opening {
         cue(3, BLOW, Synth.THUNDER, 1f, 0.85f);
         cue(4, BLOW, Synth.GROUND, 1f, 0.8f);
         cue(5, BLOW, Synth.GLASS, 1f, 0.9f);
+        // under it all, a low blow felt more than heard
+        cue(7, BLOW + 0.02f, Synth.GROUND, 1f, 0.4f);
         cue(6, NAME + TYPED, Synth.CHIME, 0.7f, 1.6f);
         // the name typed, a tick a letter
         int typed = typedNow();
         if (typed > ticks && t < WHITE_AT) {
             ticks = typed;
-            host.sound(Synth.TOCK, 0.3f, 1.7f);
+            // each letter struck in, as the blocks came down: a knock of stone, the eye jolted
+            host.sound(Synth.STONE, 0.7f, 0.62f + 0.05f * (typed % 2));
+            shake = Math.max(shake, 0.32f);
         }
         if (broken) fall(dt);
-        shake = Math.max(0f, shake - dt * 2f);
+        shake = Math.max(0f, shake - dt * 3.2f);
         if (t >= LENGTH) done = true;
     }
 
@@ -363,7 +367,7 @@ final class Opening {
             look[2] = OZ;
         }
         if (shake > 0f) {
-            float s = shake * shake * 0.35f;
+            float s = shake * shake * 0.6f;
             eye[0] += (rnd.nextFloat() - 0.5f) * s;
             eye[1] += (rnd.nextFloat() - 0.5f) * s;
         }

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.45
+
+- The opening's blow has weight: a low boom under the thunder and the glass, the eye jolted harder
+  and shorter. The name is struck in letter by letter, each with a knock of stone and a jolt, as
+  the blocks came down.
+- After the blow, one thread from the street into her head: the mallet's orange smoulders in the
+  red key of the dispatcher's room, from the moment the walls close until the mallet knocks it.
+- That first time the screen comes on torn: snow and slipped bands, a bright line rolling down, a
+  crackle and the glass ringing; then the cracks of the blow faint over it, fading, and the first
+  lines typed in fits. Every room after it is as before.
+
 ## 0.44
 
 - She swims. The sea's bed shelves out from the wet sand; into the water she wades, slowly, and

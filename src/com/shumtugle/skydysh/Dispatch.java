@@ -66,6 +66,36 @@ final class Dispatch {
     private int[] rowTop = new int[0], rowBottom = new int[0];
     private int rowX0, rowX1;
 
+    // just after the blow into the glass of the opening: the red key smouldering in the mallet's own
+    // orange until it is knocked; the screen coming on torn and snowing, cracked, the first lines
+    // coming in fits
+    private boolean ember, glitchHeard;
+    static final float GLITCH = 0.75f, CRACKED = 3f;
+    private float[] cracks;
+
+    /** This room is the first after the blow of the opening. */
+    Dispatch afterBlow() {
+        ember = true;
+        java.util.Random r = new java.util.Random(0xB10EL);
+        cracks = new float[4 * 40];
+        int n = 0;
+        for (int k = 0; k < 5 && n < 40; k++) {
+            float a = k * 1.256f + r.nextFloat() * 0.6f, x = 0.5f, y = 0.48f;
+            for (int s = 0; s < 7 && n < 40; s++) {
+                a += (r.nextFloat() - 0.5f) * 0.6f;
+                float l = 0.05f + r.nextFloat() * 0.06f, nx = x + (float) Math.cos(a) * l, ny = y + (float) Math.sin(a) * l * 1.3f;
+                cracks[n * 4] = x;
+                cracks[n * 4 + 1] = y;
+                cracks[n * 4 + 2] = nx;
+                cracks[n * 4 + 3] = ny;
+                n++;
+                x = nx;
+                y = ny;
+            }
+        }
+        return this;
+    }
+
     /** The lines are a choice: touching line k picks picks[k] (none, if it is -1). */
     Dispatch choices(int[] picks) {
         pick = picks;
@@ -184,8 +214,17 @@ final class Dispatch {
 
     void update(float dt) {
         t += dt;
-        if (t >= CLOSE && knockAt < 0f) {
-            typed = Math.min(letters, typed + dt * TYPE);
+        if (ember && !glitchHeard && t >= CLOSE) {
+            // the screen comes on hard after the blow: a crackle, the glass ringing
+            glitchHeard = true;
+            host.sound(Synth.TV_OFF, 0.6f, 0.6f);
+            host.sound(Synth.GLASS, 0.25f, 1.5f);
+        }
+        boolean glitching = ember && t - CLOSE < GLITCH;
+        if (t >= CLOSE && knockAt < 0f && !glitching) {
+            // after the blow the first lines come in fits: a run, a catch, a run
+            float rate = ember && typed < letters * 0.5f ? ((int) (t * 6f) % 3 == 0 ? 0f : 1.7f) : 1f;
+            typed = Math.min(letters, typed + dt * TYPE * rate);
             int k = (int) typed / 3;
             if (k > ticked && typed < letters) {
                 ticked = k;
@@ -330,7 +369,11 @@ final class Dispatch {
         for (int k = 0; k < 4; k++)
             box(d, 0.13f - k * 0.09f, KEY_Y, KEY_Z, 0.033f, 0.015f, 0.05f, 0xEDE6D6, DrawList.PLAIN);
         if (pressed) box(d, KEY_X, KEY_Y - 0.008f, KEY_Z, 0.07f, 0.012f, 0.08f, 0xFF5A3C, DrawList.GLOW);
-        else box(d, KEY_X, KEY_Y + 0.006f, KEY_Z, 0.07f, 0.018f, 0.08f, 0xC5372B, DrawList.PLAIN);
+        else if (ember) {
+            // the mallet's own orange, smouldering in the key till it is knocked
+            float glow = 0.55f + 0.45f * (float) Math.sin(t * 5f);
+            box(d, KEY_X, KEY_Y + 0.006f, KEY_Z, 0.07f, 0.018f, 0.08f, Street.mix(0xA8401A, 0xFF9A3A, glow), DrawList.GLOW);
+        } else box(d, KEY_X, KEY_Y + 0.006f, KEY_Z, 0.07f, 0.018f, 0.08f, 0xC5372B, DrawList.PLAIN);
         box(d, CLOCK_X, CLOCK_Y, CLOCK_Z + 0.06f, 0.14f, 0.06f, 0.06f, 0x2C2A28, DrawList.PLAIN);
         box(d, CLOCK_X, CLOCK_Y, CLOCK_Z - 0.002f, 0.11f, 0.04f, 0.004f, 0x120C0A, DrawList.GLASS);
     }
@@ -407,6 +450,11 @@ final class Dispatch {
         d.tube[2] = ix1;
         d.tube[3] = iy1;
         if (t < CLOSE) return;
+        if (ember && t - CLOSE < GLITCH) {
+            snow(f, ix0, iy0, ix1, iy1);
+            return;
+        }
+        if (ember && t - CLOSE < GLITCH + CRACKED) crackle(f, ix0, iy0, ix1, iy1, 1f - (t - CLOSE - GLITCH) / CRACKED);
         if (font == null) font = TubeFont.read(host.asset("tube.bin"));
         if (font == null) {
             pixelLines(f, ix0, iy0, iy1);
@@ -479,6 +527,43 @@ final class Dispatch {
 
     private static TubeFont font;
     private final float[] light = new float[32];
+
+    /** The screen coming on torn: snow, and bands of it slipped sideways, rolling. */
+    private void snow(Px f, int x0, int y0, int x1, int y1) {
+        int frame = (int) (t * 30f);
+        long seed = frame * 0x9E3779B97F4A7C15L;
+        for (int y = y0; y < y1; y++) {
+            seed = seed * 6364136223846793005L + 1442695040888963407L;
+            int band = (int) ((seed >>> 40) & 7);
+            boolean torn = band == 0;
+            for (int x = x0; x < x1; x++) {
+                seed = seed * 6364136223846793005L + 1442695040888963407L;
+                int v = (int) ((seed >>> 33) & 0xFF);
+                if (torn) v = Math.min(255, v + 90);
+                else if (v < 150) continue;
+                int c = (int) (v * 0.75f);
+                f.a[y * f.w + x] = 0xFF000000 | (c << 16) | (c << 8) | Math.min(255, c + 12);
+            }
+        }
+        // a bright line rolling down
+        int roll = y0 + (int) (((t - CLOSE) / GLITCH) * (y1 - y0) * 1.7f) % Math.max(1, y1 - y0);
+        if (roll >= y0 && roll + 1 < y1) f.rect(x0, roll, x1, roll + 2, 0xFFE9DDB0);
+    }
+
+    /** The cracks in the glass from the blow, faint and fading, over the first lines. */
+    private void crackle(Px f, int x0, int y0, int x1, int y1, float fade) {
+        if (cracks == null || fade <= 0f) return;
+        int a = Math.round(150 * fade);
+        float w = x1 - x0, h = y1 - y0;
+        for (int k = 0; k < cracks.length / 4; k++) {
+            float ax = x0 + cracks[k * 4] * w, ay = y0 + cracks[k * 4 + 1] * h, bx = x0 + cracks[k * 4 + 2] * w, by = y0 + cracks[k * 4 + 3] * h;
+            int n = (int) Math.max(Math.abs(bx - ax), Math.abs(by - ay)) + 1;
+            for (int i = 0; i <= n; i++) {
+                int px = Math.round(ax + (bx - ax) * i / n), py = Math.round(ay + (by - ay) * i / n);
+                if (px >= x0 && px < x1 && py >= y0 && py < y1) f.a[py * f.w + px] = (a << 24) | 0xFFFFFF;
+            }
+        }
+    }
 
     /** The dispatch in the small capitals of the frame, when the tube's own font is not to be had. */
     private void pixelLines(Px f, int left, int iy0, int iy1) {
