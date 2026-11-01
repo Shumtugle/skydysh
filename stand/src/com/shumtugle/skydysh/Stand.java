@@ -536,6 +536,64 @@ public final class Stand implements World.Host {
             System.out.println(String.format("%7.2fs  a ladder at %.1f %.1f, from %.1f to %.1f m, facing %.0f %.0f", time,
                     best[0], best[1], best[2], best[3], best[4], best[5]));
             step();
+        } else if (c.equals("roofbot")) {
+            // roofbot SECONDS EVERY PREFIX: a player after the folder over the roofs: put before the
+            // fire escape of its row, runs at it and climbs, then along the middle of the row's roofs
+            // to it, up the ladders where a roof stands higher, off the edges where it is lower
+            Folder fo = world.folder;
+            float[] w = new float[5];
+            if (!fo.wayUp(w)) {
+                System.out.println("no fire escape in the folder's row");
+                return;
+            }
+            boolean alongX = Math.abs(fo.frontZ) > 0.5f;
+            world.runner.put(w[0] + w[2] * 0.9f, City.WALK_TOP, w[1] + w[3] * 0.9f, (float) Math.atan2(-w[2], -w[3]));
+            world.runner.recenter();
+            float secs = f(p[1]), every = f(p[2]), next = 0f, upAt = -1f;
+            int n = Math.round(secs / DT), k = 0;
+            for (int i = 0; i < n; i++) {
+                Runner r = world.runner;
+                if (fo.hers || fo.theirs) break;
+                if (r.climbing()) {
+                    if (bdown) {
+                        world.touch(World.UP, bx, by);
+                        bdown = false;
+                    }
+                } else if (r.y < 2f) lead(w[0], w[1], 10f);
+                else {
+                    if (upAt < 0f) {
+                        upAt = time;
+                        System.out.println(String.format("%7.2fs  up on the roofs, %.0f m from the folder", time, (float) Math.hypot(fo.x - r.x, fo.z - r.z)));
+                    }
+                    // onto the middle of the row first, then along it to the folder
+                    float off = alongX ? Math.abs(r.z - w[4]) : Math.abs(r.x - w[4]);
+                    float gx = alongX ? (off > 0.8f ? r.x : fo.x) : (off > 0.8f ? w[4] : fo.x);
+                    float gz = alongX ? (off > 0.8f ? w[4] : fo.z) : (off > 0.8f ? r.z : fo.z);
+                    if (off > 0.8f) {
+                        gx = alongX ? r.x + Math.signum(fo.x - r.x) * 1f : w[4];
+                        gz = alongX ? w[4] : r.z + Math.signum(fo.z - r.z) * 1f;
+                    }
+                    // near it, the finger off: she slows to it rather than running past and off the roof
+                    if (Math.hypot(fo.x - r.x, fo.z - r.z) < 4.5f && !r.inAir()) {
+                        if (bdown) {
+                            world.touch(World.UP, bx, by);
+                            bdown = false;
+                        }
+                        if (r.speed < 1.5f) lead(fo.x, fo.z, 30f);
+                    } else lead(gx, gz, 10f);
+                }
+                step();
+                if (every > 0f && i * DT >= next) {
+                    shot(p[3] + (k++));
+                    next += every;
+                }
+            }
+            if (bdown) world.touch(World.UP, bx, by);
+            bdown = false;
+            Runner r = world.runner;
+            System.out.println(String.format("%7.2fs  %s, her %.1f %.1f %.1f, the folder %.0f m off", time,
+                    fo.hers ? "she has the folder" : fo.theirs ? "a rival got it" : "not yet", r.x, r.y, r.z,
+                    (float) Math.hypot(fo.x - r.x, fo.z - r.z)));
         } else if (c.equals("tapsign")) {
             // tapsign lift|ladder|up: a tap on the nearest sign of the kind on the glass, told
             int which = p[1].equals("ladder") ? Badges.LADDER : p[1].equals("up") ? Badges.UP : Badges.LIFT;
@@ -722,19 +780,22 @@ public final class Stand implements World.Host {
     /** The lift in the folder's block whose door is nearest the folder, as City.liftAt() tells it. */
     private float[] doorNearFolder() {
         Folder fo = world.folder;
-        int ci = City.index(fo.x), cj = City.index(fo.z);
+        int ci0 = City.index(fo.x), cj0 = City.index(fo.z);
         float[] h = new float[8], l = new float[10], best = null;
         float bd = 1e9f;
-        for (int k = 0; k < world.city.houses(ci, cj); k++) {
-            world.city.house(ci, cj, k, h);
-            if (h[7] != City.LIFT) continue;
-            City.lift(h, 0, l);
-            float dd = (l[4] - fo.x) * (l[4] - fo.x) + (l[6] - fo.z) * (l[6] - fo.z);
-            if (dd < bd) {
-                bd = dd;
-                best = l.clone();
-            }
-        }
+        // lifts are rare: the cells round about too
+        for (int cj = cj0 - 2; cj <= cj0 + 2; cj++)
+            for (int ci = ci0 - 2; ci <= ci0 + 2; ci++)
+                for (int k = 0; k < world.city.houses(ci, cj); k++) {
+                    world.city.house(ci, cj, k, h);
+                    if (h[7] != City.LIFT) continue;
+                    City.lift(h, 0, l);
+                    float dd = (l[4] - fo.x) * (l[4] - fo.x) + (l[6] - fo.z) * (l[6] - fo.z);
+                    if (dd < bd) {
+                        bd = dd;
+                        best = l.clone();
+                    }
+                }
         return best;
     }
 

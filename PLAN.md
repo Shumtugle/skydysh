@@ -43,9 +43,27 @@ release, each seen on the stand before the phone.
 - 0.29 Buttons and signs of glass over the frame, sixteen of them; pause; the lift's button;
   signs over the ways in and up.
 - 0.30 The signs touched send her where they say: up a ladder, up or down by a lift.
+- 0.31 Lifts rare and shut in a hunt; the folder got to over the roofs; ladders caught in the air.
 
 ## Next
 
+The missions in order, each teaching a thing; then the town is hers.
+
+1. The hunt: in the streets only (the lifts shut), learning to run them.
+2. The folder: over the roofs, learning to jump, climb and glide, a way to be worked out.
+3. The delivery: duty pickups, open-topped, stand here and there in the streets. Find one, drive
+   it to the factory, take on a load for the store, carry it there, drive home.
+4. After that, free: drive about, get out, walk, climb the roofs, find the duty pickups, find
+   home. A mission ends at home; at home the missions done can be played again, or the next one
+   taken.
+
+The releases toward it, one thing each:
+
+- A duty pickup: parked in the streets now and then, its own sign; touched (or run to), she gets
+  in; the finger drives it as it runs her; out again by a button. Its feel: mass, grip, how it
+  takes a corner.
+- Places in the town: the factory, the store, home; their signs; a load on the pickup's bed.
+- The delivery as mission three; then home as the end of every mission, and the choice there.
 - The other buttons put to work as their things come: the wheel in a car, the jet pack, the map,
   the help, a throw and a lift of a thing; buttons as part of the controls where a gesture is
   not enough.

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.30";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.31";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -359,6 +359,8 @@ final class World {
             return;
         }
         if (r.inAir() || r.climbing() || r.throwing() >= 0f || (folder != null && folder.hers)) return;
+        // in a hunt the lifts are shut: the streets are hers to learn
+        if (!liftsOpen()) return;
         float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading);
         boolean near = city.liftNear(r.x, r.z, r.y, 3f, liftNow, houseNow);
         if (!near) {
@@ -467,6 +469,11 @@ final class World {
         }
     }
 
+    /** Whether the lifts take her: not in a hunt, which is to be run in the streets. */
+    boolean liftsOpen() {
+        return folder != null;
+    }
+
     // ---- signs at the ways in and up: over a lift's doors, a fire escape's foot, a ladder up a wall ----
     private final float[] marks = new float[6 * 64], markAt = new float[3];
     // the signs found this frame: on screen x, y, size, which, how much shown; and where in the
@@ -490,6 +497,7 @@ final class World {
             int o = i * 6;
             float x = marks[o], y = marks[o + 1], z = marks[o + 2], nx = marks[o + 3], nz = marks[o + 4];
             int kind = (int) marks[o + 5];
+            if (!liftsOpen() && (kind == City.MARK_STREET_LIFT || kind == City.MARK_HUT)) continue;
             // on her level: a lift's or a fire escape's in the street while she is in the street; a
             // ladder's up, or a hut's, while she is up there near its foot
             float level = kind == City.MARK_STREET_LIFT || kind == City.MARK_ESCAPE ? City.WALK_TOP : marks[o + 1] - (kind == City.MARK_ROOF_LADDER ? 1.9f : City.HUT_HIGH + 0.8f);
@@ -653,13 +661,25 @@ final class World {
     // ---- ladders: up a fire escape from the street, or from one roof up onto a taller one ----
     private final float[] ladderNow = new float[6];
     private float ladderWait;
-    static final float LADDER_NEAR = 1.1f, LADDER_STAND = 0.35f;
+    static final float LADDER_NEAR = 1.1f, LADDER_STAND = 0.35f, LADDER_GRAB = 1.3f;
 
-    /** At the foot of a ladder, coming at its wall or standing there a moment, she climbs it. */
+    /**
+     * At the foot of a ladder, coming at its wall or standing there a moment, she climbs it; in
+     * the air (gliding down, falling, leaping at it), coming at its wall near enough, she takes
+     * hold of it where she is and climbs on.
+     */
     private void ladders(float dt) {
         Runner r = runner;
-        if (indoors != null || swapT >= 0f || r.inAir() || r.climbing() || r.throwing() >= 0f || (folder != null && folder.hers)) return;
+        if (indoors != null || swapT >= 0f || r.climbing() || r.throwing() >= 0f || (folder != null && folder.hers)) return;
         float[] l = ladderNow;
+        if (r.inAir()) {
+            if (r.sinceLetGo() < 0.8f || !city.ladderAt(r.x, r.z, r.y, LADDER_GRAB, l)) return;
+            float into = -((float) Math.sin(r.heading) * l[4] + (float) Math.cos(r.heading) * l[5]);
+            if (into < 0.3f) return;
+            r.climb(l[0], l[1], l[2], l[3], l[4], l[5]);
+            host.sound(Synth.CLANG, 0.3f, 1.3f);
+            return;
+        }
         if (!city.ladderNear(r.x, r.z, r.y, LADDER_NEAR, l)) {
             ladderWait = 0f;
             return;

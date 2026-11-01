@@ -8,8 +8,8 @@ import java.util.Random;
  * about a while, then each runs for a house of its row, climbs the front and runs along the roofs
  * to it. Whoever gets to it first has it.
  *
- * The house it lies on has no way up; a house of its row has, a lift or a fire escape. Up there,
- * then along the roofs: up the ladders where the next roof stands higher, leaping, down onto
+ * The house it lies on has no way up, nor have the houses next to it, and there is no lift in its
+ * row; a house of its row two off or more has a fire escape. Up there, then along the roofs: up the ladders where the next roof stands higher, leaping, down onto
  * the lower ones, gliding, beating the air to rise. Taken, she carries it, and goes down to the
  * street gliding.
  */
@@ -50,7 +50,7 @@ final class Folder {
 
     /**
      * Dropped a way off from (sx, sz) onto a house without a way up, in a row of at least three
-     * where another house has one, in a block with a lift.
+     * where a house two off or more has a fire escape, with no lift in the row and no way up next door.
      */
     void start(float sx, float sz, City city) {
         int ci, cj;
@@ -58,10 +58,9 @@ final class Folder {
             float a = rnd.nextFloat() * 6.2832f, d = NEAR + rnd.nextFloat() * SPREAD;
             ci = City.index(sx + (float) Math.sin(a) * d);
             cj = City.index(sz + (float) Math.cos(a) * d);
-            int n = city.houses(ci, cj), lifts = 0, pick = -1, seen = 0;
+            int n = city.houses(ci, cj), pick = -1, seen = 0;
             for (int k = 0; k < n; k++) {
                 city.house(ci, cj, k, h);
-                if (h[7] == City.LIFT) lifts++;
                 // tall enough to want a way up, and without one
                 if (h[7] == 0f && h[4] > 17f && rnd.nextInt(++seen) == 0) pick = k;
             }
@@ -70,9 +69,16 @@ final class Folder {
             if (pick < 0) continue;
             city.house(ci, cj, pick, h);
             rowOf(city, ci, cj);
-            boolean up = false;
-            for (int k = 0; k < rowN; k++) if (k != mine && row[k][7] != 0f) up = true;
-            if ((rowN < 3 || !up || lifts == 0) && tries < 400) continue;
+            // the way up is a fire escape two houses off or more, and nothing in the row is quicker:
+            // no lift in it, no way up next door; the rest is over the roofs
+            boolean up = false, near = false;
+            for (int k = 0; k < rowN; k++) {
+                if (k == mine) continue;
+                if (row[k][7] == City.LIFT) near = true;
+                if (row[k][7] != 0f && Math.abs(k - mine) < 2) near = true;
+                if (row[k][7] == City.ESCAPE && Math.abs(k - mine) >= 2) up = true;
+            }
+            if ((rowN < 3 || !up || near) && tries < 400) continue;
             if (lie(city)) break;
         }
         // the helicopter over it, a little off; the rivals far round it, each from its own way
@@ -121,6 +127,28 @@ final class Folder {
             g.over(w, n);
             rivals[k] = g;
         }
+    }
+
+    /**
+     * For the desktop stand: the foot of the fire escape of the folder's row nearest the folder
+     * (x, z), the way its wall faces (x, z), and the middle line of the row across (along x, its
+     * z; along z, its x); false if the row has none.
+     */
+    boolean wayUp(float[] out) {
+        boolean alongX = Math.abs(frontZ) > 0.5f;
+        int best = -1;
+        for (int k = 0; k < rowN; k++)
+            if (row[k][7] == City.ESCAPE && (best < 0 || Math.abs(k - mine) < Math.abs(best - mine))) best = k;
+        if (best < 0) return false;
+        float[] o = row[best];
+        float cu = alongX ? o[0] : o[1], hu = alongX ? o[2] : o[3], cv = alongX ? o[1] : o[0], hv = alongX ? o[3] : o[2];
+        float side = alongX ? frontZ : frontX, fv = cv + side * (hv + 0.55f), u = cu - hu + 1.1f;
+        out[0] = alongX ? u : fv;
+        out[1] = alongX ? fv : u;
+        out[2] = frontX;
+        out[3] = frontZ;
+        out[4] = cv;
+        return true;
     }
 
     /** The row of the house in h, in cell (ci, cj): the houses wall to wall with it along its front. */

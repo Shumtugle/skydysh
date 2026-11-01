@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.31
+
+- No plates on the walls by the lifts: the lamp over each hut's door and the light over each
+  front door are gone; the signs are the game's own and show only when they matter.
+- Lifts are rare: one in ten of the taller houses has one (one in two did).
+- The folder lies where it is to be got to over the roofs: no lift in its row, no way up next
+  door to it; a fire escape two houses off or more, and from there along the roofs.
+- In the air, coming at a ladder (a fire escape or one between roofs) near enough and facing
+  its wall, she takes hold of it where she is and climbs on: gliding down, falling, leaping at
+  it. Not again for a moment after letting go.
+- In a hunt the lifts are shut, and their signs not shown: the hunt is run in the streets.
+- The folder's briefing: up a fire escape, then over the roofs; in the air, grab a ladder.
+- Stand: `roofbot SECONDS EVERY PREFIX` (after the folder up its row's fire escape and along the
+  roofs; four in six of the folders tried taken); the stand finds a lift a few cells round.
+
 ## 0.30
 
 - The signs do what they say. Touch one and she goes by herself: a fire escape's ladder, she

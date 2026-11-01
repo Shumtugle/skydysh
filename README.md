@@ -21,7 +21,7 @@ up beats her arms and lifts her (four times a flight, the wings at the bottom of
 telling how many are left); run at a ladder, she takes hold and climbs it hand over hand; flicked down, she
 slides; lifted, she slows to a stop. A tap is the mallet's: a golem within reach she strikes,
 one ahead and not too far she throws at; with none, she throws it ahead and it comes back. The
-door of a house with a lift opens by itself when she comes to it or stands at it: inside is
+door of a house with a lift (there are few) opens by itself when she comes to it or stands at it: inside is
 its hall, made from the house's seed, and in its side wall the lift, which is called, opens,
 takes her up and lets her out on the roof by itself. On the roof, by the hut's door, a button
 shows; pressed, the lift takes her down and the cabin opens onto the hall again. Signs of glass

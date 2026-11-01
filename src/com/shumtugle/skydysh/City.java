@@ -379,9 +379,9 @@ final class City implements Ground {
             float fv = side < 0 ? v0 : v1;
             float kx = alongX ? cu : fv + side * 0.15f, kz = alongX ? fv + side * 0.15f : cu;
             d.box(kx, height - 0.2f, kz, alongX ? hu : 0.25f, 0.2f, alongX ? 0.25f : hu, null, Street.scale(tint, 1.05f), DrawList.PLAIN);
-            // the taller houses, one in two, have a lift: a door in the front, a hut on the roof
-            // (and no chimneys in its way)
-            boolean lift = storeys >= 4 && ((seed >>> 3) & 1) == 0;
+            // a lift is rare: one in ten of the taller houses has one, a door in the front, a hut on
+            // the roof (and no chimneys in its way); the roofs are to be got about by the roofs
+            boolean lift = storeys >= 4 && ((seed >>> 3) % 10) == 0;
             // of the rest, one in three has a fire escape up its front
             boolean escape = !lift && ((seed >>> 5) % 3) == 0;
             roof(c, d, lift ? null : c.detail, cx, height, cz, hx, hz, seed);
@@ -501,13 +501,47 @@ final class City implements Ground {
         return found;
     }
 
+    /**
+     * A ladder one in the air at (x, z) with feet at feet can take hold of: within reach of the
+     * place before it, the feet between its bottom and a little under its top; as ladderNear
+     * tells it. False if none.
+     */
+    boolean ladderAt(float x, float z, float feet, float reach, float[] out) {
+        float best = reach * reach;
+        boolean found = false;
+        int ci = index(x), cj = index(z);
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                if (square(i, j)) continue;
+                Cell c = cell(i, j);
+                for (int k = 0; k < c.ladderN; k++) {
+                    int o = k * Cell.LADDER;
+                    float bottom = c.ladders[o + 2], top = c.ladders[o + 3];
+                    if (feet < bottom - 0.6f || feet > top - 0.6f) continue;
+                    float fx = c.ladders[o] + c.ladders[o + 4] * 0.55f, fz = c.ladders[o + 1] + c.ladders[o + 5] * 0.55f;
+                    float dd = (fx - x) * (fx - x) + (fz - z) * (fz - z);
+                    if (dd < best) {
+                        best = dd;
+                        out[0] = fx;
+                        out[1] = fz;
+                        out[2] = bottom;
+                        out[3] = top;
+                        out[4] = c.ladders[o + 4];
+                        out[5] = c.ladders[o + 5];
+                        found = true;
+                    }
+                }
+            }
+        return found;
+    }
+
     // a lift's door: half its width, its height; its hut on the roof: in from the front, half sizes, height
     static final float DOOR_HALF = 0.85f, DOOR_HIGH = 2.6f, HUT_IN = 2.6f, HUT_HALF = 1.3f, HUT_DEEP = 1.1f, HUT_HIGH = 2.2f;
     static final int LIFT_LIGHT = 0x8FF0C8;
 
     /**
      * A lift: in the front at u (along the row), the front at v facing side, a door of dark glass
-     * in a stone frame, a green light over it, and the same at the back, on the yard; on the roof
+     * in a stone frame (the sign over it is the game's own, see World), and the same at the back, on the yard; on the roof
      * the hut it comes up into, its door facing in, away from the street.
      */
     private static void lift(Cell c, DrawList d, float u, float fv, boolean alongX, int side, float height, int tint) {
@@ -519,19 +553,16 @@ final class City implements Ground {
         boxUV(d, u, top + HUT_HIGH + 0.08f, hv, HUT_HALF + 0.12f, 0.08f, HUT_DEEP + 0.12f, alongX, 0xA8553A, DrawList.GRAIN);
         float back = hv - side * (HUT_DEEP + 0.03f);
         boxUV(d, u, top + 1.05f, back, 0.55f, 1.05f, 0.04f, alongX, 0x1D2730, DrawList.PLAIN);
-        boxUV(d, u, top + 1.95f, back - side * 0.02f, 0.18f, 0.1f, 0.04f, alongX, LIFT_LIGHT, DrawList.GLOW);
         float x0 = alongX ? u - HUT_HALF : hv - HUT_DEEP, z0 = alongX ? hv - HUT_DEEP : u - HUT_HALF;
         c.wall(x0, z0, x0 + 2f * (alongX ? HUT_HALF : HUT_DEEP), z0 + 2f * (alongX ? HUT_DEEP : HUT_HALF), top + HUT_HIGH + 0.16f);
     }
 
-    /** A lift's door in a wall at v facing side: dark glass in a stone frame, a green light over it. */
+    /** A lift's door in a wall at v facing side: dark glass in a stone frame. */
     private static void liftDoor(DrawList d, float u, float fv, boolean alongX, int side) {
         float out = fv + side * 0.06f;
         boxUV(d, u, DOOR_HIGH * 0.5f + WALK_TOP, out, DOOR_HALF + 0.22f, DOOR_HIGH * 0.5f + 0.15f, 0.07f, alongX, 0xD8CDB8, DrawList.STONE);
         boxUV(d, u, DOOR_HIGH * 0.5f + WALK_TOP, out + side * 0.03f, DOOR_HALF, DOOR_HIGH * 0.5f, 0.06f, alongX, 0x1D2730, DrawList.PLAIN);
         boxUV(d, u, DOOR_HIGH * 0.5f + WALK_TOP, out + side * 0.05f, 0.03f, DOOR_HIGH * 0.5f, 0.05f, alongX, 0x9AA3A8, DrawList.PLAIN);
-        // a slim green light along the top of the frame (the sign over the door is the game's own, see World)
-        boxUV(d, u, WALK_TOP + DOOR_HIGH + 0.24f, out + side * 0.04f, DOOR_HALF, 0.04f, 0.05f, alongX, LIFT_LIGHT, DrawList.GLOW);
     }
 
     /** A box placed by u along a row and v across it, so wide, high and deep. */

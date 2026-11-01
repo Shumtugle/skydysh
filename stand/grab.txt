@@ -1,0 +1,20 @@
+# A ladder caught in the air: before a fire escape on the pavement, she runs at it and jumps,
+# leaps on up, and takes hold of it high up, where she is, and climbs on.
+screen 1096 2560
+ladder street 7
+wait 0.2
+down 137 600
+wait 0.25
+swipe 137 600
+wait 0.12
+swipe 137 600
+wait 0.25
+where
+shot g0
+wait 0.4
+where
+shot g1
+up 137 600
+wait 1.5
+where
+shot g2

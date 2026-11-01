@@ -21,7 +21,7 @@ final class Lang {
         EN.put("report", "Dispatch \u2014 mission {n}||All five plates are in.|The town is safe|for tonight.||Time  {time}"
                 + "||Touch to go on");
         EN.put("brief.folder", "Dispatch \u2014 mission {n}||A folder of papers fell|out of a helicopter's cabin.|It lies somewhere on the roofs."
-                + "||The reward: 100 000.||Golems are after it too.|Get there first. Up by a lift|or a fire escape; gliding,|flick up to rise higher."
+                + "||The reward: 100 000.||Golems are after it too.|Get there first: up a fire|escape, then over the roofs.|In the air, grab a ladder;|flick up to rise higher."
                 + "||Touch to go");
         EN.put("brief.again", "Dispatch \u2014 mission {n}||The golem dropped the folder|running over the roofs.|The helicopter saw where."
                 + "||One more try.|The reward is still 100 000.||Touch to go");

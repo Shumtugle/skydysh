@@ -263,6 +263,8 @@ final class Runner {
     /** Onto a ladder: standing at (fx, fz) before its wall (facing nx, nz), up from bottom to top. */
     void climb(float fx, float fz, float bottom, float top, float nx, float nz) {
         led = false;
+        boosted = false;
+        beats = 0;
         state = CLIMB;
         stateAt = clock;
         x = fx;
@@ -277,8 +279,12 @@ final class Runner {
         gliding = false;
     }
 
+    /** When she last let go of a ladder (she does not take hold again at once). */
+    float letGoAt = -9f;
+
     /** Off the ladder, back from it, falling. */
     private void letGo() {
+        letGoAt = clock;
         state = AIR;
         stateAt = clock;
         x += climbNX * 0.4f;
@@ -286,6 +292,11 @@ final class Runner {
         vy = 0f;
         boosted = true;
         jumpFrom = y;
+    }
+
+    /** Seconds of her own clock since she let go of a ladder. */
+    float sinceLetGo() {
+        return clock - letGoAt;
     }
 
     /** Whether she is on a ladder. */
