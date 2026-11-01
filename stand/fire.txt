@@ -1,6 +1,6 @@
 # The double on fire, near: the chase run until she is caught, then looked at close while she
 # is jolted and breaks loose; her light on the street round her.
 screen 1096 2560
-golemahead
+brumahead
 wait 0.4
 chasebot 40 2 f

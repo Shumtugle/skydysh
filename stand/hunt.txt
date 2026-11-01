@@ -1,4 +1,4 @@
-# The hunt: five golems waiting about the town; the runner goes after the nearest each time,
+# The hunt: five brums waiting about the town; the runner goes after the nearest each time,
 # along the streets while it is far, on its trail once it runs; caught, each falls apart. Shot
 # at the start, as the first falls apart, every half minute, and at the end.
 screen 1096 2560

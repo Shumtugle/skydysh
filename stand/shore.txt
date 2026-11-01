@@ -1,5 +1,5 @@
-# The shore: the shore road, the promenade along it, the parapet and the sea; into the water off
-# the parapet, and up on the promenade again.
+# The shore: the shore road, the promenade along it, the parapet, the steps down to the beach, the
+# sand and the sea; down the steps and back up them; into the water, and up on the sand again.
 screen 1096 2560
 wait 0.4
 at 0 6 3.1416
@@ -8,11 +8,27 @@ shot s0
 at 20 -10 1.5708
 wait 0.6
 shot s1
-at 30 -12 0
-wait 0.6
+at 28 -15 3.1416
+wait 0.3
+down 137 600
+wait 2.2
+up 137 600
+where
+wait 0.5
 shot s2
-at 10 -19.5 3.1416
+face 0
+down 137 600
+wait 2.5
+up 137 600
+where
+at 40 -27 0.3
+wait 0.6
+shot s3
+at 10 -36 3.1416
 wait 0.05
 where
 wait 0.6
-shot s3
+shot s4
+at -20 30 -1.5708
+wait 0.6
+shot s5

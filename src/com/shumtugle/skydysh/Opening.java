@@ -3,36 +3,37 @@ package com.shumtugle.skydysh;
 import java.util.Random;
 
 /**
- * What the game opens with, some six and a half seconds; the one word in it is the game's name.
+ * What the game opens with, some eight and a half seconds; the one word in it is the game's name.
  *
- * The eye comes down out of the sky over a town by the sea, over the promenade with its palms
- * and parapet, onto a square paved in rings, houses round it, roads behind and to the right with
- * cars going both ways, people far off on the pavements. It stops before her: a giant, two and a
- * half times her own height, standing in the middle of the square with a golden mallet in her
- * right hand. Her eyes light, and a low blow of metal sounds. The town goes dark; one light is
+ * The eye comes in from far out over the sea, low over the beach and the promenade with its palms,
+ * across the shore road to the square with its fountain, and turns along the shore to home. It
+ * stops before her: a giant, two and a half times her own height, standing in the shore road
+ * before home's door with a golden mallet in her right hand. Her eyes light, and a low blow of metal sounds. The town goes dark; one light is
  * left, on her, and the mallet glows of itself. She swings it back over her head, slowly, then
  * down at the eye, faster and faster, the eye stepping up to meet it; it strikes the glass of the
  * screen: thunder, the ground's boom, glass, a white flash, the frame shaking. Eight white cracks
  * run out from the blow and branch, and she falls to pieces, every block of her flung off away
  * from the blow, turning, knocking on the stones; the mallet falls, its handle and its burning
  * head apart. The eye draws back and down to see her come down; the cracks melt away. The light
- * leaves the heap and goes up to the name, which lights dot by dot from the left, each dot white
- * and then, a third of a second on, a bar of gold; a high chime. The frame goes white, and at its
- * whitest the game begins.
+ * stays on the heap, and over the frame the name is typed as the dispatcher's screen types, in the
+ * letters of its tube, a white cursor before them; a high chime. The frame goes white, and at its
+ * whitest the game begins, in the same town, before home.
  *
  * A touch at any moment skips to the white.
  */
 final class Opening {
-    static final float LENGTH = 6.45f, WHITE_AT = 6.2f;
-    static final float LAND = 2.5f, EYES = 2.5f, DARK = 3.0f, SWING = 3.6f, STRIKE = 4.05f, BLOW = 4.3f, NAME = 5.2f;
+    static final float LENGTH = 8.75f, WHITE_AT = 8.5f;
+    static final float LAND = 4.6f, EYES = 4.6f, DARK = 5.1f, SWING = 5.7f, STRIKE = 6.15f, BLOW = 6.4f, NAME = 7.2f;
     static final float SIZE = Runner.SIZE * 2.5f, MALLET = Toss.SCALE / Runner.SIZE * SIZE;
-    static final float FLOOR = 0.14f;                 // the square's stones
+    static final float FLOOR = 0f;                    // the shore road
+    // where she stands: in the shore road before home's door, facing the sea
+    static final float OX = City.HOME_DOOR_X, OZ = City.HOME_J * City.CELL;
     static final String WORD = "SKYDYSH";
 
     float t;
     boolean done;
     private final World.Host host;
-    private final DrawList set = new DrawList();
+    private final City city;
     private final Walkers people = new Walkers();
     private final Random rnd = new Random(0x0BE5L);
     private int heard;                                // the sounds already played, one bit each
@@ -62,9 +63,9 @@ final class Opening {
     private final float[] tmp = new float[3], hand = new float[3], elbow = new float[3], turn = new float[9];
     private final float[] at = new float[3];
 
-    Opening(World.Host host) {
+    Opening(World.Host host, City city) {
         this.host = host;
-        build(set, new Random(31));
+        this.city = city;
         // dress the people once, as the town does
         people.update(0f, new Runner(), new Chase());
         for (int c = 0; c < CARS; c++) {
@@ -84,6 +85,14 @@ final class Opening {
     }
 
     private boolean skipped;
+    private int ticks;
+    static final float TYPED = 0.7f;                  // how long the name takes to type
+
+    /** How many letters of the name are typed by now. */
+    private int typedNow() {
+        if (t < NAME) return 0;
+        return Math.min(WORD.length(), 1 + (int) ((t - NAME) / TYPED * WORD.length()));
+    }
 
     void update(float dt) {
         t += dt;
@@ -95,7 +104,13 @@ final class Opening {
         cue(3, BLOW, Synth.THUNDER, 1f, 0.85f);
         cue(4, BLOW, Synth.GROUND, 1f, 0.8f);
         cue(5, BLOW, Synth.GLASS, 1f, 0.9f);
-        cue(6, NAME, Synth.CHIME, 0.7f, 1.6f);
+        cue(6, NAME + TYPED, Synth.CHIME, 0.7f, 1.6f);
+        // the name typed, a tick a letter
+        int typed = typedNow();
+        if (typed > ticks && t < WHITE_AT) {
+            ticks = typed;
+            host.sound(Synth.TOCK, 0.3f, 1.7f);
+        }
         if (broken) fall(dt);
         shake = Math.max(0f, shake - dt * 2f);
         if (t >= LENGTH) done = true;
@@ -143,8 +158,8 @@ final class Opening {
 
     /** The same, swung so far (0 hanging, 1 running on from her forearm). */
     private void grip(String motion, float mt, float k) {
-        Frida.place("hand_r", 0f, FLOOR, 0f, 0f, SIZE, motion, mt, hand);
-        Frida.place("lowerarm_r", 0f, FLOOR, 0f, 0f, SIZE, motion, mt, elbow);
+        Frida.place("hand_r", OX, FLOOR, OZ, 0f, SIZE, motion, mt, hand);
+        Frida.place("lowerarm_r", OX, FLOOR, OZ, 0f, SIZE, motion, mt, elbow);
         float fx = hand[0] - elbow[0], fy = hand[1] - elbow[1], fz = hand[2] - elbow[2];
         float fl = Math.max(1e-3f, (float) Math.sqrt(fx * fx + fy * fy + fz * fz));
         // at rest it hangs, its head on the stones beside her; swung, it runs on from her forearm
@@ -178,8 +193,8 @@ final class Opening {
         shake = 1f;
         headAt("throw", 0.40f, blowAt);
         // her blocks, flung from her middle and away from the blow
-        bn = Frida.capture(0f, FLOOR, 0f, 0f, SIZE, "throw", 0.40f, bp, bt, bh, bc, bm);
-        float cx = 0f, cy = FLOOR + 0.95f * SIZE, cz = 0f;
+        bn = Frida.capture(OX, FLOOR, OZ, 0f, SIZE, "throw", 0.40f, bp, bt, bh, bc, bm);
+        float cx = OX, cy = FLOOR + 0.95f * SIZE, cz = OZ;
         for (int i = 0; i < bn; i++) {
             float ox = bp[i * 3] - cx, oy = bp[i * 3 + 1] - cy, oz = bp[i * 3 + 2] - cz;
             float ol = Math.max(0.1f, (float) Math.sqrt(ox * ox + oy * oy + oz * oz));
@@ -300,17 +315,35 @@ final class Opening {
 
     // ---- the eye ----
 
+    // the flight in: where the eye is at each of these points, what it looks at there, and how far
+    // into the flight (eased) it is there; from far out at sea, over the beach and the promenade, over
+    // the square, along the shore to her
+    private static final float[][] FLIGHT = {
+            {-120f, 58f, -250f, -20f, 6f, 30f},
+            {-62f, 24f, -78f, -32f, 3f, 30f},
+            {-30f, 12f, -8f, -24f, 2f, 34f},
+            {8f, 11f, -1f, OX, 4f, OZ + 2f},
+            {OX, 3.3f, OZ - 10.5f, OX, 4.7f, OZ}};
+    private static final float[] KNOTS = {0f, 0.34f, 0.62f, 0.84f, 1f};
+
+    /** One of the six values of the flight, u (0 to 1) of the way along it, through its points. */
+    private static float flight(int k, float u) {
+        int n = FLIGHT.length, s = 0;
+        while (s < n - 2 && u > KNOTS[s + 1]) s++;
+        float v = clamp((u - KNOTS[s]) / (KNOTS[s + 1] - KNOTS[s]));
+        float p0 = FLIGHT[Math.max(0, s - 1)][k], p1 = FLIGHT[s][k], p2 = FLIGHT[s + 1][k], p3 = FLIGHT[Math.min(n - 1, s + 2)][k];
+        // a curve through the points, smooth from one into the next
+        return 0.5f * (2f * p1 + (p2 - p0) * v + (2f * p0 - 5f * p1 + 4f * p2 - p3) * v * v + (3f * p1 - p0 - 3f * p2 + p3) * v * v * v);
+    }
+
     /** Where the eye is and what it looks at, into eye (x y z) and look (x y z). */
     private void eye(float[] eye, float[] look) {
-        // down out of the sky in an arc, over the sea and the promenade, onto the square before her
         float u = ease(t / LAND);
-        float a = 1f - u;
-        float[] p0 = {-45f, 62f, -125f}, p1 = {-12f, 34f, -70f}, p2 = {0f, 8f, -30f}, p3 = {0f, 3.3f, -10.5f};
-        for (int k = 0; k < 3; k++)
-            eye[k] = a * a * a * p0[k] + 3f * a * a * u * p1[k] + 3f * a * u * u * p2[k] + u * u * u * p3[k];
-        look[0] = 0f;
-        look[1] = 2f + 2.7f * u;
-        look[2] = 20f * (1f - u);
+        for (int k = 0; k < 3; k++) {
+            eye[k] = flight(k, u);
+            look[k] = flight(k + 3, u);
+        }
+        float[] p3 = FLIGHT[FLIGHT.length - 1];
         if (t >= STRIKE && t < BLOW) {
             // a step toward her, up to where the head of the mallet will come
             float v = clamp((t - STRIKE) / (BLOW - STRIKE));
@@ -320,15 +353,14 @@ final class Opening {
             look[1] += (blowAim[1] - look[1]) * v;
         }
         if (t >= BLOW) {
-            // back and down, to see her come down; then up a little to the name
+            // back and down, to see her come down
             float v = ease((t - BLOW) / 0.9f);
             float[] from = {blowAim[0], blowAim[1] + 0.2f, blowAim[2] - 2.4f};
-            float[] to = {0f, 3.6f, -17f};
+            float[] to = {OX, 3.6f, OZ - 15f};
             for (int k = 0; k < 3; k++) eye[k] = from[k] + (to[k] - from[k]) * v;
-            float n = ease((t - NAME) / 0.6f);
-            look[0] = 0f;
-            look[1] = 1.5f + 4.6f * n;
-            look[2] = 0f;
+            look[0] = OX;
+            look[1] = 1.5f;
+            look[2] = OZ;
         }
         if (shake > 0f) {
             float s = shake * shake * 0.35f;
@@ -363,25 +395,27 @@ final class Opening {
         // the dark, and the one light left: on her, then up on the name
         float dark = clamp((t - DARK) / 0.35f);
         if (dark > 0f) {
-            float n = ease((t - NAME) / 0.45f);
-            d.spot[0] = 0f;
-            d.spot[1] = 3f + 4.5f * n;
-            d.spot[2] = 1f * n;
-            d.spot[3] = (24f - 15f * ease((t - DARK) / 0.5f)) * (1f - n) + 8.5f * n;
+            // the light on her, closing in; on the heap, a little wider, once she is down
+            float n = ease((t - NAME) / 0.6f);
+            d.spot[0] = OX;
+            d.spot[1] = 3f - 1.5f * n;
+            d.spot[2] = OZ;
+            d.spot[3] = (24f - 15f * ease((t - DARK) / 0.5f)) * (1f - n) + 10f * n;
             d.spot[4] = dark;
         }
         if (dark < 0.995f) {
-            d.append(set);
+            // the town itself, round home, the whole of it at once
+            city.draw(d, OX, OZ + 20f, 0f, 0f);
             cars(d);
             walkers(d);
         } else {
-            // only the stones under her
-            d.box(0f, FLOOR - 0.12f, 0f, 17f, 0.12f, 17f, null, 0xD8CCB6, DrawList.SQUARE);
+            // only the road under her
+            d.box(OX, FLOOR - 0.25f, OZ, 17f, 0.25f, 17f, null, 0x5E4844, DrawList.ASPHALT);
         }
         if (!broken) {
             String m = motion();
             float mt = motionTime();
-            Frida.draw(d, 0f, FLOOR, 0f, 0f, SIZE, m, mt);
+            Frida.draw(d, OX, FLOOR, OZ, 0f, SIZE, m, mt);
             grip(m, mt);
             Mallet.draw(d, turn, hand[0], hand[1], hand[2], MALLET, 0f, true, 0, Mallet.ALL);
             // the mallet's head lights what is near it
@@ -393,44 +427,33 @@ final class Opening {
         } else {
             rubble(d);
         }
-        if (t >= NAME) name(d);
         flat(d, f, h);
     }
 
+    /** Cars up and down the two streets either side of the square, both ways; none in the shore road before her. */
     private void cars(DrawList d) {
         for (int c = 0; c < CARS; c++) {
-            float along = (start[c] + t * 9f) % 160f - 80f;
-            float x, z, yaw;
-            switch (lane[c]) {
-                case 0: x = along; z = 22.5f; yaw = (float) Math.PI * 0.5f; break;          // behind the square, going right
-                case 1: x = -along; z = 25.5f; yaw = -(float) Math.PI * 0.5f; break;        // and coming back
-                case 2: x = 25.5f; z = along + 40f; yaw = 0f; break;                        // to the right of it, going away
-                default: x = 22.5f; z = 40f - along; yaw = (float) Math.PI; break;          // and coming back
-            }
-            Cars.car(d, x, z, yaw, paint[c], false);
+            float along = (start[c] + t * 9f) % 200f;
+            float x = (lane[c] < 2 ? 0f : -City.CELL), lane1 = lane[c] % 2 == 0 ? 1.6f : -1.6f;
+            float z = lane[c] % 2 == 0 ? 6f + along : 206f - along;
+            Cars.car(d, x + lane1, z, lane[c] % 2 == 0 ? 0f : (float) Math.PI, paint[c], false);
         }
     }
 
+    /** People along the promenade, both ways, and on the far side of the square: never near her. */
     private void walkers(DrawList d) {
-        // along the promenade, and on the far pavements: never near the eye
         for (int i = 0; i < 16; i++) {
             float sp = 1.1f + (i % 5) * 0.12f, dir = (i & 1) == 0 ? 1f : -1f;
-            float along = ((i * 37f + t * sp * dir) % 120f + 120f) % 120f - 60f;
-            float x, z, yaw;
-            if (i < 8) {
+            float along = ((i * 37f + t * sp * dir) % 160f + 160f) % 160f - 140f;
+            float x, z, yaw = dir > 0 ? (float) Math.PI * 0.5f : -(float) Math.PI * 0.5f;
+            if (i < 10) {
                 x = along;
-                z = -24f + (i % 3) * 2.2f;
-                yaw = dir > 0 ? (float) Math.PI * 0.5f : -(float) Math.PI * 0.5f;
-            } else if (i < 12) {
-                x = along;
-                z = 29.2f;
-                yaw = dir > 0 ? (float) Math.PI * 0.5f : -(float) Math.PI * 0.5f;
+                z = OZ - 8.5f - (i % 3) * 2f;
             } else {
-                x = 29.2f;
-                z = along + 50f;
-                yaw = dir > 0 ? 0f : (float) Math.PI;
+                x = -City.CELL + 8f + ((along + 140f) % 48f);
+                z = City.CELL - 6.5f;
             }
-            people.figure(d, i, x, FLOOR, z, yaw, t * sp * 3.2f + i);
+            people.figure(d, i, x, City.WALK_TOP, z, yaw, t * sp * 3.2f + i);
         }
     }
 
@@ -453,29 +476,53 @@ final class Opening {
         d.fire[3] = 0.9f;
     }
 
-    /** The name in dots, lit one column after another, each white, then gold. */
-    private void name(DrawList d) {
-        int cols = PixelFont.width(WORD, 1) + 1;
-        float pitch = 0.3f, x0 = -(cols - 1) * pitch * 0.5f, top = 9.2f, z = 2f;
-        int col = 0;
-        for (int i = 0; i < WORD.length(); i++) {
-            char c = WORD.charAt(i);
-            for (int gx = 0; gx < 5; gx++, col++) {
-                float lit = t - (NAME + 0.6f * col / cols);
-                if (lit < 0f) continue;
-                for (int gy = 0; gy < 7; gy++) {
-                    if (!PixelFont.dot(c, gx, gy)) continue;
-                    float x = x0 + col * pitch, y = top - gy * pitch;
-                    if (lit < 0.33f) d.box(x, y, z, 0.12f, 0.12f, 0.12f, null, 0xFFFFFF, DrawList.GLOW);
-                    else d.box(x, y, z, 0.125f, 0.12f, 0.22f, null, 0xF2B63A, DrawList.material(DrawList.FIRE, 244));
-                }
-            }
-            col++;
+    private static TubeFont font;
+    private Px word;
+    static final int NAME_SCALE = 4;
+
+    /**
+     * The name over the frame, typed as the dispatcher's screen types it, in its tube's letters
+     * made big, cream, the letter just typed white, a cursor after the last; the frame's rows
+     * there drawn as the tube draws them.
+     */
+    private void name(DrawList d, Px f, int h) {
+        if (font == null) font = TubeFont.read(host.asset("tube.bin"));
+        if (font == null) return;
+        int n = typedNow();
+        String shown = WORD.substring(0, n);
+        int ww = font.width(WORD) + 4;
+        if (word == null) word = new Px(ww, font.rows);
+        java.util.Arrays.fill(word.a, 0);
+        font.draw(word, shown, 0, 0, 0xFFF2E6C8, null);
+        // the letter just typed, white a moment
+        float since = t - NAME - (n - 1) * TYPED / WORD.length();
+        if (n > 0 && since < 0.12f) font.draw(word, WORD.substring(n - 1, n), font.width(WORD.substring(0, n - 1)), 0, 0xFFFFFFFF, null);
+        // the cursor, blinking once all is typed
+        boolean all = n == WORD.length();
+        if (!all || (int) ((t - NAME) * 2.2f) % 2 == 0) {
+            int cx = font.width(shown) + 1;
+            for (int y = 2; y < font.base; y++) for (int x = cx; x < cx + 3 && x < ww; x++) word.a[y * ww + x] = 0xFFF2C46A;
         }
+        int s = NAME_SCALE, x0 = (World.W - font.width(WORD) * s) / 2, y0 = Math.round(h * 0.26f);
+        for (int y = 0; y < word.h; y++)
+            for (int x = 0; x < ww; x++) {
+                int c = word.a[y * ww + x];
+                if (c == 0) continue;
+                for (int dy = 0; dy < s; dy++)
+                    for (int dx = 0; dx < s; dx++) {
+                        int px = x0 + x * s + dx, py = y0 + y * s + dy;
+                        if (px >= 0 && px < f.w && py >= 0 && py < f.h) f.a[py * f.w + px] = c;
+                    }
+            }
+        d.tube[0] = x0 - 6;
+        d.tube[1] = y0 - 4;
+        d.tube[2] = x0 + ww * s + 6;
+        d.tube[3] = y0 + font.rows * s + 4;
     }
 
     /** Over the frame: the cracks in the glass, the flash of the blow, the white at the end. */
     private void flat(DrawList d, Px f, int h) {
+        if (t >= NAME) name(d, f, h);
         if (crackN > 0) {
             float fade = 1f - clamp((t - BLOW - 0.4f) / 1.1f);
             if (fade > 0f) {
@@ -519,77 +566,5 @@ final class Opening {
         float dx = x1 - x0, dy = y1 - y0;
         int n = (int) Math.max(Math.abs(dx), Math.abs(dy)) + 1;
         for (int i = 0; i <= n; i++) f.set(Math.round(x0 + dx * i / n), Math.round(y0 + dy * i / n), c);
-    }
-
-    // ---- the set ----
-
-    /**
-     * The square and what is round it, once: the setts in rings, the pavements, the promenade
-     * with its palms and the parapet, the sea; the roads behind and to the right; houses on three
-     * sides and the town beyond them.
-     */
-    private static void build(DrawList d, Random rnd) {
-        d.box(0f, FLOOR - 0.12f, 0f, 17f, 0.12f, 17f, null, 0xD8CCB6, DrawList.SQUARE);
-        // pavements round it
-        d.box(18.5f, (FLOOR - 0.25f) * 0.5f, 6f, 1.5f, (FLOOR + 0.25f) * 0.5f, 23f, null, 0xCDBFA6, DrawList.PAVING);
-        d.box(-0.5f, (FLOOR - 0.25f) * 0.5f, 18.5f, 18.5f, (FLOOR + 0.25f) * 0.5f, 1.5f, null, 0xCDBFA6, DrawList.PAVING);
-        d.box(-18f, (FLOOR - 0.25f) * 0.5f, 6f, 1f, (FLOOR + 0.25f) * 0.5f, 23f, null, 0xCDBFA6, DrawList.PAVING);
-        // the roads: behind the square along x, to the right of it along z, asphalt where they cross
-        d.box(-50f, -0.25f, 24f, 70f, 0.25f, 4f, null, 0x5E4844, DrawList.ROAD);
-        d.box(24f, -0.25f, -0.5f, 4f, 0.25f, 16.5f, null, 0x5E4844, DrawList.ROAD);
-        d.box(24f, -0.25f, 80f, 4f, 0.25f, 52f, null, 0x5E4844, DrawList.ROAD);
-        d.box(24f, -0.26f, 24f, 4f, 0.25f, 4f, null, 0x5E4844, DrawList.ASPHALT);
-        d.box(80f, -0.25f, 24f, 52f, 0.25f, 4f, null, 0x5E4844, DrawList.ROAD);
-        d.box(29f, (FLOOR - 0.25f) * 0.5f, 60f, 1f, (FLOOR + 0.25f) * 0.5f, 90f, null, 0xCDBFA6, DrawList.PAVING);
-        d.box(0f, (FLOOR - 0.25f) * 0.5f, 29f, 140f, (FLOOR + 0.25f) * 0.5f, 1f, null, 0xCDBFA6, DrawList.PAVING);
-        // the promenade, the parapet, the sea
-        d.box(0f, (FLOOR - 1.5f) * 0.5f, -24.5f, 160f, (FLOOR + 1.5f) * 0.5f, 7.5f, null, 0xDCCDB2, DrawList.PROMENADE);
-        d.box(0f, -0.3f, -32.3f, 160f, 1.2f, 0.3f, null, 0xE2D4BA, DrawList.STONE);
-        d.box(0f, 0.95f, -32.3f, 160f, 0.06f, 0.38f, null, 0xEDE2CC, DrawList.PLAIN);
-        d.box(0f, -0.85f, -330f, 600f, 0.25f, 298f, null, 0x2D6990, DrawList.SEA);
-        for (int i = 0; i < 18; i++) {
-            float x = -76f + i * 9f;
-            if (Math.abs(x) < 6f) continue;
-            Street.palm(d, rnd, x, FLOOR, -28f + (i % 2) * 1.2f, 7f + rnd.nextFloat() * 2f, (rnd.nextFloat() - 0.5f) * 0.3f, false);
-        }
-        // the houses round the square: to the left, facing it; behind and to the right, past the roads
-        int seed = 300;
-        seed = row(d, rnd, false, -19f, -1, -17f, 46f, seed, true);
-        seed = row(d, rnd, true, 30f, 1, -80f, 120f, seed, true);
-        seed = row(d, rnd, false, 30f, 1, -17f, 140f, seed, true);
-        // the town beyond, seen from above as the eye comes down
-        for (int r = 0; r < 4; r++) {
-            seed = row(d, rnd, true, 52f + r * 22f, 1, -90f, 150f, seed, false);
-            seed = row(d, rnd, false, 52f + r * 22f, 1, -17f, 46f, seed, false);
-            seed = row(d, rnd, false, -41f - r * 22f, -1, -17f, 160f, seed, false);
-        }
-    }
-
-    /**
-     * A row of houses: their fronts on the line wall (along x, or along z), deep the other way
-     * (back is +1 or -1, the side away from the street), from one end to the other; balconies and
-     * awnings on the near ones. The next seed.
-     */
-    private static int row(DrawList d, Random rnd, boolean alongX, float wall, int back, float from, float to, int seed,
-                           boolean near) {
-        float at = from;
-        while (at < to) {
-            int bays = 3 + rnd.nextInt(3);
-            float len = bays * 2.9f;
-            int storeys = 3 + rnd.nextInt(3);
-            float height = 3.3f * (storeys + 1) + 0.5f;
-            int tint = Street.WALLS[rnd.nextInt(Street.WALLS.length)];
-            float mid = at + len * 0.5f, deep = wall + back * 7f;
-            float bx = alongX ? mid : deep, bz = alongX ? deep : mid;
-            float hx = alongX ? len * 0.5f : 7f, hz = alongX ? 7f : len * 0.5f;
-            d.box(bx, height * 0.5f, bz, hx, height * 0.5f, hz, null, tint, DrawList.material(DrawList.FACADE, seed & 255));
-            float cx = alongX ? mid : wall - back * 0.15f, cz = alongX ? wall - back * 0.15f : mid;
-            d.box(cx, height - 0.2f, cz, alongX ? hx : 0.25f, 0.2f, alongX ? 0.25f : hz, null, Street.scale(tint, 1.05f), DrawList.PLAIN);
-            Street.roof(d, bx, height, bz, hx, hz, seed);
-            if (near) Street.fronts(d, alongX, wall, -back, at, bays, storeys, seed);
-            at += len;
-            seed++;
-        }
-        return seed;
     }
 }

@@ -4,7 +4,7 @@ import java.util.Random;
 
 /**
  * The folder: dropped out of a helicopter's cabin, it lies somewhere on the roofs, and there is a
- * reward for it. The helicopter circles over where it fell. Golems are after it too: they look
+ * reward for it. The helicopter circles over where it fell. Brums are after it too: they look
  * about a while, then each runs for a house of its row, climbs the front and runs along the roofs
  * to it. Whoever gets to it first has it.
  *

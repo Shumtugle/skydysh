@@ -275,7 +275,7 @@ public final class Stand implements World.Host {
             world.standFliers(2, f(p[1]));
             step();
         } else if (c.equals("chasebot")) {
-            // chasebot SECONDS [SHOTEVERY PREFIX [once]]: a finger that runs after the nearest golem as a player
+            // chasebot SECONDS [SHOTEVERY PREFIX [once]]: a finger that runs after the nearest brum as a player
             // would, turning toward her by sideways moves of its own, never more than a hand's
             // width a frame
             float secs = f(p[1]), every = p.length > 2 ? f(p[2]) : 0f;
@@ -388,7 +388,7 @@ public final class Stand implements World.Host {
                     thrownSeen = world.toss.thrown;
                     System.out.println(String.format("%7.2fs  hammer flies, %.1f m", time, world.chase.apart));
                 }
-                if (!notap && world.toss.state == Toss.HELD && !r.inAir() && Toss.pick(r, world.golems()) == ch
+                if (!notap && world.toss.state == Toss.HELD && !r.inAir() && Toss.pick(r, world.brums()) == ch
                         && ch.apart < THROW_AT && !ch.done()) {
                     // near enough and ahead: a tap, and the finger back down
                     world.touch(World.UP, fx, fy);
@@ -433,8 +433,8 @@ public final class Stand implements World.Host {
                 }
             }
             world.touch(World.UP, fx, fy);
-        } else if (c.equals("golemahead")) {
-            // the nearest golem put running down the street ahead of the start, as the chase once began
+        } else if (c.equals("brumahead")) {
+            // the nearest brum put running down the street ahead of the start, as the chase once began
             world.chase.standAhead();
             step();
         } else if (c.equals("carbehind")) {
@@ -864,8 +864,8 @@ public final class Stand implements World.Host {
             world.runner.put(px, City.WALK_TOP, pz, (float) Math.atan2(g.x - px, g.z - pz));
             step();
         } else if (c.equals("catchall")) {
-            // catchall: every golem of the hunt knocked down at once, as if the mallet had got them all
-            for (Chase g : world.mission.golems) g.take(world.runner, world.city, 1f, 0f);
+            // catchall: every brum of the hunt knocked down at once, as if the mallet had got them all
+            for (Chase g : world.mission.brums) g.take(world.runner, world.city, 1f, 0f);
             step();
         } else if (c.equals("idle")) {
             // idle SECONDS EVERY PREFIX: no one playing; the rivals' ways told, shot so often, till the folder is got
@@ -922,7 +922,7 @@ public final class Stand implements World.Host {
         return best;
     }
 
-    /** A golem this near and ahead, the hunting finger taps for the mallet. */
+    /** A brum this near and ahead, the hunting finger taps for the mallet. */
     static final float THROW_AT = 12f;
 
     /** A finger put down at (x, y), flicked up quickly and lifted, a step a frame. */

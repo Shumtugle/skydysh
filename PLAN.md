@@ -12,9 +12,9 @@ release, each seen on the stand before the phone.
   pavements; the double burns through, her light and glow on all round her.
 - 0.7 The cars run into the double: she is flung, falls, lies and gets up again; a moment to
   catch her.
-- 0.8 The first mission: five golems loose about the town, to be found, run down and caught;
+- 0.8 The first mission: five brums loose about the town, to be found, run down and caught;
   caught, each falls apart for good.
-- 0.9 Her hammer: thrown by itself at a golem near enough, it knocks the plate off its brow;
+- 0.9 Her hammer: thrown by itself at a brum near enough, it knocks the plate off its brow;
   the plates won fill five slots over the frame. A new icon.
 - 0.10 The hammer thrown from nearer, within 10 meters.
 - 0.11 The hammer a stonemason's maul.
@@ -22,11 +22,11 @@ release, each seen on the stand before the phone.
 - 0.13 A new look: early-2000s town realism in place of print; worked surfaces, soft light, haze.
 - 0.14 The opening: down to the square, the dark, the blow into the glass, the name in gold.
 - 0.15 The dispatcher's room: the briefing on the set before a mission, the report after it.
-- 0.16 The golem runs on when reached and the mallet catches it up; all a little quicker.
+- 0.16 The brum runs on when reached and the mallet catches it up; all a little quicker.
 - 0.17 The dispatcher's room is her head: walls of her brick round the street seen through her eyes.
 - 0.18 Russian, by the phone's language or the game's own.
 - 0.19 A tap jumps, two taps leap, a flick up glides; over cars and onto roofs; autosave.
-- 0.20 The folder on the roofs: lifts up, roof to roof, rival golems climbing; the tube's letters.
+- 0.20 The folder on the roofs: lifts up, roof to roof, rival brums climbing; the tube's letters.
 - 0.21 A tap is the mallet's (strike or throw); a flick jumps, a second flick goes on up; she
   glides by herself from high up; lifts open by themselves; the folder marked green; rivals later.
 - 0.22 Indoors: places made from a seed; a house's hall, front door to yard door, with a lift
@@ -37,7 +37,7 @@ release, each seen on the stand before the phone.
 - 0.26 The townspeople walk their own walk, worked out on the skeleton, each their own way.
 - 0.27 The folder's race on the roofs: fire escapes, ladders between roofs, beating up in a
   glide; the rivals run the row's roofs.
-- 0.28 A shorter mallet, thrown by itself at a golem run down; up a ladder by the arms alone;
+- 0.28 A shorter mallet, thrown by itself at a brum run down; up a ladder by the arms alone;
   the lift down from a roof by a button; dogs and cats, more people and cars, five kinds of
   car; squares with fountains or gardens, trees, benches, pots and ivy along the streets.
 - 0.29 Buttons and signs of glass over the frame, sixteen of them; pause; the lift's button;
@@ -50,6 +50,7 @@ release, each seen on the stand before the phone.
 - 0.34 The traffic untangled; people on the benches and about the squares, dogs and cats there.
 - 0.35 The cars in painted skins of their own; round wheels.
 - 0.36 A hunt has five minutes; the town by the sea, a promenade along the shore road; home on it.
+- 0.37 Brums; a beach under the quay, a square by home; the opening flies in from the sea to home.
 
 ## Next
 
@@ -91,7 +92,7 @@ are waiting for the work below. Each item is one release or a few.
 - Animals, each on a skeleton of its own with motions of its own (the pack's renderer taking any
   skeleton, not only the people's): dogs on leads and strays first; a mounted police horse on the
   promenade, a donkey for rides by the sea; the country animals for a mission outside the town.
-- A mission with dinosaurs, loose in the town as the golems were.
+- A mission with dinosaurs, loose in the town as the brums were.
 - A mission in another, colder town: its own townspeople in coats and jumpers.
 - Townspeople with something to do: a waiter outside a café, a fisher on the promenade, a seller
   with a cart, people sitting on benches; the police on foot.

@@ -21,7 +21,7 @@ final class Frida {
             FACE = 0xD0C0B6, PLANK = 0x8F6241, YOKE = 0x8A6650, YOKE_DARK = 0x7A5944, CAP = 0xA55E21,
             STAKE = 0x7A4A2A, IRON = 0x5F514C, DRESS = 0x1E1C21, WHITE = 0xEFE9E6, LACE = 0xE8E2DE,
             POCKET = 0xE0D8D4, EYES = 0xFFF0A0, MORTAR = 0x6E5A50, SLAB = 0xC9C1B8;
-    // the plate on a golem's brow, and the sign cut in it: hers has none, so these are drawn on fire only
+    // the plate on a brum's brow, and the sign cut in it: hers has none, so these are drawn on fire only
     static final int SHEM = 0x5FE0C4, SIGN = 0x1E3A40;
 
     /** How far her eyes are lit, 0 (dark coals) to 1. */
@@ -199,7 +199,7 @@ final class Frida {
         for (int s = -1; s <= 1; s += 2) part(s * 0.037f, 1.68f, -0.111f, 0.019f, 0.009f, 0.003f, EYES, glow);
         part(0f, 1.725f, -0.035f, 0.1f, 0.02f, 0.095f, CAP, wood);
         part(0f, 1.75f, -0.035f, 0.085f, 0.008f, 0.08f, SLAB, stone);
-        // a golem's plate, on the brow of the cap
+        // a brum's plate, on the brow of the cap
         part(0f, 1.735f, -0.136f, 0.075f, 0.045f, 0.008f, SHEM, glow);
         part(0f, 1.735f, -0.145f, 0.015f, 0.03f, 0.003f, SIGN, plain);
     }
@@ -227,7 +227,7 @@ final class Frida {
     private static float[] capPos, capRot, capHalf;
     private static int[] capCol, capMat;
     private static int capN;
-    /** Where the plate on a golem's brow was at the last capture, and its turn. */
+    /** Where the plate on a brum's brow was at the last capture, and its turn. */
     static final float[] shemAt = new float[3], shemTurn = new float[9];
 
     /**

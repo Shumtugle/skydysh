@@ -1,36 +1,39 @@
-# The opening, as it plays at every start: the flight down to the square, her eyes lit, the
-# dark, the swing, the blow into the glass, her falling to pieces, the name, the white.
+# The opening, as it plays at every start: in from the sea over the beach and the promenade, the
+# square, along the shore to her before home; her eyes lit, the dark, the swing, the blow into the
+# glass, her falling to pieces, the name typed, the white; then the street, before home.
 screen 1096 2560
 opening
 wait 0.3
 shot o00
-wait 0.9
+wait 1.0
 shot o01
 wait 1.0
 shot o02
-wait 0.5
+wait 0.8
 shot o03
-wait 0.6
+wait 0.8
 shot o04
-wait 0.4
+wait 0.9
 shot o05
-wait 0.35
-shot o06
-wait 0.2
-shot o07
-wait 0.05
-shot o08
-wait 0.3
-shot o09
-wait 0.5
-shot o10
 wait 0.6
-shot o11
+shot o06
 wait 0.5
-shot o12
+shot o07
+wait 0.35
+shot o08
+wait 0.15
+shot o09
+wait 0.6
+shot o10
 wait 0.3
-shot o13
-wait 0.25
-shot o14
+shot o11
 wait 0.4
+shot o12
+wait 0.6
+shot o13
+wait 0.5
+shot o14
+wait 0.5
 shot o15
+wait 2
+shot o16

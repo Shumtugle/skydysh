@@ -13,8 +13,8 @@ final class Lang {
     private static HashMap<String, String> words = EN;
 
     static {
-        EN.put("brief.first", "Dispatch \u2014 mission {n}||At sunset five golems|broke out of the foundry.|Their forged plates burn:"
-                + "|the golems burn with them,|and so will the town."
+        EN.put("brief.first", "Dispatch \u2014 mission {n}||At sunset five brums|broke out of the foundry.|Their forged plates burn:"
+                + "|the brums burn with them,|and so will the town."
                 + "||Find them. Run them down.|Knock every plate off.|You have five minutes,|or the mission fails.||Touch to go");
         EN.put("brief.more", "Dispatch \u2014 mission {n}||Five more have broken out|with forged plates.||Find them. Run them down."
                 + "|Knock every plate off.|You have five minutes,|or the mission fails.||Touch to go");
@@ -26,13 +26,13 @@ final class Lang {
         EN.put("report", "Dispatch \u2014 mission {n}||All five plates are in.|The town is safe|for tonight.||Time  {time}"
                 + "||Touch to go on");
         EN.put("brief.folder", "Dispatch \u2014 mission {n}||A folder of papers fell|out of a helicopter's cabin.|It lies somewhere on the roofs."
-                + "||The reward: 100 000.||Golems are after it too.|Get there first: up a fire|escape, then over the roofs.|In the air, grab a ladder;|flick up to rise higher."
+                + "||The reward: 100 000.||Brums are after it too.|Get there first: up a fire|escape, then over the roofs.|In the air, grab a ladder;|flick up to rise higher."
                 + "||Touch to go");
-        EN.put("brief.again", "Dispatch \u2014 mission {n}||The golem dropped the folder|running over the roofs.|The helicopter saw where."
+        EN.put("brief.again", "Dispatch \u2014 mission {n}||The brum dropped the folder|running over the roofs.|The helicopter saw where."
                 + "||One more try.|The reward is still 100 000.||Touch to go");
         EN.put("report.folder", "Dispatch \u2014 mission {n}||The folder is ours.|The reward: {reward}.|In all: {sum}.||Time  {time}"
                 + "||Touch to go on");
-        EN.put("report.lost", "Dispatch \u2014 mission {n}||A golem got there first.|Not for long: it is running|over the roofs with it."
+        EN.put("report.lost", "Dispatch \u2014 mission {n}||A brum got there first.|Not for long: it is running|over the roofs with it."
                 + "||Touch to go on");
         EN.put("lost.short", "TOO LATE");
     }

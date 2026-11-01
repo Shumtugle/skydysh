@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.36";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.37";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3;
 
     /** What the world may ask of the phone. */
@@ -78,11 +78,13 @@ final class World {
         if (next > 1) mission.round = next - 1;
         plates = host.loadInt(SAVE_PLATES);
         money = host.loadInt(SAVE_MONEY);
-        begin(0f, 0f);
-        opening = new Opening(host);
+        // every game begins at home: on the promenade across the shore road from its door, facing it
+        runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - 5.5f, 0f);
+        begin(runner.x, runner.z);
+        opening = new Opening(host, city);
     }
 
-    /** The next mission, round (x, z): five golems loose, or, every other time, the folder. */
+    /** The next mission, round (x, z): five brums loose, or, every other time, the folder. */
     private void begin(float x, float z) {
         if (driving != null) getOut();
         int n = mission.round + 1;
@@ -98,9 +100,9 @@ final class World {
         }
     }
 
-    /** The golems of the mission now. */
-    Chase[] golems() {
-        return folder != null ? folder.rivals : mission.golems;
+    /** The brums of the mission now. */
+    Chase[] brums() {
+        return folder != null ? folder.rivals : mission.brums;
     }
 
     /** Whether the mission now is done with, won or not. */
@@ -163,7 +165,7 @@ final class World {
 
     /** The opening from its start (the desktop stand). */
     void startOpening() {
-        opening = new Opening(host);
+        opening = new Opening(host, city);
     }
 
     void resize(int screenW, int screenH) {
@@ -282,10 +284,10 @@ final class World {
         // a beat of the arms (a flick, between frames): the air through them
         if (runner.beatsLeft() < beatsWere) host.sound(Synth.WHOOSH, 0.5f, 0.8f);
         if (swapT < 0f && driving == null) runner.update(dt, city, cars, walkers);
-        // over the parapet into the sea: a splash, and she is up on the promenade again, facing the town
+        // into the sea off the beach: a splash, and she is up on the sand again, facing the town
         if (driving == null && indoors == null && City.overWater(runner.x, runner.z) && runner.y < City.WATER + 0.3f) {
             host.sound(Synth.SPLASH, 1f, 1f);
-            runner.put(runner.x, City.WALK_TOP, City.SHORE * City.CELL + City.PARAPET + 2.6f, 0f);
+            runner.put(runner.x, City.SAND, City.SHORE * City.CELL + City.WATERLINE + 3f, 0f);
         }
         beatsWere = runner.beatsLeft();
         int round = mission.round;
@@ -299,13 +301,13 @@ final class World {
             mission.update(dt, runner, city, cars);
             chase = mission.target(chase);
         }
-        toss.update(dt, runner, golems(), city, runner.tapped(), folder == null);
-        cars.update(dt, runner, golems());
+        toss.update(dt, runner, brums(), city, runner.tapped(), folder == null);
+        cars.update(dt, runner, brums());
         walkers.update(dt, runner, chase, city);
         pets.update(dt, runner, walkers, city);
         int caught = mission.caught(), struck = 0;
         if (folder != null) caught = 0;
-        for (Chase g : golems()) struck += g.struck;
+        for (Chase g : brums()) struck += g.struck;
         if (round != mission.round) {
             caughtSeen = 0;
             nextSlot = 0;
@@ -981,7 +983,7 @@ final class World {
         String c = got + "/" + Mission.FIVE;
         // the plates knocked off, alight in their slots once they have flown there; the empty slots dark
         int slots = 0;
-        for (Chase g : mission.golems) {
+        for (Chase g : mission.brums) {
             if (g.done() && g.slot < 0) g.slot = nextSlot++;
             if (g.slot >= 0 && g.sinceTaken() >= PLATE_POP + PLATE_FLY) slots |= 1 << g.slot;
         }
@@ -990,7 +992,7 @@ final class World {
             plate(f, 13 + k * 13, 18, 5f, 1f, lit ? 0xFF5FE0C4 : 0xFF3A4660, lit ? 0xFF1E3A40 : 0xFF2A3350, ink);
         }
         // a plate just knocked off: up off the brow, then across the frame into its slot
-        for (Chase g : mission.golems) {
+        for (Chase g : mission.brums) {
             float t = g.sinceTaken();
             if (t < 0f || t >= PLATE_POP + PLATE_FLY || g.slot < 0) continue;
             g.plateAt(at3);
@@ -1031,7 +1033,7 @@ final class World {
         String m = String.valueOf(Math.round(chase.apart));
         int tw = PixelFont.width(m, 3);
         shadowed(f, m, (W - tw) / 2, 14, 3, cream, ink);
-        for (Chase g : mission.golems) {
+        for (Chase g : mission.brums) {
             if (g.done()) continue;
             boolean seen = d.project(g.x, g.y + 1.5f, g.z, at)
                     && at[0] > 6 && at[0] < W - 6 && at[1] > 30 && at[1] < h - 6;
@@ -1252,9 +1254,9 @@ final class World {
         if (folder != null) folder.draw(d, r);
         // the one nearest that still burns gives off light and glow; the others only burn
         Chase lit = null;
-        Chase[] golems = golems();
-        for (Chase g : golems) if (g.burning() && (lit == null || g.apart < lit.apart)) lit = g;
-        for (Chase g : golems) {
+        Chase[] brums = brums();
+        for (Chase g : brums) if (g.burning() && (lit == null || g.apart < lit.apart)) lit = g;
+        for (Chase g : brums) {
             float gx = g.x - eyeX, gz = g.z - eyeZ;
             if (gx * ex + gz * ez < -6f || gx * gx + gz * gz > 200f * 200f) continue;
             g.draw(d, g == lit);

@@ -3,8 +3,8 @@ package com.shumtugle.skydysh;
 import java.util.Calendar;
 
 /**
- * The dispatcher's room is her head. She is a golem too, of brick and stone; where the forged
- * golems have a plate on the brow, she has this: a room inside her head, walled in courses of
+ * The dispatcher's room is her head. She is a brum too, of brick and stone; where the forged
+ * brums have a plate on the brow, she has this: a room inside her head, walled in courses of
  * her own brick and stone, a ceiling of planks as her cap is, a floor of slab. In its front wall
  * the screen: her eyes. Through it the street is seen as she sees it, standing still while she
  * is in here; her eyes, two lamps over the screen, lit. Under the screen a shelf of planks with a

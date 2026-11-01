@@ -2,11 +2,11 @@ package com.shumtugle.skydysh;
 
 /**
  * Her mallet (see Mallet): carried in her right hand, hanging from the fist and trailing behind
- * her, its head low. At a tap she uses it: a golem within her reach she strikes where she stands;
+ * her, its head low. At a tap she uses it: a brum within her reach she strikes where she stands;
  * one further off, ahead of her and not too far, she throws at: she stops, turns after it as it
  * runs on, and the mallet flies after its head end over end, knocks the plate off its brow, and
  * comes back to her hand. With nothing to throw at, she throws all the same, straight ahead, and
- * it comes back empty. In a hunt she needs no tap to throw: once she has run a golem down to
+ * it comes back empty. In a hunt she needs no tap to throw: once she has run a brum down to
  * within REACHED of her, she throws at it by herself, and it runs on as the mallet flies after it.
  * On a ladder the mallet hangs at her hip.
  */
@@ -15,7 +15,7 @@ final class Toss {
     static final float STRIKE_LOCK = 0.6f;                 // how long she stands to strike
     // within so far she strikes; ahead within so far she throws; ahead: the cosine off the eye's way
     static final float STRIKE = 3.6f, RANGE = 20f, AHEAD = 0.6f, MISS = 14f;
-    static final float REACHED = 4.5f;                     // in a hunt, so near a golem she throws by herself
+    static final float REACHED = 4.5f;                     // in a hunt, so near a brum she throws by herself
     static final float OUT_SPEED = 24f, BACK_TIME = 0.45f, SCALE = 1.6f, MIDDLE = 0.19f;
     static final int HELD = 0, OUT = 1, BACK = 2, WINDUP = 3;
 
@@ -29,12 +29,12 @@ final class Toss {
     private final float[] hand = new float[3], elbow = new float[3];
     private final float[] axis = new float[3], base = new float[9], turn = new float[9];
 
-    /** The golem a tap now would be for: within reach, or ahead of the eye and not too far; or null. */
-    static Chase pick(Runner r, Chase[] golems) {
+    /** The brum a tap now would be for: within reach, or ahead of the eye and not too far; or null. */
+    static Chase pick(Runner r, Chase[] brums) {
         float ax = (float) Math.sin(r.eyeYaw), az = (float) Math.cos(r.eyeYaw);
         Chase best = null;
         float bd = 1e9f;
-        for (Chase g : golems) {
+        for (Chase g : brums) {
             if (g.done()) continue;
             float dx = g.x - r.x, dy = g.y - r.y, dz = g.z - r.z;
             float flat = (float) Math.sqrt(dx * dx + dz * dz), d = (float) Math.sqrt(flat * flat + dy * dy);
@@ -49,11 +49,11 @@ final class Toss {
         return best;
     }
 
-    /** In a hunt: the nearest golem she has run down to within REACHED, or null. */
-    static Chase reached(Runner r, Chase[] golems) {
+    /** In a hunt: the nearest brum she has run down to within REACHED, or null. */
+    static Chase reached(Runner r, Chase[] brums) {
         Chase best = null;
         float bd = REACHED * REACHED;
-        for (Chase g : golems) {
+        for (Chase g : brums) {
             if (g.done()) continue;
             float dx = g.x - r.x, dy = g.y - r.y, dz = g.z - r.z, d = dx * dx + dy * dy + dz * dz;
             if (d < bd) {
@@ -64,12 +64,12 @@ final class Toss {
         return best;
     }
 
-    /** A frame of it: tap, a tap was heard; hunt, a golem run down is thrown at without one. */
-    void update(float dt, Runner r, Chase[] golems, City city, boolean tap, boolean hunt) {
+    /** A frame of it: tap, a tap was heard; hunt, a brum run down is thrown at without one. */
+    void update(float dt, Runner r, Chase[] brums, City city, boolean tap, boolean hunt) {
         clock += dt;
         if (state == HELD) {
             if (r.inAir() || r.hidden || r.room != null || r.held || r.climbing() || r.riding) return;
-            Chase run = hunt && !tap ? reached(r, golems) : null;
+            Chase run = hunt && !tap ? reached(r, brums) : null;
             if (run != null) {
                 // run down: she stops and throws, and it runs on with the mallet after it
                 aim = run;
@@ -80,7 +80,7 @@ final class Toss {
                 return;
             }
             if (!tap) return;
-            aim = pick(r, golems);
+            aim = pick(r, brums);
             hit = false;
             if (aim != null) {
                 float dx = aim.x - r.x, dy = aim.y - r.y, dz = aim.z - r.z;

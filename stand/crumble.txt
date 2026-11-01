@@ -2,7 +2,7 @@
 # flies, then stopping while the plate is knocked off its brow and it falls apart, its stones
 # cooling and sinking into the road.
 screen 1096 2560
-golemahead
+brumahead
 wait 0.4
 chasebot 90 0 x once
 shot u0

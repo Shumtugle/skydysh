@@ -4,12 +4,17 @@ A game for Android: races through an open town, a southern seaside town on a sum
 seen as town games were drawn early in the century,
 its streets grown from a seed without end as they are come to, cars going about them,
 people out on the pavements with their dogs, cats by the walls; squares with fountains or
-gardens, trees, benches and pots of flowers along the streets. For now on foot: a giant of
+gardens, trees, benches and pots of flowers along the streets. For now on foot: a brum, a giant of
 brick and stone in a maid's dress runs, turns, jumps and slides through it; a car, a boat and
 a plane are to come.
 
-It opens, at every start, with a flight down onto a square by the sea, where she stands with a
-golden mallet and brings it down into the glass of the screen; a touch skips it. Then the
+The town is lived in by humans and brums. A brum is a shell of brick and stone made to stand
+and walk; she is one, and so are the ones she hunts.
+
+It opens, at every start, with a flight in from the sea over the beach and the square to home,
+where she stands in the shore road with a golden mallet and brings it down into the glass of the
+screen, and the name is typed in the letters of the dispatcher's tube; a touch skips it. The game
+begins before home. Then the
 dispatcher's room, which is her head: walls of her own brick round the street seen through her
 eyes, what is to be done typed over it; a touch, her mallet knocks a key, the walls draw back
 and the street goes on. When it is done, back into her head for the report.
@@ -19,7 +24,7 @@ flicked up, she jumps; flicked up again in the air, she goes on up, over a car o
 stands a storey up; falling from high enough, she glides down by herself, and gliding, a flick
 up beats her arms and lifts her (four times a flight, the wings at the bottom of the glass
 telling how many are left); run at a ladder, she takes hold and climbs it hand over hand; flicked down, she
-slides; lifted, she slows to a stop. A tap is the mallet's: a golem within reach she strikes,
+slides; lifted, she slows to a stop. A tap is the mallet's: a brum within reach she strikes,
 one ahead and not too far she throws at; with none, she throws it ahead and it comes back. Half the blocks
 have a yard open to the street by an arch; the others are shut in, with a fire escape up the back
 of a house; the fire escapes are all in the yards. Some houses have a way in, a hall through to
@@ -32,8 +37,8 @@ hang over the ways in and up near her: the lifts' doors, the fire escapes, the l
 to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
 out) by the lift. A button high on the left pauses the game.
 
-The town ends at the sea: along its southmost street a promenade with palms, a parapet and the
-water below. Home is there, where the game begins: one large house with a tower and a lamp on
+The town ends at the sea: along its southmost street a promenade with palms and a parapet, steps
+down to a beach with sunshades, and the water. Home is there, where the game begins: one large house with a tower and a lamp on
 top, the same in every town; its sign over the door takes her in.
 
 Duty pickups stand at the curbs here and there (not in a hunt). Touch the wheel over one, or
@@ -42,20 +47,20 @@ from where the finger came down turns the wheel; drawn down, it brakes, and held
 lifted, it rolls to a stop. The button low on the right lets her out. She stands on
 whatever she comes down on, the roofs too. When a mission is done the game keeps where it is.
 
-For now, to try: a hunt. Five golems on fire that should not be are loose in the town, each
+For now, to try: a hunt. Five brums on fire that should not be are loose in the town, each
 waiting somewhere far off on a pavement of its own; come near one and it runs. Run it down
 close enough and she stops and throws her mallet by itself (a tap throws sooner, or, within
-reach, strikes); it knocks the plate off its brow, and the golem goes out and falls apart.
+reach, strikes); it knocks the plate off its brow, and the brum goes out and falls apart.
 At the top, how far off the nearest still loose is, in meters; in the corners, the five plates
 as they are won, and the time left; at the edge of the frame, a burning mark
 the way each one out of sight is. A hunt has five minutes: when the last is caught in time, five
 more are let loose; when the time runs out first, five again.
 
 Every other mission, the folder: dropped from a helicopter somewhere on the roofs, a reward for
-it, and golems after it too, each climbing a house of its row and running along the roofs.
+it, and brums after it too, each climbing a house of its row and running along the roofs.
 Up by a lift or a fire escape in a house of the row, then roof to roof: up the iron ladders
 where the next roof stands higher, down onto the lower ones, leaping, gliding, beating the air
-to rise; taken, she goes down to the street with it by herself. If a golem gets there first,
+to rise; taken, she goes down to the street with it by herself. If a brum gets there first,
 the mission is played again.
 
 What is to come is in `PLAN.md`.

@@ -34,6 +34,10 @@ final class City implements Ground {
     // the parapet along the promenade (where its middle is, half its thickness, how high over the
     // pavement), the water's top, and how deep under it one who falls in goes
     static final float PARAPET = -18f, PARAPET_HALF = 0.3f, PARAPET_HIGH = 0.95f, WATER = -1.7f, DEEP = 1.4f;
+    // the beach under the quay: its sand, the wet sand by the sea, where the wet begins and where the
+    // water does (from the shore road's middle); a flight of steps down from the promenade in every cell
+    static final float SAND = -1.15f, WET = -1.5f, WET_FROM = -30f, WATERLINE = -35f;
+    static final float STAIRS_AT = 28f, STAIRS_HALF = 1.4f, STAIR = 1f;
 
     /** Whether cell row j is out of the town: the promenade (the row next to the shore) and the sea. */
     static boolean sea(int j) {
@@ -50,15 +54,27 @@ final class City implements Ground {
         return dir == 3 && !road(j, -1) ? 2 : dir;
     }
 
-    /** Whether (x, z) is over the water, past the parapet. */
+    /** Whether (x, z) is over the water, past the beach. */
     static boolean overWater(float x, float z) {
-        return z < SHORE * CELL + PARAPET - PARAPET_HALF;
+        return z < SHORE * CELL + WATERLINE;
+    }
+
+    /** Whether (x, z) is on the beach, under the quay. */
+    static boolean beach(float x, float z) {
+        return z < SHORE * CELL + PARAPET - PARAPET_HALF && !overWater(x, z);
     }
 
     /** Where home is: the south row of the block by the shore road where the game begins. */
     static final int HOME_I = 0, HOME_J = SHORE;
     static final int HOME_STOREYS = 8;
     static final float HOME_TOWER = 7f;
+    /** Home's door, in the middle of its front, on the shore road; the way out from it is -z, to the sea. */
+    static final float HOME_DOOR_X = HOME_I * CELL + CELL * 0.5f, HOME_DOOR_Z = HOME_J * CELL + FRONT;
+
+    /** Whether (x, z) is on the way from home's door straight out to the sea, kept clear of lamps, cars and palms. */
+    static boolean beforeHome(float x, float z) {
+        return Math.abs(x - HOME_DOOR_X) < 4.5f && z < HOME_DOOR_Z && z > HOME_J * CELL + PARAPET;
+    }
 
     /** Whether (x, z) is within home's walls. */
     static boolean home(float x, float z) {
@@ -185,8 +201,8 @@ final class City implements Ground {
                 if (dist < CELL * 1.6f) d.append(c.detail);
                 if (dist < CELL * 1.2f) d.append(c.parked);
             }
-        // the sea, one sheet out to the haze from the foot of the parapet
-        float edge = SHORE * CELL + PARAPET - PARAPET_HALF;
+        // the sea, one sheet out to the haze from the edge of the beach
+        float edge = SHORE * CELL + WATERLINE;
         if (z - edge < (REACH + 2) * CELL) {
             float mx = Math.round(x / CELL) * CELL, far = 1500f;
             d.box(mx, WATER - 0.25f, edge - far * 0.5f, far, 0.25f, far * 0.5f, null, 0x2D6990, DrawList.SEA);
@@ -204,7 +220,11 @@ final class City implements Ground {
 
     /** How high the ground is here: the road, or the pavement a step up. */
     float ground(float x, float z) {
-        if (z < SHORE * CELL - CURB) return overWater(x, z) ? WATER - DEEP : WALK_TOP;
+        if (z < SHORE * CELL - CURB) {
+            if (overWater(x, z)) return WATER - DEEP;
+            if (!beach(x, z)) return WALK_TOP;
+            return z > SHORE * CELL + WET_FROM ? SAND : WET;
+        }
         float ox = x - Math.round(x / CELL) * CELL, oz = z - Math.round(z / CELL) * CELL;
         return Math.abs(ox) < CURB || Math.abs(oz) < CURB ? 0f : WALK_TOP;
     }
@@ -336,7 +356,9 @@ final class City implements Ground {
     /** What a cell's block is: houses, mostly; now and then a square. The one the runner starts by is houses. */
     boolean square(int i, int j) {
         if (sea(j)) return false;
-        if (i == 0 && j == 0 || i == -1 && j == 0) return false;
+        // across the street from home, a square with a fountain; the runner's own block, houses
+        if (i == HOME_I - 1 && j == HOME_J) return true;
+        if (i == 0 && j == 0) return false;
         return (hash(i, j, 1) & 0xFF) < 30;
     }
 
@@ -404,6 +426,7 @@ final class City implements Ground {
 
     /** Whether a square is a garden within an iron fence rather than paving round a fountain. */
     boolean garden(int i, int j) {
+        if (i == HOME_I - 1 && j == HOME_J) return false;
         return (hash(i, j, 5) & 1) == 0;
     }
 
@@ -479,8 +502,9 @@ final class City implements Ground {
 
     /**
      * The promenade along the shore road, a cell of it: the curb, the big pale stones out to the
-     * parapet, the parapet on the stone face of the quay going down into the water; two rows of
-     * palms, lamps along the parapet, benches by it looking out to sea.
+     * parapet, the parapet on the stone face of the quay; a flight of steps down through a gap in it
+     * to the beach, sand and then wet sand out to the water, a sunshade or two with its loungers;
+     * two rows of palms, lamps along the parapet, benches by it looking out to sea.
      */
     private void promenade(Cell c, float x0, float z0) {
         DrawList d = c.boxes;
@@ -491,16 +515,51 @@ final class City implements Ground {
         float p0 = z0 + CELL + PARAPET + PARAPET_HALF, p1 = top - CURB;
         d.box(mx, (WALK_TOP - 0.25f) * 0.5f, (p0 + p1) * 0.5f, hx, (WALK_TOP + 0.25f) * 0.5f, (p1 - p0) * 0.5f,
                 null, 0xDCCDB2, DrawList.PROMENADE);
-        // the parapet: the quay's stone face from under the water up past the pavement, a cap on it
-        float pz = z0 + CELL + PARAPET, low = WATER - 1.2f, high = WALK_TOP + PARAPET_HIGH;
-        d.box(mx, (low + high) * 0.5f, pz, hx, (high - low) * 0.5f, PARAPET_HALF, null, 0xE2D4BA, DrawList.STONE);
-        d.box(mx, high + 0.06f, pz, hx, 0.06f, PARAPET_HALF + 0.08f, null, 0xEDE2CC, DrawList.PLAIN);
-        c.wall(x0, pz - PARAPET_HALF, x0 + CELL, pz + PARAPET_HALF, high + 0.12f);
+        // the parapet: the quay's stone face from the sand up past the pavement, a cap on it; a gap in
+        // it where the steps go down, the face there only as high as the pavement
+        float pz = z0 + CELL + PARAPET, low = SAND - 0.4f, high = WALK_TOP + PARAPET_HIGH;
+        float g0 = x0 + STAIRS_AT - STAIRS_HALF, g1 = x0 + STAIRS_AT + STAIRS_HALF;
+        float[][] parts = {{x0, g0}, {g1, x0 + CELL}};
+        for (float[] q : parts) {
+            float qm = (q[0] + q[1]) * 0.5f, qh = (q[1] - q[0]) * 0.5f;
+            d.box(qm, (low + high) * 0.5f, pz, qh, (high - low) * 0.5f, PARAPET_HALF, null, 0xD2C2A4, DrawList.STONE);
+            d.box(qm, high + 0.06f, pz, qh, 0.06f, PARAPET_HALF + 0.08f, null, 0xEDE2CC, DrawList.PLAIN);
+            c.wall(q[0], pz - PARAPET_HALF, q[1], pz + PARAPET_HALF, high + 0.12f, low);
+        }
+        d.box(x0 + STAIRS_AT, (low + WALK_TOP) * 0.5f, pz, STAIRS_HALF, (WALK_TOP - low) * 0.5f, PARAPET_HALF, null, 0xDCCDB2, DrawList.STONE);
+        // the steps down, away from the quay, each a stride deep
+        float face = pz - PARAPET_HALF, rise = (WALK_TOP - SAND) / 5f;
+        for (int k = 0; k < 4; k++) {
+            float st = WALK_TOP - (k + 1) * rise, s0 = face - (k + 1) * STAIR, s1 = face - k * STAIR;
+            d.box(x0 + STAIRS_AT, (st + low) * 0.5f, (s0 + s1) * 0.5f, STAIRS_HALF, (st - low) * 0.5f, STAIR * 0.5f,
+                    null, 0xD6C7AA, DrawList.STONE);
+            c.wall(g0, s0, g1, s1, st, low);
+        }
+        // the beach: sand from the quay to the wet, the wet sand to the water
+        float wet = z0 + CELL + WET_FROM, sea = z0 + CELL + WATERLINE;
+        d.box(mx, (SAND + low) * 0.5f, (face + wet) * 0.5f, hx, (SAND - low) * 0.5f, (face - wet) * 0.5f, null, 0xD8BC8A, DrawList.GRAIN);
+        d.box(mx, (WET + low) * 0.5f, (wet + sea) * 0.5f, hx, (WET - low) * 0.5f, (wet - sea) * 0.5f, null, 0xBFA27A, DrawList.GRAIN);
+        // a sunshade now and then, striped, two loungers under it looking out to sea
+        for (float t = 10f; t < CELL - 4f; t += 22f) {
+            if (deco.nextInt(3) == 0) continue;
+            float ux = x0 + t + deco.nextFloat() * 6f, uz = face - 6f - deco.nextFloat() * 4f;
+            int cloth = deco.nextBoolean() ? 0xE9765B : 0x3FAFA6;
+            c.detail.box(ux, SAND + 1.2f, uz, 0.04f, 1.2f, 0.04f, null, 0xEDE2CC, DrawList.PLAIN);
+            c.detail.box(ux, SAND + 2.3f, uz, 1.35f, 0.05f, 1.35f, null, cloth, DrawList.material(DrawList.AWNING, 1));
+            c.wall(ux - 0.1f, uz - 0.1f, ux + 0.1f, uz + 0.1f, TALL, low);
+            for (int e = -1; e <= 1; e += 2) {
+                float lx = ux + e * 0.75f;
+                c.detail.box(lx, SAND + 0.22f, uz - 0.3f, 0.32f, 0.05f, 0.95f, null, 0xF4E8D2, DrawList.WOOD);
+                c.detail.box(lx, SAND + 0.45f, uz + 0.55f, 0.32f, 0.05f, 0.3f, null, 0xF4E8D2, DrawList.WOOD);
+                c.wall(lx - 0.32f, uz - 1.25f, lx + 0.32f, uz + 0.85f, SAND + 0.3f, low);
+            }
+        }
         // palms in two rows down the promenade, a little out of step
         for (int row = 0; row < 2; row++) {
             float rz = row == 0 ? p1 - 3.2f : p0 + 4.6f;
             for (float t = row * 6f + 3f; t < CELL; t += 12f) {
                 float px = x0 + t, h = 6.8f + deco.nextFloat() * 2f, lean = (deco.nextFloat() - 0.5f) * 0.3f;
+                if (beforeHome(px, rz) || beforeHome(px + 1.5f, rz) || beforeHome(px - 1.5f, rz)) continue;
                 Street.palm(c.detail, deco, px, WALK_TOP, rz, h, lean, false);
                 c.wall(px - 0.25f, rz - 0.25f, px + 0.25f, rz + 0.25f);
             }
@@ -1232,6 +1291,7 @@ final class City implements Ground {
                 } else {
                     // the street running east: on its south side they face east, on its north side west
                     float x = x0 + t, z = z0 + s * off;
+                    if (beforeHome(x, z) || beforeHome(x + 2f, z) || beforeHome(x - 2f, z)) continue;
                     Cars.car(c.parked, x, z, s < 0 ? (float) (Math.PI / 2) : (float) (-Math.PI / 2), paint, true, kind);
                     c.wall(x - len, z - 0.95f, x + len, z + 0.95f, top);
                 }
@@ -1244,7 +1304,7 @@ final class City implements Ground {
         float in = CURB + 0.5f;
         for (float t = 14f; t < CELL - 8f; t += 18f) {
             lamp(c, d, x0 + in, z0 + t);
-            lamp(c, d, x0 + t, z0 + in);
+            if (!beforeHome(x0 + t, z0 + in)) lamp(c, d, x0 + t, z0 + in);
         }
     }
 

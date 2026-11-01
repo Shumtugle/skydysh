@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.37
+
+- Golems are brums now, in every word of the game and of its code: the town is lived in by
+  humans and brums. She is a brum too.
+- A new opening. The eye comes in from far out over the sea, low over the beach and the
+  promenade, over the square, and turns along the shore road to home, where she stands before its
+  door, a giant, the mallet in her hand: then the dark, the light on her, the blow into the glass,
+  her falling to pieces as before; the name is typed over the frame as the dispatcher's screen
+  types, in its tube's letters made big, a cursor after them, a tick a letter. It is the town
+  itself the eye flies over, not a set of its own.
+- Every game begins at home: on the promenade across the shore road from its door.
+- A beach under the quay all along the shore: sand, wet sand by the water, sunshades with
+  loungers now and then; a flight of steps down to it through the parapet in every stretch of the
+  promenade. Off the beach into the water, a splash, and she is on the sand again.
+- A square with a fountain across the street from home, the same in every town; the way from
+  home's door to the sea kept clear of lamps, parked cars and palms.
+- Stand: scenes `shore.txt` (the steps and the beach), `opening.txt` (the new flight).
+
 ## 0.36
 
 - A hunt has five minutes. The briefing says so; the time left runs down in the corner, in fire
@@ -8,7 +26,7 @@
   mission again with five more loose (the plates that did come in are kept).
 - The town is by the sea. Its southmost street is the shore road; south of it a promenade of big
   pale stones with two rows of palms, lamps and benches looking out to sea, a stone parapet on
-  the quay's face, and the water. No street goes on into the sea: the traffic, the golems, the
+  the quay's face, and the water. No street goes on into the sea: the traffic, the brums, the
   rivals, the people and their dogs keep to the town, and a hunt's five are let loose inland.
   Over the parapet she falls into the water, and is up on the promenade again at once.
 - Home: one large house, built by hand and the same in every town, on the shore road where the
@@ -146,7 +164,7 @@
 
 - Her mallet is shorter: the handle half as long, the head as it was. It no longer trails at her
   heels as she runs; thrown, it turns about its own middle.
-- The hunt: run a golem down to within four and a half metres and she throws at it by herself,
+- The hunt: run a brum down to within four and a half metres and she throws at it by herself,
   no tap needed, and it runs on as the mallet flies after it and knocks the plate off. A tap
   still strikes or throws as before.
 - Up a ladder she goes by her arms alone: hand over hand, one hand reaching up to the next rung
@@ -245,8 +263,8 @@
 ## 0.23
 
 - Fixed: a game that began with the folder's mission (the last one having ended with the folder
-  lost) stopped at once. The hunt's count of golems caught was asked every frame, before any
-  hunt had let its golems loose. It now counts none until there are some.
+  lost) stopped at once. The hunt's count of brums caught was asked every frame, before any
+  hunt had let its brums loose. It now counts none until there are some.
 - Stand: `fuzz S SEED` (a careless finger at random: down, about, up, taps, flicks); scene
   `coldfolder.txt` (a game that begins with the folder, lost, and played again).
 
@@ -281,10 +299,10 @@
   flick up while she is in the air takes her on up as high as a leap would have, over a car or a
   storey up. A flick just after running off an edge is still a jump. She glides by herself once
   she is falling high over what is below; no flick for it any more. A flick down slides.
-- A tap is the mallet's. A golem within reach she strikes where she stands; one ahead of the eye
+- A tap is the mallet's. A brum within reach she strikes where she stands; one ahead of the eye
   and within 20 m she stops and throws at, and the mallet flies after its head as before. With
-  none, she throws it straight ahead and it comes back empty. Reaching a golem no longer throws
-  by itself, and a golem reached is no longer taken by itself after a while.
+  none, she throws it straight ahead and it comes back empty. Reaching a brum no longer throws
+  by itself, and a brum reached is no longer taken by itself after a while.
 - Lifts open by themselves: come to the door, or stand at it a moment, and the doors take her.
   Running by along the front, they do not.
 - The folder is marked green: a ring round it in sight, a green mark at the edge of the frame
@@ -300,7 +318,7 @@
   helicopter's cabin onto the roofs; there is a reward of 100 000 for it. The helicopter circles
   low over where it fell. At the top, how far off it is; at the edge of the frame a red mark the
   way it is; over it, when it is in sight, a red mark coming and going, and it glints.
-- Golems are after it too: three, each setting off a while after the start from its own side of
+- Brums are after it too: three, each setting off a while after the start from its own side of
   the town, running the streets the shortest way to the folder's house, climbing its front and
   crossing the roof. In the corner, how far each has still to go (gold once it climbs). The
   mallet takes them down as it takes the five. If one gets there first, the mission is lost; the
@@ -348,7 +366,7 @@
 
 ## 0.17
 
-- The dispatcher's room is her head. She is a golem too; where the forged golems have a plate on
+- The dispatcher's room is her head. She is a brum too; where the forged brums have a plate on
   the brow, she has a room inside her head, walled in courses of her own brick and stone, a
   ceiling of planks as her cap is, a floor of slab. In its front wall the screen, her eyes:
   through it the street is seen as she sees it, standing still while she is in there; over it
@@ -364,9 +382,9 @@
 
 ## 0.16
 
-- A golem run down no longer stops: it runs on, and she stops, turns after it as she swings and
+- A brum run down no longer stops: it runs on, and she stops, turns after it as she swings and
   throws; the mallet catches it up on the run and knocks the plate off. The mallet flies faster.
-- Everyone a little quicker, by about a sixth: she runs to 11.5 meters a second, the golems run
+- Everyone a little quicker, by about a sixth: she runs to 11.5 meters a second, the brums run
   and bolt quicker to match, the cars go at 10.5, the people walk a little brisker.
 - In the dispatcher's room the set comes on out of a bright line across its middle, as old sets
   did; the clock shows the date under the time; the red key, now under the set, goes in with a
@@ -378,7 +396,7 @@
   window at evening; on a wooden desk an old television, a panel of keys before it, a clock on
   the set with the real time, papers, a pencil, a mug; a lamp's warm light.
 - Before a mission the dispatch is typed out on the glass of the set, ticking as it types: five
-  golems broke out of the foundry at sunset with forged plates; forged plates burn, the golems
+  brums broke out of the foundry at sunset with forged plates; forged plates burn, the brums
   burn with them and so will the town; they hide about the streets; find them, run them down,
   knock every plate off. A touch types the rest at once; another, and the eye goes into the
   glass and the mission begins in the street.
@@ -427,14 +445,14 @@
 
 ## 0.12
 
-- The chase runs to its end again: a golem is to be run down until she is within reach of it.
+- The chase runs to its end again: a brum is to be run down until she is within reach of it.
   Then it is held where it is, startled (or lying, if a car had knocked it down), and she
   stops short, turns to it and throws: a wind-up, and the mallet flies at its head, knocks the
   plate off its brow and comes back to her hand. The finger is not heard while she throws.
 - Her mallet: a big head of pale planks bound with two bands of iron, a square handle of
   darker wood, a red-brown cap on its end. The maul is gone.
 - The icon redrawn with the mallet.
-- Stand: the bot goes round by the streets to a golem that waits until it is down the same
+- Stand: the bot goes round by the streets to a brum that waits until it is down the same
   street, and steps aside to either hand by turns when held up.
 
 ## 0.11
@@ -447,15 +465,15 @@
 
 ## 0.10
 
-- The hammer flies from nearer: within 10 meters of a golem instead of 18.
+- The hammer flies from nearer: within 10 meters of a brum instead of 18.
 
 ## 0.9
 
-- She carries a hammer in her right hand. When a golem still loose is within 18 meters, before
+- She carries a hammer in her right hand. When a brum still loose is within 18 meters, before
   her and with no house between, the hammer flies at it by itself, end over end, finding its
   head wherever it has run to, and comes back to her hand.
-- Every golem wears a plate on its brow, alight. The hammer knocks it off: the plate flies up
-  turning over, then across the frame into its slot in the corner, and the golem falls apart.
+- Every brum wears a plate on its brow, alight. The hammer knocks it off: the plate flies up
+  turning over, then across the frame into its slot in the corner, and the brum falls apart.
   Running into one still pulls its plate off, as before.
 - In the corner, five slots for the five plates, dark until each is won, instead of a count.
 - A new icon in two layers, the evening street behind and the hammer with the plate it has
@@ -463,19 +481,19 @@
 
 ## 0.8
 
-- The first mission, to try: five golems on fire that should not be are loose in the town,
+- The first mission, to try: five brums on fire that should not be are loose in the town,
   each waiting with its arms folded on a pavement of its own, round the start one a way round
   the compass, from 150 to 420 meters off. Come within 50 meters of one and it runs; left far
   behind, it stops and waits again.
-- Caught, a golem is done with for good: it goes out where it stands and falls apart, its
+- Caught, a brum is done with for good: it goes out where it stands and falls apart, its
   blocks flying off it still burning, going out to a dark crust, lying on the road as cold
   stone, and at last sinking into it.
 - Over the frame: how many of the five are caught, the clock, how far off the nearest still
   loose is, and a burning mark at the edge of the frame for every one out of sight, smaller
   the further. The last one caught, the count and the time large in the middle; ten seconds
   on, five more are let loose round wherever she is. The phone buzzes long at the last.
-- Only the nearest golem still burning gives off light and glow; the others only burn.
-- Cars stop for a golem that stands in the road.
+- Only the nearest brum still burning gives off light and glow; the others only burn.
+- Cars stop for a brum that stands in the road.
 - Stand: the bot goes after the nearest one, along the streets while it is far and on its
   trail once it runs, keeping to its side of the road and stepping aside when held up; scenes
   for the whole hunt and for one falling apart close up.

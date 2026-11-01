@@ -6,7 +6,7 @@ import java.util.Random;
  * The town's traffic: cars of a few kinds (sedans, hatchbacks, little town cars, taxis in black
  * and yellow, vans) on the right of the road, going on or turning at the
  * crossings as it falls out, never turning back; slowing for a turn, for a car ahead and for
- * the runner in the road before them. Not for a golem on the run: they run into it, stop short
+ * the runner in the road before them. Not for a brum on the run: they run into it, stop short
  * a while, and wait while it lies there or stands in the road. They come from out of sight round the runner and go out of
  * it behind her, and are put back somewhere else round her.
  *
@@ -59,7 +59,7 @@ final class Cars {
     // how long it has stood held up by other cars; how long more it edges out past them
     private final float[] waited = new float[MOST], edging = new float[MOST];
 
-    void update(float dt, Runner r, Chase[] golems) {
+    void update(float dt, Runner r, Chase[] brums) {
         for (int c = 0; c < MOST; c++) {
             float rx = x[c] - r.x, rz = z[c] - r.z;
             if (!live[c] || rx * rx + rz * rz > GONE * GONE) {
@@ -84,9 +84,9 @@ final class Cars {
             boolean turns = ni[c] != di[c] || nj[c] != dj[c];
             float want = turns && left < 14f ? TURNING : CRUISE;
             float fx = (float) Math.sin(heading[c]), fz = (float) Math.cos(heading[c]);
-            // someone in the road ahead: stop short of them (the runner, a golem down, a pickup left)
+            // someone in the road ahead: stop short of them (the runner, a brum down, a pickup left)
             float others = clear(c, fx, fz, r.x, r.z);
-            for (Chase g : golems) if (g.down()) others = Math.min(others, clear(c, fx, fz, g.x, g.z));
+            for (Chase g : brums) if (g.down()) others = Math.min(others, clear(c, fx, fz, g.x, g.z));
             if (duty != null) for (int k = 0; k < duty.all.size(); k++) {
                 Pickup p = duty.all.get(k);
                 if (!p.driven) others = Math.min(others, clear(c, fx, fz, p.x, p.z));
