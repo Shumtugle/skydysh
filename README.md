@@ -15,14 +15,19 @@ and walk; she is one, and so are the ones she hunts.
 It opens, at every start, with a flight in from the sea over the beach and the square to home,
 where she stands in the shore road with a golden mallet and brings it down into the glass of the
 screen, and the name is typed in the letters of the dispatcher's tube; a touch skips it. The game
-begins before home. Then the
+begins before home. The first time, the
 dispatcher's room, which is her head: walls of her own brick round the street seen through her
 eyes, what is to be done typed over it; a touch, her mallet knocks a key, the walls draw back
-and the street goes on. When it is done, back into her head for the report (a mission won, its
-time against the mission's best, kept on the phone); then she is home, on the sofa, the game
-kept, and the screen offers the next mission, or the same again if it was lost (begun again from
-where it began, its targets laid out the same, never from where it was lost), or a rest: free time, the town hers as long as she
-likes, the next mission taken at home.
+and the street goes on. Every mission after the first is taken at home, and a game begun again
+later begins in the street before home's door, the next mission waiting inside.
+
+A mission lost (the time run out, the folder taken by another): back into her head at once for
+the report, and the same task again from where it began, its targets laid out the same, never
+from where it was lost. A mission won: no screen; at the top, done and home, and how far it is.
+The town is hers on the way. At home, on the sofa, the game is kept and the report read (its
+time against the mission's best, kept on the phone); then the screen offers the next mission,
+one of each kind, or a rest: free time, the town hers as long as she likes, the next mission
+taken at home.
 
 One finger leads her: held down, she runs; moved sideways, she turns; flicked up, she jumps,
 flicked down, she slides; a tap is the mallet's. Other fingers, while it leads, press what they
@@ -75,8 +80,9 @@ against the back wall, lamps either side, the sea in a frame over it, books, pla
 the sofa and she sits; the game is kept, and the screen in her head asks which mission now (or
 the next one, or just a rest). A touch, and she gets up.
 
-Duty pickups stand at the curbs here and there (not in a hunt). Touch the wheel over one, or
-stand at its door, and she gets in. Driving is the easy way about the town, and the fast one, up
+Duty pickups stand at the curbs here and there (not in a hunt), and once the third mission is
+done, one at the curb a few steps from home's door. Touch the wheel over one, or stand by it a
+moment, on any side, and she gets in. Driving is the easy way about the town, and the fast one, up
 to some 130 kilometers an hour on a straight (how fast is shown low on the left). The pickup is
 the dispatch's own and does not break: a car in its way, going or parked at a curb, is rammed off, sliding and spinning to a
 wreck; a street lamp in its way is felled across the road (the town puts it up again once she

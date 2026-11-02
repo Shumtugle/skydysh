@@ -19,10 +19,11 @@ import java.util.Random;
  * and the water below.
  */
 final class City implements Ground {
-    static final float PARKED = 3.3f;            // a parked car's middle, from the road's middle
+    static final float PARKED = 4.85f;           // a parked car's middle, from the road's middle
     static final float CELL = 64f;
-    // across a street from its middle: the asphalt, the curb, the pavement up to the house fronts
-    static final float ROAD = 4.05f, CURB = 4.3f, FRONT = 7f;
+    // across a street from its middle: the asphalt, the curb, the pavement up to the house fronts.
+    // Two lanes wide enough to pass in, and a row of parked cars at each curb outside them
+    static final float ROAD = 6f, CURB = 6.25f, FRONT = 8.95f;
     static final float WALK_TOP = 0.14f, CURB_TOP = 0.15f;
     // how deep the houses are, from the front back into the block
     static final float DEPTH = 12f;
@@ -59,7 +60,7 @@ final class City implements Ground {
      */
     static final int EDGE_J = 10;
     /** The road out: it leaves the town up the street by home's west side, and wanders as it goes. */
-    static final float ROUTE_X = 0f, ROUTE_SWING = 18f, ROUTE_WAVE = 70f, ROUTE_HALF = 3.6f;
+    static final float ROUTE_X = 0f, ROUTE_SWING = 18f, ROUTE_WAVE = 70f, ROUTE_HALF = 5f;
     /** The ridge across the country (its row), the pass through it, and the village (its square's middle). */
     static final int RIDGE_J = EDGE_J + 4;
     static final float PASS_Z = RIDGE_J * CELL + 32f, PASS_HALF = 8.5f;
@@ -114,6 +115,8 @@ final class City implements Ground {
     /** Whether (x, z) is kept clear of lamps, parked cars and palms: the way from home's door straight out to the sea, the bays. */
     static boolean keptClear(float x, float z) {
         if (Math.abs(x - HOME_DOOR_X) < 4.5f && z < HOME_DOOR_Z && z > HOME_J * CELL + PARAPET) return true;
+        // home's own pickup's place at the curb
+        if (Math.abs(x - HOME_PICKUP_X) < 4f && z > HOME_J * CELL + ROAD * 0.5f && z < HOME_J * CELL + CURB) return true;
         // and the bays before the factory's and the store's gates
         for (int k = 0; k < 2; k++)
             if (Math.abs(x - gateX(k == 0)) < 7f && z > SHORE * CELL - 0.5f && z < SHORE * CELL + FRONT) return true;
@@ -127,7 +130,7 @@ final class City implements Ground {
      */
     static final int FACTORY_I = HOME_I - 4, STORE_I = HOME_I + 5;
     // the bay: half its length along the road, and its middle across it (in the lane by the gate)
-    static final float BAY_HALF = 4.5f, BAY_Z = 2.4f, BAY_DEEP = 1.9f;
+    static final float BAY_HALF = 4.5f, BAY_Z = 3.4f, BAY_DEEP = 1.9f;
 
     /** The middle of the factory's gate (true) or the store's (false), along the shore road. */
     static float gateX(boolean factory) {
@@ -460,6 +463,19 @@ final class City implements Ground {
 
     /** Whether a duty pickup stands at the curb in cell (i, j): one cell in five, not by the start. */
     boolean duty(int i, int j) {
+        if (i == HOME_I && j == HOME_J) return homePickup;
+        return seeded(i, j);
+    }
+
+    /**
+     * Home's own duty pickup, at the curb a few steps from its door: out once the third mission is
+     * done, so that the missions taken at home after it have one to hand.
+     */
+    boolean homePickup;
+    static final float HOME_PICKUP_X = HOME_DOOR_X + 9f;
+
+    /** Whether cell (i, j) has a duty pickup of the seed's: one cell in five, none round home. */
+    boolean seeded(int i, int j) {
         if (sea(j) || country(j)) return false;
         if (Math.abs(i) <= 1 && Math.abs(j) <= 1) return false;
         return ((hash(i, j, 7) >>> 24) % 5) == 0;
@@ -471,6 +487,13 @@ final class City implements Ground {
 
     /** Where cell (i, j)'s duty pickup stands: x, z, heading. */
     static void dutyPlace(int i, int j, float[] out) {
+        if (i == HOME_I && j == HOME_J) {
+            // home's: on the shore road, on home's side of it, facing west
+            out[0] = HOME_PICKUP_X;
+            out[1] = SHORE * CELL + PARKED;
+            out[2] = (float) (-Math.PI / 2);
+            return;
+        }
         out[0] = i * CELL + PARKED;
         out[1] = j * CELL + DUTY_ALONG;
         out[2] = 0f;
@@ -1061,7 +1084,7 @@ final class City implements Ground {
         if (i == TOWER_I && j == TOWER_J) waterTower(c, x0 + CELL * 0.5f + 12f, z0 + CELL * 0.5f + 12f);
         lamps(c, x0, z0);
         benches(c, x0, z0);
-        parked(c, rnd, x0, z0, duty(i, j));
+        parked(c, rnd, x0, z0, seeded(i, j));
         if (!palmy(i, j) && leafy(i, j, 3)) {
             // plane trees down the street along the west edge, on both its pavements
             for (float t = 20f; t < CELL - 10f; t += 26f)

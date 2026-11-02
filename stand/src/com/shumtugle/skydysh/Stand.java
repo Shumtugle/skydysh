@@ -306,6 +306,10 @@ public final class Stand implements World.Host {
             step();
             Pickup q = world.driving;
             System.out.println(String.format("%7.2fs  at the wheel at %.1f %.1f, %d crates on", time, q.x, q.z, q.load));
+        } else if (c.equals("sofa")) {
+            // sofa: in home's room, down on the sofa, as if she had come in at the door and up to it
+            world.standSofa();
+            step();
         } else if (c.equals("home")) {
             // home: in her head, home's choice on the screen
             world.standHome();
@@ -916,7 +920,7 @@ public final class Stand implements World.Host {
             // where: her place, the eye's, and whether she is indoors, told
             Runner r = world.runner;
             System.out.println(String.format("%7.2fs  her %.1f %.1f %.1f, eye %.1f %.1f %.1f, %s", time, r.x, r.y, r.z,
-                    r.eyeX, r.eyeY, r.eyeZ, world.indoors != null ? "indoors" : "out of doors") + (r.inAir() ? ", beats left " + r.beatsLeft() + (r.gliding ? ", gliding" : "") : ""));
+                    r.eyeX, r.eyeY, r.eyeZ, world.indoors != null ? "indoors" : world.driving != null ? "at the wheel" : "out of doors") + (r.inAir() ? ", beats left " + r.beatsLeft() + (r.gliding ? ", gliding" : "") : ""));
         } else if (c.equals("onhut")) {
             // onhut [METERS]: her on the roof of the lift's house nearest the folder, standing at its
             // hut's door, or so far back from it, facing it

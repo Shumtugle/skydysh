@@ -17,7 +17,7 @@ final class Pets {
     // the garden's paths, cats sitting by the benches
     static final int ABOUT = 16, MOST = 22;
     // the rings round a block they keep to: so far in from each street's middle
-    static final float DOG_RING = 5.5f, CAT_RING = 6.75f;
+    static final float DOG_RING = City.CURB + 1.2f, CAT_RING = City.CURB + 2.45f;
     static final float BORN_NEAR = 26f, BORN_FAR = 100f, GONE = 130f, SHY = 4.5f;
     private static final int[] DOGS = {0x8A5A34, 0xD9B482, 0x2B2622, 0xF1E9DA, 0x6B4A30, 0xB9A58C, 0x3E3A38};
     private static final int[] CATS = {0x3A3432, 0xE89A4E, 0xD8D2C8, 0x8A817A, 0xC98F5A, 0x24201E};

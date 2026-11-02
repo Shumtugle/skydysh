@@ -25,7 +25,7 @@ import java.util.Random;
  */
 final class Chase {
     static final float SIZE = 1.3f;
-    static final float LANE = 1.6f;            // right of the road's middle
+    static final float LANE = 2f;              // right of the road's middle
     static final float RUN = 9.9f, BOLT = 11f, LAG = 7.5f, BREAK = 14.4f;
     static final float NEAR = 10f, FAR = 70f, WAIT = 160f, RESUME = 50f, REACH = 2.2f;
     static final float BREAK_TIME = 3f, JOLT = 0.8f;
@@ -36,7 +36,7 @@ final class Chase {
     static final int SEEK = 7, CLIMB = 8, ROOF = 9;
     // a rival: how fast she climbs, and walks on the roof; how near the thing she is after is reached
     static final float CLIMBS = 1.6f, ROOF_WALK = 5f, GOT = 0.9f, OFF_WALL = 0.5f, DROP = 22f;
-    static final float SIDE = 5.4f;            // where one of a hunt waits: on the pavement
+    static final float SIDE = City.CURB + 1.1f;            // where one of a hunt waits: on the pavement
     static final float COOL = 1.4f, LIES = 7f, SINKS = 2f;
 
     float x = LANE, z = 34f, y, heading, speed;

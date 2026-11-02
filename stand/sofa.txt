@@ -1,32 +1,40 @@
-# After a mission: the hunt's five minutes run out; the report; she is brought home onto the sofa,
-# the game kept; the screen offers the same mission again, from where it began. Taken, she gets up
-# for it. Then a hunt won at once: its time kept as the mission's best. In Russian.
+# After a mission. The hunt's five minutes run out: the report at once, in the street, and the
+# same task again from where it began. Then the hunt won: no screen, the town hers on the way
+# home; at home, on the sofa, the report with its time, and then the choice of the next. In Russian.
 screen 1096 2560
 wait 0.4
 lang ru
+at 40 30 0
+mission 1
 wait 300
-wait 5.5
+wait 5
 shot f0
 down 137 300
 up 137 300
 wait 0.3
 down 137 300
 up 137 300
-wait 2
-where
-shot s0
-wait 3.5
-shot s1
-pick 0
-wait 2
+wait 2.5
+shot f1
 down 137 300
 up 137 300
 wait 0.3
 down 137 300
 up 137 300
-wait 2.5
+wait 2
 where
-shot s2
+shot f2
+wait 1
 catchall
-wait 9
+wait 4
 shot w0
+sofa
+wait 3.5
+shot w1
+down 137 300
+up 137 300
+wait 0.3
+down 137 300
+up 137 300
+wait 3
+shot w2

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.57";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.58";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -87,8 +87,10 @@ final class World {
         plates = host.loadInt(SAVE_PLATES);
         money = host.loadInt(SAVE_MONEY);
         // every game begins at home: on the promenade across the shore road from its door, facing it
-        runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - 5.5f, 0f);
-        begin(runner.x, runner.z);
+        runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - City.CURB - 1.2f, 0f);
+        // the first mission is given out here in the street; every one after it, at home
+        if (next > 1) standFree();
+        else begin(runner.x, runner.z);
         opening = new Opening(host, city);
     }
 
@@ -158,7 +160,7 @@ final class World {
         runner.stopLead();
         host.sound(Synth.DOOR, 0.45f, 1f);
         // out again, she stands where every game begins: on the promenade across from the door
-        runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - 5.5f, 0f);
+        runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - City.CURB - 1.2f, 0f);
         runner.recenter();
         runner.update(0f, city, cars, walkers);
         dispatch = new Dispatch(host, Dispatch.home(free ? mission.round + 1 : mission.round)).choices(Dispatch.HOME_PICKS);
@@ -185,6 +187,17 @@ final class World {
         host.saveInt(SAVE_MISSION, n);
     }
 
+    /** For the desktop stand: in home's room, down on the sofa. */
+    void standSofa() {
+        if (driving != null) getOut();
+        if (indoors != null) leave();
+        indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+        indoors.enter(runner, false);
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        sitDown();
+    }
+
     /** For the desktop stand: home's choice on the screen, as if she had come in at its door. */
     void standHome() {
         atHome();
@@ -209,8 +222,12 @@ final class World {
     boolean free;
     /** The mission last played was lost: the one offered at home is the same again. */
     private boolean lost;
-    /** The report read, she is to be brought home onto the sofa. */
-    private boolean homeAfter;
+    /** The report of a mission won, waiting for her at home: read on the sofa, before the next is offered. */
+    String[] waiting;
+    /** The report on the screen is one waiting from the street: the choice of the next comes after it. */
+    private boolean sofaAfter;
+    /** The report on the screen is of a mission lost: it is played again from where it began, after it. */
+    private boolean retryAfter;
     /** Where the mission now began: home's room, or out of doors at (x, z). */
     private float startX, startZ;
     private boolean startHome;
@@ -239,7 +256,7 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 3, 3, 1, 1};
+    static final int[] REVISION = {0, 4, 4, 2, 2};
 
     /** Mission n's kind: the hunt 1, the folder 2, the delivery 3. */
     static int kindOf(int n) {
@@ -318,18 +335,35 @@ final class World {
         return out.toArray(new String[0]);
     }
 
-    /** Home, after a mission: in home's room, sitting on the sofa, where the next is offered. */
-    private void bringHome() {
+    /**
+     * The mission just lost, again: she is put where it began (in home's room, if it began there),
+     * and it begins the same, its targets where they were.
+     */
+    private void retry() {
         if (driving != null) getOut();
         errand = NO_ERRAND;
         runner.stopLead();
-        if (indoors != null) leave();
-        indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
-        indoors.enter(runner, false);
+        for (Pickup p : duty.all) p.load = 0;
+        mission.round--;
+        if (startHome) {
+            if (indoors != null) leave();
+            indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+            indoors.enter(runner, false);
+        } else {
+            if (indoors != null) leave();
+            runner.put(startX, City.WALK_TOP, startZ, runner.heading);
+        }
         runner.recenter();
         runner.update(0f, city, cars, walkers);
+        boolean home = startHome;
+        float x = startX, z = startZ;
+        begin(x, z);
+        startHome = home;
+        overFor = 0f;
+        caughtSeen = 0;
+        nextSlot = 0;
+        struckSeen = 0;
         whiteOut = WHITE_OUT;
-        sitDown();
         letGo();
     }
 
@@ -406,7 +440,7 @@ final class World {
         dispatch = new Dispatch(host, done ? report() : briefing());
     }
 
-    /** No mission now, the town hers (the desktop stand). */
+    /** No mission now, the town hers till she goes home for the next (a game begun past the first, and the desktop stand). */
     void standFree() {
         free = true;
         folder = null;
@@ -895,7 +929,7 @@ final class World {
         Frida.eyeHeat = 0f;
                 whiteOut = WHITE_OUT;
                 runner.update(0f, city, cars, walkers);      // the eye put behind her
-                dispatch = new Dispatch(host, briefing()).afterBlow();
+                if (!free) dispatch = new Dispatch(host, briefing()).afterBlow();
                 letGo();
             }
             return;
@@ -909,43 +943,52 @@ final class World {
                 dispatch = null;
                 overFor = 0f;
                 if (resultsOpen) resultsOpen = false;
-                else if (homeAfter) {
-                    homeAfter = false;
-                    bringHome();
+                else if (retryAfter) {
+                    retryAfter = false;
+                    retry();
+                } else if (sofaAfter) {
+                    // the report read on the sofa: the choice of the next comes on
+                    sofaAfter = false;
+                    dispatch = new Dispatch(host, Dispatch.sofa(mission.round + 1, false)).choices(Dispatch.SOFA_PICKS);
+                    letGo();
                 } else if (seated() && !free) standUp();
             }
             return;
         }
         if (!free && over() && (overFor += dt) > BACK_TO_ROOM) {
-            // indoors when it ends: out at the front door first, the room in her head is out of doors
-            if (indoors != null) {
-                swapTo = TO_STREET;
-                swap();
-                swapT = -1f;
-            }
             save();
             String[] said = report();
-            // lost, the same again when she next takes one at home, from where it began; won, the
-            // next, and its time kept against the best. The report, and then she is brought home,
-            // onto the sofa, where the next is offered
-            again = hunt() ? mission.late : folder != null && folder.theirs;
-            if (!again) said = Dispatch.timed(said, record(mission.round, doneTime()), doneTime());
-            lost = again;
-            if (again) mission.round--;
-            again = false;
+            boolean failed = hunt() ? mission.late : folder != null && folder.theirs;
+            overFor = 0f;
+            letGo();
+            if (failed) {
+                // lost: the report at once, wherever she is, and the same task again from where it
+                // began, the same targets in the same places
+                if (indoors != null) {
+                    swapTo = TO_STREET;
+                    swap();
+                    swapT = -1f;
+                }
+                dispatch = new Dispatch(host, said).then(Dispatch.again(mission.round));
+                retryAfter = true;
+                return;
+            }
+            // won: its time kept against the best; the report waits at home, on the sofa, and the
+            // town is hers on the way there
+            said = Dispatch.timed(said, record(mission.round, doneTime()), doneTime());
+            lost = false;
             free = true;
             folder = null;
             delivery = null;
             rescue = null;
             city.extra = null;
             chase = nobody;
-            dispatch = new Dispatch(host, Dispatch.freed(said));
-            homeAfter = true;
-            letGo();
-            overFor = 0f;
+            waiting = said;
             return;
         }
         whiteOut = Math.max(0f, whiteOut - dt);
+        // home's own pickup at its curb, once the third mission is done
+        city.homePickup = (free ? mission.round : mission.round - 1) >= 3;
         if (dutyOut()) duty.update(runner.x, runner.z, city, driving);
         else duty.all.clear();
         if (driving != null) drive(dt);
@@ -1326,11 +1369,12 @@ final class World {
     }
 
     // ---- the duty pickups: in, driven, out ----
-    static final float GET_IN = 1.3f, GET_IN_STAND = 0.5f;
+    // how near its sides or ends she stands to get in, and how long
+    static final float BY_IT = 1f, GET_IN_STAND = 0.5f;
     private boolean pedal;
     private float wheelIn, brakeIn, doorWait;
     private boolean doorArmed = true;         // not got in again until she has been away from the door
-    private final float[] seatAt = new float[3], doorAt2 = new float[2];
+    private final float[] seatAt = new float[3];
 
     /** Whether the duty pickups are out: in every mission but a hunt, which is run on foot. */
     boolean dutyOut() {
@@ -1350,7 +1394,7 @@ final class World {
         return best;
     }
 
-    /** Standing at a pickup's door a moment, she gets in. */
+    /** Standing by a pickup a moment, on any side of it, she gets in. */
     private void getIn(float dt) {
         Runner r = runner;
         if (!dutyOut() || indoors != null || swapT >= 0f || r.inAir() || r.climbing() || r.speed > 1f) {
@@ -1358,9 +1402,7 @@ final class World {
             return;
         }
         for (Pickup p : duty.all) {
-            p.door(0.9f, doorAt2);
-            float dx = doorAt2[0] - r.x, dz = doorAt2[1] - r.z;
-            if (dx * dx + dz * dz < GET_IN * GET_IN && Math.abs(r.y - p.y) < 1f) {
+            if (p.apart(r.x, r.z) < BY_IT && Math.abs(r.y - p.y) < 1f) {
                 if (doorArmed && (doorWait += dt) > GET_IN_STAND) getIn(p);
                 return;
             }
@@ -1836,7 +1878,13 @@ final class World {
         if (in.shot(eyeNow)) r.eyeAt(eyeNow);
         if (!sofaAsked && seatedFor > SIT_FOR) {
             sofaAsked = true;
-            dispatch = new Dispatch(host, Dispatch.sofa(free ? mission.round + 1 : mission.round, free && lost)).choices(Dispatch.SOFA_PICKS);
+            if (waiting != null) {
+                // a mission won out of doors: its report first, here at home
+                dispatch = new Dispatch(host, waiting);
+                waiting = null;
+                sofaAfter = true;
+            } else
+                dispatch = new Dispatch(host, Dispatch.sofa(free ? mission.round + 1 : mission.round, free && lost)).choices(Dispatch.SOFA_PICKS);
             letGo();
         }
         return true;
@@ -2104,7 +2152,7 @@ final class World {
         float gx = City.HOME_DOOR_X - runner.x, gz = City.HOME_DOOR_Z - runner.z;
         float far = (float) Math.sqrt(gx * gx + gz * gz);
         if (far < 12f) return;
-        String w = Lang.lines("goal.free", mission.round, null)[0];
+        String w = Lang.lines(waiting != null ? "goal.done" : "goal.free", mission.round, null)[0];
         shadowed(f, w, (W - PixelFont.width(w, 1)) / 2, 14, 1, cream, ink);
         String m = String.valueOf(Math.round(far));
         shadowed(f, m, (W - PixelFont.width(m, 2)) / 2, 26, 2, green, ink);

@@ -72,6 +72,7 @@ release, each seen on the stand before the phone.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
+- 0.58 Streets two lanes wide with room to drive; a mission won, home on her own for the report; a lost one again at once; home's own pickup; in at any side.
 
 ## Next
 
@@ -93,8 +94,6 @@ The releases toward it, one thing each:
   crane, a mole with a lighthouse. Then the land's rise and a winding road up to the pass.
 
 - What home is like inside; a few more known houses along the shore road by it.
-- After a mission, free: the town hers to roam, no next mission until she goes home and picks one
-  (the choice there is in 0.43).
 - The other buttons put to work as their things come: the wheel in a car, the jet pack, the map,
   the help, a throw and a lift of a thing; buttons as part of the controls where a gesture is
   not enough.

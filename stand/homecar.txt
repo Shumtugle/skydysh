@@ -1,0 +1,16 @@
+# Home's own pickup at the curb before its door, once the third mission is done; she gets in at
+# its tail end, not at a door.
+screen 1096 2560
+wait 0.4
+keep mission 4
+restart
+at 32 -7.45 0
+wait 1
+shot h0
+at 44.3 4.85 -1.5708
+wait 0.2
+where
+shot h1
+wait 1.5
+where
+shot h2

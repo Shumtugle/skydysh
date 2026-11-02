@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.58
+
+- The streets two lanes wide: 12 m of asphalt from curb to curb (it was 8.1), a lane each way of
+  nearly 4 m, a row of parked cars along each curb outside them; the pavements as wide as they
+  were, the blocks a little smaller. The traffic, the brums and the people keep to the new lines.
+  The road out to the pass wider too (10 m).
+- A mission won: no screen in her head. At the top, done and home, and how far it is; the town
+  hers on the way. At home, on the sofa, the game kept and the report read (the time against the
+  best), then the choice of the next.
+- A mission lost: the report at once, wherever she is, and straight on the same task again from
+  where it began, its targets laid out the same.
+- Only the first mission is given out in the street; a game begun again later begins before
+  home's door, the next mission waiting inside.
+- Once the third mission is done, home has its own duty pickup at the curb a few steps from the
+  door, facing west for the road out.
+- She gets into a pickup standing by it a moment on any side, the tail end too, not only at the
+  driver's door.
+- Every kind of mission raised a revision: the streets they are played in changed.
+- Stand: scenes `road.txt`, `homecar.txt`; `sofa.txt` follows the new ending; `ram.txt` moved
+  onto the new lines; stand commands `sofa`, and `where` tells when she is at the wheel.
+
 ## 0.57
 
 - Districts: the town about home gets places of its own, on fixed places; further off it still

@@ -44,7 +44,7 @@ final class Lang {
         EN.put("home", "Dispatch \u2014 home||Which job now?||1  The hunt|2  The folder|3  The delivery|4  Call out||Or on: job {n}");
         EN.put("sofa", "Home. Progress saved.|Which job now?||1  The hunt|2  The folder|3  The delivery|4  Call out|On: job {n}|Just rest");
         EN.put("sofa.again", "Home. Progress saved.|Which job now?||1  The hunt|2  The folder|3  The delivery|4  Call out|Again: job {n}|Just rest");
-        EN.put("free.after", "Now, home.|");
+        EN.put("goal.done", "DONE. HOME");
         EN.put("best.first", "Best time.|");
         EN.put("best.new", "New record. Was: {time}|");
         EN.put("best", "Best time: {time}|");

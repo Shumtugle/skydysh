@@ -22,7 +22,7 @@ final class Walkers {
     private static final int SHORTS = 0, TROUSERS = 1, SKIRT = 2;
 
     // the ring round a block they walk on: so far in from each street's middle
-    static final float RING = 6.2f;
+    static final float RING = City.CURB + 1.9f;
     // a bench's seat over the pavement; the hips over the feet on the skeleton
     static final float SEAT = 0.5f, HIPS = 0.93f;
     static final float BORN_NEAR = 28f, BORN_FAR = 110f, GONE = 140f, SHY = 3.2f, KEPT = 80f, SEATED = 65f;

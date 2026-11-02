@@ -197,6 +197,13 @@ final class Pickup {
         out[2] = z - s * SEAT_X + c * SEAT_Z;
     }
 
+    /** How far (x, z) is from the pickup's body: past its sides, or its ends; 0 within it. */
+    float apart(float px, float pz) {
+        float c = (float) Math.cos(heading), s = (float) Math.sin(heading), dx = px - x, dz = pz - z;
+        float across = Math.max(0f, Math.abs(dx * c - dz * s) - HALF_WIDE), along = Math.max(0f, Math.abs(dx * s + dz * c) - HALF_LONG);
+        return (float) Math.sqrt(across * across + along * along);
+    }
+
     /** Where she gets in and out: beside the driver's door, so far off it (x, z into out). */
     void door(float off, float[] out) {
         float c = (float) Math.cos(heading), s = (float) Math.sin(heading);

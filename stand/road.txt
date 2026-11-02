@@ -1,0 +1,17 @@
+# The streets two lanes wide, a row of parked cars at each curb: up a street from the shore road
+# in the pickup, and along the shore road east past home's door.
+screen 1096 2560
+wait 0.4
+mission 3
+drivein 66 14 0
+pedal 2 0 0 0.25 ra
+wait 0.8
+shot rb
+drivein 6 -2 1.5708
+pedal 2.5 0 0 0.25 sa
+wait 0.8
+shot sb
+free
+at 32 -7.45 0
+wait 1
+shot st

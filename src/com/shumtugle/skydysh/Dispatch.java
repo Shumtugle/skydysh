@@ -154,17 +154,6 @@ final class Dispatch {
     /** What touching each line of the sofa's screen picks (see HOME_PICKS); a rest, REST. */
     static final int[] SOFA_PICKS = {-1, -1, -1, 1, 2, 3, 4, 0, REST};
 
-    /** A report, and before its last line (the touch to go on) that the town is hers till home. */
-    static String[] freed(String[] report) {
-        String[] more = Lang.lines("free.after", 0, null);
-        String[] out = new String[report.length + more.length];
-        int k = report.length - 1;
-        System.arraycopy(report, 0, out, 0, k);
-        System.arraycopy(more, 0, out, k, more.length);
-        out[out.length - 1] = report[k];
-        return out;
-    }
-
     /** After these lines, at the key, the next ones on the screen before the walls draw back. */
     Dispatch then(String[] more) {
         next = more;
