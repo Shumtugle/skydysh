@@ -41,9 +41,9 @@ final class Lang {
         EN.put("goal.free", "HOME, FOR A JOB");
         EN.put("controls.one", "ONE FINGER");
         EN.put("controls.two", "TWO THUMBS");
-        EN.put("home", "Dispatch \u2014 home||Which job now?||1  The hunt|2  The folder|3  The delivery||Or on: job {n}");
-        EN.put("sofa", "Home. Progress saved.|Which job now?||1  The hunt|2  The folder|3  The delivery|On: job {n}|Just rest");
-        EN.put("sofa.again", "Home. Progress saved.|Which job now?||1  The hunt|2  The folder|3  The delivery|Again: job {n}|Just rest");
+        EN.put("home", "Dispatch \u2014 home||Which job now?||1  The hunt|2  The folder|3  The delivery|4  Call out||Or on: job {n}");
+        EN.put("sofa", "Home. Progress saved.|Which job now?||1  The hunt|2  The folder|3  The delivery|4  Call out|On: job {n}|Just rest");
+        EN.put("sofa.again", "Home. Progress saved.|Which job now?||1  The hunt|2  The folder|3  The delivery|4  Call out|Again: job {n}|Just rest");
         EN.put("free.after", "Now, home.|");
         EN.put("best.first", "Best time.|");
         EN.put("best.new", "New record. Was: {time}|");
@@ -56,6 +56,15 @@ final class Lang {
         EN.put("kind.1", "The hunt");
         EN.put("kind.2", "The folder");
         EN.put("kind.3", "The delivery");
+        EN.put("kind.4", "Call out");
+        EN.put("brief.rescue", "Dispatch \u2014 job {n}||The road to the village over the hills|is blocked in the pass:|rocks, fallen trunks."
+                + "||Take a duty pickup.|The road goes north,|up the street by home and out of town."
+                + "||Clear the way \u2014|with the pickup or the mallet.|Get to the village square.||Pay: 60 000.||Touch to go");
+        EN.put("brief.rescue.again", "Dispatch \u2014 job {n}||Replay job.||Clear the pass|and get to the village.||Pay: 60 000.||Touch to go");
+        EN.put("report.rescue", "Dispatch \u2014 job {n}||The pass is clear.|The road to the village is open.|Paid: {reward}.|Balance: {sum}.||Time: {time}"
+                + "||Touch to go on");
+        EN.put("goal.pass", "PASS");
+        EN.put("goal.village", "VILLAGE");
     }
 
     private Lang() {

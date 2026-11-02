@@ -403,7 +403,7 @@ final class Walkers {
         for (int tries = 0; tries < 20; tries++) {
             bi[i] = City.index(r.x) + rnd.nextInt(5) - 2;
             bj[i] = City.index(r.z) + rnd.nextInt(5) - 2;
-            if (City.sea(bj[i])) continue;
+            if (City.sea(bj[i]) || City.country(bj[i])) continue;
             u[i] = rnd.nextFloat() * side() * 4f;
             dir[i] = rnd.nextBoolean() ? 1f : -1f;
             aside[i] = 0f;

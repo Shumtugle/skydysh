@@ -49,7 +49,44 @@ final class City implements Ground {
 
     /** Whether a street runs from a crossing in row j one step along dj (north 1, south -1): none out to sea. */
     static boolean road(int j, int dj) {
-        return j >= SHORE && j + dj >= SHORE;
+        return j >= SHORE && j + dj >= SHORE && j <= EDGE_J && j + dj <= EDGE_J;
+    }
+
+    // ---- the town's end inland, and the country past it ----
+    /**
+     * The row of crossings the town ends at, inland: its street, east and west, is the last; past
+     * it, fields and hills, one road out north, a ridge with a pass in it, and a village beyond.
+     */
+    static final int EDGE_J = 10;
+    /** The road out: it leaves the town up the street by home's west side, and wanders as it goes. */
+    static final float ROUTE_X = 0f, ROUTE_SWING = 18f, ROUTE_WAVE = 70f, ROUTE_HALF = 3.6f;
+    /** The ridge across the country (its row), the pass through it, and the village (its square's middle). */
+    static final int RIDGE_J = EDGE_J + 4;
+    static final float PASS_Z = RIDGE_J * CELL + 32f, PASS_HALF = 8.5f;
+    static final float VILLAGE_Z = (EDGE_J + 8) * CELL + 10f, SQUARE_HALF = 16f;
+
+    /** Whether row j is past the town's end (its first row still has the last street). */
+    static boolean country(int j) {
+        return j >= EDGE_J;
+    }
+
+    /** Where the road out runs at z (its middle, x). */
+    static float routeX(float z) {
+        float t = Math.max(0f, z - EDGE_J * CELL);
+        float k = Math.min(1f, t / 40f);
+        return ROUTE_X + ROUTE_SWING * k * (float) Math.sin(t / ROUTE_WAVE);
+    }
+
+    /** The village square's middle, x. */
+    static float villageX() {
+        return routeX(VILLAGE_Z);
+    }
+
+    /** Whether (x, z) is on the road out, or the village square. */
+    static boolean onRoute(float x, float z, float margin) {
+        if (z < EDGE_J * CELL - CURB) return false;
+        if (Math.abs(z - VILLAGE_Z) < SQUARE_HALF + margin && Math.abs(x - villageX()) < SQUARE_HALF + margin) return true;
+        return z < VILLAGE_Z && Math.abs(x - routeX(z)) < ROUTE_HALF + margin;
     }
 
     /** A way out of a crossing in row j (0 +x, 1 -x, 2 +z, 3 -z), one that is a street: inland, not out to sea. */
@@ -267,6 +304,8 @@ final class City implements Ground {
             if (!beach(x, z)) return WALK_TOP;
             return z > SHORE * CELL + WET_FROM ? SAND : WET;
         }
+        // past the town's last street, the country: grass, the road out, the village square, all level
+        if (z > EDGE_J * CELL + CURB) return 0f;
         float ox = x - Math.round(x / CELL) * CELL, oz = z - Math.round(z / CELL) * CELL;
         return Math.abs(ox) < CURB || Math.abs(oz) < CURB ? 0f : WALK_TOP;
     }
@@ -352,8 +391,15 @@ final class City implements Ground {
     }
 
     /** The same, for one whose feet are at feet: what is lower than a step under them is not in the way. */
+    /** Something more in the way than the town's own walls (what blocks the pass on a call out); none, none. */
+    interface Extra {
+        boolean push(float[] p, float r, float feet);
+    }
+
+    Extra extra;
+
     public boolean push(float[] p, float r, float feet) {
-        boolean hit = false;
+        boolean hit = extra != null && extra.push(p, r, feet);
         int ci = index(p[0]), cj = index(p[1]);
         for (int j = cj - 1; j <= cj + 1; j++)
             for (int i = ci - 1; i <= ci + 1; i++) {
@@ -412,7 +458,7 @@ final class City implements Ground {
 
     /** Whether a duty pickup stands at the curb in cell (i, j): one cell in five, not by the start. */
     boolean duty(int i, int j) {
-        if (sea(j)) return false;
+        if (sea(j) || country(j)) return false;
         if (Math.abs(i) <= 1 && Math.abs(j) <= 1) return false;
         return ((hash(i, j, 7) >>> 24) % 5) == 0;
     }
@@ -460,6 +506,209 @@ final class City implements Ground {
                 }
             }
         return n;
+    }
+
+    // ---- the country past the town ----
+
+    /**
+     * A cell of the country: in the first row, the town's last street along its south edge; then
+     * grass, the road out where it runs, trees about the fields, low stone walls; in the ridge's
+     * row, hills shoulder to shoulder with the pass cut through them for the road; in the village's
+     * rows, its houses round a square.
+     */
+    private void country(Cell c, int i, int j) {
+        DrawList d = c.boxes;
+        Random rnd = new Random(hash(i, j, 11));
+        float x0 = i * CELL, z0 = j * CELL, half = CELL * 0.5f;
+        int grass = 0x7FA052, asphalt = 0x5E4844;
+        float g0 = z0;
+        if (j == EDGE_J) {
+            // the town's last street, its crossing, a curb and a low wall along its north side
+            d.box(x0, -0.25f, z0, ROAD, 0.25f, ROAD, null, asphalt, DrawList.ASPHALT);
+            d.box(x0 + half, -0.25f, z0, half - ROAD, 0.25f, ROAD, null, asphalt, DrawList.ROAD);
+            float cz = z0 + ROAD + (CURB - ROAD) * 0.5f;
+            d.box(x0 + half, (CURB_TOP - 0.25f) * 0.5f, cz, half, (CURB_TOP + 0.25f) * 0.5f, (CURB - ROAD) * 0.5f, null, 0xC9BFAE, DrawList.STONE);
+            g0 = z0 + CURB;
+            float wz = z0 + CURB + 1.2f;
+            for (int k = 0; k < 2; k++) {
+                // the wall, broken where the road out goes through
+                float a = k == 0 ? x0 + ROAD + 0.5f : routeX(wz) + ROUTE_HALF + 1.5f;
+                float b = k == 0 ? routeX(wz) - ROUTE_HALF - 1.5f : x0 + CELL - ROAD - 0.5f;
+                a = Math.max(a, x0 + 0.5f);
+                b = Math.min(b, x0 + CELL - 0.5f);
+                if (b - a < 0.5f) continue;
+                d.box((a + b) * 0.5f, 0.45f, wz, (b - a) * 0.5f, 0.45f, 0.3f, null, 0xCBB89A, DrawList.STONE);
+                c.wall(a, wz - 0.3f, b, wz + 0.3f, 0.9f);
+            }
+        }
+        // the grass, a little under the road
+        d.box(x0 + half, -0.3f, (g0 + z0 + CELL) * 0.5f, half, 0.28f, (z0 + CELL - g0) * 0.5f, null, grass, DrawList.GRASS);
+        // the road out, in short straight pieces along its curve, a dashed line down its middle
+        if (z0 + CELL > EDGE_J * CELL + ROAD && z0 < VILLAGE_Z) {
+            float from = Math.max(z0, EDGE_J * CELL + ROAD), to = Math.min(z0 + CELL, VILLAGE_Z - SQUARE_HALF);
+            for (float z = from; z < to; z += 4f) {
+                float za = z, zb = Math.min(to, z + 4f), xa = routeX(za), xb = routeX(zb);
+                if (Math.abs((xa + xb) * 0.5f - x0 - half) > half + ROUTE_HALF + 4f) continue;
+                float dx = xb - xa, dz = zb - za, len = (float) Math.sqrt(dx * dx + dz * dz);
+                float[] f = yawFrame((float) Math.atan2(dx, dz));
+                d.box((xa + xb) * 0.5f, -0.12f, (za + zb) * 0.5f, ROUTE_HALF, 0.12f, len * 0.5f + 0.06f, f, asphalt, DrawList.ASPHALT);
+                if (((int) (z / 4f)) % 2 == 0)
+                    c.detail.box((xa + xb) * 0.5f, 0.005f, (za + zb) * 0.5f, 0.07f, 0.01f, len * 0.3f, f, 0xF2EEDF, DrawList.PAINT);
+                // the verges: pale gravel either side
+                for (int e = -1; e <= 1; e += 2) {
+                    float ox = (float) Math.cos(Math.atan2(dx, dz)) * e * (ROUTE_HALF + 0.6f), oz = -(float) Math.sin(Math.atan2(dx, dz)) * e * (ROUTE_HALF + 0.6f);
+                    d.box((xa + xb) * 0.5f + ox, -0.1f, (za + zb) * 0.5f + oz, 0.6f, 0.1f, len * 0.5f + 0.06f, f, 0xCDBB98, DrawList.GRAVEL);
+                }
+            }
+        }
+        if (j == RIDGE_J) ridge(c, rnd, x0, z0);
+        else if (j == EDGE_J + 7 || j == EDGE_J + 8) village(c, rnd, x0, z0, j);
+        else fields(c, rnd, x0, z0, j);
+    }
+
+    /** A turn about the up axis, row by row (a fresh array: boxes keep their own). */
+    private static float[] yawFrame(float a) {
+        float cy = (float) Math.cos(a), sy = (float) Math.sin(a);
+        return new float[]{cy, 0f, sy, 0f, 1f, 0f, -sy, 0f, cy};
+    }
+
+    /** Fields: trees here and there, a boulder now and then; never on the road. */
+    private void fields(Cell c, Random rnd, float x0, float z0, int j) {
+        int trees = 5 + rnd.nextInt(6);
+        for (int k = 0; k < trees; k++) {
+            float tx = x0 + 4f + rnd.nextFloat() * (CELL - 8f), tz = z0 + 6f + rnd.nextFloat() * (CELL - 12f);
+            float h = 6.5f + rnd.nextFloat() * 3.5f;
+            if (onRoute(tx, tz, 6f) || j == EDGE_J && tz < z0 + 10f) continue;
+            tree(c, c.detail, rnd, tx, 0f, tz, h);
+            c.wall(tx - 0.2f, tz - 0.2f, tx + 0.2f, tz + 0.2f);
+        }
+        if (rnd.nextInt(2) == 0) {
+            float bx = x0 + 6f + rnd.nextFloat() * (CELL - 12f), bz = z0 + 8f + rnd.nextFloat() * (CELL - 16f);
+            float r = 0.8f + rnd.nextFloat() * 1.2f;
+            if (!onRoute(bx, bz, 4f) && !(j == EDGE_J && bz < z0 + 10f)) {
+                c.detail.box(bx, r * 0.55f, bz, r, r * 0.6f, r * 0.85f, yawFrame(rnd.nextFloat() * 3f), 0x9C968A, DrawList.STONE);
+                c.wall(bx - r * 0.8f, bz - r * 0.7f, bx + r * 0.8f, bz + r * 0.7f, r * 1.1f);
+            }
+        }
+    }
+
+    /**
+     * The ridge: green hills shoulder to shoulder the whole way across, rock showing at their feet;
+     * where the road goes, the pass, cut between two faces of rock.
+     */
+    private void ridge(Cell c, Random rnd, float x0, float z0) {
+        DrawList d = c.boxes;
+        float mid = z0 + CELL * 0.5f, depth = CELL * 0.5f - 5f;
+        float px = routeX(PASS_Z);
+        // mounds every ten meters, each wider than that, so that they run together into one ridge;
+        // each a rock foot and grass stepping in to its top; where the road goes, cut back in steps
+        for (float cx = x0 + 5f; cx < x0 + CELL; cx += 10f) {
+            float hgt = 10f + (float) Math.abs(Math.sin(cx * 0.037f) * 7f + Math.sin(cx * 0.013f + 1f) * 5f);
+            float dz = (float) Math.sin(cx * 0.05f) * 4f;
+            int green = Street.mix(0x6E9447, 0x86A85A, (float) Math.abs(Math.sin(cx * 0.07f)));
+            float lift = 0f;
+            for (int k = 0; k < 5; k++) {
+                float th = k == 0 ? 2.2f : (hgt - 2.2f) / 4f;
+                float hx = 9f - k * 1.6f, hz = depth - k * 4.2f;
+                float a = cx - hx, b = cx + hx, cutA = px - PASS_HALF - k * 1.6f, cutB = px + PASS_HALF + k * 1.6f;
+                if (b > cutA && a < cutB) {
+                    if (a < cutA) b = cutA;
+                    else if (b > cutB) a = cutB;
+                    else {
+                        lift += th;
+                        continue;
+                    }
+                }
+                a = Math.max(a, x0);
+                b = Math.min(b, x0 + CELL);
+                if (b - a > 0.2f)
+                    d.box((a + b) * 0.5f, lift + th * 0.5f, mid + dz, (b - a) * 0.5f, th * 0.5f, hz, null,
+                            k == 0 ? 0x9A8F80 : Street.scale(green, 0.92f + 0.04f * k), k == 0 ? DrawList.STONE : DrawList.GRASS);
+                lift += th;
+            }
+            float a = Math.max(x0, cx - 9f), b = Math.min(x0 + CELL, cx + 9f);
+            float cutA = px - PASS_HALF, cutB = px + PASS_HALF;
+            if (b > cutA && a < cutB) {
+                if (a < cutA) b = cutA;
+                else if (b > cutB) a = cutB;
+                else continue;
+            }
+            if (b - a > 0.2f) c.wall(a, mid + dz - depth, b, mid + dz + depth, hgt);
+        }
+    }
+
+    /**
+     * The village: a square of beaten earth where the road ends, a well in it, little houses of
+     * two storeys round it under red tile roofs, gardens behind low walls, a tree or two.
+     */
+    private void village(Cell c, Random rnd, float x0, float z0, int j) {
+        DrawList d = c.boxes;
+        float sx = villageX(), sz = VILLAGE_Z;
+        boolean hasSquare = sx + SQUARE_HALF > x0 && sx - SQUARE_HALF < x0 + CELL && sz + SQUARE_HALF > z0 && sz - SQUARE_HALF < z0 + CELL;
+        if (hasSquare) {
+            float a = Math.max(x0, sx - SQUARE_HALF), b = Math.min(x0 + CELL, sx + SQUARE_HALF);
+            float p = Math.max(z0, sz - SQUARE_HALF), q = Math.min(z0 + CELL, sz + SQUARE_HALF);
+            d.box((a + b) * 0.5f, -0.1f, (p + q) * 0.5f, (b - a) * 0.5f, 0.1f, (q - p) * 0.5f, null, 0xC9AE86, DrawList.GRAVEL);
+            if (sx > x0 && sx < x0 + CELL && sz > z0 && sz < z0 + CELL) {
+                // the well
+                d.box(sx, 0.45f, sz, 0.9f, 0.45f, 0.9f, null, 0xB8AA92, DrawList.STONE);
+                d.box(sx, 1.6f, sz, 0.08f, 0.7f, 0.9f, null, 0x6A4A33, DrawList.WOOD);
+                d.box(sx, 2.35f, sz, 0.7f, 0.08f, 1.05f, null, 0xA8463A, DrawList.TILES);
+                c.wall(sx - 0.9f, sz - 0.9f, sx + 0.9f, sz + 0.9f, 0.9f);
+            }
+        }
+        // houses round the square, in a ring at its edge, facing it; and a few more along the road in
+        int[] walls = {0xF0E2C8, 0xEFC9B4, 0xE9D9A8, 0xDCCDB8, 0xF2D9C4};
+        for (int k = 0; k < 12; k++) {
+            float ang = k * 6.2832f / 12f + 0.13f;
+            float hx = sx + (float) Math.sin(ang) * (SQUARE_HALF + 7f), hz = sz + (float) Math.cos(ang) * (SQUARE_HALF + 7f);
+            // the road comes in from the south: no house across it
+            if (Math.abs(ang - (float) Math.PI) < 0.45f) continue;
+            if (hx < x0 || hx >= x0 + CELL || hz < z0 || hz >= z0 + CELL) continue;
+            Random own = new Random(hash(Math.round(hx), Math.round(hz), 12));
+            house(c, own, hx, hz, ang + (float) Math.PI, walls[own.nextInt(walls.length)]);
+        }
+        for (int k = 0; k < 6; k++) {
+            float hz = sz - SQUARE_HALF - 14f - k * 13f;
+            for (int e = -1; e <= 1; e += 2) {
+                float hx = routeX(hz) + e * (ROUTE_HALF + 7.5f);
+                if (hx < x0 || hx >= x0 + CELL || hz < z0 || hz >= z0 + CELL) continue;
+                Random own = new Random(hash(Math.round(hx), Math.round(hz), 13));
+                if (own.nextInt(3) == 0) continue;
+                house(c, own, hx, hz, e > 0 ? (float) (-Math.PI / 2) : (float) (Math.PI / 2), walls[own.nextInt(walls.length)]);
+            }
+        }
+        fields(c, rnd, x0, z0, j);
+    }
+
+    /** A village house at (x, z), its front facing the way yaw: two storeys, a tile roof, a door, windows. */
+    private void house(Cell c, Random rnd, float x, float z, float yaw, int wall) {
+        DrawList d = c.boxes, small = c.detail;
+        float w = 3.2f + rnd.nextFloat() * 1.2f, dp = 3f + rnd.nextFloat() * 0.8f, h = 5.6f + rnd.nextFloat() * 1.2f;
+        float[] f = yawFrame(yaw);
+        d.box(x, h * 0.5f, z, w, h * 0.5f, dp, f, wall, DrawList.PAINT);
+        // the roof: two slopes of red tile meeting along the ridge
+        for (int e = -1; e <= 1; e += 2) {
+            float tilt = e * 0.55f, cy = h + 0.9f;
+            float[] t = yawFrame(yaw);
+            float ct = (float) Math.cos(tilt), st = (float) Math.sin(tilt);
+            // tipped about the house's own x (across its front): its slopes run front and back
+            float[] r = {t[0], t[1] * ct + t[2] * st, -t[1] * st + t[2] * ct, t[3], t[4] * ct + t[5] * st, -t[4] * st + t[5] * ct,
+                    t[6], t[7] * ct + t[8] * st, -t[7] * st + t[8] * ct};
+            float off = e * dp * 0.5f;
+            d.box(x + f[2] * off, cy, z + f[8] * off, w + 0.3f, 0.12f, dp * 0.62f, r, 0xB24A36, DrawList.TILES);
+        }
+        // the door and two windows on the front, a window above
+        float fx = f[2], fz = f[8], ax = f[0], az = f[6];
+        float front = dp + 0.03f;
+        small.box(x + fx * front, 1.1f, z + fz * front, 0.55f, 1.1f, 0.03f, f, 0x5A3B2A, DrawList.WOOD);
+        for (int e = -1; e <= 1; e += 2) {
+            small.box(x + fx * front + ax * e * w * 0.55f, 1.6f, z + fz * front + az * e * w * 0.55f, 0.45f, 0.55f, 0.03f, f, 0x3E5560, DrawList.GLASS);
+            small.box(x + fx * front + ax * e * w * 0.45f, 4.3f, z + fz * front + az * e * w * 0.45f, 0.45f, 0.55f, 0.03f, f, 0x3E5560, DrawList.GLASS);
+        }
+        // what she cannot go through: the house, as the box round it
+        float ex = Math.abs(f[0]) * w + Math.abs(f[2]) * dp, ez = Math.abs(f[6]) * w + Math.abs(f[8]) * dp;
+        c.wall(x - ex, z - ez, x + ex, z + ez, h + 1.8f);
     }
 
     // ---- the crowns of the trees and palms, which the eye keeps out of ----
@@ -647,6 +896,10 @@ final class City implements Ground {
         Cell c = new Cell();
         if (j == SHORE - 1) promenade(c, i * CELL, j * CELL);
         if (sea(j)) return c;
+        if (country(j)) {
+            country(c, i, j);
+            return c;
+        }
         DrawList d = c.boxes;
         Random rnd = new Random(hash(i, j, 0));
         float x0 = i * CELL, z0 = j * CELL, half = CELL * 0.5f;

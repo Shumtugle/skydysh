@@ -786,6 +786,14 @@ public final class Stand implements World.Host {
             Pickup q = world.driving;
             System.out.println(q == null ? String.format("%7.2fs  not at the wheel", time)
                     : String.format("%7.2fs  at the wheel: %.1f m/s, gear %d, at %.1f %.1f heading %.2f", time, q.speed, q.gear, q.x, q.z, q.heading));
+        } else if (c.equals("rescue")) {
+            // rescue: the call out's step, whether the pass is clear, its clock
+            Rescue rs = world.rescue;
+            System.out.println(rs == null ? String.format("%7.2fs  no call out", time)
+                    : String.format("%7.2fs  call out: step %d, pass %s, clock %.1f", time, rs.step, rs.cleared() ? "clear" : "blocked", rs.clock));
+            if (rs != null)
+                for (int k = 0; k < Rescue.MOST; k++)
+                    System.out.println(String.format("           piece %d at %.1f %.1f (the road's middle there %.1f)", k, rs.x[k], rs.z[k], City.routeX(rs.z[k])));
         } else if (c.equals("free")) {
             // free: no mission now, the town hers till she goes home for the next
             world.standFree();

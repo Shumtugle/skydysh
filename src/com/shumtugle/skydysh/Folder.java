@@ -40,9 +40,9 @@ final class Folder {
         rnd = new Random(seed);
     }
 
-    /** Whether mission n is the folder's: the second, and every third after it. */
+    /** Whether mission n is the folder's: the second, and every fourth after it. */
     static boolean its(int n) {
-        return n % 3 == 2;
+        return n % 4 == 2;
     }
 
     // the folder's row, wall to wall: its houses (as the cell keeps them), in order along it, and which is the folder's

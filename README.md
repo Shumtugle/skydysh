@@ -102,10 +102,18 @@ the mission is played again.
 The third mission, the delivery: a load waits at the factory with the chimney, west along the
 shore road, and is wanted at the store, east along it. A duty pickup to the factory's gate,
 stood in the bay painted before it while the crates go on; to the store's, while they come off;
-then home. The missions come in turn: the hunt, the folder, the delivery, and round again; or
-come home, touch its sign, and in her head the screen asks which mission now: a touch on the
-hunt, the folder or the delivery begins it there and then, a touch on the last line goes on with
-the one now.
+then home.
+
+The fourth, the call out: the road to the village over the hills is blocked in the pass, rocks
+and fallen trunks across it. The town ends inland, ten streets up from the shore: past its last
+street a low wall, fields with trees about them, and one road out, north up the street by home's
+west side, winding as it goes; a ridge of green hills across the whole country, the pass cut
+through it for the road; beyond, a village of little houses under red tiles round a square with a
+well. A duty pickup up the road (it keeps along the road's bends by itself), through the pass
+(what lies across it is shoved off, or knocked aside on foot with the mallet), to the square.
+
+The missions come in turn: the hunt, the folder, the delivery, the call out, and round again; or
+on home's sofa, the screen asks which now.
 
 What is to come is in `PLAN.md`.
 

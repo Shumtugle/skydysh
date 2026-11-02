@@ -124,11 +124,11 @@ final class Dispatch {
         return Lang.lines("home", round, null);
     }
 
-    /** What touching each line of home's screen picks: the hunt 1, the folder 2, the delivery 3, on 0. */
-    static final int[] HOME_PICKS = {-1, -1, -1, -1, 1, 2, 3, -1, 0};
+    /** What touching each line of home's screen picks: the hunt 1, the folder 2, the delivery 3, the call out 4, on 0. */
+    static final int[] HOME_PICKS = {-1, -1, -1, -1, 1, 2, 3, 4, -1, 0};
 
     /** A pick that takes no mission: she stays as she is (on the sofa, free). */
-    static final int REST = 4;
+    static final int REST = 9;
 
     /** On home's sofa: kept; which mission now, the three of them, on to the next, or a rest. */
     static String[] sofa(int round, boolean again) {
@@ -152,7 +152,7 @@ final class Dispatch {
     }
 
     /** What touching each line of the sofa's screen picks (see HOME_PICKS); a rest, REST. */
-    static final int[] SOFA_PICKS = {-1, -1, -1, 1, 2, 3, 0, REST};
+    static final int[] SOFA_PICKS = {-1, -1, -1, 1, 2, 3, 4, 0, REST};
 
     /** A report, and before its last line (the touch to go on) that the town is hers till home. */
     static String[] freed(String[] report) {
@@ -175,12 +175,13 @@ final class Dispatch {
     static String[] briefing(int round) {
         if (Folder.its(round)) return Lang.lines("brief.folder", round, null);
         if (Delivery.its(round)) return Lang.lines("brief.delivery", round, null);
+        if (Rescue.its(round)) return Lang.lines("brief.rescue", round, null);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
     /** Before a mission again: the folder, after the rivals got there first; a hunt, after the time ran out. */
     static String[] again(int round) {
-        return Lang.lines(Folder.its(round) ? "brief.again" : "brief.late", round, null);
+        return Lang.lines(Folder.its(round) ? "brief.again" : Rescue.its(round) ? "brief.rescue.again" : "brief.late", round, null);
     }
 
     /** The time ran out with some of the five still loose: how many were caught. */
@@ -198,6 +199,11 @@ final class Dispatch {
     /** The load brought to the store and her home: the pay, what has been won in all, the time. */
     static String[] delivered(int round, String time, int money) {
         return fill(Lang.lines("report.delivery", round, time), Delivery.REWARD, money);
+    }
+
+    /** The pass cleared and the village got to: the pay, what has been won in all, the time. */
+    static String[] rescued(int round, String time, int money) {
+        return fill(Lang.lines("report.rescue", round, time), Rescue.REWARD, money);
     }
 
     /** The rivals got there first. */

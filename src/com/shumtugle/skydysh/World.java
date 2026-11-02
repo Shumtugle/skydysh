@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.55";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.56";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -44,6 +44,7 @@ final class World {
     Chase chase;                             // the nearest of them still loose
     Folder folder;                           // the mission now, when it is the folder's
     Delivery delivery;                       // the mission now, when it is a delivery
+    Rescue rescue;                           // the mission now, when it is a call out
     private static final Chase[] NONE = new Chase[0];
     // in a delivery no brum is about: one far off and still, for those who keep an eye on the nearest
     private final Chase nobody = new Chase(1L, 100000, 100000, 0);
@@ -91,7 +92,7 @@ final class World {
         opening = new Opening(host, city);
     }
 
-    /** The next mission, round (x, z): in turn five brums loose, the folder, a delivery. */
+    /** The next mission, round (x, z): in turn five brums loose, the folder, a delivery, a call out. */
     private void begin(float x, float z) {
         if (driving != null) getOut();
         free = false;
@@ -102,7 +103,15 @@ final class World {
         startHome = indoors != null && indoors.home;
         int n = mission.round + 1;
         delivery = null;
-        if (Delivery.its(n)) {
+        rescue = null;
+        city.extra = null;
+        if (Rescue.its(n)) {
+            mission.round = n;
+            folder = null;
+            rescue = new Rescue();
+            city.extra = rescue;
+            chase = nobody;
+        } else if (Delivery.its(n)) {
             mission.round = n;
             folder = null;
             delivery = new Delivery();
@@ -163,7 +172,7 @@ final class World {
      */
     private void chooseMission(int kind) {
         int n = Math.max(1, free ? mission.round + 1 : mission.round);
-        while ((Delivery.its(n) ? 3 : Folder.its(n) ? 2 : 1) != kind) n++;
+        while (kindOf(n) != kind) n++;
         mission.round = n - 1;
         again = false;
         // what was left lying about from the one now: no load waits on any pickup
@@ -209,6 +218,7 @@ final class World {
 
     /** How long the mission just done took, seconds. */
     private float doneTime() {
+        if (rescue != null) return rescue.doneAt;
         if (delivery != null) return delivery.doneAt;
         if (folder != null) return folder.doneAt;
         return mission.doneAt;
@@ -229,16 +239,16 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 2, 2, 1};
+    static final int[] REVISION = {0, 2, 2, 1, 1};
 
     /** Mission n's kind: the hunt 1, the folder 2, the delivery 3. */
     static int kindOf(int n) {
-        return Delivery.its(n) ? 3 : Folder.its(n) ? 2 : 1;
+        return Rescue.its(n) ? 4 : Delivery.its(n) ? 3 : Folder.its(n) ? 2 : 1;
     }
 
     /** Where mission n's best time is kept, as its kind is made now. */
     static String bestKey(int n) {
-        return SAVE_BEST + n + ".r" + REVISION[kindOf(n)];
+        return SAVE_BEST + n + ".k" + kindOf(n) + ".r" + REVISION[kindOf(n)];
     }
 
     // ---- under the pause: the language, and the best times ----
@@ -325,17 +335,18 @@ final class World {
 
     /** The brums of the mission now. */
     Chase[] brums() {
-        if (free || delivery != null) return NONE;
+        if (free || delivery != null || rescue != null) return NONE;
         return folder != null ? folder.rivals : mission.brums;
     }
 
     /** Whether the mission now is a hunt. */
     boolean hunt() {
-        return !free && folder == null && delivery == null;
+        return !free && folder == null && delivery == null && rescue == null;
     }
 
     /** Whether the mission now is done with, won or not. */
     boolean over() {
+        if (rescue != null) return rescue.over();
         if (delivery != null) return delivery.over();
         if (folder == null) return mission.over();
         return folder.theirs || folder.hers && runner.landed;
@@ -348,6 +359,7 @@ final class World {
 
     /** The report on the mission just done. */
     private String[] report() {
+        if (rescue != null) return Dispatch.rescued(mission.round, clock(rescue.doneAt), money);
         if (delivery != null) return Dispatch.delivered(mission.round, clock(delivery.doneAt), money);
         if (folder == null && mission.late) return Dispatch.late(mission.round, mission.caught());
         if (folder == null) return Dispatch.report(mission.round, clock(mission.doneAt));
@@ -374,7 +386,8 @@ final class World {
     /** The mission done: the next one to play and what has been won, kept for the next game. */
     private void save() {
         boolean lost = hunt() ? mission.late : folder != null && folder.theirs;
-        if (delivery != null) money += Delivery.REWARD;
+        if (rescue != null) money += Rescue.REWARD;
+        else if (delivery != null) money += Delivery.REWARD;
         else if (folder == null) plates += mission.caught();
         else if (folder.hers) money += Folder.REWARD;
         // lost, the same mission is played again
@@ -923,6 +936,8 @@ final class World {
             free = true;
             folder = null;
             delivery = null;
+            rescue = null;
+            city.extra = null;
             chase = nobody;
             dispatch = new Dispatch(host, Dispatch.freed(said));
             homeAfter = true;
@@ -951,6 +966,17 @@ final class World {
         int round = mission.round;
         if (free) {
             chase = nobody;
+        } else if (rescue != null) {
+            rescue.update(dt, duty, driving, runner, city, host);
+            // a blow of the mallet on foot, at what blocks the pass
+            boolean swings = driving == null && runner.throwing() >= 0f;
+            if (swings && !swungSeen) rescue.strike(runner.x, runner.z, (float) Math.sin(runner.heading), (float) Math.cos(runner.heading));
+            swungSeen = swings;
+            if (rescue.hit != rescueHits) {
+                rescueHits = rescue.hit;
+                host.sound(Synth.STONE, 0.6f, 0.8f);
+                host.buzz(40);
+            }
         } else if (delivery != null) {
             delivery.update(dt, duty, driving, runner, host);
         } else if (folder != null) {
@@ -1431,6 +1457,7 @@ final class World {
                 unparkedHere(parkedAt[0], parkedAt[1]);
             }
         }
+        if (rescue != null) rescue.ram(p, dt);
         int ramsWere = cars.rams;
         p.drive(dt, go, wheel, brakeIn, false, city, cars, walkers);
         if (cars.rams != ramsWere) {
@@ -1444,7 +1471,23 @@ final class World {
         // the wheel let be, or nearly: along the street it is nearly along, the less the more it is turned
         float let = 1f - Math.min(1f, Math.abs(p.steer) / SETTLE_WHEEL);
         if (let > 0f && Math.abs(p.speed) > 3f) {
-            float q = (float) Math.PI * 0.5f, d = Math.round(p.heading / q) * q - p.heading;
+            float d;
+            if (p.z > City.EDGE_J * City.CELL + City.CURB) {
+                // out of the town: along the road out, if it is on it or near, the way it runs here
+                d = 9f;
+                if (Math.abs(p.x - City.routeX(p.z)) < City.ROUTE_HALF + 6f && p.z < City.VILLAGE_Z - City.SQUARE_HALF) {
+                    float run = (float) Math.atan2(City.routeX(p.z + 1f) - City.routeX(p.z - 1f), 2f);
+                    for (int back = 0; back < 2; back++) {
+                        float to = run + back * (float) Math.PI, e = to - p.heading;
+                        while (e > Math.PI) e -= 2f * (float) Math.PI;
+                        while (e < -Math.PI) e += 2f * (float) Math.PI;
+                        if (Math.abs(e) < Math.abs(d)) d = e;
+                    }
+                }
+            } else {
+                float q = (float) Math.PI * 0.5f;
+                d = Math.round(p.heading / q) * q - p.heading;
+            }
             if (Math.abs(d) < SETTLE_WITHIN) p.heading += d * Math.min(1f, dt * SETTLE_RATE * let);
         }
         p.seat(seatAt);
@@ -1454,6 +1497,7 @@ final class World {
     /** The ring at the wheel, coloured for what she is about: the hunt coral, the folder turquoise, a delivery amber, free cream. */
     private int ringTint() {
         if (free) return DrawList.TINT_CREAM;
+        if (rescue != null) return DrawList.TINT_GREEN;
         if (delivery != null) return DrawList.TINT_AMBER;
         if (folder != null) return DrawList.TINT_TURQUOISE;
         return DrawList.TINT_CORAL;
@@ -1468,6 +1512,8 @@ final class World {
     static final float WHEEL_HALF = 66f, WHEEL_TURNS = 2.2f;            // the ring at the wheel, its radius: wider than her stick on foot
     static final float SETTLE_RATE = 3.5f;     // how fast it settles along the street, the wheel let be
     final Felled felled = new Felled();
+    private boolean swungSeen;
+    private int rescueHits;
     // parked cars rammed off their curbs: where each stood, put back once she is far off
     private final float[] parkedAt = new float[5], unparkedX = new float[24], unparkedZ = new float[24];
     private int unparkedN;
@@ -2065,6 +2111,28 @@ final class World {
         goalMark(d, f, City.HOME_DOOR_X, City.WALK_TOP + 1.5f, City.HOME_DOOR_Z, green, ink);
     }
 
+    /** Over the frame, a call out: the clock and the pay, how far off where the way goes is, and what it is. */
+    private void rescueFlat(DrawList d, Px f) {
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
+        Rescue rs = rescue;
+        String clock = clock(rs.over() ? rs.doneAt : rs.clock);
+        shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        String sum = money(Rescue.REWARD);
+        shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
+        if (rs.over()) {
+            String big = "+" + sum;
+            shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
+            return;
+        }
+        if (!rs.goal(duty, driving, runner, goal)) return;
+        float gx = goal[0] - runner.x, gz = goal[2] - runner.z;
+        String m = String.valueOf(Math.round((float) Math.sqrt(gx * gx + gz * gz)));
+        shadowed(f, m, (W - PixelFont.width(m, 3)) / 2, 14, 3, cream, ink);
+        String w = Lang.lines(rs.goalWord(), mission.round, null)[0];
+        shadowed(f, w, (W - PixelFont.width(w, 1)) / 2, 38, 1, green, ink);
+        goalMark(d, f, goal[0], goal[1], goal[2], green, ink);
+    }
+
     /** Where the way goes: a green ring round it while it is in sight, a green mark at the edge the way it is while not. */
     private void goalMark(DrawList d, Px f, float x, float y, float z, int green, int ink) {
         boolean seen = d.project(x, y, z, at) && at[0] > 6 && at[0] < W - 6 && at[1] > 50 && at[1] < h - 6;
@@ -2164,6 +2232,7 @@ final class World {
         }
         if (dispatch != null) dispatch.draw(d, f, h);
         else if (free) freeFlat(d, f);
+        else if (rescue != null) rescueFlat(d, f);
         else if (delivery != null) deliveryFlat(d, f);
         else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);
@@ -2232,7 +2301,9 @@ final class World {
         city.draw(d, eyeX, eyeZ, ex, ez);
         cars.draw(d, eyeX, eyeZ, ex, ez);
         felled.draw(d, eyeX, eyeZ, ex, ez);
-        duty.draw(d, eyeX, eyeZ, ex, ez, time);
+        if (rescue != null) rescue.draw(d, eyeX, eyeZ, ex, ez);
+        // in her head, the pickup she sits in is not seen (its lamp would be in the room)
+        duty.draw(d, eyeX, eyeZ, ex, ez, time, dispatch != null && !dispatch.showsHer() ? driving : null);
         walkers.draw(d, eyeX, eyeZ, ex, ez);
         pets.draw(d, eyeX, eyeZ, ex, ez, walkers);
         if ((dispatch == null || dispatch.showsHer()) && !r.hidden) {
@@ -2251,6 +2322,7 @@ final class World {
         }
         if (dispatch != null) dispatch.draw(d, f, h);
         else if (free) freeFlat(d, f);
+        else if (rescue != null) rescueFlat(d, f);
         else if (delivery != null) deliveryFlat(d, f);
         else if (folder != null) folderFlat(d, f);
         else chaseFlat(d, f);

@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.56
+
+- The town ends inland: ten streets up from the shore its last street, a low wall along it, and
+  past it the country: grass, trees about the fields, a boulder now and then; one road out, north
+  up the street by home's west side, winding as it goes; a ridge of green hills, stepped, the whole
+  way across, a pass cut through it for the road; beyond, a village of little plastered houses
+  under red tile roofs round a square of beaten earth with a well. Nothing of the town's life goes
+  past its end: people, pets, the traffic, the brums, the duty pickups stay in it.
+- A fourth job, the call out: the road to the village is blocked in the pass, rocks and fallen
+  trunks across it, wall to wall. A duty pickup up the road out; at the wheel in the country the
+  pickup keeps along the road's bends (not the town's grid); through the pass, shoving what it
+  runs into off to the side (a trunk is three bodies along it), or on foot knocking it aside with
+  the mallet; then to the village square. No losing it, only a time. The ring at the wheel green.
+- The jobs come round in fours: the hunt, the folder, the delivery, the call out; the sofa offers
+  all four. The best times are kept by number, kind and revision.
+- The pickup no longer brakes for something loose ahead (it is shoved off), only for the town's
+  own walls.
+- Stand: scenes `country.txt`, `rescue.txt`; the command `rescue`.
+
 ## 0.55
 
 - The dispatch's voice: a city service, calm and plain. "Job", not "mission"; things by their own

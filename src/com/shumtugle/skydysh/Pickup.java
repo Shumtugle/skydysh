@@ -152,8 +152,11 @@ final class Pickup {
     private float target(float fx, float fz, City city, Cars cars) {
         float t = VMAX * (1f - TURN_SLOWS * Math.abs(steer));
         // a car ahead does not hold it back: it is rammed out of the way (see Cars.push)
-        // something standing ahead: looked for a few steps on, along the way it goes
+        // something standing ahead: looked for a few steps on, along the way it goes (the town's
+        // own walls, not what lies loose in the way: that is shoved off)
         float[] p = new float[2];
+        City.Extra loose = city.extra;
+        city.extra = null;
         for (float d = 4f; d <= 16f; d += 3f) {
             p[0] = x + fx * d;
             p[1] = z + fz * d;
@@ -162,6 +165,7 @@ final class Pickup {
                 break;
             }
         }
+        city.extra = loose;
         // never quite nothing: nosing along, the wheel can still take it round what is in the way
         return Math.max(t, CREEP);
     }

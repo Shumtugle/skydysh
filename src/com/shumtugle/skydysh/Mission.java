@@ -45,6 +45,8 @@ final class Mission {
             int cj = Math.round((z + (float) Math.cos(a) * d) / City.CELL);
             // none out at sea: the other way, inland
             if (cj < City.SHORE) cj = 2 * City.SHORE - cj;
+            // nor out past the town's end: back in from it
+            if (cj >= City.EDGE_J) cj = Math.max(City.SHORE, 2 * (City.EDGE_J - 1) - cj);
             brums[k] = new Chase(rnd.nextLong(), ci, cj, City.way(cj, rnd.nextInt(4)));
         }
     }

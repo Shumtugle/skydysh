@@ -130,8 +130,8 @@ final class DrawList {
     final float[] badge = new float[BADGE_MAX * 4], badgeOf = new float[BADGE_MAX * 2];
     int badgeN;
 
-    // a badge's own colour, laid over its rim and glass: none, coral, turquoise, amber, cream
-    static final int TINT_NONE = 0, TINT_CORAL = 1, TINT_TURQUOISE = 2, TINT_AMBER = 3, TINT_CREAM = 4;
+    // a badge's own colour, laid over its rim and glass: none, coral, turquoise, amber, cream, green
+    static final int TINT_NONE = 0, TINT_CORAL = 1, TINT_TURQUOISE = 2, TINT_AMBER = 3, TINT_CREAM = 4, TINT_GREEN = 5;
 
     /** A button or sign over the frame: at (x, y), so big, so much shown, lit so much. */
     void badge(float x, float y, float half, int which, float shown, float lit) {

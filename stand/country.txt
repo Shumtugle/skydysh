@@ -1,0 +1,20 @@
+# Past the town's end: up the street by home to its last street, the low wall and the road out;
+# the fields, the ridge and its pass; the village round its square.
+screen 1096 2560
+wait 0.4
+mission 3
+at 0 610 0
+wait 1
+shot e0
+at 0 700 0
+wait 1
+shot e1
+at -12 875 0
+wait 1
+shot e2
+at -14 1085 0
+wait 1
+shot e3
+at -10 1150 3.1416
+wait 1
+shot e4

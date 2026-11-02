@@ -101,7 +101,7 @@ void main() {
         if (tint > 0.5) {
             // its own colour over the rim and the glass, as bright as they were
             vec3 hue = tint < 1.5 ? vec3(1.0, 0.45, 0.32) : tint < 2.5 ? vec3(0.25, 0.92, 0.86)
-                    : tint < 3.5 ? vec3(1.0, 0.74, 0.25) : vec3(0.98, 0.93, 0.82);
+                    : tint < 3.5 ? vec3(1.0, 0.74, 0.25) : tint < 4.5 ? vec3(0.98, 0.93, 0.82) : vec3(0.5, 0.95, 0.45);
             float luma = dot(t.rgb, vec3(0.3, 0.55, 0.15));
             t.rgb = mix(t.rgb, hue * luma * 1.5, 0.85);
         }

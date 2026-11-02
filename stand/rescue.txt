@@ -1,0 +1,24 @@
+# The call out: at the wheel on the road out (it keeps along the road's bends by itself), straight
+# into what blocks the pass, shoved off; then on foot, the mallet at what is left; on to the village
+# square; the report, and home. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 4
+drivein 13.6 700 0.167
+pedal 3 0 0 1 rw
+rescue
+drivein -5.1 880 -0.24
+wait 0.5
+shot r0
+pedal 3 0 0 0.4 ra
+rescue
+wait 1
+shot r1
+drivein 2.6 1090 0.25
+pedal 4 0 0 1 rb
+rescue
+wait 3
+shot r2
+wait 8
+shot r3

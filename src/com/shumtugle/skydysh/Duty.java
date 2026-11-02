@@ -63,9 +63,11 @@ final class Duty {
         return hit;
     }
 
-    void draw(DrawList d, float ex, float ez, float fx, float fz, float time) {
+    /** The pickups about, all but one (the one she sits in while the eye is in her head; none, none). */
+    void draw(DrawList d, float ex, float ez, float fx, float fz, float time, Pickup but) {
         for (int k = 0; k < all.size(); k++) {
             Pickup p = all.get(k);
+            if (p == but) continue;
             float dx = p.x - ex, dz = p.z - ez;
             if (dx * fx + dz * fz < -6f || dx * dx + dz * dz > 200f * 200f) continue;
             p.draw(d, time);
