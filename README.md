@@ -26,7 +26,7 @@ the report, and the same task again from where it began, its targets laid out th
 from where it was lost. A mission won: no screen; at the top, done and home, and how far it is.
 The town is hers on the way. At home, on the sofa, the game is kept and the report read (its
 time against the mission's best, kept on the phone); then the screen offers the next mission,
-one of each kind, or a rest: free time, the town hers as long as she likes, the next mission
+or one of the kinds already won, or a rest: free time, the town hers as long as she likes, the next mission
 taken at home.
 
 One finger leads her: held down, she runs; moved sideways, she turns; flicked up, she jumps,

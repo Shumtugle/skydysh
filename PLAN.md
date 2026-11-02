@@ -72,6 +72,7 @@ release, each seen on the stand before the phone.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
+- 0.59 The report and the choice of the next on one screen; only the kinds of mission won offered by name.
 - 0.58 Streets two lanes wide with room to drive; a mission won, home on her own for the report; a lost one again at once; home's own pickup; in at any side.
 
 ## Next

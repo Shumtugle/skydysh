@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.59
+
+- Home after a mission won: the report on the screen, and at the key, on the same screen, the
+  choice of the next; the walls no longer draw back to the sofa between them.
+- The screen at home offers by name only the kinds of mission won so far; the next one, whatever
+  it is, is offered as "on", and the others come in their turn. A game kept before counts the
+  kinds of the missions it had played.
+- Stand: scene `fresh.txt`.
+
 ## 0.58
 
 - The streets two lanes wide: 12 m of asphalt from curb to curb (it was 8.1), a lane each way of

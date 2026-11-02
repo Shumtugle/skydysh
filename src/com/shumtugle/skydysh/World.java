@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.58";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.59";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -82,6 +82,10 @@ final class World {
         // where the last game left off: the mission to play next, and what has been won
         int next = host.loadInt(SAVE_MISSION);
         if (next > 1) mission.round = next - 1;
+        // the kinds won; a game kept before they were counted: those of the missions it had played
+        kindsWon = host.loadInt(SAVE_KINDS);
+        if (kindsWon == 0)
+            for (int n = 1; n < next; n++) kindsWon |= 1 << kindOf(n);
         // the way to play on foot: one finger, unless two thumbs are offered and were chosen (kept as 2)
         Runner.classic = !TWO_THUMBS_OFFERED || host.loadInt(SAVE_CONTROLS) != 2;
         plates = host.loadInt(SAVE_PLATES);
@@ -163,7 +167,8 @@ final class World {
         runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - City.CURB - 1.2f, 0f);
         runner.recenter();
         runner.update(0f, city, cars, walkers);
-        dispatch = new Dispatch(host, Dispatch.home(free ? mission.round + 1 : mission.round)).choices(Dispatch.HOME_PICKS);
+        int[] picks = known(Dispatch.home(free ? mission.round + 1 : mission.round), Dispatch.HOME_PICKS);
+        dispatch = new Dispatch(host, keptLines).choices(picks);
         letGo();
     }
 
@@ -224,8 +229,6 @@ final class World {
     private boolean lost;
     /** The report of a mission won, waiting for her at home: read on the sofa, before the next is offered. */
     String[] waiting;
-    /** The report on the screen is one waiting from the street: the choice of the next comes after it. */
-    private boolean sofaAfter;
     /** The report on the screen is of a mission lost: it is played again from where it began, after it. */
     private boolean retryAfter;
     /** Where the mission now began: home's room, or out of doors at (x, z). */
@@ -946,11 +949,6 @@ final class World {
                 else if (retryAfter) {
                     retryAfter = false;
                     retry();
-                } else if (sofaAfter) {
-                    // the report read on the sofa: the choice of the next comes on
-                    sofaAfter = false;
-                    dispatch = new Dispatch(host, Dispatch.sofa(mission.round + 1, false)).choices(Dispatch.SOFA_PICKS);
-                    letGo();
                 } else if (seated() && !free) standUp();
             }
             return;
@@ -976,6 +974,8 @@ final class World {
             // won: its time kept against the best; the report waits at home, on the sofa, and the
             // town is hers on the way there
             said = Dispatch.timed(said, record(mission.round, doneTime()), doneTime());
+            kindsWon |= 1 << kindOf(mission.round);
+            host.saveInt(SAVE_KINDS, kindsWon);
             lost = false;
             free = true;
             folder = null;
@@ -1878,13 +1878,15 @@ final class World {
         if (in.shot(eyeNow)) r.eyeAt(eyeNow);
         if (!sofaAsked && seatedFor > SIT_FOR) {
             sofaAsked = true;
+            String[] lines = Dispatch.sofa(free ? mission.round + 1 : mission.round, free && lost);
+            int[] picks = known(lines, Dispatch.SOFA_PICKS);
+            lines = keptLines;
             if (waiting != null) {
-                // a mission won out of doors: its report first, here at home
-                dispatch = new Dispatch(host, waiting);
+                // a mission won out of doors: its report first, here at home, and the choice of the
+                // next on the same screen after it
+                dispatch = new Dispatch(host, waiting).then(lines, picks);
                 waiting = null;
-                sofaAfter = true;
-            } else
-                dispatch = new Dispatch(host, Dispatch.sofa(free ? mission.round + 1 : mission.round, free && lost)).choices(Dispatch.SOFA_PICKS);
+            } else dispatch = new Dispatch(host, lines).choices(picks);
             letGo();
         }
         return true;
@@ -1905,6 +1907,32 @@ final class World {
         host.saveInt(SAVE_MONEY, money);
         host.sound(Synth.WOOD, 0.5f, 0.7f);
         host.buzz(40);
+    }
+
+    // ---- the kinds of mission she knows: only those won are offered by name at home ----
+    static final String SAVE_KINDS = "kinds";
+    /** The kinds of mission won at least once, a bit each (1 << kind). */
+    private int kindsWon;
+    private String[] keptLines;
+
+    /**
+     * A choice's lines and what each picks, without the lines of kinds of mission not yet won: the
+     * screen offers what she has done, and the next; the rest she comes to in its turn. The lines
+     * kept are left in keptLines.
+     */
+    private int[] known(String[] lines, int[] picks) {
+        java.util.ArrayList<String> l = new java.util.ArrayList<String>();
+        java.util.ArrayList<Integer> p = new java.util.ArrayList<Integer>();
+        for (int k = 0; k < lines.length; k++) {
+            int c = k < picks.length ? picks[k] : -1;
+            if (c >= 1 && c <= 4 && (kindsWon & (1 << c)) == 0) continue;
+            l.add(lines[k]);
+            p.add(c);
+        }
+        keptLines = l.toArray(new String[0]);
+        int[] out = new int[p.size()];
+        for (int k = 0; k < out.length; k++) out[k] = p.get(k);
+        return out;
     }
 
     /** Up from the sofa, a step before it, facing the door. */

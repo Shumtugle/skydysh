@@ -35,6 +35,7 @@ final class Dispatch {
 
     private final World.Host host;
     private String[] lines, next;
+    private int[] nextPick;
     private int letters;
     private float t, typed, knockAt = -1f, openAt = -1f;
     private boolean pressed, done;
@@ -160,6 +161,13 @@ final class Dispatch {
         return this;
     }
 
+    /** After these lines, at the key, a choice on the screen (see choices), the walls staying where they are. */
+    Dispatch then(String[] more, int[] picks) {
+        next = more;
+        nextPick = picks;
+        return this;
+    }
+
     /** What the screen says before a mission. */
     static String[] briefing(int round) {
         if (Folder.its(round)) return Lang.lines("brief.folder", round, null);
@@ -254,6 +262,10 @@ final class Dispatch {
             // the screen wiped, the next dispatch typed on it
             show(next);
             next = null;
+            if (nextPick != null) {
+                pick = nextPick;
+                nextPick = null;
+            }
             knockAt = -1f;
             pressed = false;
             host.sound(Synth.TV_OFF, 0.3f, 1.6f);
