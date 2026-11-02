@@ -71,6 +71,7 @@ release, each seen on the stand before the phone.
 - 0.54 After a mission, home to the sofa; the best time of each mission kept; a lost one begun again where it began; the eye keeps out of the leaves.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
+- 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
 
 ## Next
 
@@ -85,6 +86,11 @@ The missions in order, each teaching a thing; then the town is hers.
    taken.
 
 The releases toward it, one thing each:
+
+- Districts about home, built by hand on fixed places; the town further off still from the seed.
+  Next: an avenue along the second street up from the shore, broad, for speed; the main way north
+  from home to the town's end and the road to the pass; the store become a harbour, quays, a
+  crane, a mole with a lighthouse. Then the land's rise and a winding road up to the pass.
 
 - What home is like inside; a few more known houses along the shore road by it.
 - After a mission, free: the town hers to roam, no next mission until she goes home and picks one

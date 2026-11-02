@@ -443,7 +443,9 @@ final class City implements Ground {
 
     /** What a cell's block is: houses, mostly; now and then a square. The one the runner starts by is houses. */
     boolean square(int i, int j) {
-        if (sea(j)) return false;
+        if (sea(j) || oldTown(i, j)) return false;
+        // the park with the water tower, a landmark seen from far off
+        if (i == TOWER_I && j == TOWER_J) return true;
         // across the street from home, a square with a fountain; the runner's own block, houses
         if (i == HOME_I - 1 && j == HOME_J) return true;
         if (i == 0 && j == 0) return false;
@@ -506,6 +508,136 @@ final class City implements Ground {
                 }
             }
         return n;
+    }
+
+    // ---- the districts: the old town, the park with the water tower ----
+
+    /** The old town: west of home, three blocks by three, from the second row up from the shore. */
+    static final int OLD_I0 = -3, OLD_I1 = -1, OLD_J0 = SHORE + 1, OLD_J1 = SHORE + 3;
+    /** Its market, with the clock tower: the middle block. */
+    static final int MARKET_I = -2, MARKET_J = SHORE + 2;
+    /** The park with the water tower, north-east of home. */
+    static final int TOWER_I = 3, TOWER_J = SHORE + 6;
+    // the old town's lanes: half their width; its houses' walls, warm plaster
+    static final float LANE_HALF = 2.4f, POST_GAP = 1.6f, MARKET_HALF = 9f, MARKET_DEEP = 13f;
+    private static final int[] OLD_WALLS = {0xE9C9A0, 0xE7B48E, 0xF0D8B0, 0xDDA27E, 0xEBD2A6, 0xD9B48C};
+    private int lowRise;
+
+    static boolean oldTown(int i, int j) {
+        return i >= OLD_I0 && i <= OLD_I1 && j >= OLD_J0 && j <= OLD_J1;
+    }
+
+    /**
+     * A block of the old town: four little blocks of low warm houses, packed tight, with lanes
+     * between them crossing in the middle, paved in cobbles; posts at the lanes' mouths, too close
+     * for a car, wide enough for her. The market block keeps a square where the lanes cross, a
+     * market roof on posts and the clock tower over it.
+     */
+    private void oldTown(Cell c, Random rnd, float x0, float z0, int i, int j) {
+        DrawList d = c.boxes;
+        float a = FRONT, b = CELL - FRONT, mid = CELL * 0.5f;
+        boolean market = i == MARKET_I && j == MARKET_J;
+        float open = LANE_HALF;
+        // the cobbles of the lanes, darker than the pavements; the market square in lighter stone
+        int cobble = 0xA8957A;
+        d.box(x0 + mid, WALK_TOP + 0.01f, z0 + mid, (b - a) * 0.5f, 0.01f, open, null, cobble, DrawList.PAVING);
+        d.box(x0 + mid, WALK_TOP + 0.012f, z0 + mid, open, 0.01f, (b - a) * 0.5f, null, cobble, DrawList.PAVING);
+        if (market) d.box(x0 + mid, WALK_TOP + 0.014f, z0 + mid, MARKET_HALF, 0.01f, MARKET_DEEP, null, 0xD9C9AC, DrawList.PROMENADE);
+        // the four little blocks, two rows of houses each, back to back, low; in the market block
+        // the inner rows stop short of the square
+        lowRise = 3;
+        for (int qx = 0; qx < 2; qx++)
+            for (int qz = 0; qz < 2; qz++) {
+                float u0 = qx == 0 ? a : mid + open, u1 = qx == 0 ? mid - open : b;
+                float v0 = qz == 0 ? a : mid + open, v1 = qz == 0 ? mid - open : b;
+                float vm = (v0 + v1) * 0.5f + (rnd.nextFloat() - 0.5f) * 2f;
+                float w0 = u0, w1 = u1;
+                if (market) { if (qx == 0) w1 = mid - MARKET_HALF; else w0 = mid + MARKET_HALF; }
+                if (qz == 0) {
+                    row(c, rnd, x0 + u0, x0 + u1, z0 + v0, z0 + vm, true, -1, false);
+                    if (w1 - w0 > 4f) row(c, rnd, x0 + w0, x0 + w1, z0 + vm, z0 + v1, true, 1, false);
+                } else {
+                    if (w1 - w0 > 4f) row(c, rnd, x0 + w0, x0 + w1, z0 + v0, z0 + vm, true, -1, false);
+                    row(c, rnd, x0 + u0, x0 + u1, z0 + vm, z0 + v1, true, 1, false);
+                }
+            }
+        lowRise = 0;
+        // posts across each lane's mouth, three to a mouth: the gaps let her through, never a car
+        for (int e = 0; e < 4; e++) {
+            float mx = e == 0 ? a : e == 1 ? b : mid, mz = e < 2 ? mid : e == 2 ? a : b;
+            for (int s = -1; s <= 1; s++) {
+                float px = x0 + mx + (e < 2 ? 0f : s * POST_GAP), pz = z0 + mz + (e < 2 ? s * POST_GAP : 0f);
+                d.box(px, WALK_TOP + 0.45f, pz, 0.12f, 0.45f, 0.12f, null, 0x3A3530, DrawList.PLAIN);
+                c.wall(px - 0.12f, pz - 0.12f, px + 0.12f, pz + 0.12f, WALK_TOP + 0.9f);
+            }
+        }
+        if (market) marketHall(c, x0 + mid, z0 + mid);
+        // a lamp in the lanes' crossing, a bench or two along them
+        if (!market) {
+            float lx = x0 + mid + LANE_HALF - 0.4f, lz = z0 + mid + LANE_HALF - 0.4f;
+            c.detail.box(lx, WALK_TOP + 1.8f, lz, 0.05f, 1.8f, 0.05f, null, 0x2B2F3A, DrawList.PLAIN);
+            c.detail.box(lx, WALK_TOP + 3.65f, lz, 0.12f, 0.16f, 0.12f, null, 0xF3E2B4, DrawList.GLOW);
+            c.wall(lx - 0.08f, lz - 0.08f, lx + 0.08f, lz + 0.08f, WALK_TOP + 3.8f);
+        }
+    }
+
+    /** The market: a tiled roof on eight posts over stalls, and the clock tower at its north side. */
+    private void marketHall(Cell c, float mx, float mz) {
+        DrawList d = c.boxes;
+        float hx = 5.5f, hz = 4f, top = WALK_TOP + 3.6f;
+        for (int k = 0; k < 8; k++) {
+            float px = mx + (k % 4 - 1.5f) * (hx * 2f / 3f), pz = mz + (k < 4 ? -hz : hz);
+            d.box(px, WALK_TOP + 1.8f, pz, 0.14f, 1.8f, 0.14f, null, 0x6A4A33, DrawList.WOOD);
+            c.wall(px - 0.14f, pz - 0.14f, px + 0.14f, pz + 0.14f, top);
+        }
+        for (int e = -1; e <= 1; e += 2) {
+            float t = 0.42f * e, ct = (float) Math.cos(t), st = (float) Math.sin(t);
+            float[] r = {1f, 0f, 0f, 0f, ct, -st, 0f, st, ct};
+            d.box(mx, top + 0.6f, mz + e * hz * 0.5f, hx + 0.5f, 0.1f, hz * 0.6f, r, 0xB24A36, DrawList.TILES);
+        }
+        // the stalls under it: awnings of coral and teal, crates of fruit
+        for (int k = 0; k < 3; k++) {
+            float sx = mx + (k - 1) * 3.4f;
+            c.detail.box(sx, WALK_TOP + 0.45f, mz, 1.2f, 0.45f, 0.6f, null, 0x8A5E3C, DrawList.WOOD);
+            c.detail.box(sx, WALK_TOP + 0.95f, mz, 1.1f, 0.06f, 0.5f, null, k % 2 == 0 ? 0xF6B54A : 0xE0644A, DrawList.PLAIN);
+            c.wall(sx - 1.2f, mz - 0.6f, sx + 1.2f, mz + 0.6f, WALK_TOP + 1f);
+        }
+        // the clock tower: stone, a clock on each face, a little tiled cap; seen down the lanes
+        float tx = mx, tz = mz + hz + 3.2f, th = 21f;
+        d.box(tx, WALK_TOP + th * 0.5f, tz, 1.6f, th * 0.5f, 1.6f, null, 0xE2CFA8, DrawList.STONE);
+        d.box(tx, WALK_TOP + th + 1.2f, tz, 1.9f, 1.2f, 1.9f, null, 0xD8C29A, DrawList.STONE);
+        for (int e = 0; e < 4; e++) {
+            float fx = e == 0 ? 1f : e == 1 ? -1f : 0f, fz = e == 2 ? 1f : e == 3 ? -1f : 0f;
+            c.detail.box(tx + fx * 1.92f, WALK_TOP + th + 1.2f, tz + fz * 1.92f, fz != 0f ? 0.75f : 0.02f, 0.75f, fx != 0f ? 0.75f : 0.02f,
+                    null, 0xFFF4D6, DrawList.GLOW);
+        }
+        d.box(tx, WALK_TOP + th + 3.1f, tz, 1.4f, 0.7f, 1.4f, null, 0xB24A36, DrawList.TILES);
+        c.wall(tx - 1.6f, tz - 1.6f, tx + 1.6f, tz + 1.6f, WALK_TOP + th + 2.4f);
+    }
+
+    /** The water tower in the park: four iron legs braced across, a tank of pale blue on them, a ladder; 30 m to its top. */
+    private void waterTower(Cell c, float x, float z) {
+        DrawList d = c.boxes;
+        float legs = 22f, span = 2.6f;
+        for (int k = 0; k < 4; k++) {
+            float lx = x + (k % 2 == 0 ? -span : span), lz = z + (k < 2 ? -span : span);
+            d.box(lx, WALK_TOP + legs * 0.5f, lz, 0.2f, legs * 0.5f, 0.2f, null, 0x5C6670, DrawList.PLAIN);
+            c.wall(lx - 0.2f, lz - 0.2f, lx + 0.2f, lz + 0.2f, WALK_TOP + legs);
+        }
+        for (float y = 5f; y < legs; y += 5.5f) {
+            d.box(x, WALK_TOP + y, z - span, span, 0.08f, 0.08f, null, 0x5C6670, DrawList.PLAIN);
+            d.box(x, WALK_TOP + y, z + span, span, 0.08f, 0.08f, null, 0x5C6670, DrawList.PLAIN);
+            d.box(x - span, WALK_TOP + y, z, 0.08f, 0.08f, span, null, 0x5C6670, DrawList.PLAIN);
+            d.box(x + span, WALK_TOP + y, z, 0.08f, 0.08f, span, null, 0x5C6670, DrawList.PLAIN);
+        }
+        // the tank: a drum of blue-white, a rim, a cap
+        d.box(x, WALK_TOP + legs + 0.15f, z, span + 0.6f, 0.15f, span + 0.6f, null, 0x5C6670, DrawList.PLAIN);
+        d.box(x, WALK_TOP + legs + 3.3f, z, span + 0.3f, 3f, span + 0.3f, null, 0xBFD8E2, DrawList.PAINT);
+        d.box(x, WALK_TOP + legs + 6.6f, z, span - 0.2f, 0.4f, span - 0.2f, null, 0x8FB2C0, DrawList.PAINT);
+        d.box(x, WALK_TOP + legs + 7.4f, z, 0.9f, 0.5f, 0.9f, null, 0x8FB2C0, DrawList.PAINT);
+        c.wall(x - span - 0.3f, z - span - 0.3f, x + span + 0.3f, z + span + 0.3f, WALK_TOP + legs + 6.4f, WALK_TOP + legs);
+        // the ladder up one leg
+        c.detail.box(x - span - 0.35f, WALK_TOP + legs * 0.5f + 1f, z, 0.03f, legs * 0.5f + 1f, 0.3f, null, 0x2B2F3A, DrawList.RAIL);
     }
 
     // ---- the country past the town ----
@@ -870,6 +1002,7 @@ final class City implements Ground {
 
     /** Whether a square is a garden within an iron fence rather than paving round a fountain. */
     boolean garden(int i, int j) {
+        if (i == TOWER_I && j == TOWER_J) return true;
         if (i == HOME_I - 1 && j == HOME_J) return false;
         return (hash(i, j, 5) & 1) == 0;
     }
@@ -921,8 +1054,11 @@ final class City implements Ground {
                 (p1z - p0z) * 0.5f, null, sq ? 0xDCCDB2 : 0xCDBFA6, sq ? DrawList.PROMENADE : DrawList.PAVING);
         // what furnishes the streets and squares has its own seed, so the houses stay as they were
         Random deco = new Random(hash(i, j, 6));
-        if (sq) plaza(c, rnd, deco, x0, z0, garden(i, j));
+        if (oldTown(i, j)) oldTown(c, rnd, x0, z0, i, j);
+        else if (sq) plaza(c, rnd, deco, x0, z0, garden(i, j));
         else block(c, rnd, x0, z0, i, j);
+        // in the park's north-east quarter, off its fountain
+        if (i == TOWER_I && j == TOWER_J) waterTower(c, x0 + CELL * 0.5f + 12f, z0 + CELL * 0.5f + 12f);
         lamps(c, x0, z0);
         benches(c, x0, z0);
         parked(c, rnd, x0, z0, duty(i, j));
@@ -1284,9 +1420,9 @@ final class City implements Ground {
             int bays = 3 + rnd.nextInt(3);
             float len = bays * 2.9f;
             if (u1 - (u + len) < 6f) len = u1 - u;
-            int storeys = 3 + rnd.nextInt(4);
+            int storeys = lowRise > 0 ? 1 + rnd.nextInt(lowRise) : 3 + rnd.nextInt(4);
             float height = 3.3f * (storeys + 1) + 0.5f;
-            int tint = Street.WALLS[rnd.nextInt(Street.WALLS.length)];
+            int tint = lowRise > 0 ? OLD_WALLS[rnd.nextInt(OLD_WALLS.length)] : Street.WALLS[rnd.nextInt(Street.WALLS.length)];
             int seed = rnd.nextInt(1 << 16);
             float cu = u + len * 0.5f, cv = (v0 + v1) * 0.5f, hu = len * 0.5f, hv = (v1 - v0) * 0.5f;
             float cx = alongX ? cu : cv, cz = alongX ? cv : cu, hx = alongX ? hu : hv, hz = alongX ? hv : hu;

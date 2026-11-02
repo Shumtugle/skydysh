@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.56";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.57";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -166,7 +166,7 @@ final class World {
     }
 
     /**
-     * Mission of a kind (the hunt 1, the folder 2, the delivery 3) begun now where she is: the next
+     * Mission of a kind (the hunt 1, the folder 2, the delivery 3, the call out 4) begun now where she is: the next
      * number of that kind on from the one now, or the one now again, if it is of that kind (free,
      * on from the one last played).
      */
@@ -235,11 +235,11 @@ final class World {
     }
 
     /**
-     * Each kind of mission, as it is made now (the hunt 1, the folder 2, the delivery 3): raised
+     * Each kind of mission, as it is made now (the hunt 1, the folder 2, the delivery 3, the call out 4): raised
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 2, 2, 1, 1};
+    static final int[] REVISION = {0, 3, 3, 1, 1};
 
     /** Mission n's kind: the hunt 1, the folder 2, the delivery 3. */
     static int kindOf(int n) {

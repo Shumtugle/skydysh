@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.57
+
+- Districts: the town about home gets places of its own, on fixed places; further off it still
+  grows from the seed.
+- The old town, west of home, three blocks by three from the second street up from the shore:
+  each block cut in four by lanes crossing in its middle, cobbled, darker than the pavements;
+  low houses of warm plaster, two to four storeys; at each lane's mouth three posts, far enough
+  apart for her, too close for a car. In the middle block the market: a square where the lanes
+  cross, a tiled roof on eight posts over the stalls, a clock tower of 21 m, a clock on each face,
+  seen down the lanes and from the roofs.
+- The park with the water tower, north-east of home: four iron legs braced across, a pale blue
+  tank 22 m up, a ladder up one leg; in the park's corner, off its fountain.
+- The hunt and the folder are raised a revision: the town they are played in changed.
+- Stand: scenes `oldtown.txt`, `tower.txt`.
+
 ## 0.56
 
 - The town ends inland: ten streets up from the shore its last street, a low wall along it, and

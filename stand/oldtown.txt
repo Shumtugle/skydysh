@@ -1,0 +1,26 @@
+# The old town west of home: into a lane between its low warm houses, the posts at its mouth,
+# the market and the clock tower; and the water tower over its park north-east of home.
+screen 1096 2560
+wait 0.4
+free
+at -96 120 0
+wait 1
+shot o0
+at -96 138 0
+wait 1
+shot o1
+at -110 150 0.6
+wait 1
+shot o2
+at -160 120 0
+wait 1
+shot o3
+at -70 96 -1.5708
+wait 1
+shot o4
+at 224 330 0
+wait 1
+shot o5
+at 120 250 0.7
+wait 1
+shot o6
