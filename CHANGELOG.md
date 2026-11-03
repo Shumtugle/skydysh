@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.63
+
+- The marks of where the way goes are no longer glass, nor green rings: flat little pictures of
+  the place, half see-through, a thin dark edge round them, floating a little over the place
+  while it is in sight, at the edge of the frame the way it is while not. A house for home, a
+  pickup, the factory, the warehouse, the pass, the village, a paw for the puppy, the vets' (a
+  house with a cross). Green, open to her; red, shut for now (ready, not yet used).
+- Near home's door its own glass sign is there to touch, and the house mark is not drawn over it
+  as well: no more two signs over the door.
+- Stand: scene `marks.txt`.
+
 ## 0.62
 
 - The dispatch's screen fills the width of the phone, and is taller; the eye before it has the

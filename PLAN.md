@@ -72,6 +72,7 @@ release, each seen on the stand before the phone.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
+- 0.63 Flat pictures of places for the marks of the way, green or red; one sign over home's door.
 - 0.62 A screen the width of the phone; home's choice newest first, no numbers, a sign of the way back; new kinds first; a house for home; meters only in the hunt and the race.
 - 0.61 The puppy at sea: the fifth kind of mission, the vets' on the street north of home.
 - 0.60 A larger screen; a page of each mission's story behind a sign of a question; the seekers violet and breakable; a job paid once, the folder 200 000.

@@ -1,0 +1,25 @@
+# The marks of places: flat, half see-through pictures, not glass. Free in the street, home's house
+# green over the shore road from the far end; the delivery's factory and pickup; the call out's
+# pass; the puppy's paw and the vets'. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+free
+at -90 -9 1.45
+wait 1
+shot m0
+at 120 -9 -1.45
+wait 1
+shot m1
+mission 3
+at 20 -9 -1.57
+wait 1
+shot m2
+mission 4
+drivein 2.6 700 0
+wait 1
+shot m3
+mission 5
+at 520 -9 1.57
+wait 1
+shot m4

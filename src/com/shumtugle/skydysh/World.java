@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.62";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.63";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -2314,8 +2314,9 @@ final class World {
             d.badge(at[0], at[1], Math.max(8f, Math.min(16f, 300f / Math.max(1f, near))),
                     dv.step == Delivery.FACTORY ? Badges.PICK_UP : Badges.DOWN, shown, 0.5f + 0.5f * (float) Math.sin(time * 4f));
         }
-        if (dv.step == Delivery.HOME) homeMark(d, goal[0], goal[1], goal[2]);
-        else goalMark(d, f, goal[0], goal[1], goal[2], green, ink);
+        int pic = dv.step == Delivery.PICKUP ? Marks.TRUCK : dv.step == Delivery.FACTORY ? Marks.FACTORY
+                : dv.step == Delivery.STORE ? (dv.carrying != null && dv.carrying != driving ? Marks.TRUCK : Marks.WAREHOUSE) : Marks.HOUSE;
+        placeMark(d, f, goal[0], goal[1], goal[2], pic, Marks.OPEN);
     }
 
     /** Free: what has been won, and where home is (the next mission is taken there), quietly. */
@@ -2329,7 +2330,8 @@ final class World {
         if (far < 12f) return;
         String w = Lang.lines(waiting != null ? "goal.done" : "goal.free", mission.round, null)[0];
         shadowed(f, w, (W - PixelFont.width(w, 1)) / 2, 14, 1, cream, ink);
-        homeMark(d, City.HOME_DOOR_X, City.WALK_TOP + 2.6f, City.HOME_DOOR_Z);
+        // at the door its own sign is there to touch: no mark over it as well
+        if (far > 30f) placeMark(d, f, City.HOME_DOOR_X, City.WALK_TOP + 3.5f, City.HOME_DOOR_Z, Marks.HOUSE, Marks.OPEN);
     }
 
     /**
@@ -2373,7 +2375,7 @@ final class World {
             float shown = Math.min(1f, Math.max(0f, (60f - near) / 15f));
             d.badge(at[0], at[1], Math.max(8f, Math.min(16f, 300f / Math.max(1f, near))), Badges.DOWN, shown, 0.5f + 0.5f * (float) Math.sin(time * 4f));
         }
-        goalMark(d, f, goal[0], goal[1], goal[2], green, ink);
+        placeMark(d, f, goal[0], goal[1], goal[2], pu.held() ? Marks.CLINIC : Marks.PAW, Marks.OPEN);
     }
 
     /** Over the frame, a call out: the clock and the pay, how far off where the way goes is, and what it is. */
@@ -2394,47 +2396,28 @@ final class World {
         if (!rs.goal(duty, driving, runner, goal)) return;
         String w = Lang.lines(rs.goalWord(), mission.round, null)[0];
         shadowed(f, w, (W - PixelFont.width(w, 2)) / 2, 16, 2, green, ink);
-        goalMark(d, f, goal[0], goal[1], goal[2], green, ink);
-    }
-
-    /** Where the way goes: a green ring round it while it is in sight, a green mark at the edge the way it is while not. */
-    private void goalMark(DrawList d, Px f, float x, float y, float z, int green, int ink) {
-        boolean seen = d.project(x, y, z, at) && at[0] > 6 && at[0] < W - 6 && at[1] > 50 && at[1] < h - 6;
-        if (seen) {
-            float rr = 6.5f + 1.2f * (float) Math.sin(time * 5f);
-            ring(f, at[0], at[1], rr + 1f, rr - 3f, ink);
-            ring(f, at[0], at[1], rr, rr - 2f, green);
-            return;
-        }
-        float ax = (float) Math.sin(runner.eyeYaw), az = (float) Math.cos(runner.eyeYaw);
-        float vx = x - runner.x, vz = z - runner.z;
-        float ang = (float) Math.atan2(vx * az - vz * ax, vx * ax + vz * az);
-        float ex = (float) Math.sin(ang), ey = -(float) Math.cos(ang);
-        float k = Math.min((W * 0.5f - 12f) / Math.max(1e-3f, Math.abs(ex)), (h * 0.5f - 60f) / Math.max(1e-3f, Math.abs(ey)));
-        float px = W * 0.5f + ex * k, py = h * 0.5f + ey * k;
-        f.disc(px, py, 6.5f, ink);
-        f.disc(px, py, 5.5f, green);
-        f.disc(px, py, 2.2f, 0xFFD9FFE6);
+        placeMark(d, f, goal[0], goal[1], goal[2], rs.step == Rescue.PICKUP ? Marks.TRUCK : rs.step == Rescue.PASS ? Marks.PASS : Marks.VILLAGE, Marks.OPEN);
     }
 
     /**
-     * Home's mark: the sign of the house, of the same glass as the buttons, over home's door while it
-     * is in sight, breathing a little; out of sight, smaller, at the edge of the frame the way it is.
+     * Where the way goes, as a place: its picture (see Marks), half see-through, over the place
+     * while it is in sight, floating a little; out of sight, at the edge of the frame the way it is.
+     * Green, open to her; red, shut for now.
      */
-    private void homeMark(DrawList d, float x, float y, float z) {
-        float lit = 0.25f + 0.25f * (float) Math.sin(time * 4f);
-        boolean seen = d.project(x, y, z, at) && at[0] > 14 && at[0] < W - 14 && at[1] > 60 && at[1] < h - 14;
+    private void placeMark(DrawList d, Px f, float x, float y, float z, int pic, int color) {
+        float bob = 1.5f * (float) Math.sin(time * 2.4f);
+        float half = Marks.SIDE * Marks.SCALE * 0.5f + 2f;
+        boolean seen = d.project(x, y, z, at) && at[0] > half && at[0] < W - half && at[1] > 60 && at[1] < h - half;
         if (seen) {
-            float near = (float) Math.sqrt((x - runner.x) * (x - runner.x) + (z - runner.z) * (z - runner.z));
-            d.badge(at[0], at[1], Math.max(11f, Math.min(18f, 400f / Math.max(1f, near))), Badges.HOME, 0.95f, lit);
+            Marks.draw(f, pic, at[0], at[1] + bob, color, 1f);
             return;
         }
         float ax = (float) Math.sin(runner.eyeYaw), az = (float) Math.cos(runner.eyeYaw);
         float vx = x - runner.x, vz = z - runner.z;
         float ang = (float) Math.atan2(vx * az - vz * ax, vx * ax + vz * az);
         float ex = (float) Math.sin(ang), ey = -(float) Math.cos(ang);
-        float k = Math.min((W * 0.5f - 18f) / Math.max(1e-3f, Math.abs(ex)), (h * 0.5f - 66f) / Math.max(1e-3f, Math.abs(ey)));
-        d.badge(W * 0.5f + ex * k, h * 0.5f + ey * k, 12f, Badges.HOME, 0.9f, lit);
+        float k = Math.min((W * 0.5f - half - 4f) / Math.max(1e-3f, Math.abs(ex)), (h * 0.5f - 70f) / Math.max(1e-3f, Math.abs(ey)));
+        Marks.draw(f, pic, W * 0.5f + ex * k, h * 0.5f + ey * k + bob, color, 0.85f);
     }
 
     /** A ring over the frame round (cx, cy): between radii in and out, in one colour. */

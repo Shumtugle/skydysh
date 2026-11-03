@@ -23,8 +23,8 @@ later begins in the street before home's door, the next mission waiting inside.
 
 A mission lost (the time run out, the folder taken by another): back into her head at once for
 the report, and the same task again from where it began, its targets laid out the same, never
-from where it was lost. A mission won: no screen; at the top, done and home, and the sign of a
-house over home's door, or at the edge of the frame the way it is. The town is hers on the way.
+from where it was lost. A mission won: no screen; at the top, done and home, and a little green
+house over home's, or at the edge of the frame the way it is. The town is hers on the way.
 At home, on the sofa, the game is kept and the report read (its time against the mission's best,
 kept on the phone); then the screen offers the next (a kind not yet won comes first, while there
 is one), or one of the kinds already won, the newest at the top. A sign of the way back floats
@@ -33,7 +33,9 @@ likes, the next mission taken at home. A job is called by its kind, not by a num
 
 Meters to where the way goes are shown only where they are the game itself: in the hunt, to the
 nearest runaway, and on the roofs, to the folder and for each seeker. Elsewhere a word at the top
-and a mark show the way.
+and a mark show the way: a flat little picture of the place, half see-through, not glass (glass
+is for what is touched) — a house for home, a pickup, the factory, the warehouse, the pass, the
+village, a paw for the puppy, the vets'. Green, the place is open to her; red, shut for now.
 
 One finger leads her: held down, she runs; moved sideways, she turns; flicked up, she jumps,
 flicked down, she slides; a tap is the mallet's. Other fingers, while it leads, press what they
