@@ -99,11 +99,17 @@ the way each one out of sight is. A hunt has five minutes: when the last is caug
 more are let loose; when the time runs out first, five again.
 
 The second mission, the folder: dropped from a helicopter somewhere on the roofs, a reward for
-it, and brums after it too, each climbing a house of its row and running along the roofs.
+it, and three seekers after it too: brums of violet brick with true plates, not on fire, each
+climbing a house of its row and running along the roofs. The mallet stops a seeker as it stops a
+runaway: broken, it is out of the race.
 Up by a lift or a fire escape in a house of the row, then roof to roof: up the iron ladders
 where the next roof stands higher, down onto the lower ones, leaping, gliding, beating the air
 to rise; taken, she goes down to the street with it by herself. If a brum gets there first,
 the mission is played again.
+
+A paid job is paid once, the first time it is done; done again, only its time counts. Over each
+briefing a sign of a question floats by the screen: touched, a still page of what lies behind the
+mission and what it asks; the same from under the pause while it is played.
 
 The third mission, the delivery: a load waits at the factory with the chimney, west along the
 shore road, and is wanted at the store, east along it. A duty pickup to the factory's gate,

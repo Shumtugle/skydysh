@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.60
+
+- The dispatch's screen larger, and the eye in the room a step further back: the longest lines of
+  every briefing fit, in both languages, with room round them.
+- Over a briefing a sign of a question floats by the top right of the screen; touched, a page of
+  its own over everything, still, deep blue going to violet: what lies behind the mission (why the
+  plates burn, why folders lie on the roofs, what the crates are, why the pass), and what it asks
+  and how it is played. A touch closes it; a long page moves under the finger. The same page from
+  under the pause during a mission, its third row.
+- The folder's seekers are no runaways: brums of violet brick where hers is red, their plates true
+  and cool, not on fire, no glow round them; broken, their stones fall violet and cold. The mallet
+  breaks a seeker as it does a runaway: it is out of the race. Their marks in the corner violet.
+- A paid job is paid once, the first time it is done: done again, the briefing and the report
+  say it was paid already, and only the time counts. The folder pays 200 000. A game kept before
+  takes the paid kinds it had won as paid.
+- A choice's lines no longer stay coloured as a choice on the briefing typed after it.
+- Stand: scenes `story.txt`, `screen.txt`, `rivals.txt`, `paid.txt`, `pausestory.txt`; commands
+  `help`, `storytap`, `atrival`.
+
 ## 0.59
 
 - Home after a mission won: the report on the screen, and at the key, on the same screen, the

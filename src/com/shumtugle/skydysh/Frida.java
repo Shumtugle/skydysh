@@ -24,6 +24,18 @@ final class Frida {
     // the plate on a brum's brow, and the sign cut in it: hers has none, so these are drawn on fire only
     static final int SHEM = 0x5FE0C4, SIGN = 0x1E3A40;
 
+    /**
+     * Drawn as a rival is, not on fire: a brum of violet brick where hers is red, the plate on the
+     * brow whole and cool. Set round a draw, and cleared after it.
+     */
+    static boolean violet;
+    static final int VIOLET = 0x7B48B0, VIOLET_DARK = 0x5A3488;
+
+    /** A block's color as a rival's: the brick violet, the rest as it is. */
+    static int rival(int own) {
+        return own == BRICK ? VIOLET : own == BRICK_DARK ? VIOLET_DARK : own;
+    }
+
     /** How far her eyes are lit, 0 (dark coals) to 1. */
     static float eyes = 1f;
     /** How much bigger her eyes are drawn than they are: in the dark of the opening they must not be lost. */
@@ -355,7 +367,7 @@ final class Frida {
             rot[6] = -sy * r00 + cy * r20; rot[7] = -sy * r01 + cy * r21; rot[8] = -sy * r02 + cy * r22;
             float wx = x + cy * px + sy * pz, wz = z - sy * px + cy * pz;
             boolean plate = COL[i] == SHEM || COL[i] == SIGN;
-            if (plate && !fire) continue;
+            if (plate && !fire && !violet) continue;
             if (capPos != null) {
                 if (plate) {
                     if (COL[i] == SHEM) {
@@ -379,6 +391,10 @@ final class Frida {
             }
             int col = COL[i] == EYES ? Street.mix(0x2A1C14, Street.mix(EYES, 0xFF6A12, eyeHeat), eyes) : COL[i];
             int mat = MAT[i];
+            if (violet && !fire) {
+                col = COL[i] == EYES ? EYES : rival(COL[i]);
+                if (plate) mat = DrawList.PLAIN;
+            }
             if (fire) {
                 int own = COL[i];
                 // how hot the block burns: the dark ones low, the light ones high, each flickering on its own

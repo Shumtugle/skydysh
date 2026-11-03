@@ -1,0 +1,21 @@
+# The briefing of the folder on the wider screen, the sign of a question floating by its top right;
+# touched, the story of the mission over everything; a touch, back to the briefing. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 2
+dispatch
+wait 3
+shot q0
+help
+wait 0.5
+shot q1
+storytap
+wait 0.4
+shot q2
+mission 1
+dispatch
+wait 1
+help
+wait 0.5
+shot q3

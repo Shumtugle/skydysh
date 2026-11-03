@@ -1,0 +1,15 @@
+# The folder's rivals: brums of violet brick with true plates, cool, not on fire; one come up to on
+# the street and struck with the mallet falls apart, out of the race. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 2
+wait 1
+atrival 0 7
+wait 0.3
+shot v0
+tap 137 400
+wait 0.9
+shot v1
+wait 2
+shot v2

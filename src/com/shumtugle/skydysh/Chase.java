@@ -581,6 +581,7 @@ final class Chase {
 
     /** Whether she still burns: loose, or caught a moment ago and not yet gone out. */
     boolean burning() {
+        if (rival) return false;
         return state != STONE || clock - stateAt < COOL;
     }
 
@@ -661,6 +662,13 @@ final class Chase {
             if (lying()) stones(d, lit);
             return;
         }
+        if (rival) {
+            // a rival is no runaway: her plate is a true one, cool; she does not burn
+            Frida.violet = true;
+            Frida.draw(d, x, y + lift, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), false);
+            Frida.violet = false;
+            return;
+        }
         Frida.draw(d, x, y + lift, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), true);
         if (!lit) return;
         float flick = 0.92f + 0.08f * (float) Math.sin(clock * 11f) * (float) Math.sin(clock * 4.3f + 1f);
@@ -683,7 +691,7 @@ final class Chase {
      * cold stone; at the last sinking into the ground.
      */
     private void stones(DrawList d, boolean lit) {
-        float k = clock - stateAt, cool = Math.max(0f, 1f - k / COOL);
+        float k = clock - stateAt, cool = rival ? 0f : Math.max(0f, 1f - k / COOL);
         float sink = Math.max(0f, k - LIES) / SINKS;
         for (int i = 0; i < bn; i++) {
             // the block's turn as it fell: about its own axis, so far
@@ -696,14 +704,14 @@ final class Chase {
                 d.box(bp[i * 3], py, bp[i * 3 + 2], bh[i * 3], hy, bh[i * 3 + 2], turnNow, own,
                         DrawList.material(DrawList.FIRE, Math.round(Math.max(0f, Math.min(0.99f, hot)) * 250f)));
             } else {
-                d.box(bp[i * 3], py, bp[i * 3 + 2], bh[i * 3], hy, bh[i * 3 + 2], turnNow, Frida.cold(own), DrawList.STONE);
+                d.box(bp[i * 3], py, bp[i * 3 + 2], bh[i * 3], hy, bh[i * 3 + 2], turnNow, rival ? Frida.rival(own) : Frida.cold(own), DrawList.STONE);
             }
         }
         // the plate, still alight, the sign cut in it, as long as her stones lie
         spun(plateAxis, plateSpin, plateTurn, turnNow);
         float py = plate[1] - sink * 0.2f;
         float sz = SIZE;
-        d.box(plate[0], py, plate[2], 0.075f * sz, 0.045f * sz, 0.008f * sz, turnNow, Frida.SHEM, DrawList.GLOW);
+        d.box(plate[0], py, plate[2], 0.075f * sz, 0.045f * sz, 0.008f * sz, turnNow, Frida.SHEM, rival ? DrawList.PLAIN : DrawList.GLOW);
         float nx = turnNow[2], ny = turnNow[5], nz = turnNow[8];
         for (int side = -1; side <= 1; side += 2)
             d.box(plate[0] + nx * side * 0.01f * sz, py + ny * side * 0.01f * sz, plate[2] + nz * side * 0.01f * sz,

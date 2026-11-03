@@ -306,6 +306,15 @@ public final class Stand implements World.Host {
             step();
             Pickup q = world.driving;
             System.out.println(String.format("%7.2fs  at the wheel at %.1f %.1f, %d crates on", time, q.x, q.z, q.load));
+        } else if (c.equals("help")) {
+            // help: a touch on the sign of a question by the briefing, if it is there, told
+            System.out.println(String.format("%7.2fs  %s", time, world.standHelp() ? "the story opened" : "no sign of a question"));
+            step();
+        } else if (c.equals("storytap")) {
+            // storytap: a touch on the open story's page: it closes
+            world.standStoryTap();
+            step();
+            System.out.println(String.format("%7.2fs  story %s", time, world.story == null ? "closed" : "still open"));
         } else if (c.equals("sofa")) {
             // sofa: in home's room, down on the sofa, as if she had come in at the door and up to it
             world.standSofa();
@@ -505,6 +514,24 @@ public final class Stand implements World.Host {
                 }
             }
             world.touch(World.UP, fx, fy);
+        } else if (c.equals("atrival")) {
+            // atrival K METERS: her put so far from rival K of the folder, on the ground, facing her
+            Chase g = world.folder.rivals[Integer.parseInt(p[1])];
+            float m = f(p[2]), x = g.x - m, z = g.z;
+            // along the street she waits by: the way that is open, on the ground
+            float[][] ways = {{-1f, 0f}, {1f, 0f}, {0f, -1f}, {0f, 1f}};
+            for (float[] w : ways) {
+                float wx = g.x + w[0] * m, wz = g.z + w[1] * m;
+                if (Math.abs(world.city.ground(wx, wz, 100f, 0f) - g.y) < 0.3f) {
+                    x = wx;
+                    z = wz;
+                    break;
+                }
+            }
+            Runner r = world.runner;
+            r.put(x, g.y, z, (float) Math.atan2(g.x - x, g.z - z));
+            r.recenter();
+            step();
         } else if (c.equals("brumahead")) {
             // the nearest brum put running down the street ahead of the start, as the chase once began
             world.chase.standAhead();

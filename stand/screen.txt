@@ -1,0 +1,22 @@
+# The dispatch's screen, wider, with the longest lines on it: the folder's briefing and the call
+# out's, in Russian and in English, all typed.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 2
+dispatch
+wait 6
+shot s0
+mission 4
+dispatch
+wait 7
+shot s1
+lang en
+mission 2
+dispatch
+wait 6
+shot s2
+mission 3
+dispatch
+wait 7
+shot s3

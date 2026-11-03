@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.59";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.60";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -86,6 +86,9 @@ final class World {
         kindsWon = host.loadInt(SAVE_KINDS);
         if (kindsWon == 0)
             for (int n = 1; n < next; n++) kindsWon |= 1 << kindOf(n);
+        Dispatch.paidKinds = host.loadInt(SAVE_PAID);
+        // a game kept before pay was counted: the paid kinds it had won taken as paid
+        if (Dispatch.paidKinds == 0) Dispatch.paidKinds = kindsWon & (1 << 2 | 1 << 3 | 1 << 4);
         // the way to play on foot: one finger, unless two thumbs are offered and were chosen (kept as 2)
         Runner.classic = !TWO_THUMBS_OFFERED || host.loadInt(SAVE_CONTROLS) != 2;
         plates = host.loadInt(SAVE_PLATES);
@@ -192,6 +195,21 @@ final class World {
         host.saveInt(SAVE_MISSION, n);
     }
 
+    /** For the desktop stand: a touch on the sign of a question by the briefing; false if it is not shown. */
+    boolean standHelp() {
+        float[] at = new float[2];
+        if (dispatch == null || !dispatch.helpAt(at)) return false;
+        touch(DOWN, 0, at[0], at[1]);
+        touch(UP, 0, at[0], at[1]);
+        return true;
+    }
+
+    /** For the desktop stand: a touch on the story's page where it does not move: it closes. */
+    void standStoryTap() {
+        touch(DOWN, 0, W * 0.5f, h * 0.5f);
+        touch(UP, 0, W * 0.5f, h * 0.5f);
+    }
+
     /** For the desktop stand: in home's room, down on the sofa. */
     void standSofa() {
         if (driving != null) getOut();
@@ -290,6 +308,10 @@ final class World {
         return langRowY() + 26f;
     }
 
+    float storyRowY() {
+        return resultsRowY() + 26f;
+    }
+
     /** A touch under the pause on one of its rows: the language turned to the next, or the best times shown. */
     private boolean pauseRow(float x, float y) {
         if (Math.abs(x - W * 0.5f) > 90f) return false;
@@ -305,6 +327,10 @@ final class World {
             host.buzz(20);
             return true;
         }
+        if (!free && Math.abs(y - storyRowY()) < 11f) {
+            openStory(kindOf(mission.round));
+            return true;
+        }
         return false;
     }
 
@@ -316,6 +342,9 @@ final class World {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, teal = 0xFF7FE6D2;
         shadowed(f, l, Math.round(W * 0.5f - PixelFont.width(l, 1) * 0.5f), Math.round(langRowY() - 4f), 1, teal, ink);
         shadowed(f, r, Math.round(W * 0.5f - PixelFont.width(r, 1) * 0.5f), Math.round(resultsRowY() - 4f), 1, cream, ink);
+        if (free) return;
+        String st = Lang.lines("pause.story", 0, null)[0];
+        shadowed(f, st, Math.round(W * 0.5f - PixelFont.width(st, 1) * 0.5f), Math.round(storyRowY() - 4f), 1, cream, ink);
     }
 
     /** The best times kept, mission by mission, the latest last (as many as the screen holds). */
@@ -394,13 +423,37 @@ final class World {
         return again ? Dispatch.again(mission.round) : Dispatch.briefing(mission.round);
     }
 
+    static final String SAVE_PAID = "paid";
+    /** What the mission just done paid (0: nothing, it was paid before). */
+    private int paidNow;
+
+    // ---- what lies behind a mission: a page over everything, from the briefing's sign or the pause ----
+    /** The page of a mission's story now open, or null. */
+    Story story;
+
+    private void openStory(int kind) {
+        if (kind < 1) return;
+        story = Story.of(kind);
+        letGo();
+        host.buzz(20);
+        host.sound(Synth.TOCK, 0.3f, 1.2f);
+    }
+
+    /** The page over the frame, if one is open: nothing of the frame's own buttons shows through it. */
+    private void storyFlat(DrawList d, Px f) {
+        if (story == null) return;
+        story.draw(f, Dispatch.font(host));
+        d.badgeN = 0;
+        d.tube[0] = d.tube[2] = 0f;
+    }
+
     /** The report on the mission just done. */
     private String[] report() {
-        if (rescue != null) return Dispatch.rescued(mission.round, clock(rescue.doneAt), money);
-        if (delivery != null) return Dispatch.delivered(mission.round, clock(delivery.doneAt), money);
+        if (rescue != null) return Dispatch.rescued(mission.round, clock(rescue.doneAt), money, paidNow);
+        if (delivery != null) return Dispatch.delivered(mission.round, clock(delivery.doneAt), money, paidNow);
         if (folder == null && mission.late) return Dispatch.late(mission.round, mission.caught());
         if (folder == null) return Dispatch.report(mission.round, clock(mission.doneAt));
-        if (folder.hers) return Dispatch.paid(mission.round, clock(folder.doneAt), money);
+        if (folder.hers) return Dispatch.paid(mission.round, clock(folder.doneAt), money, paidNow);
         return Dispatch.lost(mission.round, clock(folder.doneAt));
     }
 
@@ -423,10 +476,14 @@ final class World {
     /** The mission done: the next one to play and what has been won, kept for the next game. */
     private void save() {
         boolean lost = hunt() ? mission.late : folder != null && folder.theirs;
-        if (rescue != null) money += Rescue.REWARD;
-        else if (delivery != null) money += Delivery.REWARD;
-        else if (folder == null) plates += mission.caught();
-        else if (folder.hers) money += Folder.REWARD;
+        // a job is paid once, the first time it is done
+        paidNow = lost ? 0 : Dispatch.due(mission.round);
+        if (paidNow > 0) {
+            money += paidNow;
+            Dispatch.paidKinds |= 1 << kindOf(mission.round);
+            host.saveInt(SAVE_PAID, Dispatch.paidKinds);
+        }
+        if (folder == null && rescue == null && delivery == null) plates += mission.caught();
         // lost, the same mission is played again
         host.saveInt(SAVE_MISSION, lost ? mission.round : mission.round + 1);
         host.saveInt(SAVE_PLATES, plates);
@@ -441,6 +498,7 @@ final class World {
         Frida.eyeHeat = 0f;
         runner.update(0f, city, cars, walkers);
         dispatch = new Dispatch(host, done ? report() : briefing());
+        if (!done) dispatch.story(kindOf(mission.round));
     }
 
     /** No mission now, the town hers till she goes home for the next (a game begun past the first, and the desktop stand). */
@@ -515,16 +573,29 @@ final class World {
             return;
         }
         if (id < 0 || id >= FINGERS) return;
+        if (story != null) {
+            // the story of the mission over everything: the first finger turns its page or closes it
+            if (id == 0 || type == DOWN) story.touch(type, x, y);
+            if (story.closed) {
+                story = null;
+                letGo();
+            }
+            return;
+        }
         if (opening != null) {
             if (type == DOWN) opening.skip();
             return;
         }
         if (dispatch != null) {
+            if (type == DOWN && dispatch.onHelp(x, y)) {
+                openStory(dispatch.storyKind());
+                return;
+            }
             if (type == DOWN && dispatch.choosing()) {
                 int c = dispatch.pickAt(x, y);
                 if (c > 0 && c < Dispatch.REST) {
                     chooseMission(c);
-                    dispatch.then(briefing());
+                    dispatch.then(briefing()).story(kindOf(mission.round));
                 } else if (c == 0 && free) {
                     // on to the next, whatever its kind; lost, the same again, from where it began
                     again = lost;
@@ -534,7 +605,7 @@ final class World {
                     caughtSeen = 0;
                     nextSlot = 0;
                     struckSeen = 0;
-                    dispatch.then(briefing());
+                    dispatch.then(briefing()).story(kindOf(mission.round));
                     again = false;
                 }
             } else if (type == DOWN) dispatch.touch();
@@ -919,6 +990,11 @@ final class World {
     boolean paused;
 
     void update(float dt) {
+        if (story != null) {
+            // the town stands still while its page is read
+            story.update(dt);
+            return;
+        }
         if (paused && opening == null && dispatch == null) return;
         time += dt;
         if (opening != null) {
@@ -932,7 +1008,7 @@ final class World {
         Frida.eyeHeat = 0f;
                 whiteOut = WHITE_OUT;
                 runner.update(0f, city, cars, walkers);      // the eye put behind her
-                if (!free) dispatch = new Dispatch(host, briefing()).afterBlow();
+                if (!free) dispatch = new Dispatch(host, briefing()).afterBlow().story(kindOf(mission.round));
                 letGo();
             }
             return;
@@ -967,7 +1043,7 @@ final class World {
                     swap();
                     swapT = -1f;
                 }
-                dispatch = new Dispatch(host, said).then(Dispatch.again(mission.round));
+                dispatch = new Dispatch(host, said).then(Dispatch.again(mission.round)).story(kindOf(mission.round));
                 retryAfter = true;
                 return;
             }
@@ -2079,22 +2155,24 @@ final class World {
         Folder fo = folder;
         String clock = clock(fo.over() ? fo.doneAt : fo.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        String sum = money(Folder.REWARD);
-        shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
+        // what it pays: the sum, until it has been paid once
+        int due = Dispatch.due(mission.round);
+        String sum = money(due);
+        if (due > 0) shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
         // the rivals: a mark each, alight while it is about, and what it has still to go
         for (int k = 0; k < Folder.RIVALS; k++) {
             Chase g = fo.rivals[k];
             int y = 12 + k * 13;
             boolean about = !g.done();
             f.disc(14, y + 3, 4.5f, ink);
-            f.disc(14, y + 3, 3.5f, about ? fire : 0xFF3A4660);
+            f.disc(14, y + 3, 3.5f, about ? 0xFF000000 | Frida.VIOLET : 0xFF3A4660);
             if (!about) continue;
             String m = Math.round(fo.toGo(g)) + "";
             shadowed(f, m, 22, y, 1, g.y > 1f ? gold : cream, ink);
         }
         if (fo.over() && fo.hers) {
             String big = "+" + sum;
-            shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
+            if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
             return;
         }
         if (fo.theirs) {
@@ -2140,8 +2218,10 @@ final class World {
         Delivery dv = delivery;
         String clock = clock(dv.over() ? dv.doneAt : dv.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        String sum = money(Delivery.REWARD);
-        shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
+        // what it pays: the sum, until it has been paid once
+        int due = Dispatch.due(mission.round);
+        String sum = money(due);
+        if (due > 0) shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
         // the crates on the pickup she drives, in a row of little squares
         Pickup p = driving != null ? driving : dv.carrying;
         for (int k = 0; k < Pickup.CRATES; k++) {
@@ -2151,7 +2231,7 @@ final class World {
         }
         if (dv.over()) {
             String big = "+" + sum;
-            shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
+            if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
             return;
         }
         if (!dv.goal(duty, driving, runner, goal)) return;
@@ -2193,11 +2273,13 @@ final class World {
         Rescue rs = rescue;
         String clock = clock(rs.over() ? rs.doneAt : rs.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        String sum = money(Rescue.REWARD);
-        shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
+        // what it pays: the sum, until it has been paid once
+        int due = Dispatch.due(mission.round);
+        String sum = money(due);
+        if (due > 0) shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
         if (rs.over()) {
             String big = "+" + sum;
-            shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
+            if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
             return;
         }
         if (!rs.goal(duty, driving, runner, goal)) return;
@@ -2317,6 +2399,7 @@ final class World {
         if (dispatch == null) buttons(d);
         if (dispatch == null && paused) pauseFlat(f);
         swapFlat(f);
+        storyFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         meter(f);
     }
@@ -2411,6 +2494,7 @@ final class World {
             if (paused) pauseFlat(f);
         }
         swapFlat(f);
+        storyFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         // the white the opening ended on, going off
         if (whiteOut > 0f) Opening.wash(f, whiteOut / WHITE_OUT);

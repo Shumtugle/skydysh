@@ -1,0 +1,13 @@
+# Under the pause in a mission: the language, the results, and the way to the story of the job;
+# touched, the story's page. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 3
+wait 1
+tap 24 68
+wait 0.5
+shot u0
+tap 137 410
+wait 0.5
+shot u1

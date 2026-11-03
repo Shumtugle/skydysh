@@ -28,8 +28,8 @@ final class Dispatch {
     static final float HEAD = 2.2f;                     // the room's middle above her feet
 
     // the screen in the front wall, the eye before it (the room's own frame: x right, y up, z ahead)
-    private static final float SX = 0.5f, SY0 = -0.1f, SY1 = 0.62f, FRONT = 0.65f;
-    private static final float EYE_Y = 0.2f, EYE_Z = -1.3f;
+    private static final float SX = 0.62f, SY0 = -0.2f, SY1 = 0.72f, FRONT = 0.65f;
+    private static final float EYE_Y = 0.24f, EYE_Z = -1.55f;
     private static final float KEY_X = 0.25f, KEY_Y = -0.47f, KEY_Z = 0.42f;
     private static final float CLOCK_X = -0.35f, CLOCK_Y = -0.4f, CLOCK_Z = 0.4f;
 
@@ -168,17 +168,39 @@ final class Dispatch {
         return this;
     }
 
+    /**
+     * The kinds of paid mission already paid for, a bit each (1 << kind): a job is paid once, the
+     * first time it is done; done again, only its time counts. Kept by the world.
+     */
+    static int paidKinds;
+
+    /** What a mission of round's kind pays now: its reward the first time, nothing after. */
+    static int due(int round) {
+        int kind = World.kindOf(round);
+        int reward = kind == 2 ? Folder.REWARD : kind == 3 ? Delivery.REWARD : kind == 4 ? Rescue.REWARD : 0;
+        return (paidKinds & (1 << kind)) != 0 ? 0 : reward;
+    }
+
+    /** The line of a briefing with the pay in it: the sum, or, paid before, that it was. */
+    private static String[] priced(String[] lines, int round) {
+        int due = due(round);
+        for (int k = 0; k < lines.length; k++)
+            if (lines[k].contains("{reward}"))
+                lines[k] = due > 0 ? lines[k].replace("{reward}", World.money(due)) : Lang.lines("paid.before", round, null)[0];
+        return lines;
+    }
+
     /** What the screen says before a mission. */
     static String[] briefing(int round) {
-        if (Folder.its(round)) return Lang.lines("brief.folder", round, null);
-        if (Delivery.its(round)) return Lang.lines("brief.delivery", round, null);
-        if (Rescue.its(round)) return Lang.lines("brief.rescue", round, null);
+        if (Folder.its(round)) return priced(Lang.lines("brief.folder", round, null), round);
+        if (Delivery.its(round)) return priced(Lang.lines("brief.delivery", round, null), round);
+        if (Rescue.its(round)) return priced(Lang.lines("brief.rescue", round, null), round);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
     /** Before a mission again: the folder, after the rivals got there first; a hunt, after the time ran out. */
     static String[] again(int round) {
-        return Lang.lines(Folder.its(round) ? "brief.again" : Rescue.its(round) ? "brief.rescue.again" : "brief.late", round, null);
+        return priced(Lang.lines(Folder.its(round) ? "brief.again" : Rescue.its(round) ? "brief.rescue.again" : "brief.late", round, null), round);
     }
 
     /** The time ran out with some of the five still loose: how many were caught. */
@@ -189,18 +211,18 @@ final class Dispatch {
     }
 
     /** The folder brought in: the reward, what has been won in all, the time. */
-    static String[] paid(int round, String time, int money) {
-        return fill(Lang.lines("report.folder", round, time), Folder.REWARD, money);
+    static String[] paid(int round, String time, int money, int got) {
+        return fill(Lang.lines("report.folder", round, time), got, money);
     }
 
     /** The load brought to the store and her home: the pay, what has been won in all, the time. */
-    static String[] delivered(int round, String time, int money) {
-        return fill(Lang.lines("report.delivery", round, time), Delivery.REWARD, money);
+    static String[] delivered(int round, String time, int money, int got) {
+        return fill(Lang.lines("report.delivery", round, time), got, money);
     }
 
     /** The pass cleared and the village got to: the pay, what has been won in all, the time. */
-    static String[] rescued(int round, String time, int money) {
-        return fill(Lang.lines("report.rescue", round, time), Rescue.REWARD, money);
+    static String[] rescued(int round, String time, int money, int got) {
+        return fill(Lang.lines("report.rescue", round, time), got, money);
     }
 
     /** The rivals got there first. */
@@ -210,7 +232,8 @@ final class Dispatch {
 
     private static String[] fill(String[] lines, int reward, int money) {
         for (int k = 0; k < lines.length; k++)
-            lines[k] = lines[k].replace("{reward}", World.money(reward)).replace("{sum}", World.money(money));
+            lines[k] = lines[k].contains("{reward}") && reward <= 0 ? Lang.lines("paid.before", 0, null)[0]
+                    : lines[k].replace("{reward}", World.money(reward)).replace("{sum}", World.money(money));
         return lines;
     }
 
@@ -262,10 +285,10 @@ final class Dispatch {
             // the screen wiped, the next dispatch typed on it
             show(next);
             next = null;
-            if (nextPick != null) {
-                pick = nextPick;
-                nextPick = null;
-            }
+            // the next lines are a choice of their own, or none: the last one's lines no longer picked
+            pick = nextPick;
+            nextPick = null;
+            picked = -1;
             knockAt = -1f;
             pressed = false;
             host.sound(Synth.TV_OFF, 0.3f, 1.6f);
@@ -343,7 +366,57 @@ final class Dispatch {
         if (size < 1.05f) {
             screen(d, f);
             clock(d, f);
+            help(d);
         }
+    }
+
+    // ---- the sign of a question by the screen, over a briefing: what lies behind the mission ----
+    /** The kind of mission whose story the sign opens (0: no sign). */
+    private int storyKind;
+    private float helpX = -99f, helpY = -99f;
+    private boolean helpShown;
+    static final float HELP_HALF = 15f;
+
+    /** Over the last of these lines (a briefing), the sign that opens the story of a mission of the kind. */
+    Dispatch story(int kind) {
+        storyKind = kind;
+        return this;
+    }
+
+    /** The sign of a question by the top right of the screen, floating, once the briefing is on it. */
+    private void help(DrawList d) {
+        helpShown = storyKind > 0 && next == null && pick == null && t >= CLOSE && knockAt < 0f && d.tube[2] > d.tube[0];
+        if (!helpShown) return;
+        float bob = 2.5f * (float) Math.sin(t * 2.2f);
+        helpX = d.tube[2] - 6f;
+        helpY = d.tube[1] - 14f + bob;
+        float lit = 0.15f + 0.15f * (float) Math.sin(t * 3f);
+        d.badge(helpX, helpY, HELP_HALF, Badges.HELP, 0.95f, lit);
+    }
+
+    /** Whether a touch at (x, y) is on the sign of a question. */
+    boolean onHelp(float x, float y) {
+        if (!helpShown) return false;
+        float m = HELP_HALF + 8f;
+        return Math.abs(x - helpX) < m && Math.abs(y - helpY) < m;
+    }
+
+    /** Where the sign of a question is on the frame, into at (x, y); false while it is not shown (the desktop stand). */
+    boolean helpAt(float[] at) {
+        at[0] = helpX;
+        at[1] = helpY;
+        return helpShown;
+    }
+
+    /** The kind of mission the sign opens the story of. */
+    int storyKind() {
+        return storyKind;
+    }
+
+    /** The dispatch's letters, read the first time they are wanted. */
+    static TubeFont font(World.Host host) {
+        if (font == null) font = TubeFont.read(host.asset("tube.bin"));
+        return font;
     }
 
     private static final int BRICK = Frida.BRICK, BRICK_DARK = Frida.BRICK_DARK, STONE = Frida.STONE,

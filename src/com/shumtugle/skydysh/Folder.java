@@ -15,7 +15,7 @@ import java.util.Random;
  * street gliding.
  */
 final class Folder {
-    static final int RIVALS = 3, REWARD = 100000;
+    static final int RIVALS = 3, REWARD = 200000;
     // how far off it falls; how far off the rivals start; when each sets off, and how fast it runs
     static final float NEAR = 170f, SPREAD = 50f, RIVALS_FROM = 200f;
     static final float[] SETS_OFF = {35f, 45f, 55f};
