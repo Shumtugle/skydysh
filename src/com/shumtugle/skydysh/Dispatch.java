@@ -126,7 +126,7 @@ final class Dispatch {
     }
 
     /** What touching each line of home's screen picks: the hunt 1, the folder 2, the delivery 3, the call out 4, on 0. */
-    static final int[] HOME_PICKS = {-1, -1, -1, -1, 1, 2, 3, 4, -1, 0};
+    static final int[] HOME_PICKS = {-1, -1, -1, -1, 1, 2, 3, 4, 5, -1, 0};
 
     /** A pick that takes no mission: she stays as she is (on the sofa, free). */
     static final int REST = 9;
@@ -153,7 +153,7 @@ final class Dispatch {
     }
 
     /** What touching each line of the sofa's screen picks (see HOME_PICKS); a rest, REST. */
-    static final int[] SOFA_PICKS = {-1, -1, -1, 1, 2, 3, 4, 0, REST};
+    static final int[] SOFA_PICKS = {-1, -1, -1, 1, 2, 3, 4, 5, 0, REST};
 
     /** After these lines, at the key, the next ones on the screen before the walls draw back. */
     Dispatch then(String[] more) {
@@ -177,7 +177,7 @@ final class Dispatch {
     /** What a mission of round's kind pays now: its reward the first time, nothing after. */
     static int due(int round) {
         int kind = World.kindOf(round);
-        int reward = kind == 2 ? Folder.REWARD : kind == 3 ? Delivery.REWARD : kind == 4 ? Rescue.REWARD : 0;
+        int reward = kind == 2 ? Folder.REWARD : kind == 3 ? Delivery.REWARD : kind == 4 ? Rescue.REWARD : kind == 5 ? Puppy.REWARD : 0;
         return (paidKinds & (1 << kind)) != 0 ? 0 : reward;
     }
 
@@ -195,12 +195,13 @@ final class Dispatch {
         if (Folder.its(round)) return priced(Lang.lines("brief.folder", round, null), round);
         if (Delivery.its(round)) return priced(Lang.lines("brief.delivery", round, null), round);
         if (Rescue.its(round)) return priced(Lang.lines("brief.rescue", round, null), round);
+        if (Puppy.its(round)) return priced(Lang.lines("brief.puppy", round, null), round);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
     /** Before a mission again: the folder, after the rivals got there first; a hunt, after the time ran out. */
     static String[] again(int round) {
-        return priced(Lang.lines(Folder.its(round) ? "brief.again" : Rescue.its(round) ? "brief.rescue.again" : "brief.late", round, null), round);
+        return priced(Lang.lines(Folder.its(round) ? "brief.again" : Rescue.its(round) ? "brief.rescue.again" : Puppy.its(round) ? "brief.puppy.again" : "brief.late", round, null), round);
     }
 
     /** The time ran out with some of the five still loose: how many were caught. */
@@ -223,6 +224,16 @@ final class Dispatch {
     /** The pass cleared and the village got to: the pay, what has been won in all, the time. */
     static String[] rescued(int round, String time, int money, int got) {
         return fill(Lang.lines("report.rescue", round, time), got, money);
+    }
+
+    /** The puppy brought to the vets': the pay, what has been won in all, the time. */
+    static String[] puppied(int round, String time, int money, int got) {
+        return fill(Lang.lines("report.puppy", round, time), got, money);
+    }
+
+    /** The puppy held out no longer: the people on the shore got it out themselves. */
+    static String[] puppyLate(int round) {
+        return Lang.lines("report.puppy.late", round, null);
     }
 
     /** The rivals got there first. */

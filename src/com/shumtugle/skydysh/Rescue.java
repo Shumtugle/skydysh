@@ -13,9 +13,9 @@ final class Rescue implements City.Extra {
     // the steps: a pickup to be found, the pass to be cleared, the village to be got to, done
     static final int PICKUP = 0, PASS = 1, VILLAGE = 2, DONE = 3;
 
-    /** Whether mission n is a call out: the fourth, and every fourth after it. */
+    /** Whether mission n is a call out: the fourth, and every fifth after it. */
     static boolean its(int n) {
-        return n % 4 == 0;
+        return World.kindOf(n) == 4;
     }
 
     int step = PICKUP;

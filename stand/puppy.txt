@@ -1,0 +1,39 @@
+# The puppy at sea: the briefing; the crowd at the water's edge east of home, the puppy out in the
+# water; swum out to, taken; carried to the vets', the white house with the paw over its door,
+# handed in there. Then the same again, too late: the people on the shore get it out. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 5
+dispatch
+wait 7
+shot b0
+close
+mission 5
+at 548 -18 3.4
+wait 1.5
+shot c0
+at 541 -50 2.8
+wait 1.5
+where
+shot c1
+at 543.6 -55.6 3.1416
+wait 1
+where
+shot c2
+at 544 -40 0
+wait 1
+shot c3
+at 96 186 0
+wait 1
+shot k0
+at 96 197.5 0
+wait 1
+shot k1
+wait 4
+shot k2
+mission 5
+wait 151
+shot l0
+wait 4
+shot l1

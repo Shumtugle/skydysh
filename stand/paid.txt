@@ -1,4 +1,4 @@
-# A job is paid once: the folder found twice; the first report pays 200 000, the second says it was
+# A job is paid once: the folder found twice (jobs 2 and 7); the first report pays 200 000, the second says it was
 # paid already, and the briefing of the next folder says so too. In Russian.
 screen 1096 2560
 wait 0.4
@@ -9,7 +9,7 @@ wait 14
 sofa
 wait 5.5
 shot p0
-mission 6
+mission 7
 dispatch
 wait 6
 shot p1

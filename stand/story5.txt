@@ -1,0 +1,17 @@
+# The puppy's story page, and the sofa's choice once all five kinds are won. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 5
+dispatch
+wait 2
+help
+wait 0.5
+shot t0
+storytap
+close
+keep kinds 62
+restart
+sofa
+wait 7
+shot t1

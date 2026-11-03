@@ -220,7 +220,7 @@ final class Cars {
             knocked[c] = 0f;
             wreck[c] = true;
             // never left standing in a bay at the factory's gate or the warehouse's: it is towed off
-            if (City.inBay(true, x[c], z[c]) || City.inBay(false, x[c], z[c])) live[c] = false;
+            if (City.inBay(true, x[c], z[c]) || City.inBay(false, x[c], z[c]) || City.inClinicBay(x[c], z[c])) live[c] = false;
         }
     }
 

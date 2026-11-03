@@ -124,8 +124,16 @@ through it for the road; beyond, a village of little houses under red tiles roun
 well. A duty pickup up the road (it keeps along the road's bends by itself), through the pass
 (what lies across it is shoved off, or knocked aside on foot with the mallet), to the square.
 
-The missions come in turn: the hunt, the folder, the delivery, the call out, and round again; or
-on home's sofa, the screen asks which now.
+The fifth, the puppy at sea: a call from the beach east of home, past the store, where a crowd
+stands at the water's edge looking out at a puppy too tired to swim back; a clock of its own
+says how long it still holds out. Along the shore road in a duty pickup, down to the beach, out
+into the water, right up to it, and she takes it; back to the pickup and to the vets', a white
+house with a turquoise band and a paw over its door, three streets up and a block east of home,
+the bay painted on the street before it. Too late, and the people from the shore get it out
+themselves, and the job begins again.
+
+The missions come in turn: the hunt, the folder, the delivery, the call out, the puppy, and
+round again; or on home's sofa, the screen asks which now.
 
 What is to come is in `PLAN.md`.
 

@@ -473,6 +473,11 @@ final class Walkers {
         person(d, x, y, z, yaw, phase, i, false);
     }
 
+    /** The same, standing still where it is. */
+    void standing(DrawList d, int i, float x, float y, float z, float yaw) {
+        person(d, x, y, z, yaw, 0f, i, true);
+    }
+
     void draw(DrawList d, float ex, float ez, float fx, float fz) {
         for (int i = 0; i < MOST; i++) {
             if (!live[i]) continue;

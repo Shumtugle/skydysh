@@ -117,9 +117,10 @@ final class City implements Ground {
         if (Math.abs(x - HOME_DOOR_X) < 4.5f && z < HOME_DOOR_Z && z > HOME_J * CELL + PARAPET) return true;
         // home's own pickup's place at the curb
         if (Math.abs(x - HOME_PICKUP_X) < 4f && z > HOME_J * CELL + ROAD * 0.5f && z < HOME_J * CELL + CURB) return true;
-        // and the bays before the factory's and the store's gates
+        // and the bays before the factory's and the store's gates, and the vets' door
         for (int k = 0; k < 2; k++)
             if (Math.abs(x - gateX(k == 0)) < 7f && z > SHORE * CELL - 0.5f && z < SHORE * CELL + FRONT) return true;
+        if (Math.abs(x - clinicDoorX()) < 7f && z > CLINIC_J * CELL - 0.5f && z < CLINIC_J * CELL + FRONT) return true;
         return false;
     }
 
@@ -140,6 +141,30 @@ final class City implements Ground {
     /** Whether (x, z) is in the bay before the factory's gate (true) or the store's (false). */
     static boolean inBay(boolean factory, float x, float z) {
         return Math.abs(x - gateX(factory)) < BAY_HALF && Math.abs(z - (SHORE * CELL + BAY_Z)) < BAY_DEEP;
+    }
+
+    /**
+     * The vets': built by hand, the same in every town, the south row of a block three streets up
+     * from the shore road, one block east of home's; a bay painted on the street before its door,
+     * where a pickup stands to hand in what it brings.
+     */
+    static final int CLINIC_I = HOME_I + 1, CLINIC_J = SHORE + 3;
+
+    static float clinicDoorX() {
+        return CLINIC_I * CELL + CELL * 0.5f;
+    }
+
+    static float clinicDoorZ() {
+        return CLINIC_J * CELL + FRONT;
+    }
+
+    static float clinicBayZ() {
+        return CLINIC_J * CELL + BAY_Z;
+    }
+
+    /** Whether (x, z) is in the bay before the vets' door. */
+    static boolean inClinicBay(float x, float z) {
+        return Math.abs(x - clinicDoorX()) < BAY_HALF && Math.abs(z - clinicBayZ()) < BAY_DEEP;
     }
 
     /** Whether (x, z) is within home's walls. */
@@ -1197,6 +1222,7 @@ final class City implements Ground {
         if (mine) home(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else if (works && i == FACTORY_I) factory(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else if (works) store(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
+        else if (i == CLINIC_I && j == CLINIC_J) clinic(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else row(c, rnd, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH, true, -1, open && !north);
         row(c, rnd, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b, true, 1, open && north);
         row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + a, x0 + a + DEPTH, false, -1, false);
@@ -1320,6 +1346,52 @@ final class City implements Ground {
         c.wall(x0 + 0.5f, cz - hz * 0.4f, x1 - 0.5f, cz + hz * 0.4f, high + 3.2f, high);
         c.house(cx, cz, hx, hz, high + 0.5f, 0f, -1f, 0f);
         bay(d, cx, SHORE * CELL);
+    }
+
+    /**
+     * The vets': a white house of two storeys, low and long, a turquoise band along it and a flat
+     * roof; in its middle glass doors under a turquoise awning, over them a board with a paw on it;
+     * wide windows either side, a bench by the door. The bay before it on the street.
+     */
+    private void clinic(Cell c, float x0, float x1, float z0, float z1) {
+        DrawList d = c.boxes, small = c.detail;
+        float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f;
+        float high = 7.4f, fz = z0;
+        int white = 0xEEF0EA, teal = 0x2FA39A, glass = 0x2A3E48, plinth = 0xC9CEC8;
+        d.box(cx, high * 0.5f, cz, hx, high * 0.5f, hz, null, white, DrawList.PLAIN);
+        d.box(cx, 0.4f, fz - 0.05f, hx + 0.05f, 0.4f, 0.07f, null, plinth, DrawList.STONE);
+        d.box(cx, 3.55f, fz - 0.06f, hx + 0.06f, 0.18f, 0.08f, null, teal, DrawList.PAINT);
+        d.box(cx, high + 0.2f, cz, hx + 0.15f, 0.2f, hz + 0.15f, null, 0xD6DAD4, DrawList.STONE);
+        // the doors, glass in a dark frame, the awning over them
+        d.box(cx, 1.4f, fz - 0.03f, 1.9f, 1.4f, 0.04f, null, 0x1E2428, DrawList.PLAIN);
+        d.box(cx, 1.4f, fz - 0.07f, 1.75f, 1.3f, 0.03f, null, glass, DrawList.GLASS);
+        d.box(cx, 1.4f, fz - 0.09f, 0.04f, 1.3f, 0.02f, null, 0x1E2428, DrawList.PLAIN);
+        d.box(cx, 3.05f, fz - 0.9f, 2.6f, 0.08f, 0.9f, null, teal, DrawList.AWNING);
+        // the board over the door: white, a turquoise rim, a paw on it
+        float by = 5.4f;
+        d.box(cx, by, fz - 0.12f, 1.6f, 1.05f, 0.08f, null, teal, DrawList.PAINT);
+        d.box(cx, by, fz - 0.2f, 1.45f, 0.9f, 0.03f, null, 0xFAFAF4, DrawList.PLAIN);
+        small.ellipsoid(cx, by - 0.2f, fz - 0.24f, 0.38f, 0.32f, 0.02f, null, teal, DrawList.MATTE);
+        for (int k = 0; k < 4; k++) {
+            float a = -0.95f + k * 0.63f;
+            small.ellipsoid(cx + (float) Math.sin(a) * 0.55f, by + 0.15f + (float) Math.cos(a) * 0.32f, fz - 0.24f,
+                    0.14f, 0.17f, 0.02f, null, teal, DrawList.MATTE);
+        }
+        // wide windows along both floors, either side of the door
+        for (float u = x0 + 3.2f; u < x1 - 2.5f; u += 5f) {
+            if (Math.abs(u - cx) < 4.2f) continue;
+            for (int fl = 0; fl < 2; fl++) {
+                float wy = 1.7f + fl * 3.5f;
+                d.box(u, wy, fz - 0.04f, 1.9f, 0.85f, 0.04f, null, glass, DrawList.GLASS);
+                d.box(u, wy - 0.95f, fz - 0.09f, 2.05f, 0.06f, 0.08f, null, plinth, DrawList.STONE);
+            }
+        }
+        // a bench by the door, for those who wait
+        bench(c, cx + 4.6f, WALK_TOP, fz - 0.9f, (float) Math.PI);
+        c.wall(cx + 4.6f - 0.9f, fz - 1.2f, cx + 4.6f + 0.9f, fz - 0.6f, WALK_TOP + 0.48f);
+        c.wall(x0, z0, x1, z1, high + 0.4f);
+        c.house(cx, cz, hx, hz, high + 0.4f, 0f, -1f, 0f);
+        bay(d, cx, CLINIC_J * CELL);
     }
 
     /**

@@ -16,9 +16,9 @@ final class Delivery {
     // how near home's door is home: on foot or at the wheel
     static final float HOME_NEAR = 7f;
 
-    /** Whether mission n is a delivery: the third, and every fourth after it. */
+    /** Whether mission n is a delivery: the third, and every fifth after it. */
     static boolean its(int n) {
-        return n % 4 == 3;
+        return World.kindOf(n) == 3;
     }
 
     int step = PICKUP;

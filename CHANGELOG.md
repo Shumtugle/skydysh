@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.61
+
+- A fifth kind of mission, the puppy at sea, from the town's rescue service: off the beach east of
+  home, past the store, a puppy out in the water with no strength left to swim back; a crowd of
+  people standing at the water's edge looking out at it. A clock of its own at the top left says
+  how long it still holds out (two and a half minutes). She gets there along the shore road,
+  swims out right up to it and takes it (under her arm; at the wheel, on the seat beside her);
+  then to the vets', in the bay before its door, or on foot up to the door. Too late, and the
+  people from the shore get it out themselves, and it is played again. Paid once, 70 000.
+- The vets': a white house of two storeys, a turquoise band, glass doors under a turquoise
+  awning, a board with a paw over them, a bench by the door; the south row of the block three
+  streets up from the shore, one block east of home's, the same in every town; a bay painted on
+  the street before it, kept clear of parked cars and of wrecks.
+- The missions come in a round of five: the hunt, the folder, the delivery, the call out, the
+  puppy. Mission numbers past four fall to other kinds than before.
+- The puppy's story behind the sign of a question; its line on the screens of choice at home.
+- Stand: scenes `puppy.txt`, `story5.txt`; commands `close`; `paid.txt` on the folder's new number.
+
 ## 0.60
 
 - The dispatch's screen larger, and the eye in the room a step further back: the longest lines of

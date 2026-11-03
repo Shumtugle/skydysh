@@ -343,6 +343,10 @@ public final class Stand implements World.Host {
         } else if (c.equals("opening")) {
             // the opening played from its start
             world.startOpening();
+        } else if (c.equals("close")) {
+            // close: the screen in her head gone at once, the street on
+            world.skipOpening();
+            step();
         } else if (c.equals("skip")) {
             // the opening skipped, as a touch does
             world.touch(World.DOWN, 1f, 1f);
