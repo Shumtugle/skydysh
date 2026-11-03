@@ -1,0 +1,32 @@
+# A game kept with four kinds won and job 12 next (as the author's was): on the sofa, the choice
+# newest first, no numbers, no rest line, the sign of the way back; "on" brings the kind not yet
+# won, the puppy. Then the sign of the way back: out of her head, up from the sofa. Then free in
+# the street, home's mark a house; the delivery's word with no meters. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 12
+keep kinds 30
+restart
+sofa
+wait 7
+shot h0
+pick 0
+wait 3
+shot h1
+close
+sofa
+wait 7
+backsign
+wait 1.5
+where
+shot h2
+free
+at -10 -8 1.19
+wait 1
+shot h3
+mission 3
+drivein 6 -2 1.5708
+pedal 2 0 0 0.25 da
+wait 0.5
+shot h4

@@ -28,8 +28,8 @@ final class Dispatch {
     static final float HEAD = 2.2f;                     // the room's middle above her feet
 
     // the screen in the front wall, the eye before it (the room's own frame: x right, y up, z ahead)
-    private static final float SX = 0.62f, SY0 = -0.2f, SY1 = 0.72f, FRONT = 0.65f;
-    private static final float EYE_Y = 0.24f, EYE_Z = -1.55f;
+    private static final float SX = 0.66f, SY0 = -0.26f, SY1 = 0.78f, FRONT = 0.65f;
+    private static final float EYE_Y = 0.26f, EYE_Z = -1.7f;
     private static final float KEY_X = 0.25f, KEY_Y = -0.47f, KEY_Z = 0.42f;
     private static final float CLOCK_X = -0.35f, CLOCK_Y = -0.4f, CLOCK_Z = 0.4f;
 
@@ -109,6 +109,38 @@ final class Dispatch {
         return -1;
     }
 
+    // ---- the way back out: a floating sign over a choice, the screen let go without a pick ----
+    private float backX = -99f, backY = -99f;
+    private boolean backShown;
+
+    /** The sign of the way back, high on the left over the screen, while a choice is on it. */
+    private void back(DrawList d) {
+        backShown = choosing() && t >= CLOSE && d.tube[2] > d.tube[0];
+        if (!backShown) return;
+        float bob = 2.5f * (float) Math.sin(t * 2.2f + 1.3f);
+        backX = d.tube[0] + 20f;
+        backY = d.tube[1] - 14f + bob;
+        d.badge(backX, backY, HELP_HALF, Badges.LEFT, 0.95f, 0.15f + 0.15f * (float) Math.sin(t * 3f + 1f));
+    }
+
+    /** A touch at (x, y) on the sign of the way back: the screen let go with nothing picked; true if it was. */
+    boolean leaveAt(float x, float y) {
+        if (!backShown || knockAt >= 0f) return false;
+        float m = HELP_HALF + 8f;
+        if (Math.abs(x - backX) >= m || Math.abs(y - backY) >= m) return false;
+        picked = REST;
+        knockAt = t;
+        host.buzz(25);
+        return true;
+    }
+
+    /** Where the sign of the way back is, into at (x, y); false while it is not shown (the desktop stand). */
+    boolean backAt(float[] at) {
+        at[0] = backX;
+        at[1] = backY;
+        return backShown;
+    }
+
     /** Where the line that picks c was drawn, its middle (x, y); false if it was not. */
     boolean rowOf(int c, float[] out) {
         for (int k = 0; k < rowTop.length && pick != null && k < pick.length; k++)
@@ -126,7 +158,7 @@ final class Dispatch {
     }
 
     /** What touching each line of home's screen picks: the hunt 1, the folder 2, the delivery 3, the call out 4, on 0. */
-    static final int[] HOME_PICKS = {-1, -1, -1, -1, 1, 2, 3, 4, 5, -1, 0};
+    static final int[] HOME_PICKS = {-1, -1, -1, -1, 0, 5, 4, 3, 2, 1};
 
     /** A pick that takes no mission: she stays as she is (on the sofa, free). */
     static final int REST = 9;
@@ -153,7 +185,7 @@ final class Dispatch {
     }
 
     /** What touching each line of the sofa's screen picks (see HOME_PICKS); a rest, REST. */
-    static final int[] SOFA_PICKS = {-1, -1, -1, 1, 2, 3, 4, 5, 0, REST};
+    static final int[] SOFA_PICKS = {-1, -1, -1, 0, 5, 4, 3, 2, 1};
 
     /** After these lines, at the key, the next ones on the screen before the walls draw back. */
     Dispatch then(String[] more) {
@@ -337,6 +369,17 @@ final class Dispatch {
         eye[4] = r.eyePitch + (ipitch - r.eyePitch) * k;
         // the walls far out while the eye is out, round it when it is in
         size = 1f + (WIDE - 1f) * (1f - k);
+        inShare = k;
+    }
+
+    /** How far in the eye is, 0 (behind her) to 1 (before the screen). */
+    private float inShare;
+    /** The eye's focal length before the screen, as a part of the frame's width: the same indoors and out. */
+    static final float FOCAL = 1.6f;
+
+    /** The focal length now, frame pixels: from the one the eye had behind her (from) to the room's own. */
+    float focal(float from, float width) {
+        return from + (FOCAL * width - from) * inShare;
     }
 
     /** Whether she is to be drawn: not while the eye is in her head. */
@@ -378,6 +421,7 @@ final class Dispatch {
             screen(d, f);
             clock(d, f);
             help(d);
+            back(d);
         }
     }
 
@@ -399,7 +443,7 @@ final class Dispatch {
         helpShown = storyKind > 0 && next == null && pick == null && t >= CLOSE && knockAt < 0f && d.tube[2] > d.tube[0];
         if (!helpShown) return;
         float bob = 2.5f * (float) Math.sin(t * 2.2f);
-        helpX = d.tube[2] - 6f;
+        helpX = d.tube[2] - 20f;
         helpY = d.tube[1] - 14f + bob;
         float lit = 0.15f + 0.15f * (float) Math.sin(t * 3f);
         d.badge(helpX, helpY, HELP_HALF, Badges.HELP, 0.95f, lit);
@@ -586,7 +630,7 @@ final class Dispatch {
             lineH--;
             total -= lines.length - empty;
         }
-        int top = iy0 + Math.max(3, Math.round((iy1 - iy0 - total) * 0.5f)), left = ix0 + 7;
+        int top = iy0 + Math.max(3, Math.round((iy1 - iy0 - total) * 0.5f)), left = Math.max(ix0 + 7, 12);
         if (rowTop.length != lines.length) {
             rowTop = new int[lines.length];
             rowBottom = new int[lines.length];

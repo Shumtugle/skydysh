@@ -310,6 +310,10 @@ public final class Stand implements World.Host {
             // help: a touch on the sign of a question by the briefing, if it is there, told
             System.out.println(String.format("%7.2fs  %s", time, world.standHelp() ? "the story opened" : "no sign of a question"));
             step();
+        } else if (c.equals("backsign")) {
+            // backsign: a touch on the sign of the way back over a choice, if it is there, told
+            System.out.println(String.format("%7.2fs  %s", time, world.standBack() ? "the screen let go" : "no sign of the way back"));
+            step();
         } else if (c.equals("storytap")) {
             // storytap: a touch on the open story's page: it closes
             world.standStoryTap();

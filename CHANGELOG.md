@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.62
+
+- The dispatch's screen fills the width of the phone, and is taller; the eye before it has the
+  same focal length indoors and out, so the screen is as large on the sofa as in the street.
+- Home's choice: no numbers; "on" first, then the kinds won, the newest at the top and the first
+  at the foot; no line for a rest. A sign of the way back floats high on the left over the screen:
+  touched, the screen is let go with nothing picked, and she gets up from the sofa, free.
+- "On" brings a kind not yet won first, while there is one: a game kept from before the fifth
+  kind gets the puppy next, not another folder. Once every kind is won, they come round in turn.
+- A job is called by its kind on the dispatch's screen ("Dispatch — Puppy at sea"), not by its
+  number.
+- The best times under the pause: the latest at the top, the first at the foot.
+- Home's mark: the sign of a house over its door, breathing; out of sight, at the edge of the
+  frame the way it is. No more green ring for home.
+- Meters only where they are the game: the hunt (to the nearest runaway) and the folder's race.
+  To home, a pickup, the factory, the store, the pass, the village, the puppy and the vets', a
+  word at the top, larger, and the mark.
+- Stand: scenes `choice5.txt`; `choice.txt` and `rest.txt` on the new choice; commands
+  `backsign`.
+
 ## 0.61
 
 - A fifth kind of mission, the puppy at sea, from the town's rescue service: off the beach east of

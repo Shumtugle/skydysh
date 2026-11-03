@@ -1,7 +1,10 @@
-# Home's choice: in at home's door, her head, the screen asking which mission now; the rest typed,
-# the delivery picked, its briefing, out; then home again and the hunt; in Russian, the screen.
+# Home's choice, every kind won: in at home's door, her head, the screen asking which mission now;
+# the rest typed, the delivery picked, its briefing, out; then home again and the hunt; in Russian,
+# the screen.
 screen 1096 2560
 wait 0.4
+keep kinds 62
+restart
 at 32 -2 0
 wait 0.3
 tapsign home

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.61";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.62";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -213,6 +213,15 @@ final class World {
         return true;
     }
 
+    /** For the desktop stand: a touch on the sign of the way back over a choice; false if it is not shown. */
+    boolean standBack() {
+        float[] at = new float[2];
+        if (dispatch == null || !dispatch.backAt(at)) return false;
+        touch(DOWN, 0, at[0], at[1]);
+        touch(UP, 0, at[0], at[1]);
+        return true;
+    }
+
     /** For the desktop stand: a touch on the story's page where it does not move: it closes. */
     void standStoryTap() {
         touch(DOWN, 0, W * 0.5f, h * 0.5f);
@@ -369,6 +378,8 @@ final class World {
             rows.add(n + "  " + Lang.lines("kind." + kindOf(n), 0, null)[0] + "  " + clock(best / 10f));
         }
         while (rows.size() > 8) rows.remove(0);
+        // the latest at the top, the first ones at the foot
+        java.util.Collections.reverse(rows);
         if (rows.isEmpty()) rows.add(Lang.lines("results.none", 0, null)[0]);
         String[] shell = Lang.lines("results", 0, null);
         java.util.ArrayList<String> out = new java.util.ArrayList<String>();
@@ -614,14 +625,21 @@ final class World {
                 openStory(dispatch.storyKind());
                 return;
             }
+            if (type == DOWN && dispatch.leaveAt(x, y)) {
+                // out of her head with nothing picked: up from the sofa, the town hers
+                standAfter = true;
+                return;
+            }
             if (type == DOWN && dispatch.choosing()) {
                 int c = dispatch.pickAt(x, y);
                 if (c > 0 && c < Dispatch.REST) {
                     chooseMission(c);
                     dispatch.then(briefing()).story(kindOf(mission.round));
                 } else if (c == 0 && free) {
-                    // on to the next, whatever its kind; lost, the same again, from where it began
+                    // on to the next: a kind not yet won first, while there is one; then in turn.
+                    // Lost, the same again, from where it began
                     again = lost;
+                    if (!lost) mission.round = nextNew(mission.round + 1) - 1;
                     if (lost && !startHome) runner.put(startX, City.WALK_TOP, startZ, runner.heading);
                     begin(runner.x, runner.z);
                     overFor = 0f;
@@ -1045,6 +1063,10 @@ final class World {
                 dispatch = null;
                 overFor = 0f;
                 if (resultsOpen) resultsOpen = false;
+                else if (standAfter) {
+                    standAfter = false;
+                    if (seated()) standUp();
+                }
                 else if (retryAfter) {
                     retryAfter = false;
                     retry();
@@ -2041,6 +2063,21 @@ final class World {
         return out;
     }
 
+    /** The screen let go by the sign of the way back: she gets up once the walls have drawn back. */
+    private boolean standAfter;
+
+    /**
+     * The next mission on from n: the first of a kind not yet won, while any kind is not; once all
+     * are, n itself (the kinds come round in turn).
+     */
+    private int nextNew(int n) {
+        boolean any = false;
+        for (int k = 1; k <= KINDS; k++) if ((kindsWon & (1 << k)) == 0) any = true;
+        if (!any) return n;
+        while ((kindsWon & (1 << kindOf(n))) != 0) n++;
+        return n;
+    }
+
     /** Up from the sofa, a step before it, facing the door. */
     private void standUp() {
         Indoors in = indoors;
@@ -2266,10 +2303,9 @@ final class World {
         }
         if (!dv.goal(duty, driving, runner, goal)) return;
         float gx = goal[0] - runner.x, gz = goal[2] - runner.z;
-        String m = String.valueOf(Math.round((float) Math.sqrt(gx * gx + gz * gz)));
-        shadowed(f, m, (W - PixelFont.width(m, 3)) / 2, 14, 3, cream, ink);
+        // where the way goes, in a word: no meters, the mark shows the way
         String w = Lang.lines(dv.goalWord(), mission.round, null)[0];
-        shadowed(f, w, (W - PixelFont.width(w, 1)) / 2, 38, 1, green, ink);
+        shadowed(f, w, (W - PixelFont.width(w, 2)) / 2, 16, 2, green, ink);
         boolean bay = dv.step == Delivery.FACTORY || dv.step == Delivery.STORE && (dv.carrying == null || dv.carrying == driving);
         if (bay && d.project(goal[0], City.WALK_TOP + 2.6f, goal[2], at) && at[0] > 0 && at[0] < W && at[1] > 30 && at[1] < h) {
             // the bay's sign: what is done there
@@ -2278,7 +2314,8 @@ final class World {
             d.badge(at[0], at[1], Math.max(8f, Math.min(16f, 300f / Math.max(1f, near))),
                     dv.step == Delivery.FACTORY ? Badges.PICK_UP : Badges.DOWN, shown, 0.5f + 0.5f * (float) Math.sin(time * 4f));
         }
-        goalMark(d, f, goal[0], goal[1], goal[2], green, ink);
+        if (dv.step == Delivery.HOME) homeMark(d, goal[0], goal[1], goal[2]);
+        else goalMark(d, f, goal[0], goal[1], goal[2], green, ink);
     }
 
     /** Free: what has been won, and where home is (the next mission is taken there), quietly. */
@@ -2292,9 +2329,7 @@ final class World {
         if (far < 12f) return;
         String w = Lang.lines(waiting != null ? "goal.done" : "goal.free", mission.round, null)[0];
         shadowed(f, w, (W - PixelFont.width(w, 1)) / 2, 14, 1, cream, ink);
-        String m = String.valueOf(Math.round(far));
-        shadowed(f, m, (W - PixelFont.width(m, 2)) / 2, 26, 2, green, ink);
-        goalMark(d, f, City.HOME_DOOR_X, City.WALK_TOP + 1.5f, City.HOME_DOOR_Z, green, ink);
+        homeMark(d, City.HOME_DOOR_X, City.WALK_TOP + 2.6f, City.HOME_DOOR_Z);
     }
 
     /**
@@ -2331,10 +2366,8 @@ final class World {
         if (!pu.goal(goal)) return;
         float gx = goal[0] - runner.x, gz = goal[2] - runner.z;
         float near = (float) Math.sqrt(gx * gx + gz * gz);
-        String m = String.valueOf(Math.round(near));
-        shadowed(f, m, (W - PixelFont.width(m, 3)) / 2, 14, 3, cream, ink);
         String w = Lang.lines(pu.goalWord(), mission.round, null)[0];
-        shadowed(f, w, (W - PixelFont.width(w, 1)) / 2, 38, 1, green, ink);
+        shadowed(f, w, (W - PixelFont.width(w, 2)) / 2, 16, 2, green, ink);
         if (pu.held() && d.project(goal[0], City.WALK_TOP + 2.6f, goal[2], at) && at[0] > 0 && at[0] < W && at[1] > 30 && at[1] < h) {
             // the bay's sign: what is done there
             float shown = Math.min(1f, Math.max(0f, (60f - near) / 15f));
@@ -2359,11 +2392,8 @@ final class World {
             return;
         }
         if (!rs.goal(duty, driving, runner, goal)) return;
-        float gx = goal[0] - runner.x, gz = goal[2] - runner.z;
-        String m = String.valueOf(Math.round((float) Math.sqrt(gx * gx + gz * gz)));
-        shadowed(f, m, (W - PixelFont.width(m, 3)) / 2, 14, 3, cream, ink);
         String w = Lang.lines(rs.goalWord(), mission.round, null)[0];
-        shadowed(f, w, (W - PixelFont.width(w, 1)) / 2, 38, 1, green, ink);
+        shadowed(f, w, (W - PixelFont.width(w, 2)) / 2, 16, 2, green, ink);
         goalMark(d, f, goal[0], goal[1], goal[2], green, ink);
     }
 
@@ -2385,6 +2415,26 @@ final class World {
         f.disc(px, py, 6.5f, ink);
         f.disc(px, py, 5.5f, green);
         f.disc(px, py, 2.2f, 0xFFD9FFE6);
+    }
+
+    /**
+     * Home's mark: the sign of the house, of the same glass as the buttons, over home's door while it
+     * is in sight, breathing a little; out of sight, smaller, at the edge of the frame the way it is.
+     */
+    private void homeMark(DrawList d, float x, float y, float z) {
+        float lit = 0.25f + 0.25f * (float) Math.sin(time * 4f);
+        boolean seen = d.project(x, y, z, at) && at[0] > 14 && at[0] < W - 14 && at[1] > 60 && at[1] < h - 14;
+        if (seen) {
+            float near = (float) Math.sqrt((x - runner.x) * (x - runner.x) + (z - runner.z) * (z - runner.z));
+            d.badge(at[0], at[1], Math.max(11f, Math.min(18f, 400f / Math.max(1f, near))), Badges.HOME, 0.95f, lit);
+            return;
+        }
+        float ax = (float) Math.sin(runner.eyeYaw), az = (float) Math.cos(runner.eyeYaw);
+        float vx = x - runner.x, vz = z - runner.z;
+        float ang = (float) Math.atan2(vx * az - vz * ax, vx * ax + vz * az);
+        float ex = (float) Math.sin(ang), ey = -(float) Math.cos(ang);
+        float k = Math.min((W * 0.5f - 18f) / Math.max(1e-3f, Math.abs(ex)), (h * 0.5f - 66f) / Math.max(1e-3f, Math.abs(ey)));
+        d.badge(W * 0.5f + ex * k, h * 0.5f + ey * k, 12f, Badges.HOME, 0.9f, lit);
     }
 
     /** A ring over the frame round (cx, cy): between radii in and out, in one colour. */
@@ -2455,7 +2505,7 @@ final class World {
         if (dispatch != null) {
             // the room in her head, or the eye on its way there
             dispatch.eye(r, eyeNow);
-            d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.2f, 0.03f, 80f);
+            d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], dispatch.focal(W * 1.25f, W), 0.03f, 80f);
         } else if (indoors.shot(eyeNow)) d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.25f, 0.03f, 80f);
         else d.camera(r.eyeX, r.eyeY, r.eyeZ, r.eyeYaw, r.eyePitch, W * 1.2f, 0.03f, 80f);
         // the room, unless the eye has gone back into her head past its walls (she sits against one)
@@ -2531,7 +2581,7 @@ final class World {
             eyeYaw = eyeNow[3];
             eyePitch = eyeNow[4];
         }
-        d.camera(eyeX, eyeY, eyeZ, eyeYaw, eyePitch, W * 1.6f, 0.03f, 500f);
+        d.camera(eyeX, eyeY, eyeZ, eyeYaw, eyePitch, dispatch != null ? dispatch.focal(W * 1.6f, W) : W * 1.6f, 0.03f, 500f);
         fliers.strokes(d);
         float ex = (float) Math.sin(eyeYaw), ez = (float) Math.cos(eyeYaw);
         city.draw(d, eyeX, eyeZ, ex, ez);
