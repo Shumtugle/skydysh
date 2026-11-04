@@ -15,21 +15,20 @@ and walk; she is one, and so are the ones she hunts.
 It opens, at every start, with a flight in from the sea over the beach and the square to home,
 where she stands in the shore road with a golden mallet and brings it down into the glass of the
 screen, and the name is typed in the letters of the dispatcher's tube; a touch skips it. The game
-begins before home. The first time, the
-dispatcher's room, which is her head: walls of her own brick round the street seen through her
-eyes, what is to be done typed over it; a touch, her mallet knocks a key, the walls draw back
-and the street goes on. Every mission after the first is taken at home, and a game begun again
-later begins in the street before home's door, the next mission waiting inside.
+begins in the street before home's door, the town hers: nothing is given out, nothing urged. The
+jobs are at home, on the sofa, for whoever wants one. Taken, the dispatcher's room, which is her
+head: walls of her own brick round the street seen through her eyes, what is to be done typed
+over it; a touch, her mallet knocks a key, the walls draw back and the street goes on.
 
 A mission lost (the time run out, the folder taken by another): back into her head at once for
 the report, and the same task again from where it began, its targets laid out the same, never
 from where it was lost. A mission won: no screen; at the top, done and home, and a little green
 house over home's, or at the edge of the frame the way it is. The town is hers on the way.
 At home, on the sofa, the game is kept and the report read (its time against the mission's best,
-kept on the phone); then the screen offers the next (a kind not yet won comes first, while there
-is one), or one of the kinds already won, the newest at the top. A sign of the way back floats
-over the screen: touched, it lets the screen go and she gets up, the town hers as long as she
-likes, the next mission taken at home. A job is called by its kind, not by a number.
+kept on the phone); then the screen offers every kind of job, the newest at the top, none pushed
+on her: no next in turn, no round of them. A sign of the way back floats over the screen:
+touched, it lets the screen go and she gets up, the town hers as long as she likes. A job is
+called by its kind, not by a number.
 
 Meters to where the way goes are shown only where they are the game itself: in the hunt, to the
 nearest runaway, and on the roofs, to the folder and for each seeker. Elsewhere a word at the top
@@ -88,8 +87,8 @@ against the back wall, lamps either side, the sea in a frame over it, books, pla
 the sofa and she sits; the game is kept, and the screen in her head asks which mission now (or
 the next one, or just a rest). A touch, and she gets up.
 
-Duty pickups stand at the curbs here and there (not in a hunt), and once the third mission is
-done, one at the curb a few steps from home's door. Touch the wheel over one, or stand by it a
+Duty pickups stand at the curbs here and there (not in a hunt), and one always at the curb a few
+steps from home's door. Touch the wheel over one, or stand by it a
 moment, on any side, and she gets in. Driving is the easy way about the town, and the fast one, up
 to some 130 kilometers an hour on a straight (how fast is shown low on the left). The pickup is
 the dispatch's own and does not break: a car in its way, going or parked at a curb, is rammed off, sliding and spinning to a
@@ -133,15 +132,13 @@ well. A duty pickup up the road (it keeps along the road's bends by itself), thr
 (what lies across it is shoved off, or knocked aside on foot with the mallet), to the square.
 
 The fifth, the puppy at sea: a call from the beach east of home, past the store, where a crowd
-stands at the water's edge looking out at a puppy too tired to swim back; a clock of its own
-says how long it still holds out. Along the shore road in a duty pickup, down to the beach, out
+stands at the water's edge looking out at a puppy too tired to swim back. A favour asked, not a
+job ordered: nothing is paid, and there is no clock on it but the time it takes. Along the shore road in a duty pickup, down to the beach, out
 into the water, right up to it, and she takes it; back to the pickup and to the vets', a white
 house with a turquoise band and a paw over its door, three streets up and a block east of home,
-the bay painted on the street before it. Too late, and the people from the shore get it out
-themselves, and the job begins again.
+the bay painted on the street before it.
 
-The missions come in turn: the hunt, the folder, the delivery, the call out, the puppy, and
-round again; or on home's sofa, the screen asks which now.
+The jobs do not come in turn: on home's sofa, the screen offers them all, and the player picks.
 
 What is to come is in `PLAN.md`.
 

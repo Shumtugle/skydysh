@@ -5,16 +5,13 @@ package com.shumtugle.skydysh;
  * with no strength left to swim back, and a crowd of people stands at the water's edge looking
  * out at it. She gets there (a duty pickup is the quick way, along the shore road), swims out to
  * it and takes it; then to the vets' on the street north of home's row, three streets up, where it
- * is handed in at the door, in the bay painted on the road before it. The puppy holds out so long:
- * if she is not at it by then, the people from the shore get it out themselves, and the job is
- * played again. Once she has it, there is no hurry but the clock.
+ * is handed in at the door, in the bay painted on the road before it. A favour asked of her, not
+ * a job ordered: nothing is paid for it, and there is no hurry; the puppy keeps afloat, the people
+ * on the shore wait. Only the time it took is kept.
  */
 final class Puppy {
-    static final int REWARD = 70000;
     // the steps: to the puppy, to the vets', done
     static final int REACH = 0, CLINIC = 1, DONE = 2;
-    /** How long the puppy holds out in the water, seconds. */
-    static final float STRENGTH = 150f;
     // where it is: so far east of home, so far out from the water's edge; how near she takes it
     static final float AT_X = 8 * City.CELL + 32f, AT_Z = City.SHORE * City.CELL + City.WATERLINE - 22f, TAKE = 2.6f;
     // how near the vets' door is the vets', on foot
@@ -27,13 +24,11 @@ final class Puppy {
 
     int step = REACH;
     float clock, doneAt = -1f;
-    /** Too late: the people on the shore got it out themselves. */
-    boolean late;
     // the puppy in the water: where, the way it faces, its paddling
     float x = AT_X, z = AT_Z, yaw = 0.4f, paddle;
 
     boolean over() {
-        return step == DONE || late;
+        return step == DONE;
     }
 
     /** Whether she carries it. */
@@ -55,9 +50,6 @@ final class Puppy {
                 step = CLINIC;
                 host.sound(Synth.CHIME, 0.6f, 1.4f);
                 host.buzz(120);
-            } else if (clock > STRENGTH) {
-                late = true;
-                doneAt = clock;
             }
             return;
         }
@@ -75,11 +67,6 @@ final class Puppy {
     private static boolean near(float ax, float az, float bx, float bz, float r) {
         float dx = ax - bx, dz = az - bz;
         return dx * dx + dz * dz < r * r;
-    }
-
-    /** How long it still holds out, seconds (none, once she has it). */
-    float strength() {
-        return step == REACH ? Math.max(0f, STRENGTH - clock) : 0f;
     }
 
     /** Where the way goes now, into out (x, y, z): the puppy, or the vets' bay. */
@@ -115,7 +102,7 @@ final class Puppy {
      * wheel, on the seat beside her.
      */
     void draw(DrawList d, Runner r, Pickup driving) {
-        if (step == DONE || late) return;
+        if (step == DONE) return;
         if (step == REACH) {
             float bob = 0.05f * (float) Math.sin(paddle * 1.7f);
             begin(x, City.WATER - 0.12f + bob, z, yaw, 1f);

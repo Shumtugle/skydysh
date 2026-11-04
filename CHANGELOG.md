@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.64
+
+- No round of missions. The game begins in the street before home's door, the town hers; nothing
+  is given out after the opening. On the sofa the screen offers every kind of job (the newest at
+  the top), none pushed: no "on", no next in turn. Free in the street, the top of the frame says
+  nothing (no more "home, for a job"); only a job won, its report waiting, says done and home.
+- Home's own pickup is always at its curb, not only after the third mission.
+- The puppy is a favour, not a job: no pay, and no clock on its strength, so no losing it; the
+  briefing, the report and its story say so. Its time is still kept (revision raised).
+- The marks of places half the size: hints, not buttons.
+- Stand: `next.txt` retired (it played the old round); `choice5.txt` picks the puppy.
+
 ## 0.63
 
 - The marks of where the way goes are no longer glass, nor green rings: flat little pictures of

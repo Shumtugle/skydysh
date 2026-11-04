@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.63";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.64";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -98,9 +98,8 @@ final class World {
         money = host.loadInt(SAVE_MONEY);
         // every game begins at home: on the promenade across the shore road from its door, facing it
         runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - City.CURB - 1.2f, 0f);
-        // the first mission is given out here in the street; every one after it, at home
-        if (next > 1) standFree();
-        else begin(runner.x, runner.z);
+        // no mission is given out in the street: the town is hers from the first, the jobs are at home
+        standFree();
         opening = new Opening(host, city);
     }
 
@@ -296,7 +295,7 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 2, 1};
+    static final int[] REVISION = {0, 4, 4, 2, 2, 2};
     /** How many kinds of mission there are; they come in turn, round and round. */
     static final int KINDS = 5;
 
@@ -473,13 +472,13 @@ final class World {
 
     /** Whether the mission just over was lost: the hunt's time out, the folder taken first, the puppy got out by others. */
     private boolean failed() {
-        if (puppy != null) return puppy.late;
+        if (puppy != null) return false;
         return hunt() ? mission.late : folder != null && folder.theirs;
     }
 
     /** The report on the mission just done. */
     private String[] report() {
-        if (puppy != null) return puppy.late ? Dispatch.puppyLate(mission.round) : Dispatch.puppied(mission.round, clock(puppy.doneAt), money, paidNow);
+        if (puppy != null) return Dispatch.puppied(mission.round, clock(puppy.doneAt), money, paidNow);
         if (rescue != null) return Dispatch.rescued(mission.round, clock(rescue.doneAt), money, paidNow);
         if (delivery != null) return Dispatch.delivered(mission.round, clock(delivery.doneAt), money, paidNow);
         if (folder == null && mission.late) return Dispatch.late(mission.round, mission.caught());
@@ -639,7 +638,6 @@ final class World {
                     // on to the next: a kind not yet won first, while there is one; then in turn.
                     // Lost, the same again, from where it began
                     again = lost;
-                    if (!lost) mission.round = nextNew(mission.round + 1) - 1;
                     if (lost && !startHome) runner.put(startX, City.WALK_TOP, startZ, runner.heading);
                     begin(runner.x, runner.z);
                     overFor = 0f;
@@ -1110,8 +1108,8 @@ final class World {
             return;
         }
         whiteOut = Math.max(0f, whiteOut - dt);
-        // home's own pickup at its curb, once the third mission is done
-        city.homePickup = (free ? mission.round : mission.round - 1) >= 3;
+        // home's own pickup at its curb, always
+        city.homePickup = true;
         if (dutyOut()) duty.update(runner.x, runner.z, city, driving);
         else duty.all.clear();
         if (driving != null) drive(dt);
@@ -2044,16 +2042,14 @@ final class World {
     private String[] keptLines;
 
     /**
-     * A choice's lines and what each picks, without the lines of kinds of mission not yet won: the
-     * screen offers what she has done, and the next; the rest she comes to in its turn. The lines
-     * kept are left in keptLines.
+     * A choice's lines and what each picks, as they are (every kind of job is offered: the player
+     * picks what to play; none is pushed on her). The lines kept are left in keptLines.
      */
     private int[] known(String[] lines, int[] picks) {
         java.util.ArrayList<String> l = new java.util.ArrayList<String>();
         java.util.ArrayList<Integer> p = new java.util.ArrayList<Integer>();
         for (int k = 0; k < lines.length; k++) {
             int c = k < picks.length ? picks[k] : -1;
-            if (c >= 1 && c <= KINDS && (kindsWon & (1 << c)) == 0) continue;
             l.add(lines[k]);
             p.add(c);
         }
@@ -2065,18 +2061,6 @@ final class World {
 
     /** The screen let go by the sign of the way back: she gets up once the walls have drawn back. */
     private boolean standAfter;
-
-    /**
-     * The next mission on from n: the first of a kind not yet won, while any kind is not; once all
-     * are, n itself (the kinds come round in turn).
-     */
-    private int nextNew(int n) {
-        boolean any = false;
-        for (int k = 1; k <= KINDS; k++) if ((kindsWon & (1 << k)) == 0) any = true;
-        if (!any) return n;
-        while ((kindsWon & (1 << kindOf(n))) != 0) n++;
-        return n;
-    }
 
     /** Up from the sofa, a step before it, facing the door. */
     private void standUp() {
@@ -2328,16 +2312,18 @@ final class World {
         float gx = City.HOME_DOOR_X - runner.x, gz = City.HOME_DOOR_Z - runner.z;
         float far = (float) Math.sqrt(gx * gx + gz * gz);
         if (far < 12f) return;
-        String w = Lang.lines(waiting != null ? "goal.done" : "goal.free", mission.round, null)[0];
-        shadowed(f, w, (W - PixelFont.width(w, 1)) / 2, 14, 1, cream, ink);
+        // nothing urged on her: only a job won, its report waiting at home, is said at the top
+        if (waiting != null) {
+            String w = Lang.lines("goal.done", mission.round, null)[0];
+            shadowed(f, w, (W - PixelFont.width(w, 1)) / 2, 14, 1, cream, ink);
+        }
         // at the door its own sign is there to touch: no mark over it as well
         if (far > 30f) placeMark(d, f, City.HOME_DOOR_X, City.WALK_TOP + 3.5f, City.HOME_DOOR_Z, Marks.HOUSE, Marks.OPEN);
     }
 
     /**
-     * Over the frame, the puppy: the clock and the pay in the corner; how long the puppy still holds
-     * out, large on the left while it is in the water; how far off where the way goes now is, and
-     * what it is (the puppy, the vets'), with a green ring or mark; over the vets' bay, its sign.
+     * Over the frame, the puppy: the clock in the corner; where the way goes now, in a word and a
+     * mark (the puppy, the vets'); over the vets' bay, its sign.
      */
     private void puppyFlat(DrawList d, Px f) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E, fire = 0xFFF0581C;
@@ -2347,23 +2333,10 @@ final class World {
         int due = Dispatch.due(mission.round);
         String sum = money(due);
         if (due > 0) shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
-        if (pu.late) {
-            String w = Lang.lines("puppy.late.short", mission.round, null)[0];
-            shadowed(f, w, (W - PixelFont.width(w, 3)) / 2, h / 2 - 40, 3, fire, ink);
-            return;
-        }
         if (pu.over()) {
             String big = "+" + sum;
             if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
             return;
-        }
-        if (!pu.held()) {
-            // its strength: a clock of its own, going down, red at the last
-            float left = pu.strength();
-            String s = clock(left);
-            shadowed(f, s, 10, 14, 2, left < 30f && (int) (time * 3f) % 2 == 0 ? fire : cream, ink);
-            String sw = Lang.lines("puppy.strength", mission.round, null)[0];
-            shadowed(f, sw, 10, 32, 1, cream, ink);
         }
         if (!pu.goal(goal)) return;
         float gx = goal[0] - runner.x, gz = goal[2] - runner.z;

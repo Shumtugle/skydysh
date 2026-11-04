@@ -1,6 +1,6 @@
-# A game kept with four kinds won and job 12 next (as the author's was): on the sofa, the choice
-# newest first, no numbers, no rest line, the sign of the way back; "on" brings the kind not yet
-# won, the puppy. Then the sign of the way back: out of her head, up from the sofa. Then free in
+# A game kept with four kinds won and job 12 next (as the author's was): on the sofa, every kind of
+# job offered, newest first, no numbers, no "on", no rest line, the sign of the way back; the puppy
+# picked. Then the sign of the way back: out of her head, up from the sofa. Then free in
 # the street, home's mark a house; the delivery's word with no meters. In Russian.
 screen 1096 2560
 wait 0.4
@@ -11,7 +11,7 @@ restart
 sofa
 wait 7
 shot h0
-pick 0
+pick 5
 wait 3
 shot h1
 close

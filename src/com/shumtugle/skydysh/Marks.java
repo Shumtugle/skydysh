@@ -10,7 +10,7 @@ final class Marks {
     static final int HOUSE = 0, PAW = 1, FACTORY = 2, WAREHOUSE = 3, TRUCK = 4, PASS = 5, VILLAGE = 6, CLINIC = 7;
     static final int OPEN = 0xFF46D27E, SHUT = 0xFFF0583C;
     /** The pictures' squares: each this many frame pixels. */
-    static final int SCALE = 2;
+    static final int SCALE = 1;
     static final int SIDE = 13;
     // how much of the picture shows, and of its edge
     static final float BODY = 0.78f, EDGE = 0.45f;
