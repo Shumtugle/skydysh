@@ -196,6 +196,21 @@ final class City implements Ground {
         return Math.abs(x - WORKSHOP_BAY_X) < BAY_DEEP + 0.7f && Math.abs(z - workshopZ()) < BAY_HALF + 3.5f;
     }
 
+    /**
+     * The concert hall: built by hand, the same in every town, the south row of a block north of
+     * the old town; a portico of columns on broad steps, three tall doors behind it, the middle
+     * one the way in (see Concert).
+     */
+    static final int CONCERT_I = -2, CONCERT_J = 4;
+
+    static float concertDoorX() {
+        return CONCERT_I * CELL + CELL * 0.5f;
+    }
+
+    static float concertDoorZ() {
+        return CONCERT_J * CELL + FRONT + 3f;
+    }
+
     /** Whether (x, z) is within home's walls. */
     static boolean home(float x, float z) {
         float x0 = HOME_I * CELL + FRONT, z0 = HOME_J * CELL + FRONT;
@@ -1253,6 +1268,7 @@ final class City implements Ground {
         else if (works && i == FACTORY_I) factory(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else if (works) store(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else if (i == CLINIC_I && j == CLINIC_J) clinic(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
+        else if (i == CONCERT_I && j == CONCERT_J) concertHall(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else row(c, rnd, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH, true, -1, open && !north);
         row(c, rnd, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b, true, 1, open && north);
         row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + a, x0 + a + DEPTH, false, -1, false);
@@ -1460,6 +1476,65 @@ final class City implements Ground {
         }
         for (float u = -half + 1.2f; u < half - 0.5f; u += 1.5f)
             d.box(bx, y, bz + u, BAY_DEEP - 0.3f, 0.005f, 0.12f, null, amber, DrawList.PAINT);
+    }
+
+    /**
+     * The concert hall: pale stone, high, its cornice and a pediment over the middle; before it a
+     * portico of eight columns on three broad steps; three tall doors of dark wood and glass, gilt
+     * framed; boards with notes on them either side; its name over the doors in gilt letters, a
+     * lyre on the pediment.
+     */
+    private void concertHall(Cell c, float x0, float x1, float z0, float z1) {
+        DrawList d = c.boxes, small = c.detail;
+        float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f;
+        float high = 16f, fz = z0;
+        int stone = 0xEDE4D2, shade = 0xD8CDB6, gold = 0xC9A15A, wood = 0x4A2E22, glass = 0x2A3E48;
+        d.box(cx, high * 0.5f, cz + 1.5f, hx, high * 0.5f, hz - 1.5f, null, stone, DrawList.material(DrawList.FACADE, 0x30));
+        d.box(cx, high + 0.3f, cz + 1.5f, hx + 0.3f, 0.3f, hz - 1.2f, null, shade, DrawList.STONE);
+        // the steps the length of the portico, the portico's floor, its columns and the roof on them
+        float pf = fz + 3f, half = hx * 0.55f;
+        for (int k = 0; k < 3; k++)
+            d.box(cx, WALK_TOP + 0.12f * (k + 0.5f), fz + 0.4f + k * 0.5f + 1f, half + 0.6f - k * 0.2f, 0.12f * (k + 0.5f), 1.4f - k * 0.45f, null, shade, DrawList.STONE);
+        for (int k = 0; k < 8; k++) {
+            float u = cx - half + 1f + k * (2f * half - 2f) / 7f;
+            d.box(u, 0.6f + 5.2f, fz + 0.9f, 0.45f, 5.2f, 0.45f, null, stone, DrawList.STONE);
+            d.box(u, 11.2f, fz + 0.9f, 0.6f, 0.2f, 0.6f, null, shade, DrawList.STONE);
+            c.wall(u - 0.45f, fz + 0.45f, u + 0.45f, fz + 1.35f, 11.4f);
+        }
+        d.box(cx, 11.8f, fz + 1.6f, half + 0.6f, 0.4f, 1.6f, null, shade, DrawList.STONE);
+        for (int k = 0; k < 4; k++)
+            d.box(cx, 12.4f + k * 0.5f, fz + 0.4f, half * (1f - k * 0.24f), 0.25f, 0.3f, null, stone, DrawList.STONE);
+        // the lyre on the pediment: two arms and a bar, gilt
+        for (int e = -1; e <= 1; e += 2)
+            small.box(cx + e * 0.35f, 13.4f, fz + 0.05f, 0.08f, 0.55f, 0.04f, null, gold, DrawList.GOLD);
+        small.box(cx, 13.85f, fz + 0.05f, 0.45f, 0.06f, 0.04f, null, gold, DrawList.GOLD);
+        small.box(cx, 13.05f, fz + 0.05f, 0.3f, 0.12f, 0.04f, null, gold, DrawList.GOLD);
+        // the three doors, tall, under gilt frames; the name over the middle one in gilt
+        for (int k = -1; k <= 1; k++) {
+            float u = cx + k * 4f;
+            d.box(u, WALK_TOP + 2.4f, pf - 0.02f, 1.3f, 2.4f, 0.05f, null, wood, DrawList.WOOD);
+            d.box(u, WALK_TOP + 2.2f, pf - 0.06f, 0.95f, 1.9f, 0.02f, null, glass, DrawList.GLASS);
+            d.box(u, WALK_TOP + 4.95f, pf - 0.08f, 1.45f, 0.12f, 0.06f, null, gold, DrawList.GOLD);
+        }
+        small.box(cx, WALK_TOP + 6.2f, pf - 0.08f, 3.8f, 0.3f, 0.03f, null, gold, DrawList.GOLD);
+        // tall windows along the rest of the front, boards with notes either side of the portico
+        for (float u = x0 + 2.5f; u < x1 - 2f; u += 3.2f) {
+            if (Math.abs(u - cx) < half + 1.5f) continue;
+            d.box(u, 6f, pf - 0.04f, 0.7f, 3f, 0.04f, null, glass, DrawList.GLASS);
+            d.box(u, 9.2f, pf - 0.06f, 0.85f, 0.1f, 0.05f, null, shade, DrawList.STONE);
+        }
+        for (int e = -1; e <= 1; e += 2) {
+            float u = cx + e * (half + 1.6f);
+            small.box(u, WALK_TOP + 1.6f, fz + 1.2f, 0.7f, 1f, 0.05f, null, 0x2B2F3A, DrawList.PLAIN);
+            small.box(u, WALK_TOP + 1.6f, fz + 1.15f, 0.6f, 0.88f, 0.02f, null, 0xF2E6C8, DrawList.PLAIN);
+            for (int n = 0; n < 3; n++) {
+                small.box(u - 0.25f + n * 0.25f, WALK_TOP + 1.5f + (n % 2) * 0.2f, fz + 1.12f, 0.06f, 0.05f, 0.01f, null, 0x2B2F3A, DrawList.PLAIN);
+                small.box(u - 0.2f + n * 0.25f, WALK_TOP + 1.75f + (n % 2) * 0.2f, fz + 1.12f, 0.015f, 0.22f, 0.01f, null, 0x2B2F3A, DrawList.PLAIN);
+            }
+            c.wall(u - 0.7f, fz + 1.1f, u + 0.7f, fz + 1.3f, WALK_TOP + 2.6f);
+        }
+        c.wall(x0, pf, x1, z1, high + 0.6f);
+        c.house(cx, cz, hx, hz, high + 0.6f, 0f, -1f, 0f);
     }
 
     /**

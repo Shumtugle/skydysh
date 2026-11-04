@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.68
+
+- A seventh job, the concert, paid (40 000, once): to the concert hall, in at its middle door;
+  the hall full, the pianist at the grand piano; pieces played one after another, each new,
+  written there and then from a bank of seed phrases (see CREDITS) and played as MIDI through the
+  phone's own synthesizer. Keeping order: now and then someone gets up and talks, a red mark over
+  them; come up the aisle near them and they sit down; the report counts both. Two pieces heard
+  through, and it is done; the concert goes on while she stays. Out before that, the count
+  starts again.
+- The concert hall, the same in every town: the south row of the block north of the old town;
+  pale stone, a portico of eight columns on three broad steps, a pediment with a gilt lyre, three
+  tall doors, boards with notes either side.
+- Its room: 20 m by 26, 8 m high; cream walls with gilt pilasters, a wine red carpet with a gold
+  runner, three hanging lamps; eight rows of seats either side of the aisle (they stand in her
+  way); a stage a step high, red curtains, a black grand piano with its lid up. Rooms may now
+  have ceilings of their own heights.
+- The world can ask the phone to play a piece of music (a MIDI file through its synthesizer).
+- Long words at the top of the frame drop to the small letters so they clear the corners.
+- Marks of places for the concert hall (a note) and for someone making a noise.
+- Seven kinds now: mission numbers past six fall to other kinds than before.
+- Stand: scene `concert.txt`; `paid.txt` on the folder's new number.
+
 ## 0.67
 
 - Standing, a swipe aside with the one finger turns her where she stands: she does not run, nor

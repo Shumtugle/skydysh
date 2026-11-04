@@ -93,6 +93,11 @@ public final class Stand implements World.Host {
     }
 
     @Override
+    public void music(byte[] midi) {
+        System.out.println(String.format("%7.2fs  music %s", time, midi == null ? "stopped" : midi.length + " bytes"));
+    }
+
+    @Override
     public void journal(String name, String text) {
         try {
             Files.write(new File(out, name).toPath(), text.getBytes(StandardCharsets.UTF_8));

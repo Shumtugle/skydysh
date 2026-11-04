@@ -1,0 +1,22 @@
+# The concert: the hall north of the old town, its portico; in at the middle door; the hall full,
+# the pianist at the piano, a piece made from the seed bank played; someone up and talking, a red
+# mark over them; come up to, they sit. Two pieces heard through: done. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 7
+close
+at -96 236 0
+wait 1
+shot k0
+at -96 265.6 0
+wait 2
+where
+shot k1
+wait 4
+shot k2
+wait 25
+shot k3
+wait 200
+where
+shot k4

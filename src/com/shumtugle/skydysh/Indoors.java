@@ -179,7 +179,7 @@ final class Indoors implements Ground {
     }
 
     public float ceiling(float x, float z, float feet) {
-        return FLOOR + (inCabin(u(x, z)) > 0f ? CAB_HIGH : HALL_HIGH);
+        return FLOOR + (inCabin(u(x, z)) > 0f ? CAB_HIGH : high);
     }
 
     public void keepEye(float[] p) {
@@ -337,7 +337,7 @@ final class Indoors implements Ground {
     /** The doors that are not open far enough to go through, in her way. */
     private void doorsInTheWay() {
         solidN = fixedN;
-        float top = FLOOR + HALL_HIGH;
+        float top = FLOOR + high;
         if (front < 0.85f) solid(-DOOR_HALF, 0f, DOOR_HALF, WALL, top);
         if (backDoor && back < 0.85f) solid(-DOOR_HALF, deep - WALL, DOOR_HALF, deep, top);
         float wu = side * half, wu1 = side * (half + WALL);
@@ -407,6 +407,10 @@ final class Indoors implements Ground {
     private boolean cameDown, cameBack;
     /** Whether the hall has a lift; one without is a way through from the street to the yard. */
     boolean hasLift = true;
+    /** How high its ceiling is over its floor (a hall's, unless it is a larger room). */
+    float high = HALL_HIGH;
+    /** Whether this is the concert hall's room: its seats, its stage, its piano (see Concert). */
+    boolean concert;
 
     // ---- home: a room of her own behind the front door, the sofa against its back wall ----
     /** Whether this is home's room; how far in the sofa's seat is; whether she sits on it now. */

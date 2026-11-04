@@ -59,6 +59,77 @@ final class Rooms {
     }
 
     /**
+     * The concert hall's room, behind its doors on the street: a long hall under a high ceiling,
+     * cream walls with gilt pilasters, a carpet of wine red, three lamps hung from the ceiling;
+     * rows of seats either side of an aisle down the middle, a narrow aisle along each wall; at the
+     * far end a stage of boards a step high, red curtains behind it, a grand piano on it, black,
+     * its lid up, and the bench before its keys. The seats' rows and the stage stand in her way.
+     */
+    static Indoors concert(float doorX, float doorZ) {
+        Indoors in = new Indoors(doorX, doorZ, 0f, -1f, Concert.HALF, Concert.DEEP, 1, 4f, 1);
+        in.backDoor = false;
+        in.hasLift = false;
+        in.concert = true;
+        in.high = Concert.HIGH;
+        in.frameColor = 0xC9A15A;
+        in.frameMat = DrawList.GOLD;
+        int cream = 0xEFE3CC, wine = 0x7E2A2A;
+        shell(in, wine, false, cream, 0x5E1E22, DrawList.PAINT);
+        DrawList d = in.still();
+        float f = Indoors.FLOOR, w = Indoors.WALL, half = in.half, deep = in.deep, top = f + in.high;
+        // the carpet over the tiles, and a runner of gold down the aisle
+        in.box(d, 0f, f + 0.004f, deep * 0.5f, half, 0.004f, deep * 0.5f - w, wine, DrawList.GRAIN);
+        in.box(d, 0f, f + 0.008f, (Concert.ROW0 + Concert.STAGE) * 0.5f, 0.5f, 0.004f, (Concert.STAGE - Concert.ROW0) * 0.5f, 0xB98A3A, DrawList.GRAIN);
+        // gilt pilasters along the walls, a cornice under the ceiling
+        for (float v = 3f; v < deep - 1f; v += 4f)
+            for (int e = -1; e <= 1; e += 2)
+                in.box(d, e * (half - 0.06f), f + in.high * 0.5f, v, 0.08f, in.high * 0.5f, 0.25f, 0xC9A15A, DrawList.GOLD);
+        for (int e = -1; e <= 1; e += 2)
+            in.box(d, e * (half - 0.1f), top - 0.3f, deep * 0.5f, 0.12f, 0.15f, deep * 0.5f - w, 0xC9A15A, DrawList.GOLD);
+        // the lamps hung from the ceiling
+        for (int k = 0; k < 3; k++) {
+            float v = Concert.ROW0 + 2f + k * 4.5f;
+            in.box(d, 0f, top - 1.1f, v, 0.03f, 1.1f, 0.03f, 0xC9A15A, DrawList.GOLD);
+            in.box(d, 0f, top - 2.3f, v, 0.75f, 0.12f, 0.75f, 0xC9A15A, DrawList.GOLD);
+            in.box(d, 0f, top - 2.15f, v, 0.6f, 0.1f, 0.6f, 0xFFE9BE, DrawList.GLOW);
+        }
+        // the seats: rows either side of the middle aisle, each a red cushion and a back
+        for (int r = 0; r < Concert.ROWS; r++) {
+            float v = Concert.rowV(r);
+            for (int e = -1; e <= 1; e += 2)
+                for (int k = 0; k < Concert.SEATS; k++) {
+                    float u = e * Concert.seatU(k);
+                    in.box(d, u, f + 0.22f, v, 0.38f, 0.22f, 0.36f, 0x3A2A24, DrawList.WOOD);
+                    in.box(d, u, f + 0.47f, v, 0.36f, 0.05f, 0.34f, 0xA8323A, DrawList.GRAIN);
+                    in.box(d, u, f + 0.75f, v + 0.33f, 0.36f, 0.32f, 0.05f, 0xA8323A, DrawList.GRAIN);
+                }
+            for (int e = -1; e <= 1; e += 2) {
+                float u0 = Concert.seatU(0) - 0.45f, u1 = Concert.seatU(Concert.SEATS - 1) + 0.45f;
+                in.solid(e > 0 ? u0 : -u1, v - 0.45f, e > 0 ? u1 : -u0, v + 0.45f, f + 1.1f);
+            }
+        }
+        // the stage: boards a step high the width of the hall, its edge gilt; the curtains behind
+        float st = Concert.STAGE, sy = f + Concert.STAGE_HIGH;
+        in.box(d, 0f, (f + sy) * 0.5f, (st + deep - w) * 0.5f, half, (sy - f) * 0.5f, (deep - w - st) * 0.5f, 0x8A5A34, DrawList.WOOD);
+        in.box(d, 0f, sy - 0.04f, st + 0.03f, half, 0.04f, 0.04f, 0xC9A15A, DrawList.GOLD);
+        in.solid(-half, st, half, deep, sy);
+        for (float u = -half + 0.6f; u < half; u += 1.2f)
+            in.box(d, u, (sy + top) * 0.5f, deep - w - 0.25f, 0.55f, (top - sy) * 0.5f, 0.12f, (Math.round(u) & 1) == 0 ? 0x8E1E24 : 0x7A1A20, DrawList.GRAIN);
+        // the grand piano: its body, black, the curve of its tail, its legs; the keys; the lid up; the bench
+        float pu = Concert.PIANO_U, pv = Concert.PIANO_V, py = sy + 0.95f;
+        in.box(d, pu, py, pv, 0.75f, 0.17f, 1.1f, 0x111114, DrawList.POLISHED);
+        in.box(d, pu + 0.25f, py, pv + 1.25f, 0.5f, 0.17f, 0.3f, 0x111114, DrawList.POLISHED);
+        for (int k = 0; k < 3; k++)
+            in.box(d, pu + (k == 2 ? 0.3f : (k == 0 ? -0.6f : 0.6f)), (sy + py) * 0.5f, pv + (k == 2 ? 1.2f : -0.9f), 0.05f, (py - sy) * 0.5f, 0.05f, 0x111114, DrawList.POLISHED);
+        in.box(d, pu, py + 0.02f, pv - 1.17f, 0.72f, 0.05f, 0.1f, 0xF2EEE4, DrawList.PLAIN);
+        for (float u = -0.66f; u < 0.7f; u += 0.13f)
+            in.box(d, pu + u, py + 0.08f, pv - 1.14f, 0.025f, 0.02f, 0.06f, 0x111114, DrawList.PLAIN);
+        in.box(d, pu + 0.73f, py + 0.75f, pv + 0.1f, 0.03f, 0.6f, 1.0f, 0x111114, DrawList.POLISHED);
+        in.box(d, pu, sy + 0.24f, pv - 1.85f, 0.45f, 0.24f, 0.2f, 0x111114, DrawList.POLISHED);
+        return in;
+    }
+
+    /**
      * Home's room, behind its front door: warm walls over teal panelling, a floor of boards, a
      * coral rug; against the back wall, wide enough for her, a teal sofa with cream cushions, a
      * lamp on a little table at either end; a picture of the sea over it; plants in the corners,
@@ -131,7 +202,7 @@ final class Rooms {
     /** Floor, ceiling and walls, the glass doors' openings front and back and the lift's in one side. */
     private static void shell(Indoors in, int tile, boolean diagonal, int wall, int low, float lowMat) {
         DrawList d = in.still();
-        float f = Indoors.FLOOR, h = Indoors.HALL_HIGH, w = Indoors.WALL, half = in.half, deep = in.deep;
+        float f = Indoors.FLOOR, h = in.high, w = Indoors.WALL, half = in.half, deep = in.deep;
         float tall = f + h + 1f, mid = f + h * 0.5f, dh = Indoors.DOOR_HALF, lh = Indoors.LIFT_HALF;
         int s = in.side;
         in.box(d, 0f, f - 0.15f, deep * 0.5f, half + w, 0.15f, deep * 0.5f, tile, DrawList.material(DrawList.TILES, diagonal ? 200 : 40));
@@ -224,7 +295,7 @@ final class Rooms {
         float f = Indoors.FLOOR, w = Indoors.WALL, ch = Indoors.CAB_HIGH, cd = Indoors.CAB_DEEP, chf = Indoors.CAB_HALF;
         int s = in.side;
         float door = in.half + w, mid = door + cd * 0.5f, backU = door + cd;
-        float tall = f + Indoors.HALL_HIGH + 1f;
+        float tall = f + in.high + 1f;
         in.box(d, s * mid, f - 0.15f, in.liftV, cd * 0.5f + w, 0.15f, chf + w, 0x4A3A2E, DrawList.WOOD);
         in.box(d, s * mid, f + ch + 0.12f, in.liftV, cd * 0.5f + w, 0.12f, chf + w, 0x3A302A, DrawList.PLAIN);
         in.box(d, s * (backU + w * 0.5f), f + ch * 0.5f, in.liftV, w * 0.5f, ch * 0.5f, chf + w, in.cabColor, DrawList.WOOD);
@@ -247,7 +318,7 @@ final class Rooms {
     /** So many lamps down the middle of the ceiling. */
     private static void lamps(Indoors in, int n) {
         DrawList d = in.still();
-        float top = Indoors.FLOOR + Indoors.HALL_HIGH;
+        float top = Indoors.FLOOR + in.high;
         for (int k = 0; k < n; k++) {
             float v = in.deep * (k + 1f) / (n + 1f);
             in.box(d, 0f, top - 0.05f, v, 0.36f, 0.03f, 0.36f, in.frameColor, in.frameMat);

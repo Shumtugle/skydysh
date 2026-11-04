@@ -17,6 +17,7 @@ public final class MainActivity extends Activity implements World.Host {
     private Stage stage;
     private Vibrator vibrator;
     private final Sound sound = new Sound();
+    private android.media.MediaPlayer music;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -44,6 +45,7 @@ public final class MainActivity extends Activity implements World.Host {
 
     @Override
     protected void onPause() {
+        music(null);
         sound.stop();
         stage.onPause();
         super.onPause();
@@ -134,6 +136,39 @@ public final class MainActivity extends Activity implements World.Host {
     public String language() {
         // the game's own language when one is chosen for it alone, else the phone's
         return getResources().getConfiguration().getLocales().get(0).getLanguage();
+    }
+
+    @Override
+    public void music(byte[] midi) {
+        // a piece written to a small file and played from there; the one before stopped first
+        if (music != null) {
+            try {
+                music.stop();
+            } catch (IllegalStateException e) {
+                // not yet started: nothing to stop
+            }
+            music.release();
+            music = null;
+        }
+        if (midi == null) return;
+        java.io.File file = new java.io.File(getCacheDir(), "piece.mid");
+        try (java.io.FileOutputStream out = new java.io.FileOutputStream(file)) {
+            out.write(midi);
+        } catch (java.io.IOException e) {
+            return;
+        }
+        try {
+            android.media.MediaPlayer m = new android.media.MediaPlayer();
+            m.setAudioAttributes(new android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_GAME)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build());
+            m.setDataSource(file.getAbsolutePath());
+            m.prepare();
+            m.start();
+            music = m;
+        } catch (Exception e) {
+            music = null;
+        }
     }
 
     @Override

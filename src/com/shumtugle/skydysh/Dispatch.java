@@ -158,7 +158,7 @@ final class Dispatch {
     }
 
     /** What touching each line of home's screen picks: the hunt 1, the folder 2, the delivery 3, the call out 4, on 0. */
-    static final int[] HOME_PICKS = {-1, -1, -1, -1, 6, 5, 4, 3, 2, 1};
+    static final int[] HOME_PICKS = {-1, -1, -1, -1, 7, 6, 5, 4, 3, 2, 1};
 
     /** A pick that takes no mission: she stays as she is (on the sofa, free). */
     static final int REST = 9;
@@ -185,7 +185,7 @@ final class Dispatch {
     }
 
     /** What touching each line of the sofa's screen picks (see HOME_PICKS); a rest, REST. */
-    static final int[] SOFA_PICKS = {-1, -1, -1, 6, 5, 4, 3, 2, 1};
+    static final int[] SOFA_PICKS = {-1, -1, -1, 7, 6, 5, 4, 3, 2, 1};
 
     /** After these lines, at the key, the next ones on the screen before the walls draw back. */
     Dispatch then(String[] more) {
@@ -209,7 +209,7 @@ final class Dispatch {
     /** What a mission of round's kind pays now: its reward the first time, nothing after. */
     static int due(int round) {
         int kind = World.kindOf(round);
-        int reward = kind == 2 ? Folder.REWARD : kind == 3 ? Delivery.REWARD : kind == 4 ? Rescue.REWARD : 0;
+        int reward = kind == 2 ? Folder.REWARD : kind == 3 ? Delivery.REWARD : kind == 4 ? Rescue.REWARD : kind == 7 ? Concert.REWARD : 0;
         return (paidKinds & (1 << kind)) != 0 ? 0 : reward;
     }
 
@@ -229,6 +229,7 @@ final class Dispatch {
         if (Rescue.its(round)) return priced(Lang.lines("brief.rescue", round, null), round);
         if (Puppy.its(round)) return priced(Lang.lines("brief.puppy", round, null), round);
         if (Tow.its(round)) return Lang.lines("brief.tow", round, null);
+        if (Concert.its(round)) return priced(Lang.lines("brief.concert", round, null), round);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
@@ -257,6 +258,14 @@ final class Dispatch {
     /** The pass cleared and the village got to: the pay, what has been won in all, the time. */
     static String[] rescued(int round, String time, int money, int got) {
         return fill(Lang.lines("report.rescue", round, time), got, money);
+    }
+
+    /** The concert worked: the pay, what has been won in all, those who got up and those sat down again, the time. */
+    static String[] concerted(int round, String time, int money, int got, int noisy, int calmed) {
+        String[] lines = fill(Lang.lines("report.concert", round, time), got, money);
+        for (int k = 0; k < lines.length; k++)
+            lines[k] = lines[k].replace("{noisy}", String.valueOf(noisy)).replace("{calmed}", String.valueOf(calmed));
+        return lines;
     }
 
     /** The brum's pickup brought to the workshop: the time. */

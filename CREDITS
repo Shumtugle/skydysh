@@ -80,3 +80,16 @@ They are under the terms in LICENSE, as the code is.
 
 
 Everything else in this project stays under the terms in LICENSE.
+
+
+Music at the concert (assets/seeds.bin, Seeds, Composer, Piece)
+==============================================================
+
+The pieces played at the concert are written there and then by a generator from a bank of
+seeds: about nine thousand phrases of one to four bars, cut from 342 keyboard works by 55
+composers, all in the public domain, all by composers who died more than seventy years ago.
+Each phrase is a melody and a bass. `seeds-provenance.tsv` says where every phrase came from:
+the source, the composer, the title, the licence, a hash of the source file and the bars.
+
+The bank and the generator come from another of the author's own projects, released by him
+under the MIT licence; they are used here by him, under the terms of this game.

@@ -148,6 +148,15 @@ them; then back, the brum's pickup following on the rope, to the brums' workshop
 last street by the road out, a dark brick house with two gates and a turquoise plate over them,
 and into the bay painted on the road before it. No pay, no clock but the time it takes.
 
+The seventh, the concert, paid: the concert hall north of the old town, a portico of columns on
+broad steps, three tall doors. In by the middle one: a long hall under a high ceiling, rows of
+red seats full of people, a stage with red curtains and a black grand piano, a pianist at it.
+The pieces are new each time, written there and then by a generator from a bank of short phrases
+of old keyboard music in the public domain, and played through the phone's own synthesizer. She
+keeps order: now and then someone gets up in the middle of the music and talks, a red mark over
+them; she goes up the aisle near them, and they sit down. Two pieces heard through and the job is
+done; the concert goes on while she stays. Out before that, and the count begins again.
+
 The jobs do not come in turn: on home's sofa, the screen offers them all, and the player picks.
 
 What is to come is in `PLAN.md`.
