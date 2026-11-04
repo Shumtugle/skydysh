@@ -121,6 +121,7 @@ final class City implements Ground {
         for (int k = 0; k < 2; k++)
             if (Math.abs(x - gateX(k == 0)) < 7f && z > SHORE * CELL - 0.5f && z < SHORE * CELL + FRONT) return true;
         if (Math.abs(x - clinicDoorX()) < 7f && z > CLINIC_J * CELL - 0.5f && z < CLINIC_J * CELL + FRONT) return true;
+        if (Math.abs(z - workshopZ()) < 9f && x < 0.5f && x > -FRONT) return true;
         return false;
     }
 
@@ -165,6 +166,34 @@ final class City implements Ground {
     /** Whether (x, z) is in the bay before the vets' door. */
     static boolean inClinicBay(float x, float z) {
         return Math.abs(x - clinicDoorX()) < BAY_HALF && Math.abs(z - clinicBayZ()) < BAY_DEEP;
+    }
+
+    /**
+     * The quarry: cut into the foot of the ridge west of the road to the pass, a floor of gravel
+     * open to the south and faces of rock stepped up round it on the other three sides.
+     */
+    static final float QUARRY_X = -100f, QUARRY_Z = 866f, QUARRY_HX = 22f, QUARRY_HZ = 18f;
+
+    /** Whether (x, z) is in the quarry, or within so far of it. */
+    static boolean inQuarry(float x, float z, float margin) {
+        return Math.abs(x - QUARRY_X) < QUARRY_HX + margin && Math.abs(z - QUARRY_Z) < QUARRY_HZ + margin;
+    }
+
+    /**
+     * The brums' workshop, where brums are put back together and their things mended: built by hand
+     * at the town's last street, the east row of the block west of the road out, its gate on that
+     * road; a bay painted on the road before it, on its side.
+     */
+    static final int WORKSHOP_I = -1, WORKSHOP_J = EDGE_J - 1;
+    static final float WORKSHOP_BAY_X = -BAY_Z;
+
+    static float workshopZ() {
+        return WORKSHOP_J * CELL + CELL * 0.5f;
+    }
+
+    /** Whether (x, z) is in the bay before the workshop's gate. */
+    static boolean inWorkshopBay(float x, float z) {
+        return Math.abs(x - WORKSHOP_BAY_X) < BAY_DEEP + 0.7f && Math.abs(z - workshopZ()) < BAY_HALF + 3.5f;
     }
 
     /** Whether (x, z) is within home's walls. */
@@ -744,6 +773,7 @@ final class City implements Ground {
         if (j == RIDGE_J) ridge(c, rnd, x0, z0);
         else if (j == EDGE_J + 7 || j == EDGE_J + 8) village(c, rnd, x0, z0, j);
         else fields(c, rnd, x0, z0, j);
+        if (inQuarry(x0 + CELL * 0.5f, z0 + CELL * 0.5f, CELL * 0.5f)) quarry(c, x0, z0);
     }
 
     /** A turn about the up axis, row by row (a fresh array: boxes keep their own). */
@@ -758,14 +788,14 @@ final class City implements Ground {
         for (int k = 0; k < trees; k++) {
             float tx = x0 + 4f + rnd.nextFloat() * (CELL - 8f), tz = z0 + 6f + rnd.nextFloat() * (CELL - 12f);
             float h = 6.5f + rnd.nextFloat() * 3.5f;
-            if (onRoute(tx, tz, 6f) || j == EDGE_J && tz < z0 + 10f) continue;
+            if (onRoute(tx, tz, 6f) || j == EDGE_J && tz < z0 + 10f || inQuarry(tx, tz, 3f)) continue;
             tree(c, c.detail, rnd, tx, 0f, tz, h);
             c.wall(tx - 0.2f, tz - 0.2f, tx + 0.2f, tz + 0.2f);
         }
         if (rnd.nextInt(2) == 0) {
             float bx = x0 + 6f + rnd.nextFloat() * (CELL - 12f), bz = z0 + 8f + rnd.nextFloat() * (CELL - 16f);
             float r = 0.8f + rnd.nextFloat() * 1.2f;
-            if (!onRoute(bx, bz, 4f) && !(j == EDGE_J && bz < z0 + 10f)) {
+            if (!onRoute(bx, bz, 4f) && !(j == EDGE_J && bz < z0 + 10f) && !inQuarry(bx, bz, 3f)) {
                 c.detail.box(bx, r * 0.55f, bz, r, r * 0.6f, r * 0.85f, yawFrame(rnd.nextFloat() * 3f), 0x9C968A, DrawList.STONE);
                 c.wall(bx - r * 0.8f, bz - r * 0.7f, bx + r * 0.8f, bz + r * 0.7f, r * 1.1f);
             }
@@ -1226,7 +1256,8 @@ final class City implements Ground {
         else row(c, rnd, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH, true, -1, open && !north);
         row(c, rnd, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b, true, 1, open && north);
         row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + a, x0 + a + DEPTH, false, -1, false);
-        row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b, false, 1, false);
+        if (i == WORKSHOP_I && j == WORKSHOP_J) workshop(c, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b);
+        else row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b, false, 1, false);
         yard(c, open, new Random(hash(i, j, 9)));
     }
 
@@ -1346,6 +1377,89 @@ final class City implements Ground {
         c.wall(x0 + 0.5f, cz - hz * 0.4f, x1 - 0.5f, cz + hz * 0.4f, high + 3.2f, high);
         c.house(cx, cz, hx, hz, high + 0.5f, 0f, -1f, 0f);
         bay(d, cx, SHORE * CELL);
+    }
+
+    /**
+     * The quarry, the part of it in this cell: a gravel floor; to the north, east and west faces of
+     * rock in three steps, each a little further back and higher; a pile of broken stone by a face.
+     */
+    private void quarry(Cell c, float x0, float z0) {
+        DrawList d = c.boxes, small = c.detail;
+        float qx0 = QUARRY_X - QUARRY_HX, qx1 = QUARRY_X + QUARRY_HX, qz0 = QUARRY_Z - QUARRY_HZ, qz1 = QUARRY_Z + QUARRY_HZ;
+        float ax = Math.max(qx0, x0), bx = Math.min(qx1, x0 + CELL), az = Math.max(qz0, z0), bz = Math.min(qz1, z0 + CELL);
+        if (ax >= bx || az >= bz) return;
+        d.box((ax + bx) * 0.5f, 0.02f, (az + bz) * 0.5f, (bx - ax) * 0.5f, 0.02f, (bz - az) * 0.5f, null, 0xA89E8C, DrawList.GRAVEL);
+        int[] rock = {0x8F8576, 0x9E9483, 0x847A6C};
+        for (int k = 0; k < 3; k++) {
+            float th = 2.6f + k * 0.4f, top = 3.2f * (k + 1), back = 3f + k * 3f;
+            int col = rock[k % 3];
+            // the north face, the length of the floor and past it
+            float nz = qz1 + back;
+            clipBox(c, d, qx0 - back - 3f, qx1 + back + 3f, nz - th * 0.5f, nz + th * 0.5f, top, col, x0, z0);
+            // the west and east faces
+            for (int s = -1; s <= 1; s += 2) {
+                float fx = s < 0 ? qx0 - back : qx1 + back;
+                clipBox(c, d, fx - th * 0.5f, fx + th * 0.5f, qz0 + 6f + k * 3f, nz + th * 0.5f, top, col, x0, z0);
+            }
+        }
+        // broken stone heaped by the west face
+        float hx = qx0 + 5f, hz = qz1 - 6f;
+        if (hx > x0 && hx < x0 + CELL && hz > z0 && hz < z0 + CELL)
+            for (int k = 0; k < 5; k++) {
+                float r = 0.6f + k * 0.15f;
+                small.box(hx + (k % 3) * 1.1f, r * 0.5f, hz + (k / 3) * 1.2f, r, r * 0.55f, r * 0.8f, yawFrame(k * 1.3f), 0x9C968A, DrawList.STONE);
+            }
+        if (hx > x0 && hx < x0 + CELL && hz > z0 && hz < z0 + CELL) c.wall(hx - 1f, hz - 1f, hx + 3.2f, hz + 2.4f, 1.2f);
+    }
+
+    /** A box from x0 to x1, z0 to z1, so high, clipped to the cell at (cx0, cz0), a wall too. */
+    private static void clipBox(Cell c, DrawList d, float x0, float x1, float z0, float z1, float top, int col, float cx0, float cz0) {
+        float ax = Math.max(x0, cx0), bx = Math.min(x1, cx0 + CELL), az = Math.max(z0, cz0), bz = Math.min(z1, cz0 + CELL);
+        if (ax >= bx || az >= bz) return;
+        d.box((ax + bx) * 0.5f, top * 0.5f, (az + bz) * 0.5f, (bx - ax) * 0.5f, top * 0.5f, (bz - az) * 0.5f, null, col, DrawList.STONE);
+        c.wall(ax, az, bx, bz, top);
+    }
+
+    /**
+     * The brums' workshop: a house of dark brick facing east onto the road out, two wide gates under a
+     * band of slate grey, high windows in steel frames, a board over the gates with a brum's plate on
+     * it, turquoise; a bay painted on the road before it.
+     */
+    private void workshop(Cell c, float z0, float z1, float x0, float x1) {
+        DrawList d = c.boxes, small = c.detail;
+        float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f;
+        float high = 9f, fx = x1;
+        int brick = 0x7E4A3A, dark = 0x5E3529, slate = 0x6F8A94, glass = 0x2A3A44;
+        d.box(cx, high * 0.5f, cz, hx, high * 0.5f, hz, null, brick, DrawList.STONE);
+        d.box(fx + 0.05f, 0.6f, cz, 0.07f, 0.6f, hz + 0.05f, null, dark, DrawList.STONE);
+        d.box(fx + 0.08f, 5.6f, cz, 0.1f, 0.4f, hz + 0.08f, null, slate, DrawList.PAINT);
+        d.box(cx, high + 0.25f, cz, hx + 0.2f, 0.25f, hz + 0.2f, null, 0x4E4A48, DrawList.STONE);
+        // two gates, rolled half up, dark inside
+        for (int s = -1; s <= 1; s += 2) {
+            float gz = cz + s * hz * 0.45f;
+            d.box(fx + 0.02f, 2.4f, gz, 0.04f, 2.4f, 2.8f, null, 0x1E2226, DrawList.PLAIN);
+            d.box(fx + 0.07f, 3.8f, gz, 0.05f, 1f, 2.8f, null, slate, DrawList.PAINT);
+            for (float y = 2.9f; y < 4.8f; y += 0.3f)
+                d.box(fx + 0.1f, y, gz, 0.02f, 0.025f, 2.8f, null, Street.scale(slate, 0.8f), DrawList.PLAIN);
+        }
+        // high windows along the front, between and beside the gates
+        for (float z = z0 + 1.5f; z < z1 - 1f; z += 2.6f)
+            d.box(fx + 0.04f, 7.2f, z, 0.04f, 0.8f, 0.9f, null, glass, DrawList.GLASS);
+        // the board over the middle: a brum's plate, turquoise, the sign cut in it
+        d.box(fx + 0.12f, 6.9f, cz, 0.08f, 0.75f, 1.6f, null, dark, DrawList.PLAIN);
+        small.box(fx + 0.2f, 6.9f, cz, 0.03f, 0.5f, 0.85f, null, Frida.SHEM, DrawList.GLOW);
+        small.box(fx + 0.24f, 6.9f, cz, 0.02f, 0.32f, 0.16f, null, Frida.SIGN, DrawList.PLAIN);
+        c.wall(x0, z0, x1, z1, high + 0.5f);
+        c.house(cx, cz, hx, hz, high + 0.5f, 1f, 0f, 0f);
+        // the bay on the road before it, along the road
+        int amber = 0xF0B03C;
+        float bx = WORKSHOP_BAY_X + (WORKSHOP_I + 1) * CELL, bz = workshopZ(), y = 0.006f, half = BAY_HALF + 2.5f;
+        for (int e = -1; e <= 1; e += 2) {
+            d.box(bx + e * BAY_DEEP, y, bz, 0.09f, 0.006f, half, null, amber, DrawList.PAINT);
+            d.box(bx, y, bz + e * half, BAY_DEEP, 0.006f, 0.09f, null, amber, DrawList.PAINT);
+        }
+        for (float u = -half + 1.2f; u < half - 0.5f; u += 1.5f)
+            d.box(bx, y, bz + u, BAY_DEEP - 0.3f, 0.005f, 0.12f, null, amber, DrawList.PAINT);
     }
 
     /**
@@ -2090,7 +2204,7 @@ final class City implements Ground {
                 // the street running north: on its east side they face north, on its west side south
                 if (rnd.nextBoolean()) {
                     float x = x0 + s * off, z = z0 + t;
-                    if (keep || moved.contains(lampKey(x, z))) continue;
+                    if (keep || keptClear(x, z) || keptClear(x, z + 2f) || keptClear(x, z - 2f) || moved.contains(lampKey(x, z))) continue;
                     Cars.car(c.parked, x, z, s > 0 ? 0f : (float) Math.PI, paint, true, kind);
                     c.wall(x - 0.95f, z - len, x + 0.95f, z + len, top);
                     keepParked(c, x, z, s > 0 ? 0f : (float) Math.PI, kind, paint);

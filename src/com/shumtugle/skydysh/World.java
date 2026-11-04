@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.65";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.66";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -46,6 +46,9 @@ final class World {
     Delivery delivery;                       // the mission now, when it is a delivery
     Rescue rescue;                           // the mission now, when it is a call out
     Puppy puppy;                             // the mission now, when it is the puppy in the sea
+    Tow tow;                                 // the mission now, when it is the tow out of the quarry
+    /** The brum's pickup left at the workshop after a tow, till she is far from it. */
+    private Tow towed;
     /** The crowd at the water's edge while the puppy is out. */
     private Crowd crowd;
     private static final Chase[] NONE = new Chase[0];
@@ -120,8 +123,14 @@ final class World {
         delivery = null;
         rescue = null;
         puppy = null;
+        tow = null;
         city.extra = null;
-        if (Puppy.its(n)) {
+        if (Tow.its(n)) {
+            mission.round = n;
+            folder = null;
+            tow = new Tow();
+            chase = nobody;
+        } else if (Puppy.its(n)) {
             mission.round = n;
             folder = null;
             puppy = new Puppy();
@@ -277,6 +286,7 @@ final class World {
 
     /** How long the mission just done took, seconds. */
     private float doneTime() {
+        if (tow != null) return tow.doneAt;
         if (puppy != null) return puppy.doneAt;
         if (rescue != null) return rescue.doneAt;
         if (delivery != null) return delivery.doneAt;
@@ -299,9 +309,9 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 2, 2};
+    static final int[] REVISION = {0, 4, 4, 2, 2, 2, 1};
     /** How many kinds of mission there are; they come in turn, round and round. */
-    static final int KINDS = 5;
+    static final int KINDS = 6;
 
     /** Mission n's kind: the hunt 1, the folder 2, the delivery 3. */
     static int kindOf(int n) {
@@ -427,17 +437,18 @@ final class World {
 
     /** The brums of the mission now. */
     Chase[] brums() {
-        if (free || delivery != null || rescue != null || puppy != null) return NONE;
+        if (free || delivery != null || rescue != null || puppy != null || tow != null) return NONE;
         return folder != null ? folder.rivals : mission.brums;
     }
 
     /** Whether the mission now is a hunt. */
     boolean hunt() {
-        return !free && folder == null && delivery == null && rescue == null && puppy == null;
+        return !free && folder == null && delivery == null && rescue == null && puppy == null && tow == null;
     }
 
     /** Whether the mission now is done with, won or not. */
     boolean over() {
+        if (tow != null) return tow.over();
         if (puppy != null) return puppy.over();
         if (rescue != null) return rescue.over();
         if (delivery != null) return delivery.over();
@@ -476,12 +487,13 @@ final class World {
 
     /** Whether the mission just over was lost: the hunt's time out, the folder taken first, the puppy got out by others. */
     private boolean failed() {
-        if (puppy != null) return false;
+        if (puppy != null || tow != null) return false;
         return hunt() ? mission.late : folder != null && folder.theirs;
     }
 
     /** The report on the mission just done. */
     private String[] report() {
+        if (tow != null) return Dispatch.towed(mission.round, clock(tow.doneAt));
         if (puppy != null) return Dispatch.puppied(mission.round, clock(puppy.doneAt), money, paidNow);
         if (rescue != null) return Dispatch.rescued(mission.round, clock(rescue.doneAt), money, paidNow);
         if (delivery != null) return Dispatch.delivered(mission.round, clock(delivery.doneAt), money, paidNow);
@@ -543,6 +555,7 @@ final class World {
         rescue = null;
         puppy = null;
         crowd = null;
+        tow = null;
         chase = nobody;
     }
 
@@ -1106,6 +1119,8 @@ final class World {
             rescue = null;
             puppy = null;
             crowd = null;
+            if (tow != null) towed = tow;
+            tow = null;
             city.extra = null;
             chase = nobody;
             waiting = said;
@@ -1134,6 +1149,8 @@ final class World {
         int round = mission.round;
         if (free) {
             chase = nobody;
+        } else if (tow != null) {
+            tow.update(dt, duty, driving, runner, city, host);
         } else if (puppy != null) {
             boolean had = puppy.held();
             puppy.update(dt, driving, runner, host);
@@ -1670,6 +1687,7 @@ final class World {
         if (free) return DrawList.TINT_CREAM;
         if (rescue != null) return DrawList.TINT_GREEN;
         if (puppy != null) return DrawList.TINT_TURQUOISE;
+        if (tow != null) return DrawList.TINT_AMBER;
         if (delivery != null) return DrawList.TINT_AMBER;
         if (folder != null) return DrawList.TINT_TURQUOISE;
         return DrawList.TINT_CORAL;
@@ -2355,6 +2373,18 @@ final class World {
         placeMark(d, f, goal[0], goal[1], goal[2], pu.held() ? Marks.CLINIC : Marks.PAW, Marks.OPEN);
     }
 
+    /** Over the frame, the tow: the clock in the corner; where the way goes now, in a word and a mark. */
+    private void towFlat(DrawList d, Px f) {
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E;
+        Tow tw = tow;
+        String clock = clock(tw.over() ? tw.doneAt : tw.clock);
+        shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        if (tw.over() || !tw.goal(duty, driving, runner, goal)) return;
+        String w = Lang.lines(tw.goalWord(driving), mission.round, null)[0];
+        shadowed(f, w, (W - PixelFont.width(w, 2)) / 2, 16, 2, green, ink);
+        placeMark(d, f, goal[0], goal[1], goal[2], tw.mark(driving), Marks.OPEN);
+    }
+
     /** Over the frame, a call out: the clock and the pay, how far off where the way goes is, and what it is. */
     private void rescueFlat(DrawList d, Px f) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
@@ -2476,6 +2506,7 @@ final class World {
         }
         if (dispatch != null) dispatch.draw(d, f, h);
         else if (free) freeFlat(d, f);
+        else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);
         else if (delivery != null) deliveryFlat(d, f);
@@ -2548,6 +2579,13 @@ final class World {
         cars.draw(d, eyeX, eyeZ, ex, ez);
         felled.draw(d, eyeX, eyeZ, ex, ez);
         if (rescue != null) rescue.draw(d, eyeX, eyeZ, ex, ez);
+        if (tow != null) tow.draw(d, time);
+        if (towed != null) {
+            // the brum's pickup left at the workshop, till she is well away from it
+            float tx = towed.stuck.x - r.x, tz = towed.stuck.z - r.z;
+            if (tx * tx + tz * tz > 150f * 150f) towed = null;
+            else towed.draw(d, time);
+        }
         if (puppy != null) {
             puppy.draw(d, r, driving);
             // the crowd at the water's edge, as long as the job goes on
@@ -2576,6 +2614,7 @@ final class World {
         }
         if (dispatch != null) dispatch.draw(d, f, h);
         else if (free) freeFlat(d, f);
+        else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);
         else if (delivery != null) deliveryFlat(d, f);

@@ -158,7 +158,7 @@ final class Dispatch {
     }
 
     /** What touching each line of home's screen picks: the hunt 1, the folder 2, the delivery 3, the call out 4, on 0. */
-    static final int[] HOME_PICKS = {-1, -1, -1, -1, 5, 4, 3, 2, 1};
+    static final int[] HOME_PICKS = {-1, -1, -1, -1, 6, 5, 4, 3, 2, 1};
 
     /** A pick that takes no mission: she stays as she is (on the sofa, free). */
     static final int REST = 9;
@@ -185,7 +185,7 @@ final class Dispatch {
     }
 
     /** What touching each line of the sofa's screen picks (see HOME_PICKS); a rest, REST. */
-    static final int[] SOFA_PICKS = {-1, -1, -1, 5, 4, 3, 2, 1};
+    static final int[] SOFA_PICKS = {-1, -1, -1, 6, 5, 4, 3, 2, 1};
 
     /** After these lines, at the key, the next ones on the screen before the walls draw back. */
     Dispatch then(String[] more) {
@@ -228,6 +228,7 @@ final class Dispatch {
         if (Delivery.its(round)) return priced(Lang.lines("brief.delivery", round, null), round);
         if (Rescue.its(round)) return priced(Lang.lines("brief.rescue", round, null), round);
         if (Puppy.its(round)) return priced(Lang.lines("brief.puppy", round, null), round);
+        if (Tow.its(round)) return Lang.lines("brief.tow", round, null);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
@@ -256,6 +257,11 @@ final class Dispatch {
     /** The pass cleared and the village got to: the pay, what has been won in all, the time. */
     static String[] rescued(int round, String time, int money, int got) {
         return fill(Lang.lines("report.rescue", round, time), got, money);
+    }
+
+    /** The brum's pickup brought to the workshop: the time. */
+    static String[] towed(int round, String time) {
+        return Lang.lines("report.tow", round, time);
     }
 
     /** The puppy brought to the vets': the pay, what has been won in all, the time. */

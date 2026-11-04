@@ -1,0 +1,30 @@
+# The tow: the quarry at the foot of the ridge, the brum's pickup sunk in its mud, the brum (slate
+# grey) at its wheel; a pickup stopped by it, the rope on; towed out, the brum's pickup following
+# on the rope; at the workshop by the road out, in the bay before its gates; done. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 6
+dispatch
+wait 7
+shot w0
+close
+at -100 838 0
+wait 1
+shot w1
+drivein -100 860 3.1416
+wait 1.5
+shot w2
+pedal 3 0 0 0.25 wa
+wait 0.3
+shot w3
+drivein -3.4 640 3.1416
+pedal 2 0 0 0.25 wb
+drivein -3.4 610 3.1416
+wait 0.6
+shot w4
+wait 4
+shot w5
+at -14 596 0.6
+wait 1
+shot w6

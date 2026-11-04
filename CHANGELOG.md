@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.66
+
+- A sixth job, the tow: a brum's pickup sunk in the mud at the bottom of a quarry out of town; a
+  duty pickup there, stopped by it, nose or tail to it, and a rope goes on; the brum's pickup
+  follows on the rope, drawn by the end it is tied by and turning to the pull; to the workshop's
+  bay. No pay, no clock but the time. Its story behind the sign of a question; its line at the top
+  of the screens of choice.
+- The quarry: cut into the foot of the ridge west of the road to the pass, a gravel floor open to
+  the south, faces of rock in three steps on the other sides, broken stone heaped by a face; the
+  fields' trees and boulders kept out of it.
+- The brums' workshop, the same in every town: a dark brick house facing the road out at the
+  town's last street, two gates half rolled up under a slate band, high windows, a turquoise plate
+  over the gates; a bay painted along the road before it, clear of parked cars and wrecks.
+- A brum at work is drawn slate grey where she is brick, her plate whole and cool.
+- Marks of places for the quarry and the workshop.
+- Six kinds now: mission numbers past five fall to other kinds than before.
+- Stand: scenes `tow.txt`, `towlook.txt`; `paid.txt` on the folder's new number.
+
 ## 0.65
 
 - The game begins again with the first job, the runaways, straight from the dispatch after the

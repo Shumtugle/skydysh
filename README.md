@@ -138,6 +138,14 @@ into the water, right up to it, and she takes it; back to the pickup and to the 
 house with a turquoise band and a paw over its door, three streets up and a block east of home,
 the bay painted on the street before it.
 
+The sixth, the tow: out of town at the foot of the ridge, west of the road to the pass, an old
+quarry cut into the hill, gravel at its bottom and steps of rock round it; a brum's pickup has
+gone down into it and sits sunk in the mud, the brum (slate grey) at its wheel. A duty pickup up
+the road out and to it; stopped by it a moment, nose or tail to it, and a rope goes on between
+them; then back, the brum's pickup following on the rope, to the brums' workshop at the town's
+last street by the road out, a dark brick house with two gates and a turquoise plate over them,
+and into the bay painted on the road before it. No pay, no clock but the time it takes.
+
 The jobs do not come in turn: on home's sofa, the screen offers them all, and the player picks.
 
 What is to come is in `PLAN.md`.

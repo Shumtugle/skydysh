@@ -1,0 +1,11 @@
+screen 1096 2560
+wait 0.4
+mission 6
+close
+at -94 861 -0.6
+wait 1
+shot x0
+free
+at 2 572 -0.35
+wait 1
+shot x1
