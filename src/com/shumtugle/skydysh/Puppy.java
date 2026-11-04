@@ -5,9 +5,8 @@ package com.shumtugle.skydysh;
  * with no strength left to swim back, and a crowd of people stands at the water's edge looking
  * out at it. She gets there (a duty pickup is the quick way, along the shore road), swims out to
  * it and takes it; then to the vets' on the street north of home's row, three streets up, where it
- * is handed in at the door, in the bay painted on the road before it. A favour asked of her, not
- * a job ordered: nothing is paid for it, and there is no hurry; the puppy keeps afloat, the people
- * on the shore wait. Only the time it took is kept.
+ * is handed in at the door, in the bay painted on the road before it. No pay and no clock on the
+ * puppy's strength: only the time it took is kept.
  */
 final class Puppy {
     // the steps: to the puppy, to the vets', done

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.64";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.65";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -98,8 +98,12 @@ final class World {
         money = host.loadInt(SAVE_MONEY);
         // every game begins at home: on the promenade across the shore road from its door, facing it
         runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - City.CURB - 1.2f, 0f);
-        // no mission is given out in the street: the town is hers from the first, the jobs are at home
-        standFree();
+        // the game begins with the runaways, straight from the dispatch, till that job is won once;
+        // after it the town is hers, and the jobs are at home
+        if ((kindsWon & (1 << 1)) == 0) {
+            mission.round = 0;
+            begin(runner.x, runner.z);
+        } else standFree();
         opening = new Opening(host, city);
     }
 
@@ -1108,8 +1112,8 @@ final class World {
             return;
         }
         whiteOut = Math.max(0f, whiteOut - dt);
-        // home's own pickup at its curb, always
-        city.homePickup = true;
+        // home's own pickup at its curb, once the delivery is won
+        city.homePickup = (kindsWon & (1 << 3)) != 0;
         if (dutyOut()) duty.update(runner.x, runner.z, city, driving);
         else duty.all.clear();
         if (driving != null) drive(dt);

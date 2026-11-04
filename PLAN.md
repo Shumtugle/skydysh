@@ -72,6 +72,7 @@ release, each seen on the stand before the phone.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
+- 0.65 The runaways first, straight from the dispatch; then the town, the jobs at home; home's pickup after the delivery; stories without rules.
 - 0.64 No round of missions: the town first, the jobs on the sofa for whoever wants one; the puppy unpaid, untimed; smaller marks.
 - 0.63 Flat pictures of places for the marks of the way, green or red; one sign over home's door.
 - 0.62 A screen the width of the phone; home's choice newest first, no numbers, a sign of the way back; new kinds first; a house for home; meters only in the hunt and the race.

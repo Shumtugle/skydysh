@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.65
+
+- The game begins again with the first job, the runaways, straight from the dispatch after the
+  opening, until it is won once. After it she goes home, and the town is hers; the jobs are on
+  the sofa, every kind, none urged, and she can always leave the screen with none.
+- Home's own pickup at its curb once the delivery is won.
+- The puppy is a job like the others (still no pay and no clock); the stories no longer explain
+  the rules of pay inside the game.
+
 ## 0.64
 
 - No round of missions. The game begins in the street before home's door, the town hers; nothing
