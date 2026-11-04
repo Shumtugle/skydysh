@@ -1,6 +1,7 @@
 # Home's screen with the first five jobs done (the hunt to the puppy): in at home's door, her head,
 # the screen with the next job only (the tow), the sign of the list over it; the list asked for:
-# the tow, and the games played (the hunt, the folder), nothing still to come; the folder picked,
+# the tow, then the games played, the newest above (the folder, the hunt), nothing still to come;
+# none of the lines blinking; the folder picked,
 # its briefing. Then home again: the next job again, the list, the hunt. In Russian.
 screen 1096 2560
 wait 0.4

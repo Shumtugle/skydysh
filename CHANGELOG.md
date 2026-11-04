@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.77
+
+- The list of her jobs goes newest at the top, the first at the bottom: the next story, the
+  panel (once the concert hall is done), the folder, the hunt.
+- On a choice no line blinks as the call to go on: the last of the list was blinking out of
+  sight half the time.
+
 ## 0.76
 
 - The town hall's front is a town hall's: warm pale stone over a ground floor of blocks; in the

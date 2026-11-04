@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.76";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.77";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -2454,9 +2454,10 @@ final class World {
     }
 
     /**
-     * The list, under its head: only what is hers to choose: the next story, if one is left; the
-     * games she has played (the hunt, the folder); the panel on its own, once the concert hall is
-     * done. Nothing of what is still to come after the next.
+     * The list, under its head: only what is hers to choose, the newest at the top and the first
+     * at the bottom: the next story, if one is left; the panel on its own, once the concert hall
+     * is done; the games she has played (the folder, the hunt). Nothing of what is still to come
+     * after the next.
      */
     private int[] listChoice(String head) {
         listing = true;
@@ -2471,14 +2472,14 @@ final class World {
             l.add(Lang.lines("kind." + next, 0, null)[0]);
             p.add(next);
         }
-        for (int k = 1; k <= KINDS; k++) {
-            if (!game(k) || (kindsWon & (1 << k)) == 0 && k != next) continue;
-            l.add(Lang.lines("kind." + k, 0, null)[0]);
-            p.add(k);
-        }
         if ((kindsWon & (1 << 7)) != 0) {
             l.add(Lang.lines("kind.panel", 0, null)[0]);
             p.add(Dispatch.SOLO);
+        }
+        for (int k = KINDS; k >= 1; k--) {
+            if (!game(k) || (kindsWon & (1 << k)) == 0 && k != next) continue;
+            l.add(Lang.lines("kind." + k, 0, null)[0]);
+            p.add(k);
         }
         keptLines = l.toArray(new String[0]);
         int[] out = new int[p.size()];

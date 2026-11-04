@@ -721,7 +721,8 @@ final class Dispatch {
             String part = s.length() <= shown ? s : s.substring(0, shown);
             shown -= s.length();
             int lh = s.isEmpty() ? half : lineH;
-            boolean last = i == lines.length - 1;
+            // the last line is the call to go on, blinking: not in a choice, where every line is one to pick
+            boolean last = i == lines.length - 1 && pick == null;
             if (y + lh > iy1 - 2) break;
             if (!(last && typed >= letters && (int) (t * 2.2f) % 2 == 1)) {
                 int col = last ? 0xFFF2C46A : 0xFFE9DDB0;
