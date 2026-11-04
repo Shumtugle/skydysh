@@ -8,7 +8,9 @@ import java.util.Random;
  * Power runs from the feed along every pair of pieces whose wires meet; what it reaches glows. The
  * panel is mended when it reaches every piece (then, with as many joins as there are pieces less one,
  * the wiring is one tree: no loop, no loose end). Three of the ends are lamps, lit as the power
- * comes to them. Mended, the main switch below the grid can be thrown, and the lights come on.
+ * comes to them; the lamps alone are not the panel mended, and while they all burn and some piece
+ * is still dead, the dead pieces pulse, so it is plain what is left. Mended, the main switch below
+ * the grid can be thrown, and the lights come on.
  *
  * Each panel is new: the wiring is grown at random as a tree over the whole grid out from the feed
  * (now from one piece already wired, now from another, so that it branches), no piece with four
@@ -28,6 +30,8 @@ final class Panel {
     /** The wiring as it was grown, before it was turned (for the desktop stand). */
     private final int[] grown;
     private final boolean[] lamp, powered;
+    /** How many of the lamps the power reaches now, and how many there are. */
+    private int lampsLit, lamps;
     /** The panel mended: the power reaches every piece. */
     boolean whole;
     /** The main switch thrown, after it was mended. */
@@ -53,6 +57,7 @@ final class Panel {
             int j = rnd.nextInt(m);
             lamp[ends[j]] = true;
             ends[j] = ends[--m];
+            lamps++;
         }
         grown = wires.clone();
         // turned at random, the feed too; never left whole
@@ -131,6 +136,13 @@ final class Panel {
             }
         }
         whole = reached == n * n;
+        lampsLit = 0;
+        for (int i = 0; i < n * n; i++) if (lamp[i] && powered[i]) lampsLit++;
+    }
+
+    /** Every lamp burning while the panel is not yet mended: the dead pieces are to be shown. */
+    boolean lampsOnly() {
+        return !whole && lamps > 0 && lampsLit == lamps;
     }
 
     /** For the desktop stand: the first so many pieces (row after row) turned back as they were grown. */
@@ -186,7 +198,7 @@ final class Panel {
     }
 
     static final int STEEL = 0xFF5E676E, STEEL_DARK = 0xFF3C4349, STEEL_LIGHT = 0xFF8A949B, BACK = 0xFF23282C;
-    static final int COPPER = 0xFF8A5A36, LIVE = 0xFFFFC94A, LIVE_CORE = 0xFFFFF2C2, LAMP_OFF = 0xFF4A4A40;
+    static final int COPPER = 0xFF8A5A36, COPPER_HOT = 0xFFD9935A, LIVE = 0xFFFFC94A, LIVE_CORE = 0xFFFFF2C2, LAMP_OFF = 0xFF4A4A40;
     static final int RED = 0xFFC8402E, GREEN = 0xFF46D27E, INK = 0xFF15191C, PAPER = 0xFFE8E1CC;
 
     /** The open box over the whole frame: its steel, the grid of pieces, the lamps, the switch, the plate with its name. */
@@ -210,11 +222,13 @@ final class Panel {
         gy = boxY;
         f.rect(gx - 2, gy - 2, gx + cell * n + 2, gy + cell * n + 2, INK);
         int wire = Math.max(3, cell / 9);
+        // the lamps all lit but the panel not mended: the dead copper pulses
+        int dead = lampsOnly() ? Px.mix(COPPER, COPPER_HOT, 0.5f + 0.5f * (float) Math.sin(t * 6f)) : COPPER;
         for (int r = 0; r < n; r++)
             for (int c = 0; c < n; c++) {
                 int i = r * n + c, x0 = gx + c * cell, y0 = gy + r * cell, cx = x0 + cell / 2, cy = y0 + cell / 2;
                 f.rect(x0 + 1, y0 + 1, x0 + cell - 1, y0 + cell - 1, (r + c) % 2 == 0 ? 0xFF2E3439 : 0xFF2A3035);
-                int col = powered[i] ? LIVE : COPPER;
+                int col = powered[i] ? LIVE : dead;
                 int k = wires[i];
                 if ((k & UP) != 0) f.rect(cx - wire, y0 + 1, cx + wire, cy, col);
                 if ((k & DOWN) != 0) f.rect(cx - wire, cy, cx + wire, y0 + cell - 1, col);
@@ -259,8 +273,7 @@ final class Panel {
         f.rect(leverX + leverW / 2 - 3, Math.min(handle, leverY + leverH / 2), leverX + leverW / 2 + 3, Math.max(handle, leverY + leverH / 2), STEEL_LIGHT);
         f.rect(leverX + 6, handle, leverX + leverW - 6, handle + 14, hc);
         // the three lamps' state beside the switch
-        int lit = 0;
-        for (int i = 0; i < n * n; i++) if (lamp[i] && powered[i]) lit++;
+        int lit = lampsLit;
         for (int k = 0; k < LAMPS; k++) {
             float lx = leverX + leverW + 22 + k * 16, ly = leverY + leverH / 2f;
             f.disc(lx, ly, 6f, INK);

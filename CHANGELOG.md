@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.71
+
+- The panel: while all three lamps burn and the wiring is not yet whole, the pieces the power has
+  not reached pulse, dull copper to bright and back, so it is plain that the lamps alone are not
+  the panel mended and where the rest is.
+- The story of the job says the same: the lights come on when the power reaches every square,
+  and then no wire points into the frame or into nothing.
+- The stand's concert scene has the lamps lit and one piece still dead, in two frames.
+
 ## 0.70
 
 - CREDITS: thanks for the rules of the panel's puzzle, and where they come from; the closing

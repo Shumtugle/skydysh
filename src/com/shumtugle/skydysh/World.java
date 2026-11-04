@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.70";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.71";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -579,7 +579,7 @@ final class World {
         Panel p = concert.panel;
         if (pieces >= 0) {
             p.standMend(pieces);
-            return p.whole ? "the panel mended" : "the panel not whole yet";
+            return p.whole ? "the panel mended" : p.lampsOnly() ? "the lamps lit, the panel not whole yet" : "the panel not whole yet";
         }
         p.standLever(goal);
         touch(DOWN, 0, goal[0], goal[1]);
