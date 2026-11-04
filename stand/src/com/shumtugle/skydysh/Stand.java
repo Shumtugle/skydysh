@@ -311,6 +311,14 @@ public final class Stand implements World.Host {
             step();
             Pickup q = world.driving;
             System.out.println(String.format("%7.2fs  at the wheel at %.1f %.1f, %d crates on", time, q.x, q.z, q.load));
+        } else if (c.equals("inroom")) {
+            // inroom U V: her put down in the room she is in, at (u, v) of its frame (across, in from its door)
+            world.standInRoom(f(p[1]), f(p[2]));
+            step();
+        } else if (c.equals("panel")) {
+            // panel N: the open panel's first N pieces mended; panel switch: its main switch touched
+            System.out.println(String.format("%7.2fs  %s", time, world.standPanel(p[1].equals("switch") ? -1 : Integer.parseInt(p[1]))));
+            step();
         } else if (c.equals("help")) {
             // help: a touch on the sign of a question by the briefing, if it is there, told
             System.out.println(String.format("%7.2fs  %s", time, world.standHelp() ? "the story opened" : "no sign of a question"));

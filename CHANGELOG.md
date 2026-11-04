@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.69
+
+- The seventh job is now a call out to the concert hall, "Lights in the hall", still paid
+  (40 000, once): the hall full and dark, one lamp burning on the right wall; the door to the
+  wings in the same wall before the stage, a mark of a bolt over it. At the door the panel opens
+  over everything.
+- The panel: a steel box, a grid of five by five wiring pieces (straights, corners, branches of
+  three, ends), the feed in the middle. A touch turns a piece a quarter round; the power runs out
+  from the feed along every pair of wires that meet, and what it reaches glows. Three of the ends
+  are lamps, lit as the power reaches them, shown again beside the main switch. Reaching every
+  piece, the wiring is one tree; the switch goes green; thrown, it clicks, and after a moment the
+  lights come on. The sign of the way back shuts the panel as it is; back at the door, it opens
+  as it was left.
+- Each panel is new: the wiring grown at random as a tree over the grid out from the feed (no
+  piece with four wires), every piece then turned at random, never left whole. Its seed comes
+  from a count of panels kept on the phone, so the same panel does not come twice (of 100 000
+  in a row, all began differently; 99.5 % had different wiring under them).
+- With the light the concert begins, the pieces from the seed bank as before; the job is done,
+  the music goes on while she stays. Nobody gets up to talk any more, and nothing is counted.
+- The hall's hanging lamps are out till the panel is mended; indoors can now be dark but for one
+  lamp, of a given place and reach.
+- A mark of a bolt for the panel, in place of the mark of a noise.
+- The report and the briefing of the seventh job rewritten; its story tells how the panel works.
+- Stand: `concert.txt` rewritten; commands `inroom U V` and `panel N` / `panel switch`.
+
 ## 0.68
 
 - A seventh job, the concert, paid (40 000, once): to the concert hall, in at its middle door;

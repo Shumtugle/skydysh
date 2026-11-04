@@ -72,6 +72,7 @@ release, each seen on the stand before the phone.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
+- 0.69 Lights in the hall: the concert hall dark, the panel in the wings, wiring that is new each time.
 - 0.68 The concert: the hall north of the old town, pieces from the seed bank, order kept in the aisles.
 - 0.67 A swipe aside, standing, turns her where she stands; held on, she sets off on a curve.
 - 0.66 The tow: a quarry at the ridge's foot, the brums' workshop at the town's last street, a rope between two pickups.

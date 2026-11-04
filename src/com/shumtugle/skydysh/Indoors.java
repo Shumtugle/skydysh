@@ -411,6 +411,9 @@ final class Indoors implements Ground {
     float high = HALL_HIGH;
     /** Whether this is the concert hall's room: its seats, its stage, its piano (see Concert). */
     boolean concert;
+    /** The lights out but one lamp on a wall: where it is (across, in, up from the floor), how far it reaches. */
+    boolean dark;
+    float lampU, lampV, lampY, lampReach;
 
     // ---- home: a room of her own behind the front door, the sofa against its back wall ----
     /** Whether this is home's room; how far in the sofa's seat is; whether she sits on it now. */
@@ -466,6 +469,14 @@ final class Indoors implements Ground {
         d.spot[2] = wz(cu, cv);
         d.spot[3] = deep * 0.85f;
         d.spot[4] = 0.32f;
+        if (dark) {
+            // only round the one lamp; the rest, all but gone
+            d.spot[0] = wx(lampU, lampV);
+            d.spot[1] = FLOOR + lampY;
+            d.spot[2] = wz(lampU, lampV);
+            d.spot[3] = lampReach;
+            d.spot[4] = 0.84f;
+        }
     }
 
     void draw(DrawList d) {

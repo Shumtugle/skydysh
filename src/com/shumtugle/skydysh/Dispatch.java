@@ -260,12 +260,9 @@ final class Dispatch {
         return fill(Lang.lines("report.rescue", round, time), got, money);
     }
 
-    /** The concert worked: the pay, what has been won in all, those who got up and those sat down again, the time. */
-    static String[] concerted(int round, String time, int money, int got, int noisy, int calmed) {
-        String[] lines = fill(Lang.lines("report.concert", round, time), got, money);
-        for (int k = 0; k < lines.length; k++)
-            lines[k] = lines[k].replace("{noisy}", String.valueOf(noisy)).replace("{calmed}", String.valueOf(calmed));
-        return lines;
+    /** The concert hall's lights on: the pay, what has been won in all, the time. */
+    static String[] concerted(int round, String time, int money, int got) {
+        return fill(Lang.lines("report.concert", round, time), got, money);
     }
 
     /** The brum's pickup brought to the workshop: the time. */

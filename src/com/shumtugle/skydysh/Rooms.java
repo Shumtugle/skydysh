@@ -86,13 +86,29 @@ final class Rooms {
                 in.box(d, e * (half - 0.06f), f + in.high * 0.5f, v, 0.08f, in.high * 0.5f, 0.25f, 0xC9A15A, DrawList.GOLD);
         for (int e = -1; e <= 1; e += 2)
             in.box(d, e * (half - 0.1f), top - 0.3f, deep * 0.5f, 0.12f, 0.15f, deep * 0.5f - w, 0xC9A15A, DrawList.GOLD);
-        // the lamps hung from the ceiling
-        for (int k = 0; k < 3; k++) {
-            float v = Concert.ROW0 + 2f + k * 4.5f;
+        // the lamps hung from the ceiling, their glass out (it glows once the lights are on: see Concert)
+        for (int k = 0; k < Concert.LAMPS; k++) {
+            float v = Concert.LAMP0 + k * Concert.LAMP_STEP;
             in.box(d, 0f, top - 1.1f, v, 0.03f, 1.1f, 0.03f, 0xC9A15A, DrawList.GOLD);
             in.box(d, 0f, top - 2.3f, v, 0.75f, 0.12f, 0.75f, 0xC9A15A, DrawList.GOLD);
-            in.box(d, 0f, top - 2.15f, v, 0.6f, 0.1f, 0.6f, 0xFFE9BE, DrawList.GLOW);
+            in.box(d, 0f, top - 2.16f, v, 0.6f, 0.1f, 0.6f, 0x6E6A60, DrawList.PLAIN);
         }
+        // the one lamp that burns, on its own line: a gilt arm off the right wall, a shade alight
+        float lv = Concert.SCONCE_V, ly = f + Concert.SCONCE_Y, rs = Concert.RIGHT, wallU = rs * (half - 0.06f);
+        in.box(d, wallU - rs * 0.1f, ly - 0.25f, lv, 0.1f, 0.18f, 0.1f, 0xC9A15A, DrawList.GOLD);
+        in.box(d, wallU - rs * 0.3f, ly - 0.1f, lv, 0.22f, 0.03f, 0.03f, 0xC9A15A, DrawList.GOLD);
+        in.box(d, wallU - rs * 0.45f, ly + 0.12f, lv, 0.16f, 0.2f, 0.16f, 0xFFE2B0, DrawList.GLOW);
+        in.dark = true;
+        in.lampU = wallU - rs * 0.45f;
+        in.lampV = lv;
+        in.lampY = Concert.SCONCE_Y;
+        in.lampReach = 9f;
+        // the door to the wings, in the same wall before the stage: plain boards, a steel handle, a plate
+        float wv = Concert.WINGS_V, wh = Concert.WINGS_HIGH;
+        in.box(d, wallU - rs * 0.02f, f + wh * 0.5f + 0.06f, wv, 0.04f, wh * 0.5f + 0.06f, Concert.WINGS_HALF + 0.08f, 0x2A1E18, DrawList.WOOD);
+        in.box(d, wallU - rs * 0.05f, f + wh * 0.5f, wv, 0.04f, wh * 0.5f, Concert.WINGS_HALF, 0x5A4232, DrawList.WOOD);
+        in.box(d, wallU - rs * 0.1f, f + 1.05f, wv - Concert.WINGS_HALF + 0.12f, 0.04f, 0.03f, 0.1f, 0x9AA3A8, DrawList.POLISHED);
+        in.box(d, wallU - rs * 0.1f, f + 1.75f, wv, 0.02f, 0.08f, 0.2f, 0xE8E1CC, DrawList.PLAIN);
         // the seats: rows either side of the middle aisle, each a red cushion and a back
         for (int r = 0; r < Concert.ROWS; r++) {
             float v = Concert.rowV(r);

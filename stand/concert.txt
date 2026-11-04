@@ -1,6 +1,7 @@
-# The concert: the hall north of the old town, its portico; in at the middle door; the hall full,
-# the pianist at the piano, a piece made from the seed bank played; someone up and talking, a red
-# mark over them; come up to, they sit. Two pieces heard through: done. In Russian.
+# The concert hall: its portico; in at the middle door, the hall dark but for one lamp on the
+# right wall, the people in their seats; to the door to the wings, the panel open over everything,
+# its wiring apart; half of it mended, then all; the switch thrown: the lights on, the concert
+# begins. In Russian.
 screen 1096 2560
 wait 0.4
 lang ru
@@ -13,10 +14,23 @@ at -96 265.6 0
 wait 2
 where
 shot k1
-wait 4
+inroom -6.5 14
+wait 0.5
 shot k2
-wait 25
+inroom -8.6 17.4
+wait 0.5
 shot k3
-wait 200
-where
+panel 12
+wait 0.3
 shot k4
+panel 25
+wait 0.3
+shot k5
+panel switch
+wait 0.4
+shot k6
+wait 2
+where
+shot k7
+wait 6
+shot k8

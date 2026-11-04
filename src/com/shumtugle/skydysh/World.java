@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.68";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.69";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -66,6 +66,7 @@ final class World {
     private Dispatch dispatch;               // the dispatcher's room, while she is in it
     private float overFor;                   // how long since the last of the five was caught
     // kept between games, saved when a mission is done
+    static final String SAVE_PANELS = "panels";
     static final String SAVE_MISSION = "mission", SAVE_PLATES = "plates", SAVE_MONEY = "money", SAVE_CONTROLS = "foot";
     int plates, money;
     static final float BACK_TO_ROOM = 3f;
@@ -135,7 +136,10 @@ final class World {
         if (Concert.its(n)) {
             mission.round = n;
             folder = null;
-            concert = new Concert(host, 0xC0C0L + n * 7919L);
+            // the panel's wiring new every time: a count of them kept, mixed into its seed
+            int panels = host.loadInt(SAVE_PANELS) + 1;
+            host.saveInt(SAVE_PANELS, panels);
+            concert = new Concert(host, 0xC0C0L + n * 7919L, panels * 0x9E3779B97F4A7C15L + 0xBADC0DEL);
             chase = nobody;
         } else if (Tow.its(n)) {
             mission.round = n;
@@ -322,7 +326,7 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 2, 2, 1, 1};
+    static final int[] REVISION = {0, 4, 4, 2, 2, 2, 1, 2};
     /** How many kinds of mission there are; they come in turn, round and round. */
     static final int KINDS = 7;
 
@@ -507,7 +511,7 @@ final class World {
 
     /** The report on the mission just done. */
     private String[] report() {
-        if (concert != null) return Dispatch.concerted(mission.round, clock(concert.doneAt), money, paidNow, concert.noisy, concert.calmed);
+        if (concert != null) return Dispatch.concerted(mission.round, clock(concert.doneAt), money, paidNow);
         if (tow != null) return Dispatch.towed(mission.round, clock(tow.doneAt));
         if (puppy != null) return Dispatch.puppied(mission.round, clock(puppy.doneAt), money, paidNow);
         if (rescue != null) return Dispatch.rescued(mission.round, clock(rescue.doneAt), money, paidNow);
@@ -560,6 +564,27 @@ final class World {
         runner.update(0f, city, cars, walkers);
         dispatch = new Dispatch(host, done ? report() : briefing());
         if (!done) dispatch.story(kindOf(mission.round));
+    }
+
+    /** For the desktop stand: her put down in the room she is in, at (u, v) of its frame, facing in. */
+    void standInRoom(float u, float v) {
+        if (indoors == null) return;
+        runner.put(indoors.wx(u, v), Indoors.FLOOR, indoors.wz(u, v), indoors.heading(0f, 1f));
+        runner.recenter();
+    }
+
+    /** For the desktop stand: the concert's panel, if open: so many of its pieces mended; or (pieces &lt; 0) its switch touched. */
+    String standPanel(int pieces) {
+        if (concert == null || !concert.panelOpen) return "no panel open";
+        Panel p = concert.panel;
+        if (pieces >= 0) {
+            p.standMend(pieces);
+            return p.whole ? "the panel mended" : "the panel not whole yet";
+        }
+        p.standLever(goal);
+        touch(DOWN, 0, goal[0], goal[1]);
+        touch(UP, 0, goal[0], goal[1]);
+        return p.on ? "the switch thrown" : "the switch not thrown";
     }
 
     /** No mission now, the town hers till she goes home for the next (a game begun past the first, and the desktop stand). */
@@ -647,6 +672,11 @@ final class World {
                 story = null;
                 letGo();
             }
+            return;
+        }
+        if (concert != null && concert.panelOpen) {
+            // the panel over everything: a finger down turns a piece or throws the switch
+            if (type == DOWN) concert.panel.touch(x, y, host);
             return;
         }
         if (opening != null) {
@@ -1155,6 +1185,8 @@ final class World {
                 stayed = null;
             }
         }
+        // the concert hall dark till its panel is mended
+        if (indoors != null && indoors.concert) indoors.dark = concert != null && !concert.lit();
         // home's own pickup at its curb, once the delivery is won
         city.homePickup = (kindsWon & (1 << 3)) != 0;
         if (dutyOut()) duty.update(runner.x, runner.z, city, driving);
@@ -1179,7 +1211,16 @@ final class World {
             chase = nobody;
         } else if (concert != null) {
             boolean in = indoors != null && indoors.concert;
-            concert.update(dt, in, indoors, runner);
+            if (concert.update(dt, in, indoors, runner)) {
+                // at the door to the wings: the panel opens over everything
+                letGo();
+                host.sound(Synth.LATCH, 0.5f, 1.3f);
+                host.buzz(20);
+            }
+            if (concert.lit() && concert.doneAt == concert.clock) {
+                host.sound(Synth.CHIME, 0.4f, 0.9f);
+                host.buzz(60);
+            }
             // at the hall's middle door, on foot, she goes in
             if (!in && swapT < 0f && driving == null && concert.step == Concert.GO) {
                 float dx = runner.x - City.concertDoorX(), dz = runner.z - City.concertDoorZ();
@@ -2426,8 +2467,8 @@ final class World {
     }
 
     /**
-     * Over the frame, the concert: the clock and the pay in the corner; out of the hall, its name
-     * and its mark; in it, the pieces heard so far, and a red mark over anyone up talking.
+     * Over the frame, the concert hall: the clock and the pay in the corner; out of the hall, its name
+     * and its mark; in it, in the dark, the way to the door to the wings.
      */
     private void concertFlat(DrawList d, Px f) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
@@ -2449,9 +2490,19 @@ final class World {
             placeMark(d, f, City.concertDoorX(), City.WALK_TOP + 3.5f, City.concertDoorZ(), Marks.CONCERT, Marks.OPEN);
             return;
         }
-        String w = Lang.lines("concert.heard", mission.round, null)[0].replace("{k}", String.valueOf(co.heard)).replace("{m}", String.valueOf(Concert.PIECES));
-        wordAtTop(f, w, green, ink);
-        if (co.someoneUp(indoors, goal)) placeMark(d, f, goal[0], goal[1], goal[2], Marks.NOISE, Marks.SHUT);
+        if (co.step != Concert.INSIDE || co.panelOpen) return;
+        // in the dark: to the door to the wings
+        wordAtTop(f, Lang.lines("goal.wings", mission.round, null)[0], green, ink);
+        co.wings(indoors, goal);
+        placeMark(d, f, goal[0], goal[1], goal[2], Marks.PANEL, Marks.OPEN);
+    }
+
+    /** The panel over the frame, while it is open: nothing of the frame's own buttons shows through it. */
+    private void panelFlat(DrawList d, Px f) {
+        if (concert == null || !concert.panelOpen) return;
+        concert.panel.draw(f, Lang.lines("panel.plate", 0, null)[0]);
+        d.badgeN = 0;
+        d.tube[0] = d.tube[2] = 0f;
     }
 
     /** Over the frame, the tow: the clock in the corner; where the way goes now, in a word and a mark. */
@@ -2609,6 +2660,7 @@ final class World {
         if (dispatch == null) buttons(d);
         if (dispatch == null && paused) pauseFlat(f);
         swapFlat(f);
+        panelFlat(d, f);
         storyFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         meter(f);
@@ -2722,6 +2774,7 @@ final class World {
             if (paused) pauseFlat(f);
         }
         swapFlat(f);
+        panelFlat(d, f);
         storyFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         // the white the opening ended on, going off
