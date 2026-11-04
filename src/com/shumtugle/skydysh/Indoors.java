@@ -414,6 +414,8 @@ final class Indoors implements Ground {
     /** Whether this is the town hall's hall: the secretariat's counter across from the lift, its front's middle (across, in). */
     boolean townHall;
     float deskU, deskV;
+    /** The town hall's people walking about: so far along each one's way, and how much each walks now (see Rooms.townHallStep). */
+    float[] folkAt, folkGo;
     /** The lights out but one lamp on a wall: where it is (across, in, up from the floor), how far it reaches. */
     boolean dark;
     float lampU, lampV, lampY, lampReach;

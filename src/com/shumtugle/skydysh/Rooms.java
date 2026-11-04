@@ -27,57 +27,179 @@ final class Rooms {
      */
     /** The secretariat's counter in the town hall: its top over the floor. */
     static final float DESK_TOP = 1.05f;
-    // the secretariat, a room of its own on the left of the hall: its wall's place across, the
-    // doorway in it (from, to, in), where the clerk who gives out the folders stands
-    static final float SEC_U = 1.2f, SEC_FRONT = 1.6f, DOOR_V0 = 4.2f, DOOR_V1 = 5.8f, CLERK_U = 1.9f, CLERK_V = 5f;
+    // the town hall's hall: half its width, its depth, its height; the gallery round it, its floor
+    static final float TH_HALF = 8f, TH_DEEP = 24f, TH_HIGH = 11f, GALLERY = 5.2f;
+    // the secretariat, a room of its own at the front on the left: its wall's place across, its
+    // front and back, the doorway in its wall (from, to, in), where the clerk who gives out the
+    // folders stands
+    static final float SEC_U = 4.2f, SEC_FRONT = 2f, SEC_BACK = 10.5f, DOOR_V0 = 5.6f, DOOR_V1 = 7.2f, CLERK_U = 4.9f, CLERK_V = 6.4f;
+    // the stairs: the foot of the middle flight, its top and the landing's back; the side
+    // flights' inner and outer edges; the galleries' inner edge across, and where they begin
+    static final float STAIR_V0 = 13.5f, STAIR_V1 = 18f, LANDING_V = 21f, MID_HALF = 1.8f, SIDE_IN = 3.4f, SIDE_OUT = 5.4f, GALLERY_V0 = 11.5f;
 
     /**
-     * The town hall's hall, behind its middle door: wider than a house's, pale walls, a floor of
-     * tiles, a blue runner, gilt lamps; the lift on the right, a bench by the wall before it; people
-     * about. On the left a wall with a doorway in it: the secretariat, a room of its own, a counter
-     * along its far wall, shelves of folders over it, a clerk behind it, and just inside the door
-     * another, standing, who gives out the folders.
+     * The town hall's hall, behind its middle door: two storeys high, its walls cream over a
+     * marble skirting, a floor of marble laid on the diagonal, a red carpet from the door to the
+     * stairs. Columns of pale marble with gilt heads along the way in; two chandeliers of crystal.
+     * At the far end the grand stair: one wide flight up the middle to a landing, and from it two
+     * flights turning back up either side to the gallery that runs round the hall at the upper
+     * floor, its balustrade gilt; over the stair a skylight of coloured glass. The lift on the
+     * right; on the left at the front the secretariat, a room of its own behind a doorway in a
+     * gilt frame, a counter along its far wall and shelves of folders.
      */
     static Indoors townHall(float[] house) {
         float cx = house[0], cz = house[1], hx = house[2], hz = house[3], nx = house[5], nz = house[6];
-        float halfN = Math.abs(nx) * hx + Math.abs(nz) * hz, deep = 2f * halfN, half = 4.4f;
+        float halfN = Math.abs(nx) * hx + Math.abs(nz) * hz;
+        float half = TH_HALF, deep = TH_DEEP;
         // the lift on her right as she comes in, the secretariat on her left
         int side = -1;
-        float liftV = deep * 0.6f;
-        Indoors in = new Indoors(cx + nx * halfN, cz + nz * halfN, nx, nz, half, deep, side, liftV, 5);
+        float l = -side;
+        Indoors in = new Indoors(cx + nx * halfN, cz + nz * halfN, nx, nz, half, deep, side, 8.5f, 5);
         in.backDoor = false;
         in.hasLift = true;
         in.townHall = true;
+        in.high = TH_HIGH;
         in.frameColor = 0xC9A15A;
         in.frameMat = DrawList.GOLD;
         in.cabColor = 0x7A5236;
-        shell(in, TILE[2], true, WALL[3], LOW[3], DrawList.PAINT);
+        int cream = 0xEFE3CC, marble = 0xE9E2D6, rose = 0xB8988A, gold = 0xC9A15A, wood = 0x4A3226, red = 0x9A2A2E;
+        shell(in, 0xE6DCCB, true, cream, rose, DrawList.STONE);
         cabin(in);
-        lamps(in, 3);
         DrawList d = in.still();
-        float f = Indoors.FLOOR, h = in.high, tall = f + h + 1f;
-        int wall = WALL[3], wood = 0x4A3226, gold = 0xC9A15A;
-        float l = -side;                       // across toward the left wall
-        in.box(d, -side * 0.6f, f + 0.006f, deep * 0.5f, 1f, 0.006f, deep * 0.5f - 1.2f, 0x2E4A6A, DrawList.GRAIN);
-        // the secretariat's wall: along the hall at SEC_U, from SEC_FRONT back, a doorway in it;
-        // and its front, across to the hall's left wall
-        float wu = l * SEC_U, t = 0.08f;
+        float f = Indoors.FLOOR, h = in.high, tall = f + h + 1f, g = f + GALLERY;
+        // the floor of pale marble, a band of rose round it and a star of it in the middle of the way in
+        in.box(d, 0f, f + 0.003f, deep * 0.5f, half, 0.003f, deep * 0.5f, 0xEAE2D4, DrawList.STONE);
+        for (int e = -1; e <= 1; e += 2) {
+            in.box(d, e * (half - 0.7f), f + 0.005f, deep * 0.5f, 0.18f, 0.003f, deep * 0.5f - 0.7f, rose, DrawList.STONE);
+            in.box(d, 0f, f + 0.005f, e < 0 ? 0.7f : deep - 0.7f, half - 0.7f, 0.003f, 0.18f, rose, DrawList.STONE);
+        }
+        for (float v = 2.5f; v < STAIR_V0 - 1f; v += 3.5f)
+            for (int e = -1; e <= 1; e += 2) {
+                float[] turn = {0.7071f, 0f, 0.7071f, 0f, 1f, 0f, -0.7071f, 0f, 0.7071f};
+                // a rose diamond on either side of the carpet
+                float u = e * 1.9f;
+                d.box(in.wx(u, v), f + 0.005f, in.wz(u, v), 0.35f, 0.003f, 0.35f, turn, rose, DrawList.STONE);
+            }
+        // the carpet from the door to the stairs
+        in.box(d, 0f, f + 0.006f, STAIR_V0 * 0.5f, 1.2f, 0.006f, STAIR_V0 * 0.5f - 0.3f, red, DrawList.GRAIN);
+        in.box(d, 0f, f + 0.008f, STAIR_V0 * 0.5f, 1.25f, 0.004f, STAIR_V0 * 0.5f - 0.25f, gold, DrawList.GRAIN);
+        in.box(d, 0f, f + 0.01f, STAIR_V0 * 0.5f, 1.1f, 0.006f, STAIR_V0 * 0.5f - 0.35f, red, DrawList.GRAIN);
+        // pilasters along the walls, gilt, up to the cornice
+        for (float v = 2f; v < deep - 1f; v += 3.5f)
+            for (int e = -1; e <= 1; e += 2) {
+                if (e == side && Math.abs(v - in.liftV) < 1.8f) continue;
+                in.box(d, e * (half - 0.07f), f + h * 0.5f, v, 0.08f, h * 0.5f, 0.28f, 0xE2D6BE, DrawList.STONE);
+                in.box(d, e * (half - 0.12f), f + h - 0.4f, v, 0.12f, 0.2f, 0.36f, gold, DrawList.GOLD);
+            }
+        for (int e = -1; e <= 1; e += 2)
+            in.box(d, e * (half - 0.1f), f + h - 0.15f, deep * 0.5f, 0.15f, 0.15f, deep * 0.5f, gold, DrawList.GOLD);
+        // the columns along the way in: marble shafts, gilt heads and feet
+        for (float v = 3.5f; v < 11f; v += 3.5f)
+            for (int e = -1; e <= 1; e += 2) {
+                float u = e * 3f;
+                column(in, d, u, v, f, g - 0.3f, marble, gold);
+                in.solid(u - 0.4f, v - 0.4f, u + 0.4f, v + 0.4f, tall);
+            }
+        // the grand stair: the middle flight
+        int steps = 12;
+        float rise = (GALLERY * 0.5f) / steps, run = (STAIR_V1 - STAIR_V0) / steps;
+        for (int k = 0; k < steps; k++) {
+            float top = f + rise * (k + 1), v = STAIR_V0 + run * (k + 0.5f);
+            in.box(d, 0f, (f + top) * 0.5f, v, MID_HALF, (top - f) * 0.5f, run * 0.5f + 0.01f, marble, DrawList.STONE);
+            in.box(d, 0f, top + 0.006f, v, MID_HALF - 0.35f, 0.006f, run * 0.5f, red, DrawList.GRAIN);
+        }
+        // the landing, the full width of the stair, against the back of it
+        float land = f + GALLERY * 0.5f;
+        in.box(d, 0f, (f + land) * 0.5f, (STAIR_V1 + LANDING_V) * 0.5f, SIDE_OUT, (land - f) * 0.5f, (LANDING_V - STAIR_V1) * 0.5f, marble, DrawList.STONE);
+        in.box(d, 0f, land + 0.006f, (STAIR_V1 + LANDING_V) * 0.5f, SIDE_OUT - 0.4f, 0.006f, (LANDING_V - STAIR_V1) * 0.5f - 0.3f, red, DrawList.GRAIN);
+        // the two side flights, back toward the door up to the gallery
+        for (int e = -1; e <= 1; e += 2) {
+            float u = e * (SIDE_IN + SIDE_OUT) * 0.5f, hu = (SIDE_OUT - SIDE_IN) * 0.5f;
+            for (int k = 0; k < steps; k++) {
+                float top = land + rise * (k + 1), v = STAIR_V1 - run * (k + 0.5f);
+                in.box(d, u, (f + top) * 0.5f, v, hu, (top - f) * 0.5f, run * 0.5f + 0.01f, marble, DrawList.STONE);
+                in.box(d, u, top + 0.006f, v, hu - 0.3f, 0.006f, run * 0.5f, red, DrawList.GRAIN);
+            }
+            // the balustrade up the inner edge of the side flight, and along the middle flight
+            rail(in, d, e * SIDE_IN, STAIR_V1, land, STAIR_V0, g, gold, marble);
+            rail(in, d, e * MID_HALF, STAIR_V0, f, STAIR_V1, land, gold, marble);
+            // a lamp on a post at the foot of the middle flight
+            float pu = e * (MID_HALF + 0.15f);
+            in.box(d, pu, f + 0.6f, STAIR_V0 + 0.15f, 0.18f, 0.6f, 0.18f, marble, DrawList.STONE);
+            in.box(d, pu, f + 1.5f, STAIR_V0 + 0.15f, 0.04f, 0.3f, 0.04f, gold, DrawList.GOLD);
+            in.box(d, pu, f + 1.9f, STAIR_V0 + 0.15f, 0.2f, 0.2f, 0.2f, 0xFFE9BE, DrawList.GLOW);
+        }
+        in.solid(-SIDE_OUT, STAIR_V0, SIDE_OUT, LANDING_V, tall);
+        in.solid(-MID_HALF - 0.4f, STAIR_V0 - 0.4f, -MID_HALF + 0.1f, STAIR_V0 + 0.1f, tall);
+        in.solid(MID_HALF - 0.1f, STAIR_V0 - 0.4f, MID_HALF + 0.4f, STAIR_V0 + 0.1f, tall);
+        // the gallery round the upper floor: its floor at either side and at the back, its front
+        // faced in marble, a gilt rail on balusters, columns under its edge
+        for (int e = -1; e <= 1; e += 2) {
+            float u = e * (SIDE_OUT + half) * 0.5f, hu = (half - SIDE_OUT) * 0.5f;
+            in.box(d, u, g - 0.2f, (GALLERY_V0 + deep) * 0.5f, hu, 0.2f, (deep - GALLERY_V0) * 0.5f, marble, DrawList.STONE);
+            in.box(d, u, g + 0.006f, (GALLERY_V0 + deep) * 0.5f, hu - 0.2f, 0.006f, (deep - GALLERY_V0) * 0.5f, red, DrawList.GRAIN);
+            rail(in, d, e * SIDE_OUT, GALLERY_V0, g, STAIR_V0, g, gold, marble);
+            for (float v = 12f; v < deep - 1f; v += 4f) {
+                if (v > STAIR_V0 - 0.5f && v < LANDING_V + 0.5f) continue;
+                column(in, d, e * (SIDE_OUT + 0.3f), v, f, g - 0.4f, marble, gold);
+                in.solid(e * (SIDE_OUT + 0.3f) - 0.4f, v - 0.4f, e * (SIDE_OUT + 0.3f) + 0.4f, v + 0.4f, tall);
+            }
+            in.box(d, e * (SIDE_OUT + 0.15f), g - 0.2f, (GALLERY_V0 + deep) * 0.5f, 0.15f, 0.25f, (deep - GALLERY_V0) * 0.5f, gold, DrawList.GOLD);
+            // doors of dark wood along the gallery's wall, a gilt frame each
+            for (float v = 13f; v < deep - 1f; v += 4f) {
+                in.box(d, e * (half - 0.05f), g + 1.3f, v, 0.05f, 1.3f, 0.7f, wood, DrawList.WOOD);
+                in.box(d, e * (half - 0.08f), g + 2.7f, v, 0.05f, 0.1f, 0.85f, gold, DrawList.GOLD);
+            }
+        }
+        in.box(d, 0f, g - 0.2f, (LANDING_V + deep) * 0.5f, SIDE_OUT, 0.2f, (deep - LANDING_V) * 0.5f, marble, DrawList.STONE);
+        in.box(d, 0f, g + 0.006f, (LANDING_V + deep) * 0.5f, SIDE_OUT, 0.006f, (deep - LANDING_V) * 0.5f - 0.2f, red, DrawList.GRAIN);
+        // the back wall over the landing: a great window of pale glass in a gilt arch, the town's shield in it
+        in.box(d, 0f, g + 2.4f, deep - 0.06f, 3f, 2.2f, 0.04f, 0xF4EEDC, DrawList.GLOW);
+        in.box(d, 0f, g + 4.7f, deep - 0.1f, 3.2f, 0.15f, 0.06f, gold, DrawList.GOLD);
+        for (int e = -1; e <= 1; e += 2) in.box(d, e * 3.1f, g + 2.4f, deep - 0.1f, 0.12f, 2.3f, 0.06f, gold, DrawList.GOLD);
+        in.box(d, 0f, g + 2.4f, deep - 0.12f, 0.9f, 1.1f, 0.03f, 0x2E6A64, DrawList.PAINT);
+        in.box(d, 0f, g + 2.2f, deep - 0.14f, 0.75f, 0.85f, 0.03f, 0xE6DCC6, DrawList.PAINT);
+        // the skylight over the stair: pale amber glass in fine leading, a border of colour round it
+        // and a round medallion in its middle
+        float sv0 = STAIR_V0 - 0.5f, sv1 = deep - 1f, su = 4.5f;
+        int nu = 9, nv = 11;
+        float pu = 2f * su / nu, pv = (sv1 - sv0) / nv, mu = 0f, mv = (sv0 + sv1) * 0.5f;
+        for (int a = 0; a < nu; a++)
+            for (int b = 0; b < nv; b++) {
+                float u = -su + (a + 0.5f) * pu, v = sv0 + (b + 0.5f) * pv;
+                boolean rim = a == 0 || b == 0 || a == nu - 1 || b == nv - 1;
+                float r = (float) Math.hypot((u - mu) / pu, (v - mv) / pv);
+                int c = rim ? ((a + b) % 2 == 0 ? 0x9AB4D8 : 0xE0A8A8) : r < 1.2f ? 0xF0C878 : r < 2.2f ? ((a + b) % 2 == 0 ? 0xA8C8A0 : 0xE0A8A8) : 0xF4E6C4;
+                in.box(d, u, f + h - 0.04f, v, pu * 0.5f - 0.04f, 0.02f, pv * 0.5f - 0.04f, c, DrawList.GLOW);
+            }
+        in.box(d, 0f, f + h - 0.02f, (sv0 + sv1) * 0.5f, su + 0.25f, 0.015f, (sv1 - sv0) * 0.5f + 0.25f, 0x5A4A32, DrawList.PLAIN);
+        in.box(d, 0f, f + h - 0.06f, (sv0 + sv1) * 0.5f, su + 0.4f, 0.03f, (sv1 - sv0) * 0.5f + 0.4f, gold, DrawList.GOLD);
+        // two chandeliers of crystal over the way in
+        for (int k = 0; k < 2; k++) chandelier(in, d, 0f, 4.5f + k * 5f, f + h - 3.2f, gold);
+        // the secretariat: its wall along the hall, the doorway in it; its front; its ceiling
+        float wu = l * SEC_U, t = 0.12f, sh = 4.2f;
         for (int k = 0; k < 2; k++) {
-            float v0 = k == 0 ? SEC_FRONT : DOOR_V1, v1 = k == 0 ? DOOR_V0 : deep;
-            in.box(d, wu, f + h * 0.5f, (v0 + v1) * 0.5f, t, h * 0.5f, (v1 - v0) * 0.5f, wall, DrawList.PLAIN);
+            float v0 = k == 0 ? SEC_FRONT : DOOR_V1, v1 = k == 0 ? DOOR_V0 : SEC_BACK;
+            in.box(d, wu, f + sh * 0.5f, (v0 + v1) * 0.5f, t, sh * 0.5f, (v1 - v0) * 0.5f, cream, DrawList.PLAIN);
             in.solid(Math.min(wu - t, wu + t), v0, Math.max(wu - t, wu + t), v1, tall);
         }
-        in.box(d, wu, f + 2.35f + (h - 2.35f) * 0.5f, (DOOR_V0 + DOOR_V1) * 0.5f, t, (h - 2.35f) * 0.5f, (DOOR_V1 - DOOR_V0) * 0.5f, wall, DrawList.PLAIN);
-        float mid = (SEC_U + half) * 0.5f;
-        in.box(d, l * mid, f + h * 0.5f, SEC_FRONT, (half - SEC_U) * 0.5f, h * 0.5f, t, wall, DrawList.PLAIN);
-        in.solid(Math.min(l * SEC_U, l * half), SEC_FRONT - t, Math.max(l * SEC_U, l * half), SEC_FRONT + t, tall);
+        in.box(d, wu, f + 3f + (sh - 3f) * 0.5f, (DOOR_V0 + DOOR_V1) * 0.5f, t, (sh - 3f) * 0.5f, (DOOR_V1 - DOOR_V0) * 0.5f, cream, DrawList.PLAIN);
+        float mid = (SEC_U + half) * 0.5f, hw = (half - SEC_U) * 0.5f;
+        for (int k = 0; k < 2; k++) {
+            float v = k == 0 ? SEC_FRONT : SEC_BACK;
+            in.box(d, l * mid, f + sh * 0.5f, v, hw, sh * 0.5f, t, cream, DrawList.PLAIN);
+            in.solid(Math.min(l * SEC_U, l * half), v - t, Math.max(l * SEC_U, l * half), v + t, tall);
+        }
+        in.box(d, l * mid, f + sh + 0.1f, (SEC_FRONT + SEC_BACK) * 0.5f, hw, 0.1f, (SEC_BACK - SEC_FRONT) * 0.5f, 0xF4EEDC, DrawList.PLAIN);
+        in.box(d, l * mid, f + sh + 0.25f, (SEC_FRONT + SEC_BACK) * 0.5f, hw + 0.05f, 0.06f, (SEC_BACK - SEC_FRONT) * 0.5f + 0.05f, gold, DrawList.GOLD);
+        in.box(d, l * mid, f + sh - 0.04f, (SEC_FRONT + SEC_BACK) * 0.5f, 0.5f, 0.03f, 0.5f, 0xFFE9BE, DrawList.GLOW);
         // the doorway's gilt frame and the plate over it
         for (int e = 0; e < 2; e++)
-            in.box(d, wu - l * 0.1f, f + 1.18f, e == 0 ? DOOR_V0 : DOOR_V1, 0.04f, 1.18f, 0.06f, gold, DrawList.GOLD);
-        in.box(d, wu - l * 0.1f, f + 2.4f, (DOOR_V0 + DOOR_V1) * 0.5f, 0.04f, 0.06f, (DOOR_V1 - DOOR_V0) * 0.5f + 0.06f, gold, DrawList.GOLD);
-        in.box(d, wu - l * 0.11f, f + 2.75f, (DOOR_V0 + DOOR_V1) * 0.5f, 0.02f, 0.16f, 0.55f, 0x2B3A52, DrawList.PAINT);
-        // in it: the counter along the far wall, shelves of folders over it
-        float cu = l * (half - 0.9f), cv = (DOOR_V1 + deep) * 0.5f, len = 2.2f;
+            in.box(d, wu - l * 0.14f, f + 1.5f, e == 0 ? DOOR_V0 : DOOR_V1, 0.05f, 1.5f, 0.07f, gold, DrawList.GOLD);
+        in.box(d, wu - l * 0.14f, f + 3.05f, (DOOR_V0 + DOOR_V1) * 0.5f, 0.05f, 0.07f, (DOOR_V1 - DOOR_V0) * 0.5f + 0.07f, gold, DrawList.GOLD);
+        in.box(d, wu - l * 0.15f, f + 3.5f, (DOOR_V0 + DOOR_V1) * 0.5f, 0.02f, 0.2f, 0.7f, 0x2B3A52, DrawList.PAINT);
+        // in it: the counter along its far wall, shelves of folders over it
+        float cu = l * (half - 0.9f), cv = (SEC_FRONT + SEC_BACK) * 0.5f, len = 2.6f;
         in.box(d, cu, f + DESK_TOP * 0.5f, cv, 0.35f, DESK_TOP * 0.5f, len, wood, DrawList.WOOD);
         in.box(d, cu - l * 0.05f, f + DESK_TOP + 0.03f, cv, 0.45f, 0.03f, len + 0.08f, 0x6A4A36, DrawList.WOOD);
         in.solid(Math.min(cu - 0.4f, cu + 0.4f), cv - len - 0.1f, Math.max(cu - 0.4f, cu + 0.4f), cv + len + 0.1f, f + 1.2f);
@@ -86,62 +208,175 @@ final class Rooms {
         for (int r = 0; r < 3; r++) {
             float sy = f + 1.4f + r * 0.55f;
             in.box(d, wallU - l * 0.2f, sy, cv, 0.2f, 0.025f, len + 0.4f, wood, DrawList.WOOD);
-            for (int k = 0; k < 14; k++)
+            for (int k = 0; k < 16; k++)
                 in.box(d, wallU - l * 0.2f, sy + 0.22f, cv - len - 0.2f + k * 0.33f, 0.16f, 0.2f, 0.06f, card[(k + r * 2) % card.length], DrawList.PAINT);
         }
-        // the hall's bench, by the right wall before the lift; a stand of notices in the middle
+        // a bench by the right wall at the front; the town's flag by the door
         float bu = side * (half - 0.45f);
-        in.box(d, bu, f + 0.45f, 2.9f, 0.25f, 0.04f, 1.1f, wood, DrawList.WOOD);
-        in.box(d, bu + side * 0.22f, f + 0.75f, 2.9f, 0.03f, 0.3f, 1.1f, wood, DrawList.WOOD);
-        for (int e = -1; e <= 1; e += 2) in.box(d, bu, f + 0.21f, 2.9f + e * 0.95f, 0.22f, 0.21f, 0.05f, 0x2A2622, DrawList.PLAIN);
-        in.solid(Math.min(bu - 0.3f, bu + 0.3f), 1.8f, Math.max(bu - 0.3f, bu + 0.3f), 4f, f + 0.9f);
-        // a flag of the town on its pole by the door
-        in.box(d, side * (half - 0.4f), f + 1.3f, 0.9f, 0.04f, 1.3f, 0.04f, gold, DrawList.GOLD);
-        in.box(d, side * (half - 0.4f), f + 2.1f, 1.35f, 0.02f, 0.45f, 0.4f, 0x3E5872, DrawList.PAINT);
-        // the people standing in the hall: what she cannot walk through
-        for (float[] p : STANDING) in.solid(p[0] - 0.3f, p[1] - 0.3f, p[0] + 0.3f, p[1] + 0.3f, f + 1.8f);
+        in.box(d, bu, f + 0.45f, 3.6f, 0.25f, 0.04f, 1.1f, wood, DrawList.WOOD);
+        in.box(d, bu + side * 0.22f, f + 0.75f, 3.6f, 0.03f, 0.3f, 1.1f, wood, DrawList.WOOD);
+        for (int e = -1; e <= 1; e += 2) in.box(d, bu, f + 0.21f, 3.6f + e * 0.95f, 0.22f, 0.21f, 0.05f, 0x2A2622, DrawList.PLAIN);
+        in.solid(Math.min(bu - 0.3f, bu + 0.3f), 2.5f, Math.max(bu - 0.3f, bu + 0.3f), 4.7f, f + 0.9f);
+        in.box(d, side * (half - 0.4f), f + 1.6f, 1.1f, 0.04f, 1.6f, 0.04f, gold, DrawList.GOLD);
+        in.box(d, side * (half - 0.4f), f + 2.6f, 1.55f, 0.02f, 0.5f, 0.42f, 0x3E5872, DrawList.PAINT);
         in.deskU = l * CLERK_U;
         in.deskV = CLERK_V;
+        in.folkAt = new float[WALKS.length];
+        in.folkGo = new float[WALKS.length];
+        java.util.Arrays.fill(in.folkGo, 1f);
         in.done();
         return in;
     }
 
-    // the people in the town hall's hall: standing, talking (across, in, the way they face across
-    // and in); on the bench (in); and the clerk at the counter (across from the wall, in)
-    private static final float[][] STANDING = {{-0.9f, 8.6f, 0.6f, 0.8f}, {-0.1f, 9.5f, -0.6f, -0.8f}, {-2.6f, 9.8f, 1f, 0f}};
-    private static final float[] ON_BENCH = {2.4f, 3.4f};
+    /** A column of marble from y0 to y1 at (u, v): a square foot and a gilt ring over it, the shaft, a gilt head. */
+    private static void column(Indoors in, DrawList d, float u, float v, float y0, float y1, int marble, int gold) {
+        in.box(d, u, y0 + 0.2f, v, 0.42f, 0.2f, 0.42f, marble, DrawList.STONE);
+        in.box(d, u, y0 + 0.43f, v, 0.36f, 0.03f, 0.36f, gold, DrawList.GOLD);
+        in.box(d, u, (y0 + y1) * 0.5f, v, 0.3f, (y1 - y0) * 0.5f - 0.4f, 0.3f, marble, DrawList.STONE);
+        in.box(d, u, y1 - 0.25f, v, 0.4f, 0.12f, 0.4f, gold, DrawList.GOLD);
+        in.box(d, u, y1 - 0.08f, v, 0.46f, 0.08f, 0.46f, marble, DrawList.STONE);
+    }
+
+    /** A balustrade at u from (v0, y0) to (v1, y1): balusters of marble, a gilt rail on them. */
+    private static void rail(Indoors in, DrawList d, float u, float v0, float y0, float v1, float y1, int gold, int marble) {
+        int n = Math.max(2, Math.round(Math.abs(v1 - v0) / 0.45f));
+        for (int k = 0; k <= n; k++) {
+            float a = k / (float) n, v = v0 + (v1 - v0) * a, y = y0 + (y1 - y0) * a;
+            in.box(d, u, y + 0.45f, v, 0.06f, 0.45f, 0.06f, marble, DrawList.STONE);
+        }
+        // the rail as short pieces, stepping with the flight
+        for (int k = 0; k < n; k++) {
+            float a = (k + 0.5f) / n, v = v0 + (v1 - v0) * a, y = y0 + (y1 - y0) * a;
+            in.box(d, u, y + 0.95f, v, 0.08f, 0.05f, Math.abs(v1 - v0) / n * 0.5f + 0.02f, gold, DrawList.GOLD);
+        }
+    }
+
+    /** A chandelier of crystal hung at (u, v), its middle at y: a chain, gilt rings, lights and drops. */
+    private static void chandelier(Indoors in, DrawList d, float u, float v, float y, int gold) {
+        float top = Indoors.FLOOR + in.high;
+        in.box(d, u, (y + top) * 0.5f, v, 0.03f, (top - y) * 0.5f, 0.03f, gold, DrawList.GOLD);
+        for (int r = 0; r < 3; r++) {
+            float rr = 1.3f - r * 0.4f, ry = y - 0.4f + r * 0.45f;
+            int n = 10 - r * 2;
+            for (int k = 0; k < n; k++) {
+                double a = k * 2 * Math.PI / n + r * 0.3f;
+                float px = u + (float) Math.sin(a) * rr, pv = v + (float) Math.cos(a) * rr;
+                in.box(d, px, ry, pv, 0.06f, 0.02f, 0.06f, gold, DrawList.GOLD);
+                in.box(d, px, ry + 0.1f, pv, 0.05f, 0.08f, 0.05f, 0xFFF1D0, DrawList.GLOW);
+                in.box(d, px, ry - 0.2f, pv, 0.025f, 0.12f, 0.025f, 0xDDE8F0, DrawList.GLASS);
+            }
+            in.box(d, u, ry, v, rr, 0.02f, 0.03f, gold, DrawList.GOLD);
+            in.box(d, u, ry, v, 0.03f, 0.02f, rr, gold, DrawList.GOLD);
+        }
+        in.box(d, u, y - 0.75f, v, 0.12f, 0.3f, 0.12f, 0xDDE8F0, DrawList.GLASS);
+    }
+
+    // the people walking about the town hall's hall: each a loop of points (across, in), the
+    // floor they walk on (0 the hall's, 1 the gallery's), so far along it at first, their pace
+    private static final float[][] WALKS = {
+        {-2f, 1.8f, -2f, 12f, 2f, 12f, 2f, 1.8f},
+        {2f, 12f, 2f, 1.8f, -2f, 1.8f, -2f, 12f},
+        {-4.4f, 2.4f, -4.4f, 12.6f, -6.6f, 12.6f, -6.6f, 5.8f},
+        {-1.4f, 12.6f, 2.4f, 12.6f, 2.4f, 10.6f, -1.4f, 10.6f},
+        {-6.6f, 22.6f, 6.6f, 22.6f},
+        {6.7f, 12.2f, 6.7f, 22.6f},
+        {-6.7f, 22f, -6.7f, 12.2f},
+    };
+    private static final float[] WALK_LEVEL = {0f, 0f, 0f, 0f, 1f, 1f, 1f};
+    private static final float[] WALK_FROM = {0f, 9f, 3f, 1f, 4f, 2f, 6f};
+    private static final float[] WALK_PACE = {1.15f, 1.0f, 1.25f, 0.8f, 0.9f, 1.05f, 0.95f};
+    private static Stroll.Way[] ways;
+    // on the bench, a little way along it
+    private static final float[] ON_BENCH = {3.1f, 4.1f};
 
     /**
-     * The town hall's people: in the hall, some standing about and some on the bench; in the
-     * secretariat, a clerk behind the counter and, inside the door, the one who gives out the
-     * folders, holding one in both hands while she has it (holding); where her hands are into hands.
+     * A step of the town hall's people: each walks on round their loop, but stands a moment when
+     * she is near (where the runner is, across and in, and whether up on the gallery).
+     */
+    static void townHallStep(Indoors in, float dt, Runner r) {
+        if (in.folkAt == null) return;
+        float ru = in.u(r.x, r.z), rv = in.v(r.x, r.z);
+        for (int k = 0; k < WALKS.length; k++) {
+            walkAt(k, in.folkAt[k] + WALK_FROM[k], pt);
+            boolean near = WALK_LEVEL[k] == 0f && (pt[0] - ru) * (pt[0] - ru) + (pt[1] - rv) * (pt[1] - rv) < 2.2f * 2.2f;
+            float want = near ? 0f : 1f;
+            in.folkGo[k] += (want - in.folkGo[k]) * Math.min(1f, dt * 4f);
+            in.folkAt[k] += dt * WALK_PACE[k] * in.folkGo[k];
+        }
+    }
+
+    private static final float[] pt = new float[3];
+
+    /** Where on loop k one is, so far along it: (across, in, the heading's across and in, as the way goes) into out. */
+    private static void walkAt(int k, float s, float[] out) {
+        float[] w = WALKS[k];
+        int n = w.length / 2;
+        boolean back = n == 2;
+        float total = 0f;
+        for (int i = 0; i < n; i++) {
+            int j = (i + 1) % n;
+            if (back && i == 1) j = 0;
+            total += (float) Math.hypot(w[j * 2] - w[i * 2], w[j * 2 + 1] - w[i * 2 + 1]);
+        }
+        s = s % total;
+        if (s < 0f) s += total;
+        for (int i = 0; i < n; i++) {
+            int j = (i + 1) % n;
+            float dx = w[j * 2] - w[i * 2], dz = w[j * 2 + 1] - w[i * 2 + 1], len = (float) Math.hypot(dx, dz);
+            if (s <= len || i == n - 1) {
+                float a = Math.min(1f, s / Math.max(len, 1e-3f));
+                out[0] = w[i * 2] + dx * a;
+                out[1] = w[i * 2 + 1] + dz * a;
+                out[2] = (float) Math.atan2(dx, dz);
+                return;
+            }
+            s -= len;
+        }
+    }
+
+    /**
+     * The town hall's people: walking about the hall and the gallery, two on the bench, a clerk
+     * sitting behind the secretariat's counter, and just inside its door the one who gives out
+     * the folders, holding one in both hands while she has it (holding); where her hands are into
+     * hands.
      */
     static void townHallFolk(DrawList d, Indoors in, float time, boolean holding, float[] hands) {
-        if (FolkPack.town == null || !Frida.ready()) return;
+        if (FolkPack.town == null || !Frida.ready() || in.folkAt == null) return;
         int n = FolkPack.town.count;
         float f = Indoors.FLOOR, l = -in.side;
-        for (int k = 0; k < STANDING.length; k++) {
-            float[] p = STANDING[k];
-            float a = in.heading(p[2], p[3]) + (float) Math.PI;
-            FolkPack.person(d, (k * 5 + 2) % n, in.wx(p[0], p[1]), f, in.wz(p[0], p[1]), a, 1f, "idle", time * 0.8f + k * 1.7f);
+        if (ways == null) {
+            ways = new Stroll.Way[WALKS.length];
+            for (int k = 0; k < WALKS.length; k++) ways[k] = Stroll.way(0x7A11L + k * 31L, FolkPack.town.woman((k * 5 + 2) % n));
+        }
+        for (int k = 0; k < WALKS.length; k++) {
+            float s = in.folkAt[k] + WALK_FROM[k];
+            walkAt(k, s, pt);
+            int m = (k * 5 + 2) % n;
+            float y = f + WALK_LEVEL[k] * GALLERY;
+            float yaw = (float) Math.atan2(in.wx(pt[0] + (float) Math.sin(pt[2]), pt[1] + (float) Math.cos(pt[2])) - in.wx(pt[0], pt[1]),
+                    in.wz(pt[0] + (float) Math.sin(pt[2]), pt[1] + (float) Math.cos(pt[2])) - in.wz(pt[0], pt[1]));
+            FolkPack.walker(d, m, in.wx(pt[0], pt[1]), y, in.wz(pt[0], pt[1]), yaw + (float) Math.PI, 1f, ways[k], s, in.folkGo[k]);
         }
         float bu = in.side * (in.half - 0.55f);
         for (int k = 0; k < ON_BENCH.length; k++) {
             int m = (k * 7 + 4) % n;
             float y = f + 0.5f - Walkers.HIPS * FolkPack.town.size[m];
-            FolkPack.sitter(d, m, in.wx(bu, ON_BENCH[k]), y, in.wz(bu, ON_BENCH[k]), in.heading(-in.side, 0f) + (float) Math.PI, 1f, 0.05f, k == 0 ? 0.3f : -0.2f);
+            // talking: the heads turning to each other and away now and then
+            float look = (k == 0 ? 0.35f : -0.35f) + 0.25f * (float) Math.sin(time * (0.6f + k * 0.17f) + k * 2f);
+            FolkPack.sitter(d, m, in.wx(bu, ON_BENCH[k]), y, in.wz(bu, ON_BENCH[k]), in.heading(-in.side, 0f) + (float) Math.PI, 1f,
+                    0.05f + 0.03f * (float) Math.sin(time * 0.8f + k), look);
         }
-        // the clerk behind the counter, sitting, facing the room
-        int c = (11) % n;
-        float cu = l * (in.half - 0.35f), cv = (DOOR_V1 + in.deep) * 0.5f;
+        // the clerk behind the counter, sitting, facing the room, looking up and down at her papers
+        int c = 11 % n;
+        float cu = l * (in.half - 0.35f), cv = (SEC_FRONT + SEC_BACK) * 0.5f;
         float y = f + 0.5f - Walkers.HIPS * FolkPack.town.size[c];
-        FolkPack.sitter(d, c, in.wx(cu, cv), y, in.wz(cu, cv), in.heading(-l, 0f) + (float) Math.PI, 1f, 0f, 0.2f);
+        FolkPack.sitter(d, c, in.wx(cu, cv), y, in.wz(cu, cv), in.heading(-l, 0f) + (float) Math.PI, 1f, 0.02f, 0.3f * (float) Math.sin(time * 0.5f));
         // the one who gives out the folders, just inside the door, facing it
         int w = FolkPack.womanFrom(6);
         float a = in.heading(-l, 0f) + (float) Math.PI;
         float wx = in.wx(in.deskU, in.deskV), wz = in.wz(in.deskU, in.deskV);
         if (holding) FolkPack.holder(d, w, wx, f, wz, a, 1f, hands);
-        else FolkPack.person(d, w, wx, f, wz, a, 1f, "idle", time * 0.7f);
+        else FolkPack.walker(d, w, wx, f, wz, a, 1f, Stroll.way(0x5EC1L, true), 0f, 0f);
     }
 
     static Indoors hall(float[] house, long seed, boolean backDoor, boolean lift) {

@@ -1,0 +1,38 @@
+# The town hall: from across the street, its front (the balcony on its columns, the tower, the
+# round towers at the ends); in at the middle door, the hall two storeys high: the columns, the
+# carpet, the chandeliers, people walking about it and on the gallery, two on the bench; the
+# grand stair at the far end under its skylight; the secretariat's door on the left, the clerk
+# in it with the red folder; the gallery and the lift on the right. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 8
+close
+at 8 127.5 0.55
+wait 1
+shot g0
+at 32 126.5 0
+wait 1
+shot g1
+at 32 135.6 0
+wait 2.5
+inroom 0 1.2
+face 0
+wait 1
+shot g2
+inroom 0 8
+face 0
+wait 3
+shot g3
+inroom -1 6.2
+face -1.57
+wait 1
+shot g4
+inroom -6 9
+face 0.5
+wait 2
+shot g5
+inroom 3.5 6.4
+face -1.57
+wait 1
+shot g6

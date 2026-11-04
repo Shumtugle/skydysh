@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.76
+
+- The town hall's front is a town hall's: warm pale stone over a ground floor of blocks; in the
+  middle the great balcony at the first floor, deep, on brackets, a balustrade, eight columns
+  carrying a roof with the town's shield on it, window doors out onto it; over the middle the
+  tower, the clock on three faces, an open belfry with its bell, a copper dome, a lantern, the
+  flag; round towers at the two ends rising over the roof under copper domes; framed windows,
+  arched openings on the ground floor. The roof pad moves in from the east tower.
+- Its hall is grand: two storeys high, 16 m by 24; a floor of pale marble with a rose band and
+  diamonds, a red carpet from the door; marble columns with gilt heads along the way in; two
+  crystal chandeliers; gilt pilasters. At the far end the grand stair: one wide flight up the
+  middle to a landing, two flights turning back up the sides to the gallery that runs round the
+  upper floor, its gilt balustrade on marble balusters, columns under it, doors along it; over
+  the stair a skylight of pale amber glass with a coloured border and medallion; a great window
+  over the landing with the town's shield. The secretariat is a room at the front on the left,
+  behind its gilt doorway, with its own ceiling and lamp.
+- The people are alive: seven walk about the hall and the gallery on their own rounds, and stop
+  when she is near; the two on the bench talk, their heads turning; the clerk at the counter
+  looks up and down.
+- The stand: a town hall scene; the archive scene follows the new hall.
+
 ## 0.75
 
 - The hunted brums run from the runner: off away from her when they start, round about if she

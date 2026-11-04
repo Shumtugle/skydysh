@@ -213,7 +213,7 @@ final class City implements Ground {
 
     /** Where on the town hall's roof the helicopter stands: east of the hut, the roof's middle (x, z). */
     static float townPadX() {
-        return TOWNHALL_I * CELL + CELL * 0.5f + 13f;
+        return TOWNHALL_I * CELL + CELL * 0.5f + 10.5f;
     }
 
     static float townPadZ() {
@@ -1342,50 +1342,137 @@ final class City implements Ground {
     }
 
     /**
-     * The town hall: pale stone, five storeys, a cornice and a band of darker stone under each row
-     * of windows; in the middle a front stood out a little, four pilasters, the lift's door
-     * behind them under a clock; on the roof the lift's hut, the pad and its letter, a flagpole.
+     * The town hall: pale warm stone, five storeys over a ground floor of rusticated blocks; in the
+     * middle the front stands out, and on it the great balcony at the first floor: a deep stone
+     * floor on brackets, a balustrade, a row of columns carrying a roof over it, the town's shield
+     * on the roof's front. Over the middle the tower: the clock on four faces, an open belfry of
+     * arches, a copper dome and a lantern. At the two ends round towers rising a storey over the
+     * roof, copper domes and lanterns. The lift behind the middle door; on the roof the lift's
+     * hut and the helicopter's pad.
      */
     private void townHall(Cell c, float x0, float x1, float z0, float z1) {
         DrawList d = c.boxes, small = c.detail;
         float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f;
         float high = TOWNHALL_HIGH, top = high + 0.5f;
-        int stone = 0xE6DFD0, band = 0xB9AE9A, blue = 0x3E5872, glass = 0x2A3A48, gold = 0xC9A15A;
+        int stone = 0xE8D8BC, band = 0xC9B48E, dark = 0xB09A74, glass = 0x2A3A48, gold = 0xC9A15A, copper = 0x5E9A84, roofCol = 0x9A8A78;
         d.box(cx, top * 0.5f, cz, hx, top * 0.5f, hz, null, stone, DrawList.STONE);
-        d.box(cx, top + 0.25f, cz, hx + 0.25f, 0.25f, hz + 0.25f, null, band, DrawList.STONE);
-        // the middle stood out: four pilasters, a pediment of stone
-        d.box(cx, top * 0.5f, z0 - 0.35f, 6f, top * 0.5f, 0.35f, null, stone, DrawList.STONE);
-        for (int k = 0; k < 4; k++)
-            small.box(cx - 4.5f + k * 3f, top * 0.5f, z0 - 0.75f, 0.35f, top * 0.5f, 0.1f, null, band, DrawList.STONE);
-        d.box(cx, top + 1f, z0 - 0.3f, 6.3f, 0.6f, 0.4f, null, band, DrawList.STONE);
-        // the clock over the door
-        small.box(cx, 7.4f, z0 - 0.8f, 1f, 1f, 0.05f, null, 0xF2EAD6, DrawList.PLAIN);
-        small.box(cx, 7.4f, z0 - 0.84f, 0.06f, 0.65f, 0.02f, null, 0x23262C, DrawList.PLAIN);
-        small.box(cx + 0.22f, 7.5f, z0 - 0.84f, 0.3f, 0.05f, 0.02f, null, 0x23262C, DrawList.PLAIN);
-        small.box(cx, 7.4f, z0 - 0.78f, 1.12f, 1.12f, 0.03f, null, gold, DrawList.GOLD);
-        // windows, four rows of them, a band under each
+        // the ground floor in blocks, a band over it, a cornice under the roof
+        d.box(cx, 2.6f, z0 - 0.08f, hx, 2.6f, 0.1f, null, band, DrawList.STONE);
+        for (float y = 0.9f; y < 5f; y += 0.9f) d.box(cx, y, z0 - 0.19f, hx, 0.03f, 0.02f, null, dark, DrawList.STONE);
+        d.box(cx, 5.35f, z0 - 0.2f, hx + 0.1f, 0.15f, 0.25f, null, dark, DrawList.STONE);
+        d.box(cx, top + 0.25f, cz, hx + 0.35f, 0.25f, hz + 0.35f, null, band, DrawList.STONE);
+        // the windows of the upper floors in stone frames, a pediment over the first floor's
         for (int fl = 0; fl < 4; fl++) {
-            float wy = 4.6f + fl * 3.2f;
-            d.box(cx, wy - 1.2f, z0 - 0.04f, hx, 0.12f, 0.06f, null, band, DrawList.STONE);
-            for (float u = x0 + 2f; u < x1 - 1.5f; u += 2.8f) {
-                if (Math.abs(u - cx) < 6.5f && fl == 0) continue;
-                d.box(u, wy, z0 - 0.04f, 0.6f, 0.95f, 0.04f, null, glass, DrawList.GLASS);
+            float wy = 7f + fl * 2.9f;
+            for (float u = x0 + 3.5f; u < x1 - 3f; u += 3f) {
+                if (Math.abs(u - cx) < 8.5f && fl < 2) continue;
+                if (Math.abs(u - cx) < 3.2f) continue;
+                d.box(u, wy, z0 - 0.05f, 0.62f, 0.95f, 0.04f, null, glass, DrawList.GLASS);
+                small.box(u, wy, z0 - 0.08f, 0.78f, 1.08f, 0.03f, null, band, DrawList.STONE);
+                if (fl == 0) small.box(u, wy + 1.3f, z0 - 0.12f, 0.9f, 0.12f, 0.1f, null, dark, DrawList.STONE);
             }
         }
+        // the ground floor's tall arched openings either side of the door
+        for (float u = x0 + 3.5f; u < x1 - 3f; u += 3f) {
+            if (Math.abs(u - cx) < 3.5f) continue;
+            d.box(u, 2.4f, z0 - 0.2f, 0.7f, 1.6f, 0.03f, null, glass, DrawList.GLASS);
+            small.box(u, 4.1f, z0 - 0.22f, 0.85f, 0.15f, 0.04f, null, dark, DrawList.STONE);
+        }
+        // the middle stood out, the great balcony on it at the first floor
+        float bz = z0 - 3f, by = 5.6f, bw = 8f;
+        d.box(cx, top * 0.5f, z0 - 0.4f, 8.6f, top * 0.5f, 0.4f, null, stone, DrawList.STONE);
+        d.box(cx, by, (bz + z0) * 0.5f, bw, 0.22f, (z0 - bz) * 0.5f, null, band, DrawList.STONE);
+        for (float u = cx - bw + 1f; u <= cx + bw - 0.9f; u += 2.3f)
+            small.box(u, by - 0.55f, bz + 0.6f, 0.2f, 0.4f, 0.6f, null, dark, DrawList.STONE);
+        // its balustrade: balusters and a rail along the front and the ends
+        for (float u = cx - bw + 0.3f; u <= cx + bw - 0.2f; u += 0.45f)
+            small.box(u, by + 0.6f, bz + 0.2f, 0.08f, 0.38f, 0.08f, null, stone, DrawList.STONE);
+        d.box(cx, by + 1.02f, bz + 0.2f, bw, 0.07f, 0.16f, null, band, DrawList.STONE);
+        for (int e = -1; e <= 1; e += 2) d.box(cx + e * (bw - 0.15f), by + 0.6f, (bz + z0) * 0.5f, 0.15f, 0.45f, (z0 - bz) * 0.5f, null, band, DrawList.STONE);
+        // the columns along it, and the roof they carry, the shield on its front
+        for (int k = 0; k < 8; k++) {
+            float u = cx - bw + 0.8f + k * (2f * bw - 1.6f) / 7f;
+            d.box(u, by + 0.35f, bz + 0.6f, 0.32f, 0.12f, 0.32f, null, band, DrawList.STONE);
+            d.box(u, by + 2.3f, bz + 0.6f, 0.24f, 1.9f, 0.24f, null, stone, DrawList.STONE);
+            d.box(u, by + 4.3f, bz + 0.6f, 0.34f, 0.12f, 0.34f, null, band, DrawList.STONE);
+        }
+        float ry = by + 4.75f;
+        d.box(cx, ry, (bz + z0) * 0.5f, bw + 0.2f, 0.32f, (z0 - bz) * 0.5f + 0.1f, null, band, DrawList.STONE);
+        d.box(cx, ry + 0.5f, bz + 0.15f, bw + 0.25f, 0.18f, 0.2f, null, dark, DrawList.STONE);
+        small.box(cx, ry + 1.15f, bz + 0.2f, 1.1f, 0.85f, 0.08f, null, 0x2E6A64, DrawList.PAINT);
+        small.box(cx, ry + 1.05f, bz + 0.16f, 0.85f, 0.6f, 0.05f, null, 0xE6DCC6, DrawList.PAINT);
+        small.box(cx, ry + 1.15f, bz + 0.24f, 1.2f, 0.95f, 0.04f, null, gold, DrawList.GOLD);
+        // the window doors out onto the balcony
+        for (int k = -2; k <= 2; k++)
+            d.box(cx + k * 3f, by + 1.85f, z0 - 0.83f, 0.7f, 1.6f, 0.04f, null, glass, DrawList.GLASS);
+        // the arch over the middle door, two reliefs beside it
+        small.box(cx, 3.9f, z0 - 0.85f, 2.2f, 0.3f, 0.06f, null, dark, DrawList.STONE);
+        for (int e = -1; e <= 1; e += 2) small.box(cx + e * 3.2f, 2.6f, z0 - 0.84f, 0.9f, 1.3f, 0.05f, null, 0xF2E8D4, DrawList.STONE);
         // the steps up to the door
         for (int k = 0; k < 2; k++)
             d.box(cx, WALK_TOP + 0.08f * (k + 0.5f), z0 - 1.6f + k * 0.45f, 3.4f - k * 0.3f, 0.08f * (k + 0.5f), 0.9f - k * 0.3f, null, band, DrawList.STONE);
+        // the tower over the middle: its body, the clock on its faces, the belfry, the dome
+        float tz0 = z0 - 0.8f, tz1 = z0 + 2.4f, tcz = (tz0 + tz1) * 0.5f, thz = (tz1 - tz0) * 0.5f, thx = 2.6f;
+        float t0 = top, t1 = top + 7f;
+        d.box(cx, (t0 + t1) * 0.5f, tcz, thx, (t1 - t0) * 0.5f, thz, null, stone, DrawList.STONE);
+        d.box(cx, t1 + 0.15f, tcz, thx + 0.2f, 0.15f, thz + 0.2f, null, band, DrawList.STONE);
+        float clockY = t1 - 2.2f;
+        small.box(cx, clockY, tz0 - 0.03f, 1.4f, 1.4f, 0.04f, null, 0xF4EEDC, DrawList.PLAIN);
+        small.box(cx, clockY, tz0 - 0.06f, 1.55f, 1.55f, 0.03f, null, gold, DrawList.GOLD);
+        small.box(cx, clockY + 0.45f, tz0 - 0.08f, 0.07f, 0.55f, 0.02f, null, 0x23262C, DrawList.PLAIN);
+        small.box(cx + 0.3f, clockY, tz0 - 0.08f, 0.38f, 0.06f, 0.02f, null, 0x23262C, DrawList.PLAIN);
+        for (int e = -1; e <= 1; e += 2) {
+            small.box(cx + e * (thx + 0.03f), clockY, tcz, 0.04f, 1.1f, 1.1f, null, 0xF4EEDC, DrawList.PLAIN);
+            small.box(cx + e * (thx + 0.06f), clockY, tcz, 0.03f, 1.22f, 1.22f, null, gold, DrawList.GOLD);
+        }
+        // the belfry: four piers and the arches between, the bell hung in it
+        float b0 = t1 + 0.3f, b1 = b0 + 3.2f;
+        for (int a = -1; a <= 1; a += 2)
+            for (int b = -1; b <= 1; b += 2)
+                d.box(cx + a * (thx - 0.4f), (b0 + b1) * 0.5f, tcz + b * (thz - 0.35f), 0.35f, (b1 - b0) * 0.5f, 0.35f, null, stone, DrawList.STONE);
+        d.box(cx, b1 + 0.2f, tcz, thx, 0.2f, thz, null, band, DrawList.STONE);
+        small.box(cx, b0 + 1.9f, tcz, 0.5f, 0.6f, 0.5f, null, 0xA8823A, DrawList.GOLD);
+        small.box(cx, b0 + 2.6f, tcz, 0.08f, 0.25f, 0.08f, null, 0x3A3A3A, DrawList.PLAIN);
+        dome(d, small, cx, b1 + 0.4f, tcz, thx - 0.1f, copper, gold);
+        // the round towers at the two ends, a storey over the roof
+        for (int e = -1; e <= 1; e += 2) {
+            float rx = cx + e * (hx - 2.6f), rz = z0 + 1.6f, rr = 2.6f, rt = top + 3.6f;
+            octagon(d, rx, rt * 0.5f, rz, rr, rt * 0.5f, stone, DrawList.STONE);
+            octagon(d, rx, rt + 0.15f, rz, rr + 0.2f, 0.15f, band, DrawList.STONE);
+            for (int fl = 0; fl < 4; fl++)
+                small.box(rx, 7f + fl * 2.9f, rz - rr - 0.03f, 0.5f, 0.85f, 0.04f, null, glass, DrawList.GLASS);
+            dome(d, small, rx, rt + 0.3f, rz, rr - 0.1f, copper, gold);
+        }
         // the lift: its door in the front, the hut on the roof
         lift(c, d, cx, z0, true, -1, high, stone);
         // the pad on the roof: a ring and a letter, yellow on the roof's grey
-        float px = townPadX(), pz = townPadZ();
-        pad(small, px, top + 0.02f, pz, 4.6f, 0xF2C230);
-        // the flagpole and its flag
-        small.box(x1 - 3f, top + 4f, z0 + 2f, 0.06f, 4f, 0.06f, null, 0xC9CCD0, DrawList.POLISHED);
-        small.box(x1 - 3f + 1f, top + 7.2f, z0 + 2f, 0.95f, 0.6f, 0.02f, null, blue, DrawList.PAINT);
-        small.box(x1 - 3f + 1f, top + 7.2f, z0 + 1.98f, 0.95f, 0.2f, 0.02f, null, 0xF2EAD6, DrawList.PAINT);
+        d.box(townPadX(), top + 0.01f, townPadZ(), 5f, 0.01f, 5f, null, roofCol, DrawList.STONE);
+        pad(small, townPadX(), top + 0.03f, townPadZ(), 4.4f, 0xF2C230);
+        // the flag on the tower's dome
+        small.box(cx, b1 + 5.6f, tcz, 0.05f, 1.6f, 0.05f, null, 0xC9CCD0, DrawList.POLISHED);
+        small.box(cx + 0.9f, b1 + 6.6f, tcz, 0.85f, 0.5f, 0.02f, null, 0x3E5872, DrawList.PAINT);
+        small.box(cx + 0.9f, b1 + 6.6f, tcz - 0.01f, 0.85f, 0.16f, 0.02f, null, 0xF2EAD6, DrawList.PAINT);
         c.wall(x0, z0, x1, z1, top);
         c.house(cx, cz, hx, hz, top, 0f, -1f, LIFT);
+    }
+
+    /** A prism of eight sides round (x, z), so far out to its faces, standing at y, so high each way: two squares a quarter turned. */
+    private static void octagon(DrawList d, float x, float y, float z, float r, float hy, int color, int material) {
+        float[] turn = {0.7071f, 0f, 0.7071f, 0f, 1f, 0f, -0.7071f, 0f, 0.7071f};
+        d.box(x, y, z, r, hy, r, null, color, material);
+        d.box(x, y, z, r, hy, r, turn, color, material);
+    }
+
+    /** A dome of copper from y on (x, z), so wide at its foot: tiers of eight sides, a lantern, a spike. */
+    private static void dome(DrawList d, DrawList small, float x, float y, float z, float r, int copper, int gold) {
+        float[] k = {1f, 0.92f, 0.78f, 0.58f, 0.32f};
+        float tier = r * 0.32f;
+        for (int i = 0; i < k.length; i++)
+            octagon(d, x, y + tier * (i + 0.5f), z, r * k[i], tier * 0.5f, copper, DrawList.POLISHED);
+        float ly = y + tier * k.length;
+        octagon(small, x, ly + 0.5f, z, r * 0.2f, 0.5f, 0xE8D8BC, DrawList.STONE);
+        octagon(small, x, ly + 1.1f, z, r * 0.24f, 0.1f, copper, DrawList.POLISHED);
+        small.box(x, ly + 1.7f, z, 0.06f, 0.5f, 0.06f, null, gold, DrawList.GOLD);
     }
 
     /** A helicopter pad on a flat top at y: a ring of so many parts, the letter H across it. */

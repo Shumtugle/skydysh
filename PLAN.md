@@ -72,6 +72,7 @@ release, each seen on the stand before the phone.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
+- 0.76 The town hall made grand: the balcony, the tower, the stair, the gallery; its people walking.
 - 0.75 Brums run away; the way home told once; home's screen the next job only, a list of her own.
 - 0.74 The helicopter painted from the views; the arc and the broken landing; the town hall's people and the secretariat with its clerk.
 - 0.73 Stories once; the town hall and the archive; papers to the archive by helicopter, a skid giving way.
