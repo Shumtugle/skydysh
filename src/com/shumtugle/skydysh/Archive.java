@@ -1,10 +1,10 @@
 package com.shumtugle.skydysh;
 
 /**
- * Papers to the archive: a call from the town hall. In its hall the secretariat has a stack of
- * folders for the archive, far off in the north-east of the town; up on the roof the town's
- * helicopter waits, a brum of black brick at its controls. She takes the folders, goes up in the
- * lift, gets in beside the pilot, and they fly across the whole town. Over the archive's garden
+ * Papers to the archive: a call from the town hall. In the secretariat, a room off its hall, a
+ * clerk holds a red folder of documents for the archive, far off in the north-east of the town;
+ * up on the roof the town's helicopter waits, a brum of black brick at its controls. She takes
+ * the folder, crosses the hall to the lift, goes up, gets in beside the pilot, and they fly across the whole town. Over the archive's garden
  * it comes straight down onto the pad there, and as it touches a skid gives way: it stands
  * leaning. She gets out and takes the folders in at the archive's back door. A story: played once.
  */
@@ -38,7 +38,7 @@ final class Archive {
         return step == DONE;
     }
 
-    /** Whether she has the folders with her, on foot. */
+    /** Whether she has the folder with her, on foot. */
     boolean carrying() {
         return step == LIFT || step == ROOF || step == CARRY;
     }
@@ -80,7 +80,7 @@ final class Archive {
                 float dx = r.x - at[0], dz = r.z - at[1];
                 if (in == null && Math.abs(r.y - City.townRoof()) < 1.5f && dx * dx + dz * dz < BOARD_NEAR * BOARD_NEAR && !r.inAir()) {
                     step = FLY;
-                    copter.send(City.archivePadX(), City.archivePadZ(), City.WALK_TOP, true);
+                    copter.send(City.archivePadX(), City.archivePadZ(), City.WALK_TOP, true, 1f);
                     host.sound(Synth.DOOR, 0.4f, 1.4f);
                     host.buzz(30);
                     got = IN;
@@ -119,7 +119,7 @@ final class Archive {
     }
 
     private boolean outPending;
-    private final float[] at = new float[3], hand = new float[3], seat = new float[3], turn = new float[9];
+    private final float[] at = new float[3], hand = new float[3];
 
     /**
      * Where the way goes now, into out (x, y, z); false if nowhere (in the air). In: the room she
@@ -207,42 +207,28 @@ final class Archive {
 
     private static final float[] pilotAt = new float[3];
 
-    /** The folders under her arm. */
+    /** The red folder under her arm. */
     void carried(DrawList d, Runner r) {
         r.bone("hand_l", hand);
-        float a = r.heading + (float) Math.PI * 0.5f, c = (float) Math.cos(a), s = (float) Math.sin(a);
+        folder(d, hand[0], hand[1] - 0.05f, hand[2], r.heading + (float) Math.PI * 0.5f);
+    }
+
+    /** Whether the clerk in the secretariat still has the folder to give. */
+    boolean waiting() {
+        return step <= DESK;
+    }
+
+    private static final float[] turn = new float[9];
+
+    /** The red folder, upright, its face turned so (a heading, as the town's people turn): red card, the papers' edge, a black band. */
+    static void folder(DrawList d, float x, float y, float z, float a) {
+        float c = (float) Math.cos(a), s = (float) Math.sin(a);
         turn[0] = c; turn[1] = 0f; turn[2] = s;
         turn[3] = 0f; turn[4] = 1f; turn[5] = 0f;
         turn[6] = -s; turn[7] = 0f; turn[8] = c;
-        stack(d, hand[0], hand[1] - 0.05f, hand[2], turn, true);
-    }
-
-    /** Three folders of grey-blue card tied with string: upright under an arm, or lying on a desk. */
-    static void stack(DrawList d, float x, float y, float z, float[] turn, boolean upright) {
-        int[] card = {0x5C7088, 0x6E7F92, 0x56687C};
-        for (int k = 0; k < 3; k++) {
-            float o = (k - 1) * 0.06f;
-            if (upright) d.box(x, y, z + 0f, 0.3f, 0.38f, 0.025f, turn, card[k], DrawList.PAINT);
-            else d.box(x, y + 0.03f + k * 0.055f, z, 0.38f, 0.025f, 0.3f, turn, card[k], DrawList.PAINT);
-            if (upright) {
-                x += turn[2] * 0.055f;
-                z += turn[8] * 0.055f;
-            }
-        }
-        if (upright) d.box(x - turn[2] * 0.08f, y, z - turn[8] * 0.08f, 0.31f, 0.015f, 0.1f, turn, 0xD8CBA8, DrawList.PLAIN);
-        else d.box(x, y + 0.1f, z, 0.015f, 0.1f, 0.31f, turn, 0xD8CBA8, DrawList.PLAIN);
-    }
-
-    /** In the town hall's hall: the clerk behind the desk, and the folders on it till she takes them. */
-    void drawIndoors(DrawList d, Indoors in) {
-        if (!in.townHall) return;
-        float u = in.deskU, v = in.deskV;
-        if (step <= DESK) {
-            float a = in.heading(0f, 1f), c = (float) Math.cos(a), s = (float) Math.sin(a);
-            turn[0] = c; turn[1] = 0f; turn[2] = s;
-            turn[3] = 0f; turn[4] = 1f; turn[5] = 0f;
-            turn[6] = -s; turn[7] = 0f; turn[8] = c;
-            stack(d, in.wx(u, v), Indoors.FLOOR + Rooms.DESK_TOP, in.wz(u, v), turn, false);
-        }
+        float w = 0.3f, l = 0.23f, t = 0.035f;
+        d.box(x, y, z, w, l, t, turn, 0xB0302A, DrawList.PAINT);
+        d.box(x, y, z, w - 0.02f, l - 0.02f, t + 0.012f, turn, 0xEFE6D2, DrawList.PLAIN);
+        d.box(x, y, z, 0.03f, l + 0.004f, t + 0.016f, turn, 0x1B1B20, DrawList.PLAIN);
     }
 }

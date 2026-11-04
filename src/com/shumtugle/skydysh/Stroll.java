@@ -271,6 +271,41 @@ final class Stroll {
         sit(mv, wheel, true, 0f, q, p);
     }
 
+    /** Where the hands hold a thing before the chest, standing: so far under the shoulders, so far before them. */
+    static final float HOLD_LOW = 0.32f, HOLD_FORE = 0.3f;
+
+    /**
+     * Standing upright, a thing held in both hands before the chest (a folder): for every bone its
+     * turn into q and its place into p, as pose() gives them.
+     */
+    static void hold(Moves mv, float[] q, float[] p) {
+        int n = mv.bone.length;
+        if (turn == null || turn.length != n * 4) {
+            turn = new float[n * 4];
+            g = new float[n * 4];
+            pos = new float[n * 3];
+        }
+        for (int b = 0; b < n; b++) set(b, 0f, 0f, 0f, 1f);
+        axis(HEAD, 1f, 0f, 0f, 0.12f);
+        chain(mv, 0f);
+        float ty = pos[ARM_L * 3 + 1] - HOLD_LOW, tz = pos[ARM_L * 3 + 2] - HOLD_FORE;
+        reach(mv, ARM_L, FORE_L, HAND_L, -1f, -0.12f, ty, tz);
+        reach(mv, ARM_R, FORE_R, HAND_R, 1f, 0.12f, ty, tz);
+        for (int b = 0; b < n; b++) {
+            mul(g, b, mv.restQ, b, q, b);
+            p[b * 3] = pos[b * 3];
+            p[b * 3 + 1] = pos[b * 3 + 1];
+            p[b * 3 + 2] = pos[b * 3 + 2];
+        }
+    }
+
+    /** Where the hands hold in hold(), in the figure (x, y, z into out): the shoulders' height known only after a pose, so it is asked of the last. */
+    static void held(float[] out) {
+        out[0] = 0f;
+        out[1] = pos[HAND_L * 3 + 1];
+        out[2] = pos[HAND_L * 3 + 2];
+    }
+
     /**
      * Sitting on a bench, at ease: the hands on the thighs, leaning back so much (a person's own),
      * the head turned so much: as sit() gives it.

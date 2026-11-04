@@ -38,7 +38,7 @@ final class Gfx {
     private int hudSlot;
     private int badgesTex;                    // the sheet of buttons and signs, sent once
     private int carsTex;                      // the cars' painted skins, and where each lies in it
-    private final float[] carMap = new float[36 * 4];
+    private final float[] carMap = new float[42 * 4];
     private int[] hudSwizzled;
     private int[] swizzled;
 
@@ -423,7 +423,7 @@ final class Gfx {
         int w = 1, h = 1;
         int[] px = {0xFF808080};
         java.util.Arrays.fill(carMap, 0f);
-        for (int k = 30; k < 36; k++) {
+        for (int k = 35; k < 42; k++) {
             carMap[k * 4] = carMap[k * 4 + 1] = carMap[k * 4 + 2] = 0.5f;
             carMap[k * 4 + 3] = 1f;
         }
@@ -431,7 +431,7 @@ final class Gfx {
             android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
             o.inPremultiplied = false;
             android.graphics.Bitmap b = android.graphics.BitmapFactory.decodeStream(in, null, o);
-            float[] map = new float[36 * 4];
+            float[] map = new float[42 * 4];
             java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(assets.open("cars.txt")));
             int at = 0;
             for (String line; (line = r.readLine()) != null && at < map.length; )
@@ -607,7 +607,7 @@ final class Gfx {
         GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, carsTex);
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
         GLES30.glUniform1i(u(p, "uCars"), 4);
-        GLES30.glUniform4fv(u(p, "uCarMap"), 36, carMap, 0);
+        GLES30.glUniform4fv(u(p, "uCarMap"), 42, carMap, 0);
     }
 
     // ---- helpers ----

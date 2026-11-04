@@ -27,11 +27,16 @@ final class Rooms {
      */
     /** The secretariat's counter in the town hall: its top over the floor. */
     static final float DESK_TOP = 1.05f;
+    // the secretariat, a room of its own on the left of the hall: its wall's place across, the
+    // doorway in it (from, to, in), where the clerk who gives out the folders stands
+    static final float SEC_U = 1.2f, SEC_FRONT = 1.6f, DOOR_V0 = 4.2f, DOOR_V1 = 5.8f, CLERK_U = 1.9f, CLERK_V = 5f;
 
     /**
      * The town hall's hall, behind its middle door: wider than a house's, pale walls, a floor of
-     * tiles, a blue runner, gilt lamps; the lift on the right; across from it, on the left, the secretariat, a
-     * long counter of dark wood, shelves of folders behind it on the wall, a clerk behind it.
+     * tiles, a blue runner, gilt lamps; the lift on the right, a bench by the wall before it; people
+     * about. On the left a wall with a doorway in it: the secretariat, a room of its own, a counter
+     * along its far wall, shelves of folders over it, a clerk behind it, and just inside the door
+     * another, standing, who gives out the folders.
      */
     static Indoors townHall(float[] house) {
         float cx = house[0], cz = house[1], hx = house[2], hz = house[3], nx = house[5], nz = house[6];
@@ -50,38 +55,93 @@ final class Rooms {
         cabin(in);
         lamps(in, 3);
         DrawList d = in.still();
-        float f = Indoors.FLOOR;
-        in.box(d, 0f, f + 0.006f, deep * 0.5f, 1f, 0.006f, deep * 0.5f - 1.2f, 0x2E4A6A, DrawList.GRAIN);
-        // the counter, along the wall across from the lift
-        float wallU = -side * half, cu = -side * (half - 1.1f), cv = deep * 0.42f, len = 1.7f;
-        in.deskU = -side * (half - 2.1f);
-        in.deskV = cv;
-        in.box(d, cu, f + DESK_TOP * 0.5f, cv, 0.35f, DESK_TOP * 0.5f, len, 0x4A3226, DrawList.WOOD);
-        in.box(d, cu - side * 0.05f, f + DESK_TOP + 0.03f, cv, 0.45f, 0.03f, len + 0.08f, 0x6A4A36, DrawList.WOOD);
-        in.box(d, cu - side * 0.37f, f + 0.7f, cv, 0.02f, 0.18f, 0.5f, 0xC9A15A, DrawList.GOLD);
+        float f = Indoors.FLOOR, h = in.high, tall = f + h + 1f;
+        int wall = WALL[3], wood = 0x4A3226, gold = 0xC9A15A;
+        float l = -side;                       // across toward the left wall
+        in.box(d, -side * 0.6f, f + 0.006f, deep * 0.5f, 1f, 0.006f, deep * 0.5f - 1.2f, 0x2E4A6A, DrawList.GRAIN);
+        // the secretariat's wall: along the hall at SEC_U, from SEC_FRONT back, a doorway in it;
+        // and its front, across to the hall's left wall
+        float wu = l * SEC_U, t = 0.08f;
+        for (int k = 0; k < 2; k++) {
+            float v0 = k == 0 ? SEC_FRONT : DOOR_V1, v1 = k == 0 ? DOOR_V0 : deep;
+            in.box(d, wu, f + h * 0.5f, (v0 + v1) * 0.5f, t, h * 0.5f, (v1 - v0) * 0.5f, wall, DrawList.PLAIN);
+            in.solid(Math.min(wu - t, wu + t), v0, Math.max(wu - t, wu + t), v1, tall);
+        }
+        in.box(d, wu, f + 2.35f + (h - 2.35f) * 0.5f, (DOOR_V0 + DOOR_V1) * 0.5f, t, (h - 2.35f) * 0.5f, (DOOR_V1 - DOOR_V0) * 0.5f, wall, DrawList.PLAIN);
+        float mid = (SEC_U + half) * 0.5f;
+        in.box(d, l * mid, f + h * 0.5f, SEC_FRONT, (half - SEC_U) * 0.5f, h * 0.5f, t, wall, DrawList.PLAIN);
+        in.solid(Math.min(l * SEC_U, l * half), SEC_FRONT - t, Math.max(l * SEC_U, l * half), SEC_FRONT + t, tall);
+        // the doorway's gilt frame and the plate over it
+        for (int e = 0; e < 2; e++)
+            in.box(d, wu - l * 0.1f, f + 1.18f, e == 0 ? DOOR_V0 : DOOR_V1, 0.04f, 1.18f, 0.06f, gold, DrawList.GOLD);
+        in.box(d, wu - l * 0.1f, f + 2.4f, (DOOR_V0 + DOOR_V1) * 0.5f, 0.04f, 0.06f, (DOOR_V1 - DOOR_V0) * 0.5f + 0.06f, gold, DrawList.GOLD);
+        in.box(d, wu - l * 0.11f, f + 2.75f, (DOOR_V0 + DOOR_V1) * 0.5f, 0.02f, 0.16f, 0.55f, 0x2B3A52, DrawList.PAINT);
+        // in it: the counter along the far wall, shelves of folders over it
+        float cu = l * (half - 0.9f), cv = (DOOR_V1 + deep) * 0.5f, len = 2.2f;
+        in.box(d, cu, f + DESK_TOP * 0.5f, cv, 0.35f, DESK_TOP * 0.5f, len, wood, DrawList.WOOD);
+        in.box(d, cu - l * 0.05f, f + DESK_TOP + 0.03f, cv, 0.45f, 0.03f, len + 0.08f, 0x6A4A36, DrawList.WOOD);
         in.solid(Math.min(cu - 0.4f, cu + 0.4f), cv - len - 0.1f, Math.max(cu - 0.4f, cu + 0.4f), cv + len + 0.1f, f + 1.2f);
-        // the shelves of folders on the wall behind it
-        int[] card = {0x5C7088, 0x8A6A4A, 0x6E7F92, 0x7A5A3A, 0x56687C};
+        int[] card = {0x5C7088, 0x8A6A4A, 0x6E7F92, 0x7A5A3A, 0x56687C, 0xB0302A};
+        float wallU = l * half;
         for (int r = 0; r < 3; r++) {
             float sy = f + 1.4f + r * 0.55f;
-            in.box(d, wallU - side * 0.2f, sy, cv, 0.2f, 0.025f, len + 0.4f, 0x4A3226, DrawList.WOOD);
-            for (int k = 0; k < 12; k++)
-                in.box(d, wallU - side * 0.2f, sy + 0.22f, cv - len - 0.2f + k * 0.33f, 0.16f, 0.2f, 0.06f, card[(k + r * 2) % card.length], DrawList.PAINT);
+            in.box(d, wallU - l * 0.2f, sy, cv, 0.2f, 0.025f, len + 0.4f, wood, DrawList.WOOD);
+            for (int k = 0; k < 14; k++)
+                in.box(d, wallU - l * 0.2f, sy + 0.22f, cv - len - 0.2f + k * 0.33f, 0.16f, 0.2f, 0.06f, card[(k + r * 2) % card.length], DrawList.PAINT);
         }
-        // a flag of the town on its pole in the corner by the door
-        in.box(d, wallU - side * 0.4f, f + 1.3f, 1.2f, 0.04f, 1.3f, 0.04f, 0xC9A15A, DrawList.GOLD);
-        in.box(d, wallU - side * 0.4f, f + 2.1f, 1.65f, 0.02f, 0.45f, 0.4f, 0x3E5872, DrawList.PAINT);
+        // the hall's bench, by the right wall before the lift; a stand of notices in the middle
+        float bu = side * (half - 0.45f);
+        in.box(d, bu, f + 0.45f, 2.9f, 0.25f, 0.04f, 1.1f, wood, DrawList.WOOD);
+        in.box(d, bu + side * 0.22f, f + 0.75f, 2.9f, 0.03f, 0.3f, 1.1f, wood, DrawList.WOOD);
+        for (int e = -1; e <= 1; e += 2) in.box(d, bu, f + 0.21f, 2.9f + e * 0.95f, 0.22f, 0.21f, 0.05f, 0x2A2622, DrawList.PLAIN);
+        in.solid(Math.min(bu - 0.3f, bu + 0.3f), 1.8f, Math.max(bu - 0.3f, bu + 0.3f), 4f, f + 0.9f);
+        // a flag of the town on its pole by the door
+        in.box(d, side * (half - 0.4f), f + 1.3f, 0.9f, 0.04f, 1.3f, 0.04f, gold, DrawList.GOLD);
+        in.box(d, side * (half - 0.4f), f + 2.1f, 1.35f, 0.02f, 0.45f, 0.4f, 0x3E5872, DrawList.PAINT);
+        // the people standing in the hall: what she cannot walk through
+        for (float[] p : STANDING) in.solid(p[0] - 0.3f, p[1] - 0.3f, p[0] + 0.3f, p[1] + 0.3f, f + 1.8f);
+        in.deskU = l * CLERK_U;
+        in.deskV = CLERK_V;
         in.done();
         return in;
     }
 
-    /** The town hall's clerk at the secretariat's counter, sitting behind it, facing the room. */
-    static void clerk(DrawList d, Indoors in) {
+    // the people in the town hall's hall: standing, talking (across, in, the way they face across
+    // and in); on the bench (in); and the clerk at the counter (across from the wall, in)
+    private static final float[][] STANDING = {{-0.9f, 8.6f, 0.6f, 0.8f}, {-0.1f, 9.5f, -0.6f, -0.8f}, {-2.6f, 9.8f, 1f, 0f}};
+    private static final float[] ON_BENCH = {2.4f, 3.4f};
+
+    /**
+     * The town hall's people: in the hall, some standing about and some on the bench; in the
+     * secretariat, a clerk behind the counter and, inside the door, the one who gives out the
+     * folders, holding one in both hands while she has it (holding); where her hands are into hands.
+     */
+    static void townHallFolk(DrawList d, Indoors in, float time, boolean holding, float[] hands) {
         if (FolkPack.town == null || !Frida.ready()) return;
-        int m = 11 % FolkPack.town.count;
-        float u = -in.side * (in.half - 0.45f), v = in.deskV;
-        float y = Indoors.FLOOR + 0.5f - Walkers.HIPS * FolkPack.town.size[m];
-        FolkPack.sitter(d, m, in.wx(u, v), y, in.wz(u, v), in.heading(in.side, 0f) + (float) Math.PI, 1f, 0f, 0f);
+        int n = FolkPack.town.count;
+        float f = Indoors.FLOOR, l = -in.side;
+        for (int k = 0; k < STANDING.length; k++) {
+            float[] p = STANDING[k];
+            float a = in.heading(p[2], p[3]) + (float) Math.PI;
+            FolkPack.person(d, (k * 5 + 2) % n, in.wx(p[0], p[1]), f, in.wz(p[0], p[1]), a, 1f, "idle", time * 0.8f + k * 1.7f);
+        }
+        float bu = in.side * (in.half - 0.55f);
+        for (int k = 0; k < ON_BENCH.length; k++) {
+            int m = (k * 7 + 4) % n;
+            float y = f + 0.5f - Walkers.HIPS * FolkPack.town.size[m];
+            FolkPack.sitter(d, m, in.wx(bu, ON_BENCH[k]), y, in.wz(bu, ON_BENCH[k]), in.heading(-in.side, 0f) + (float) Math.PI, 1f, 0.05f, k == 0 ? 0.3f : -0.2f);
+        }
+        // the clerk behind the counter, sitting, facing the room
+        int c = (11) % n;
+        float cu = l * (in.half - 0.35f), cv = (DOOR_V1 + in.deep) * 0.5f;
+        float y = f + 0.5f - Walkers.HIPS * FolkPack.town.size[c];
+        FolkPack.sitter(d, c, in.wx(cu, cv), y, in.wz(cu, cv), in.heading(-l, 0f) + (float) Math.PI, 1f, 0f, 0.2f);
+        // the one who gives out the folders, just inside the door, facing it
+        int w = FolkPack.womanFrom(6);
+        float a = in.heading(-l, 0f) + (float) Math.PI;
+        float wx = in.wx(in.deskU, in.deskV), wz = in.wz(in.deskU, in.deskV);
+        if (holding) FolkPack.holder(d, w, wx, f, wz, a, 1f, hands);
+        else FolkPack.person(d, w, wx, f, wz, a, 1f, "idle", time * 0.7f);
     }
 
     static Indoors hall(float[] house, long seed, boolean backDoor, boolean lift) {

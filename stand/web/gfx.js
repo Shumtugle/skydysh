@@ -44,8 +44,8 @@ function program(gl, vs, fs) {
 // the cars' painted skins (cars.png) and where each car's views lie in it (cars.txt), as on the
 // phone; without them, one grey texel, so the cars come out in their paint
 async function skins(gl, dir) {
-  const map = new Float32Array(36 * 4);
-  for (let k = 30; k < 36; k++) map.set([0.5, 0.5, 0.5, 1], k * 4);
+  const map = new Float32Array(42 * 4);
+  for (let k = 35; k < 42; k++) map.set([0.5, 0.5, 0.5, 1], k * 4);
   const tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);

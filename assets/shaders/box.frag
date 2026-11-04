@@ -33,7 +33,7 @@ uniform float uClear;         // the see-through pass: only clear plastic is dra
 uniform vec4 uSpot;           // the one light left in the dark: where, and how far it reaches
 uniform float uDark;          // how far the rest has gone into the dark (0, not at all)
 uniform sampler2D uCars;      // the cars' painted skins, side by side (see DrawList.skin)
-uniform vec4 uCarMap[36];     // for each car and view, where its skin lies; then each car's own paint
+uniform vec4 uCarMap[42];     // for each of the seven skins and its five views, where it lies; then each one's own paint
 uniform vec4 uFire;           // something burning: where, and how bright its light on what is near (0, none)
 
 out vec4 outColor;
@@ -247,7 +247,7 @@ vec3 carSkin(int kind) {
     vec4 t = texture(uCars, vec2(m.x * st.x + m.y, m.z * st.y + m.w));
     if (t.a < 0.9) return t.rgb;
     const vec3 L = vec3(0.3, 0.59, 0.11);
-    return tone * clamp(dot(t.rgb, L) / max(dot(uCarMap[30 + kind].rgb, L), 0.05), 0.0, 2.4);
+    return tone * clamp(dot(t.rgb, L) / max(dot(uCarMap[35 + kind].rgb, L), 0.05), 0.0, 2.4);
 }
 
 /** The warm light thrown by what burns on what is near it, falling off within some nine meters. */

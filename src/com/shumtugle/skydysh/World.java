@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.73";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.74";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -54,6 +54,7 @@ final class World {
     private Copter parked;
     /** Waking at home after the concert: the next story is on the screen at once. */
     private boolean morning;
+    private final float[] handsAt = new float[3];
     Concert concert;                         // the mission now, when it is the concert
     /** The hall come back to after the job is done (lit, her chair kept), while she stays in it. */
     private Concert stayed;
@@ -2929,8 +2930,10 @@ final class World {
             Concert on = concert != null ? concert : stayed;
             if (indoors.concert && on != null) on.draw(d, indoors);
             if (indoors.townHall) {
-                Rooms.clerk(d, indoors);
-                if (archive != null) archive.drawIndoors(d, indoors);
+                // the hall's people, and the clerk with the red folder in her hands till she gives it
+                boolean holding = archive != null && archive.waiting();
+                Rooms.townHallFolk(d, indoors, time, holding, handsAt);
+                if (holding) Archive.folder(d, handsAt[0], handsAt[1], handsAt[2], indoors.heading(indoors.side, 0f) + (float) Math.PI);
             }
         }
         if (!r.hidden && (dispatch == null || dispatch.showsHer())) {

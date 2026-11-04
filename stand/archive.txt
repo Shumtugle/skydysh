@@ -1,7 +1,8 @@
-# Papers to the archive: before the town hall, its name and mark; in at the middle door, the hall,
-# the secretariat on the left, the folders on its counter; taken, to the lift and up; on the roof
-# the helicopter, its pilot of black brick; in beside him, up, across the town, down onto the pad
-# in the archive's garden, a skid giving way; out, the folders to the back door. In Russian.
+# Papers to the archive: before the town hall, its name and mark; in at the middle door, the hall
+# and its people, the secretariat's door on the left, the clerk in it holding the red folder; at
+# her, the folder taken; across the hall to the lift and up; on the roof the helicopter, its pilot
+# of black brick; in beside him, up, along an arc over the town, down onto the pad in the
+# archive's garden, a skid giving way; out, the folder to the back door. In Russian.
 screen 1096 2560
 wait 0.4
 lang ru
@@ -14,10 +15,16 @@ at 32 135.6 0
 wait 2.5
 where
 shot a1
-inroom 2.3 4.2
+inroom -3.4 5
+face -1.57
+wait 0.6
+shot a1b
+inroom 1 5
+face -1.57
 wait 1
 where
 shot a2
+inroom -2 6
 walk 14 100 w
 where
 shot a3
@@ -36,7 +43,11 @@ shot a7
 wait 14
 where
 shot a8
-wait 4
+wait 0.9
+shot a8b
+wait 0.5
+shot a8c
+wait 2.6
 where
 shot a9
 at 224 600 3.14

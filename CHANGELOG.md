@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.74
+
+- The town's helicopter is new: a broad cabin with a rounded nose, two engine housings on the
+  roof, a tapering boom, a fin, a tail rotor on its right, a wide tailplane, skids on struts, four
+  blades with yellow tips, a beacon. It is painted from five flat views as the cars are, the
+  seventh skin of the cars' atlas: cream above, teal below, a coral stripe, the town's shield on
+  the side, the winch over the door. The atlas grows by two shelves; its map is 7 x 5 views and
+  7 paints now (the shader, the phone and the stand read 42 rows).
+- The flight goes in a long arc over the town, bowing out to one side and higher over its
+  middle, banked into the turn, the nose down as it gathers way.
+- Coming down on the archive's pad: the right skid gives way, it drops onto that side with a
+  jolt, hops, rocks and settles leaning.
+- The town hall's hall has people in it: three standing and talking, two on a bench by the wall.
+  The secretariat is a room of its own on the left, through a doorway in a gilt frame, a plate
+  over it; a counter along its far wall, shelves of folders, a clerk sitting behind it; and just
+  inside the door a woman holding a red folder in both hands before her. At her, the folder is
+  hers: a red folder under her arm, across the hall to the lift.
+- New pose for the town's people: standing, a thing held in both hands before the chest.
+- Texts: one red folder, the secretariat behind its door, the arc.
+
 ## 0.73
 
 - Stories are played once: the delivery, the call out, the puppy, the tow, the concert hall and

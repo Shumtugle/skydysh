@@ -110,6 +110,34 @@ final class FolkPack {
         put(d, m, x, y, z, yaw, scale, mv);
     }
 
+    /**
+     * Person m standing, a thing held in both hands before the chest; where the hands are, in the
+     * town's terms, into out (x, y, z).
+     */
+    static void holder(DrawList d, int m, float x, float y, float z, float yaw, float scale, float[] out) {
+        Moves mv = Frida.moves();
+        if (town == null || mv == null || mv.bone.length != BONES) return;
+        ready();
+        Stroll.hold(mv, pq, pp);
+        put(d, m, x, y, z, yaw, scale, mv);
+        Stroll.held(out);
+        float size = town.size[m] * scale, c = (float) Math.cos(yaw), s = (float) Math.sin(yaw);
+        float px = out[0] * size, py = out[1] * size, pz = out[2] * size;
+        out[0] = x + c * px + s * pz;
+        out[1] = y + py;
+        out[2] = z - s * px + c * pz;
+    }
+
+    /** The first model at or past m that is a woman in her own clothes, not in a uniform (m itself if none is). */
+    static int womanFrom(int m) {
+        if (town == null) return m;
+        for (int k = 0; k < town.count; k++) {
+            int i = (m + k) % town.count;
+            if (town.kind[i] == WOMAN) return i;
+        }
+        return m;
+    }
+
     /** Whether model m is a woman. */
     boolean woman(int m) {
         return kind[m] == WOMAN || kind[m] == POLICEWOMAN || kind[m] == DANCER;
