@@ -565,6 +565,22 @@ void main() {
         float glint = vnoise(vec3(w.x * 0.9, w.y * 2.6 + uTime * 0.6, 4.0));
         float toSun = max(dot(normalize(vec3(uSun.x, 0.0, uSun.z)), normalize(vec3(vWorld.x - uEye.x, 0.0, vWorld.z - uEye.z))), 0.0);
         base = mix(base, rgb(0xFBE7C8), smoothstep(0.8, 0.95, glint) * (0.25 + 0.5 * toSun) * 0.8);
+        if (seed == 1) {
+            // the sea off the beach (its own sheet): clear in the shallows. The sand of the bed seen
+            // through it, the light rippling over it, giving way to the teal as it deepens; a line of
+            // foam coming and going at the water's edge. The edge is 35 m south of the shore road,
+            // the bed shelving to its depth over 16 m (see City)
+            float off = -35.0 - vWorld.z;
+            float deep = clamp(off / 16.0, 0.0, 1.0);
+            vec2 q = vWorld.xz * 0.9;
+            float rip = vnoise(vec3(q.x + uTime * 0.35, q.y - uTime * 0.25, 7.0)) + vnoise(vec3(q.x * 1.7 - uTime * 0.3, q.y * 1.7 + uTime * 0.2, 9.0));
+            float caustic = smoothstep(1.05, 1.35, rip);
+            vec3 bed = mix(rgb(0xC9AE84), rgb(0x6FB3AA), 0.38 + 0.5 * deep);
+            bed += vec3(0.95, 0.92, 0.8) * caustic * 0.22 * (1.0 - deep);
+            base = mix(bed, base, smoothstep(0.08, 0.95, deep));
+            float foam = (1.0 - smoothstep(0.0, 1.3, off)) * (0.55 + 0.45 * sin(uTime * 1.3 + vWorld.x * 0.21));
+            base = mix(base, rgb(0xF4F1E6), clamp(foam, 0.0, 1.0) * 0.8);
+        }
     } else if (mat == GOLD) {
         gloss = 1.0;
     }

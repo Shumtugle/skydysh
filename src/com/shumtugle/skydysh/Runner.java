@@ -155,6 +155,31 @@ final class Runner {
     /** On her way where she was led: turned toward it, slowing as she comes; there, turned as she was told. */
     private final float[] probe = new float[2];
 
+    // how high a thing she hops over on her way, at most, over her feet; how near before her it is looked for
+    static final float HOP_TOP = 2.1f, HOP_LOOK = 1.5f;
+    private float hopFor;
+
+    /**
+     * Whether, along heading a, a thing stands just before her (within HOP_LOOK) that she would go
+     * round, but that is low enough to hop over: the way blocked there, its top no higher than HOP_TOP.
+     */
+    private boolean low(float a, Ground g, Cars cars) {
+        float fx = (float) Math.sin(a), fz = (float) Math.cos(a), top = -1e9f;
+        boolean blocked = false;
+        for (float t = 0.7f; t <= HOP_LOOK; t += 0.4f) {
+            probe[0] = x + fx * t;
+            probe[1] = z + fz * t;
+            float qx = probe[0], qz = probe[1];
+            if (g.push(probe, RADIUS * 0.8f, y)) blocked = true;
+            probe[0] = qx;
+            probe[1] = qz;
+            if (cars != null && cars.push(probe, RADIUS * 0.8f, 0f)) blocked = true;
+            top = Math.max(top, g.ground(qx, qz, y, 3.2f));
+            if (cars != null) top = Math.max(top, cars.topAt(qx, qz));
+        }
+        return blocked && top - y < HOP_TOP;
+    }
+
     /** Whether the way from her a few steps along heading a is clear of walls and cars (so far, at most). */
     private boolean clear(float a, float far, Ground g, Cars cars) {
         float fx = (float) Math.sin(a), fz = (float) Math.cos(a);
@@ -173,7 +198,16 @@ final class Runner {
         if (d > 0.6f) {
             float straight = (float) Math.atan2(dx, dz), far = Math.min(d, 3f);
             leadCommit -= dt;
-            if (!clear(straight, far, g, cars)) {
+            // something low just before her on the straight way (a bench, a bollard, a fence, a car):
+            // over it in one bound, not round it
+            boolean over = state == RUN && speed > 1f && hopFor <= 0f && low(straight, g, cars);
+            hopFor -= dt;
+            if (over) {
+                heading = straight;
+                speed = Math.max(speed, 4f);
+                jump();
+                hopFor = 0.6f;
+            } else if (!clear(straight, far, g, cars)) {
                 // round it on the side taken, as long as that side has a way; the other only when it has none
                 boolean found = false;
                 for (int pass = 0; pass < 2 && !found; pass++) {

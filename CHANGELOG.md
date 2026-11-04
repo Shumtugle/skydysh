@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.78
+
+- On her way to a pickup (its sign touched), something low in the way (a bench, a bollard, a
+  fence, a car, no higher than two metres) is hopped over, not gone round; she does not stand
+  stuck before it.
+- The rail at the wheel: in the town the street leads her as on a string. With the wheel let
+  be she keeps to her lane on the right of the street, through the crossings; the wheel turned
+  near a crossing (the nearer the faster she goes) lays the rail round into that street and the
+  pickup takes the corner by itself, braking for it; turned hard between crossings, she turns
+  about across the street; a slower car ahead is passed in the other lane if that is clear far
+  enough, and she slows behind it if not. The wheel turned hard anywhere else, or off the
+  streets, the hand has it alone. The wheel on the glass turns with the rail.
+- The sea is clear in the shallows: the sandy bed seen through the water, the light rippling
+  over it, the teal deepening further out, a line of foam coming and going at the edge.
+- Now and then a shoal of little fish passes in the shallows where she wades, a dark flicker
+  under the water, turning together, darting off when she comes near.
+- Here and there along the beach a run of grey rocks out into the water, a fisherman on the
+  highest, his rod out, the tip nodding and now and then lifted, the line down to a red float;
+  a bucket and a bag beside him.
+- The stand: a shore scene.
+
 ## 0.77
 
 - The list of her jobs goes newest at the top, the first at the bottom: the next story, the

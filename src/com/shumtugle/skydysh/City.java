@@ -406,7 +406,7 @@ final class City implements Ground {
         float edge = SHORE * CELL + WATERLINE;
         if (z - edge < (REACH + 2) * CELL) {
             float mx = Math.round(x / CELL) * CELL, far = 1500f;
-            d.box(mx, WATER - 0.25f, edge - far * 0.5f, far, 0.25f, far * 0.5f, null, 0x2D6990, DrawList.SEA);
+            d.box(mx, WATER - 0.25f, edge - far * 0.5f, far, 0.25f, far * 0.5f, null, 0x2D6990, DrawList.material(DrawList.SEA, 1));
         }
         if (cells.size() > (2 * REACH + 3) * (2 * REACH + 3)) {
             java.util.Iterator<Cell> it = cells.values().iterator();
@@ -1238,6 +1238,53 @@ final class City implements Ground {
      * to the beach, sand and then wet sand out to the water, a sunshade or two with its loungers;
      * two rows of palms, lamps along the parapet, benches by it looking out to sea.
      */
+    // the rocks at the water's edge: along the cell from its west street, the big rock's middle
+    // out from the shore road; each rock across, out, its half sizes, its top, its turn
+    static final float ROCKS_AT = 48f, ROCKS_Z = WATERLINE - 1.5f;
+    private static final float[][] ROCKS = {
+        {0f, 0f, 1.4f, 1.2f, -0.2f, 0.3f}, {-1.9f, 0.9f, 0.9f, 0.8f, -0.75f, -0.5f}, {1.7f, -0.8f, 1f, 0.9f, -0.8f, 0.9f},
+        {0.6f, 1.8f, 0.75f, 0.6f, -1.05f, 0.2f}, {-0.9f, -1.8f, 0.8f, 0.7f, -1.2f, -0.2f}, {2.6f, 1.1f, 0.6f, 0.5f, -1.15f, 0.6f}};
+
+    /** Whether the beach of the cell along column i has its rocks and its fisherman. */
+    boolean rocky(int i) {
+        return Math.floorMod(hash(i, -1, 23), 3) == 0 && i != HOME_I;
+    }
+
+    /**
+     * Where the fisherman on the rocks of column i sits: x, the top of the rock, z (into out),
+     * and which way he faces out to sea; false if the cell has no rocks.
+     */
+    boolean fisher(int i, float[] out) {
+        if (!rocky(i)) return false;
+        out[0] = i * CELL + ROCKS_AT + 0.2f;
+        out[1] = ROCKS[0][4];
+        out[2] = SHORE * CELL + ROCKS_Z + 0.2f;
+        out[3] = (float) Math.PI + 0.15f * ((hash(i, -1, 24) & 3) - 1.5f);
+        return true;
+    }
+
+    /** The rocks: grey boulders turned this way and that, half in the water, each a footing. */
+    private void rocks(Cell c, int i) {
+        float bx = i * CELL + ROCKS_AT, bz = SHORE * CELL + ROCKS_Z, low = WATER - BED;
+        int[] grey = {0x7E7A72, 0x8C877C, 0x6E6A62, 0x837C70};
+        float[] turn = new float[9];
+        for (int k = 0; k < ROCKS.length; k++) {
+            float[] r = ROCKS[k];
+            float x = bx + r[0], z = bz + r[1], top = r[4], cos = (float) Math.cos(r[5]), sin = (float) Math.sin(r[5]);
+            turn[0] = cos; turn[1] = 0f; turn[2] = sin;
+            turn[3] = 0f; turn[4] = 1f; turn[5] = 0f;
+            turn[6] = -sin; turn[7] = 0f; turn[8] = cos;
+            c.boxes.box(x, (top + low) * 0.5f, z, r[2], (top - low) * 0.5f, r[3], turn, grey[k % grey.length], DrawList.STONE);
+            // a weathered top, a little lighter
+            c.boxes.box(x, top - 0.06f, z, r[2] * 0.8f, 0.08f, r[3] * 0.8f, turn, 0x9C978A, DrawList.STONE);
+            float hx = Math.abs(cos) * r[2] + Math.abs(sin) * r[3], hz = Math.abs(sin) * r[2] + Math.abs(cos) * r[3];
+            c.wall(x - hx * 0.85f, z - hz * 0.85f, x + hx * 0.85f, z + hz * 0.85f, top, low);
+        }
+        // his bucket and his bag beside him
+        c.detail.box(bx + 0.9f, ROCKS[0][4] + 0.18f, bz + 0.5f, 0.17f, 0.18f, 0.17f, null, 0x3E6A8A, DrawList.PAINT);
+        c.detail.box(bx - 0.8f, ROCKS[0][4] + 0.12f, bz + 0.4f, 0.28f, 0.12f, 0.18f, null, 0x5A6A3A, DrawList.GRAIN);
+    }
+
     private void promenade(Cell c, float x0, float z0) {
         DrawList d = c.boxes;
         Random deco = new Random(hash(Math.round(x0 / CELL), Math.round(z0 / CELL), 10));
@@ -1271,8 +1318,12 @@ final class City implements Ground {
         float wet = z0 + CELL + WET_FROM, sea = z0 + CELL + WATERLINE;
         d.box(mx, (SAND + low) * 0.5f, (face + wet) * 0.5f, hx, (SAND - low) * 0.5f, (face - wet) * 0.5f, null, 0xD8BC8A, DrawList.GRAIN);
         d.box(mx, (WET + low) * 0.5f, (wet + sea) * 0.5f, hx, (WET - low) * 0.5f, (wet - sea) * 0.5f, null, 0xBFA27A, DrawList.GRAIN);
+        // now and then a run of rocks out into the water, a fisherman on the highest
+        int ci = Math.round(x0 / CELL);
+        if (rocky(ci)) rocks(c, ci);
         // a sunshade now and then, striped, two loungers under it looking out to sea
         for (float t = 10f; t < CELL - 4f; t += 22f) {
+            if (rocky(ci) && t > ROCKS_AT - 12f) continue;
             if (deco.nextInt(3) == 0) continue;
             float ux = x0 + t + deco.nextFloat() * 6f, uz = face - 6f - deco.nextFloat() * 4f;
             int cloth = deco.nextBoolean() ? 0xE9765B : 0x3FAFA6;

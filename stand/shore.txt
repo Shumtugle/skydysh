@@ -1,34 +1,19 @@
-# The shore: the shore road, the promenade along it, the parapet, the steps down to the beach, the
-# sand and the sea; down the steps and back up them; into the water, and up on the sand again.
+# The shore: on the beach by the rocks, a fisherman on the highest of them, his rod out, its line
+# down into the water; wading in the clear shallows, the sand seen through the water and the light
+# rippling over it, the teal deepening further out; a shoal of little fish may pass. In Russian.
 screen 1096 2560
 wait 0.4
-at 0 6 3.1416
-wait 0.6
+lang ru
+free
+close
+at -11 -30 3.6
+wait 1
 shot s0
-at 20 -10 1.5708
-wait 0.6
+at -26 -36.6 3.14
+wait 5
 shot s1
-at 28 -15 3.1416
-wait 0.3
-down 137 600
-wait 2.2
-up 137 600
-where
-wait 0.5
+wait 3
 shot s2
-face 0
-down 137 600
-wait 2.5
-up 137 600
-where
-at 40 -27 0.3
-wait 0.6
+at 20 -30 3.14
+wait 1
 shot s3
-at 10 -36 3.1416
-wait 0.05
-where
-wait 0.6
-shot s4
-at -20 30 -1.5708
-wait 0.6
-shot s5

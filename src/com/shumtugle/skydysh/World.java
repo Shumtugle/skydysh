@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.77";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.78";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1269,6 +1269,7 @@ final class World {
         }
         whiteOut = Math.max(0f, whiteOut - dt);
         dawn = Math.max(0f, dawn - dt);
+        if (indoors == null) shore.update(dt, runner.x, runner.z);
         if (stayed != null) {
             boolean in = indoors != null && indoors.concert;
             stayed.update(dt, in, indoors, runner);
@@ -1725,6 +1726,9 @@ final class World {
     private boolean pedal;
     private float wheelIn, brakeIn, doorWait;
     private boolean doorArmed = true;         // not got in again until she has been away from the door
+    private final Rail rail = new Rail();
+    /** The fishermen on the rocks, the shoals in the shallows. */
+    private final Shore shore = new Shore();
     private final float[] seatAt = new float[3];
 
     /** Whether the duty pickups are out: in every mission but a hunt, which is run on foot. */
@@ -1765,6 +1769,7 @@ final class World {
     private void getIn(Pickup p) {
         if (p == null || driving != null) return;
         letGo();
+        rail.reset();
         driving = p;
         p.driven = true;
         p.speed = 0f;
@@ -1851,8 +1856,12 @@ final class World {
             }
         }
         if (rescue != null) rescue.ram(p, dt);
+        // the rail: the street leads her, as on a string (see Rail)
+        float steerTo = rail.wheel(p, wheel, go, dt, cars);
+        if (rail.cap >= 0f) p.cap = rail.cap;
         int ramsWere = cars.rams;
-        p.drive(dt, go, wheel, brakeIn, false, city, cars, walkers);
+        float brakes = Math.max(brakeIn, rail.brake);
+        p.drive(dt, go && brakes == 0f, steerTo, brakes, false, city, cars, walkers);
         if (cars.rams != ramsWere) {
             // a car rammed: a jolt in the hand, the people off; the pickup, not a scratch
             p.speed *= 0.9f;
@@ -1863,7 +1872,7 @@ final class World {
         }
         // the wheel let be, or nearly: along the street it is nearly along, the less the more it is turned
         float let = 1f - Math.min(1f, Math.abs(p.steer) / SETTLE_WHEEL);
-        if (let > 0f && Math.abs(p.speed) > 3f) {
+        if (let > 0f && Math.abs(p.speed) > 3f && !rail.on) {
             float d;
             if (p.z > City.EDGE_J * City.CELL + City.CURB) {
                 // out of the town: along the road out, if it is on it or near, the way it runs here
@@ -3092,6 +3101,7 @@ final class World {
         felled.draw(d, eyeX, eyeZ, ex, ez);
         if (rescue != null) rescue.draw(d, eyeX, eyeZ, ex, ez);
         if (tow != null) tow.draw(d, time);
+        shore.draw(d, city, eyeX, eyeZ, time);
         if (archive != null) archive.draw(d, r);
         else if (parked != null) Archive.drawCopter(d, parked);
         if (towed != null) {
