@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.79
+
+- The hand has the wheel. The rail no longer takes corners or turns about by itself, nor holds
+  the wheel against the finger: with the finger straight the street still leads the pickup in
+  its lane and past slower cars, but moved aside the finger shares the wheel with it, and a
+  little further over has it alone. Turned hard near a crossing into a street that way, the
+  pickup brakes for the corner and is held to a corner's speed while the wheel stays over; the
+  hand steers it round.
+- Backing goes on while the finger is not pushed back up: moved aside, it turns as it backs,
+  instead of setting off forward.
+- Nosed into a wall or a corner, or hardly going, the wheel turned swings the pickup round
+  briskly, as if it were going, not by a crawl.
+
 ## 0.78
 
 - On her way to a pickup (its sign touched), something low in the way (a bench, a bollard, a

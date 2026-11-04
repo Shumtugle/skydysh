@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.78";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.79";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1814,8 +1814,8 @@ final class World {
      * A frame at the wheel: the pickup driven as the finger has it, she carried in it. While a
      * finger is down, it goes, as fast as the way ahead lets it; the finger moved aside from where
      * it came down turns the wheel, gently near the middle, full over at the ring's edge; drawn down
-     * past the ring's middle, it brakes, and held so standing, it backs. Lifted, the pickup slows to
-     * a stop. With the wheel let be, it settles along the street it is nearly along.
+     * past the ring's middle, it brakes, and held so standing, it backs, on till the finger is pushed
+     * back up past where it came down. Lifted, the pickup slows to a stop. With the wheel let be, it settles along the street it is nearly along.
      */
     private void drive(float dt) {
         Pickup p = driving;
@@ -1826,6 +1826,8 @@ final class World {
             float u = Math.min(1f, Math.abs(sx));
             if (u > CAR_DEAD) wheel = Math.signum(sx) * (float) Math.pow((u - CAR_DEAD) / (1f - CAR_DEAD), CAR_CURVE);
             if (sy > CAR_BRAKE) brakeIn = Math.min(1f, 0.35f + 0.65f * (sy - CAR_BRAKE) / (1f - CAR_BRAKE));
+            // backing: it goes on backing, the wheel free to turn, till the finger is pushed back up
+            else if (p.speed < -0.3f && sy > CAR_BACK_HOLD) brakeIn = 0.35f;
         }
         boolean go = pedal && brakeIn == 0f;
         p.cap = -1f;
@@ -1913,6 +1915,8 @@ final class World {
     // turn within so far, then more and more (so steep a curve) to full over at the edge; drawn
     // down past so far, the brake
     static final float CAR_DEAD = 0.3f, CAR_CURVE = 1.3f, CAR_BRAKE = 0.55f;
+    // backing, the finger may wander up so far (above where it came down) and it still backs
+    static final float CAR_BACK_HOLD = -0.25f;
     static final float CAR_R = 44f;
     // the steering wheel drawn under the finger: half its size, frame pixels; turned so far at full lock (radians)
     static final float WHEEL_HALF = 66f, WHEEL_TURNS = 2.2f;            // the ring at the wheel, its radius: wider than her stick on foot

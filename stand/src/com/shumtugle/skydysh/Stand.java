@@ -180,6 +180,15 @@ public final class Stand implements World.Host {
             world.resize(Integer.parseInt(p[1]), Integer.parseInt(p[2]));
         } else if (c.equals("wait")) {
             run(f(p[1]));
+        } else if (c.equals("trace")) {
+            // trace SECONDS EVERY: time run on, the pickup she drives told so often (place, heading, speed, wheel)
+            float secs = f(p[1]), every = f(p[2]);
+            for (float t = 0f; t < secs - 1e-4f; t += every) {
+                run(every);
+                Pickup q = world.driving;
+                if (q == null) System.out.println(String.format("%7.2fs  not at the wheel", time));
+                else System.out.println(String.format("%7.2fs  at %.1f %.1f heading %.2f, %.1f m/s, wheel %.2f", time, q.x, q.z, q.heading, q.speed, q.steer));
+            }
         } else if (c.equals("down")) {
             world.touch(World.DOWN, f(p[1]), f(p[2]));
             step();

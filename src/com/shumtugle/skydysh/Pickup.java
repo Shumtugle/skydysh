@@ -9,7 +9,7 @@ package com.shumtugle.skydysh;
  * the glass: while it is down, it goes; moved aside, the wheel turns, the car going where its nose
  * points, as sharply as the wheel says, less at the top of its speed, and never slides; hard over,
  * it slows by itself to make the corner. Drawn down, it brakes, and held so standing still, it
- * backs; lifted, it slows to a stop. The engine pulls hard all the way up. Run into a wall, it runs
+ * backs, and goes on backing while the finger is not pushed back up; lifted, it slows to a stop. The engine pulls hard all the way up. Run into a wall, it runs
  * along it, losing only what went into it.
  *
  * Its own frame: x to its right, y up, its nose along +z; the road at y = 0.
@@ -24,6 +24,7 @@ final class Pickup {
     static final float TURN_SLOWS = 0.55f, EASE = 15f;                   // the driver noses along at least this fast
     // the tightest turn, its radius; how fast it may turn at a middling speed and at the top
     static final float TIGHTEST = 4.5f, YAW_MID = 2.4f, YAW_TOP = 1.5f;
+    static final float PIVOT = 3.5f;                   // stuck or crawling, the wheel turns it as fast as at this speed
     static final float STEER_RATE = 18f;               // how fast the wheel follows the hand: a tremble of it is lost
     static final float HALF_LONG = 2.5f, HALF_WIDE = 1f, TOP = 1.7f, ENDS = 1.3f, END_R = 1.05f;
     static final int CREAM = 0xF1E8D4, TEAL = 0x2F8A86, CORAL = 0xE0644A, AMBER = 0xF6B54A;
@@ -76,9 +77,10 @@ final class Pickup {
             else accelerate(dt, flat ? VMAX : cap >= 0f ? Math.min(cap, target(fx, fz, city, cars)) : target(fx, fz, city, cars));
         }
         // the wheel: it turns the car as sharply as it says, as tight as the tightest turn when slow,
-        // a little less at the top; nosed up against something with the finger down and the wheel
-        // over, it still edges round. It goes where its nose points: no sliding
-        float v = throttle && Math.abs(speed) < 1.2f && Math.abs(steer) > 0.2f ? 1.2f : speed;
+        // a little less at the top; nosed up against something, or hardly going, with the finger down
+        // and the wheel over, it still swings round, briskly, as if it were going. It goes where its
+        // nose points: no sliding
+        float v = throttle && Math.abs(speed) < PIVOT && Math.abs(steer) > 0.2f ? PIVOT : speed;
         float cap = YAW_MID + (YAW_TOP - YAW_MID) * Math.min(1f, Math.abs(speed) / VMAX);
         float yaw = steer * Math.min(Math.abs(v) / TIGHTEST, cap) * Math.signum(v);
         heading += yaw * dt;

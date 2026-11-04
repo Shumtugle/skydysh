@@ -74,8 +74,10 @@ finger came down, turning as the pickup's wheel turns,
 coloured for the mission (coral for a hunt, turquoise for the folder, amber for a delivery, cream
 when free). Moved aside from the ring's middle, the finger turns the wheel (not at all near the middle, then more and more)
 and full over at its edge, the pickup slowing by itself to make the corner; drawn down, it brakes,
-and held so standing, it backs. Lifted, the pickup slows to a stop. With the finger held
-straight, the pickup settles along the street it is nearly along.
+and held so standing, it backs, and goes on backing, the wheel free to turn, till the finger is
+pushed back up. Lifted, the pickup slows to a stop. With the finger held straight, the street
+leads it in its lane; the moment the finger moves aside, the wheel is the hand's. Nosed into a
+wall, the wheel turned still swings it round.
 
 The town ends at the sea: along its southmost street a promenade with palms and a parapet, steps
 down to a beach with sunshades, people lying on the loungers and strolling the sand, and the

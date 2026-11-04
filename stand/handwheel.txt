@@ -1,0 +1,26 @@
+# The hand has the wheel: up a street, a hard turn right at the crossing, the wheel let back, she
+# is in the new street's lane; then backing, the finger drawn down, and moved aside without being
+# pushed back up: it goes on backing, swinging round.
+screen 1096 2560
+wait 0.4
+mission 3
+drivein 66.2 14 0
+down 137 480
+trace 2.5 0.5
+move 177 480
+trace 0.4 0.2
+shot h0
+trace 0.6 0.2
+move 137 480
+trace 1.4 0.35
+shot h1
+up 137 480
+wait 1
+drivein 66.2 300 0
+down 137 480
+move 137 528
+trace 2 0.5
+move 177 500
+trace 0.7 0.35
+shot h2
+up 177 500
