@@ -1,0 +1,38 @@
+# Back to the concert hall, the job done before: in at the middle door, the hall lit and full,
+# her chair at the front; down in it, the music; a touch, and she is up. Then home: on the sofa,
+# the panel on its own picked from the screen, mended, its time; the choice again. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 254
+restart
+free
+at -96 236 0
+wait 1
+at -96 265.6 0
+wait 2
+where
+shot h0
+inroom 0 16.9
+wait 2
+where
+shot h1
+tap 137 300
+wait 1
+where
+shot h2
+sofa
+wait 2.5
+shot h3
+pick 8
+wait 2
+shot h4
+panel 25
+panel switch
+wait 2.5
+shot h5
+tap 137 300
+wait 0.3
+tap 137 300
+wait 2.5
+shot h6

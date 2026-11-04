@@ -124,6 +124,9 @@ final class Rooms {
                 in.solid(e > 0 ? u0 : -u1, v - 0.45f, e > 0 ? u1 : -u0, v + 0.45f, f + 1.1f);
             }
         }
+        // her chair, at the front against the stage, in her way as the rows are
+        Concert.drawChair(d, in);
+        in.solid(-Concert.CHAIR_HALF, Concert.CHAIR_V - Concert.CHAIR_DEEP, Concert.CHAIR_HALF, Concert.CHAIR_V + Concert.CHAIR_DEEP, f + 1.2f);
         // the stage: boards a step high the width of the hall, its edge gilt; the curtains behind
         float st = Concert.STAGE, sy = f + Concert.STAGE_HIGH;
         in.box(d, 0f, (f + sy) * 0.5f, (st + deep - w) * 0.5f, half, (sy - f) * 0.5f, (deep - w - st) * 0.5f, 0x8A5A34, DrawList.WOOD);

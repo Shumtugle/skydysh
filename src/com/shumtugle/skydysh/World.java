@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.71";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.72";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -50,8 +50,17 @@ final class World {
     Puppy puppy;                             // the mission now, when it is the puppy in the sea
     Tow tow;                                 // the mission now, when it is the tow out of the quarry
     Concert concert;                         // the mission now, when it is the concert
-    /** The concert going on after the job is done, while she stays in the hall. */
+    /** The hall come back to after the job is done (lit, her chair kept), while she stays in it. */
     private Concert stayed;
+    /** The panel taken from home's screen on its own, no way to go: open over everything, or null. */
+    Panel solo;
+    private float soloClock;
+    private boolean soloNext;
+    static final String SAVE_PANEL_BEST = "best.panel";
+    /** After the concert, waking at home: the dark lifting, seconds left. */
+    private float dawn;
+    static final float DAWN = 2.4f;
+    private final float[] chairAt = new float[3];
     /** The brum's pickup left at the workshop after a tow, till she is far from it. */
     private Tow towed;
     /** The crowd at the water's edge while the puppy is out. */
@@ -70,6 +79,8 @@ final class World {
     static final String SAVE_MISSION = "mission", SAVE_PLATES = "plates", SAVE_MONEY = "money", SAVE_CONTROLS = "foot";
     int plates, money;
     static final float BACK_TO_ROOM = 3f;
+    /** After the concert, the dark down: so long before she wakes at home. */
+    static final float AFTER_DUSK = 0.5f;
     private float whiteOut;                  // the white of the opening going off the game, seconds left
     final Cars cars = new Cars();
     final Walkers walkers = new Walkers();
@@ -326,7 +337,7 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 2, 2, 1, 2};
+    static final int[] REVISION = {0, 4, 4, 2, 2, 2, 1, 3};
     /** How many kinds of mission there are; they come in turn, round and round. */
     static final int KINDS = 7;
 
@@ -575,8 +586,8 @@ final class World {
 
     /** For the desktop stand: the concert's panel, if open: so many of its pieces mended; or (pieces &lt; 0) its switch touched. */
     String standPanel(int pieces) {
-        if (concert == null || !concert.panelOpen) return "no panel open";
-        Panel p = concert.panel;
+        Panel p = solo != null ? solo : concert != null && concert.panelOpen ? concert.panel : null;
+        if (p == null) return "no panel open";
         if (pieces >= 0) {
             p.standMend(pieces);
             return p.whole ? "the panel mended" : p.lampsOnly() ? "the lamps lit, the panel not whole yet" : "the panel not whole yet";
@@ -679,6 +690,10 @@ final class World {
             if (type == DOWN) concert.panel.touch(x, y, host);
             return;
         }
+        if (solo != null) {
+            if (type == DOWN) solo.touch(x, y, host);
+            return;
+        }
         if (opening != null) {
             if (type == DOWN) opening.skip();
             return;
@@ -695,7 +710,10 @@ final class World {
             }
             if (type == DOWN && dispatch.choosing()) {
                 int c = dispatch.pickAt(x, y);
-                if (c > 0 && c < Dispatch.REST) {
+                if (c == Dispatch.SOLO) {
+                    // the panel on its own: it opens once the walls have drawn back
+                    soloNext = true;
+                } else if (c > 0 && c < Dispatch.REST) {
                     chooseMission(c);
                     dispatch.then(briefing()).story(kindOf(mission.round));
                 } else if (c == 0 && free) {
@@ -712,6 +730,17 @@ final class World {
                     again = false;
                 }
             } else if (type == DOWN) dispatch.touch();
+            return;
+        }
+        if (inChair()) {
+            // in her chair in the hall: the pause as ever; anywhere else she gets up (not on the
+            // job, where the music is heard to its end)
+            if (type == DOWN && paused) {
+                if (!pauseRow(x, y)) paused = false;
+            } else if (type == DOWN && onButton(x, y, pauseX(), pauseY())) {
+                paused = true;
+            } else if (type == DOWN && hall().open) offChair();
+            leadFinger = -1;
             return;
         }
         if (seated()) {
@@ -1098,6 +1127,23 @@ final class World {
             story.update(dt);
             return;
         }
+        if (solo != null) {
+            // the panel from home's screen, over everything; the room stands still
+            solo.update(dt);
+            soloClock += dt;
+            if (solo.left) {
+                solo = null;
+                letGo();
+                sofaChoice(null);
+            } else if (solo.shut()) {
+                solo = null;
+                letGo();
+                int was = host.loadInt(SAVE_PANEL_BEST), now = Math.max(1, Math.round(soloClock * 10f));
+                if (was <= 0 || now < was) host.saveInt(SAVE_PANEL_BEST, now);
+                sofaChoice(Dispatch.timed(Dispatch.panelDone(clockOf(soloClock)), was / 10f, soloClock));
+            }
+            return;
+        }
         if (paused && opening == null && dispatch == null) return;
         time += dt;
         if (opening != null) {
@@ -1124,7 +1170,10 @@ final class World {
                 // the walls drawn back: the street goes on (the next mission, after a report)
                 dispatch = null;
                 overFor = 0f;
-                if (resultsOpen) resultsOpen = false;
+                if (soloNext) {
+                    soloNext = false;
+                    openSolo();
+                } else if (resultsOpen) resultsOpen = false;
                 else if (standAfter) {
                     standAfter = false;
                     if (seated()) standUp();
@@ -1136,7 +1185,7 @@ final class World {
             }
             return;
         }
-        if (!free && over() && (overFor += dt) > BACK_TO_ROOM) {
+        if (!free && over() && (overFor += dt) > (concert != null ? AFTER_DUSK : BACK_TO_ROOM)) {
             save();
             String[] said = report();
             boolean failed = failed();
@@ -1168,15 +1217,18 @@ final class World {
             crowd = null;
             if (tow != null) towed = tow;
             tow = null;
-            // the concert goes on while she stays in the hall
-            if (concert != null) stayed = concert;
+            // after the concert the dark has come down: she wakes at home, on her sofa, in the morning
+            boolean slept = concert != null;
+            if (concert != null) concert.stop();
             concert = null;
             city.extra = null;
             chase = nobody;
             waiting = said;
+            if (slept) wake();
             return;
         }
         whiteOut = Math.max(0f, whiteOut - dt);
+        dawn = Math.max(0f, dawn - dt);
         if (stayed != null) {
             boolean in = indoors != null && indoors.concert;
             stayed.update(dt, in, indoors, runner);
@@ -1200,7 +1252,7 @@ final class World {
         }
         // a beat of the arms (a flick, between frames): the air through them
         if (runner.beatsLeft() < beatsWere) host.sound(Synth.WHOOSH, 0.5f, 0.8f);
-        if (swapT < 0f && driving == null && !seated()) runner.update(dt, city, cars, walkers);
+        if (swapT < 0f && driving == null && !seated() && !inChair()) runner.update(dt, city, cars, walkers);
         // into deep water: a splash, and she swims
         boolean swims = runner.swimming();
         if (swims && !swimSeen) host.sound(Synth.SPLASH, 0.8f, 1f);
@@ -1209,6 +1261,14 @@ final class World {
         int round = mission.round;
         if (free) {
             chase = nobody;
+            // the job at the concert hall done once: its middle door is open to her, on foot
+            if ((kindsWon & (1 << 7)) != 0 && indoors == null && swapT < 0f && driving == null) {
+                float dx = runner.x - City.concertDoorX(), dz = runner.z - City.concertDoorZ();
+                if (dx * dx + dz * dz < Concert.DOOR_NEAR * Concert.DOOR_NEAR) {
+                    host.sound(Synth.DOOR, 0.45f, 0.9f);
+                    go(TO_CONCERT);
+                }
+            }
         } else if (concert != null) {
             boolean in = indoors != null && indoors.concert;
             if (concert.update(dt, in, indoors, runner)) {
@@ -1217,7 +1277,7 @@ final class World {
                 host.sound(Synth.LATCH, 0.5f, 1.3f);
                 host.buzz(20);
             }
-            if (concert.lit() && concert.doneAt == concert.clock) {
+            if (concert.lit() && concert.litAt == concert.clock) {
                 host.sound(Synth.CHIME, 0.4f, 0.9f);
                 host.buzz(60);
             }
@@ -1338,6 +1398,7 @@ final class World {
             return;
         }
         if (indoors != null && indoors.home && sofa(dt)) return;
+        if (indoors != null && indoors.concert && chair(dt)) return;
         if (indoors != null) {
             int e = indoors.update(dt, r, host);
             if (e == Indoors.UP) go(TO_ROOF);
@@ -2044,6 +2105,8 @@ final class World {
             case TO_CONCERT:
                 indoors = Rooms.concert(City.concertDoorX(), City.concertDoorZ());
                 indoors.enter(r, false);
+                // no job here now: the hall as she left it, lit, full, her chair waiting
+                if (concert == null) stayed = Concert.open(host, 0xC0C0L + (long) (time * 1000f));
                 break;
             case TO_HOME:
                 indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
@@ -2133,6 +2196,88 @@ final class World {
         return true;
     }
 
+    // ---- her own chair in the concert hall: come up to it with the lights on, she sits ----
+    /** The hall she is in, on the job or come back to (null: neither). */
+    private Concert hall() {
+        return concert != null ? concert : stayed;
+    }
+
+    /** Whether she sits in her chair in the hall. */
+    boolean inChair() {
+        Concert co = hall();
+        return co != null && co.seated && indoors != null && indoors.concert;
+    }
+
+    /** Seated, a frame of it (true); or come up to it, down she sits (true); or not near it (false). */
+    private boolean chair(float dt) {
+        Concert co = hall();
+        Runner r = runner;
+        if (co == null) return false;
+        if (!co.seated) {
+            if (!co.atChair(indoors, r) || r.led() || r.throwing() >= 0f) return false;
+            co.sit();
+            errand = NO_ERRAND;
+            r.stopLead();
+            letGo();
+            host.sound(Synth.WOOD, 0.5f, 0.6f);
+            host.buzz(40);
+        }
+        r.lounging = true;
+        co.chair(indoors, chairAt);
+        r.ride(dt, indoors, chairAt[0], chairAt[1], chairAt[2], indoors.heading(0f, 1f), 0f, chairAt[0], chairAt[1] - 0.03f, chairAt[2], 0f);
+        co.shot(indoors, eyeNow);
+        r.eyeAt(eyeNow);
+        return true;
+    }
+
+    /** Up from her chair, behind it, facing the stage: the music stops. */
+    private void offChair() {
+        Concert co = hall();
+        if (co == null || !co.seated) return;
+        co.rise();
+        co.offChair(indoors, chairAt);
+        runner.getOut(chairAt[0], Indoors.FLOOR, chairAt[1], indoors.heading(0f, 1f));
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        letGo();
+    }
+
+    /** In the dark after the concert: home, down on her sofa, the morning; the report when the dark has lifted. */
+    private void wake() {
+        if (driving != null) getOut();
+        runner.getOut(runner.x, runner.y, runner.z, runner.heading);
+        if (indoors != null) leave();
+        swapT = -1f;
+        indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+        indoors.enter(runner, false);
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        sitDown();
+        // the screen comes on once the dark has lifted and she has sat a moment
+        seatedFor = -DAWN;
+        dawn = DAWN;
+    }
+
+    /** The panel on its own, from home's screen: new wiring each time, as on a call out. */
+    private void openSolo() {
+        int panels = host.loadInt(SAVE_PANELS) + 1;
+        host.saveInt(SAVE_PANELS, panels);
+        solo = new Panel(Concert.GRID, panels * 0x9E3779B97F4A7C15L + 0x50105EEDL);
+        soloClock = 0f;
+        letGo();
+        host.sound(Synth.LATCH, 0.5f, 1.3f);
+        host.buzz(20);
+    }
+
+    /** On the sofa again, home's choice on the screen; first, if given, these lines (a report). */
+    private void sofaChoice(String[] first) {
+        String[] lines = Dispatch.sofa(free ? mission.round + 1 : mission.round, free && lost);
+        int[] picks = known(lines, Dispatch.SOFA_PICKS);
+        lines = keptLines;
+        dispatch = first != null ? new Dispatch(host, first).then(lines, picks) : new Dispatch(host, lines).choices(picks);
+        letGo();
+    }
+
     /** Down on the sofa: the game kept, the screen to come on in a moment. */
     private void sitDown() {
         Indoors in = indoors;
@@ -2157,14 +2302,17 @@ final class World {
     private String[] keptLines;
 
     /**
-     * A choice's lines and what each picks, as they are (every kind of job is offered: the player
-     * picks what to play; none is pushed on her). The lines kept are left in keptLines.
+     * A choice's lines and what each picks (every kind of job is offered: the player picks what to
+     * play; none is pushed on her), but for the concert hall: offered till it is done once, and
+     * after that, in its place, the panel on its own. The lines kept are left in keptLines.
      */
     private int[] known(String[] lines, int[] picks) {
         java.util.ArrayList<String> l = new java.util.ArrayList<String>();
         java.util.ArrayList<Integer> p = new java.util.ArrayList<Integer>();
+        boolean hallDone = (kindsWon & (1 << 7)) != 0;
         for (int k = 0; k < lines.length; k++) {
             int c = k < picks.length ? picks[k] : -1;
+            if (c == 7 && hallDone || c == Dispatch.SOLO && !hallDone) continue;
             l.add(lines[k]);
             p.add(c);
         }
@@ -2206,7 +2354,17 @@ final class World {
     /** The dark of a door over the frame, coming down and lifting. */
     private void swapFlat(Px f) {
         if (swapT < 0f) return;
-        float dark = swapT < SWAP ? swapT / SWAP : Math.max(0f, 1f - (swapT - SWAP) / SWAP);
+        darken(f, swapT < SWAP ? swapT / SWAP : Math.max(0f, 1f - (swapT - SWAP) / SWAP));
+    }
+
+    /** The dark coming down at the end of the concert, and lifting at home in the morning. */
+    private void nightFlat(Px f) {
+        float dark = Math.max(concert != null ? concert.dusk() : 0f, dawn / DAWN);
+        if (dark > 0f) darken(f, dark * dark * (3f - 2f * dark));
+    }
+
+    /** The frame gone so far into the dark, 0 to 1. */
+    private static void darken(Px f, float dark) {
         int a = Math.round(255f * Math.min(1f, dark));
         for (int i = 0; i < f.a.length; i++) {
             int old = f.a[i], oa = old >>> 24;
@@ -2473,14 +2631,15 @@ final class World {
     private void concertFlat(DrawList d, Px f) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
         Concert co = concert;
-        String clock = clock(co.over() ? co.doneAt : co.clock);
+        String clock = clock(co.doneAt >= 0f ? co.doneAt : co.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
         int due = Dispatch.due(mission.round);
         String sum = money(due);
         if (due > 0) shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
-        if (co.over()) {
+        if (co.step >= Concert.SEATED) {
+            // the pay, big, a moment after she sits; then only the music
             String big = "+" + sum;
-            if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
+            if (due > 0 && co.listened() < 3f) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
             return;
         }
         boolean in = indoors != null && indoors.concert;
@@ -2488,6 +2647,14 @@ final class World {
             String w = Lang.lines("goal.concert", mission.round, null)[0];
             wordAtTop(f, w, green, ink);
             placeMark(d, f, City.concertDoorX(), City.WALK_TOP + 3.5f, City.concertDoorZ(), Marks.CONCERT, Marks.OPEN);
+            return;
+        }
+        if (co.step == Concert.LIT) {
+            // the lights on: to her chair at the front
+            wordAtTop(f, Lang.lines("goal.chair", mission.round, null)[0], green, ink);
+            co.chair(indoors, goal);
+            goal[1] += 2.6f;
+            placeMark(d, f, goal[0], goal[1], goal[2], Marks.CHAIR, Marks.OPEN);
             return;
         }
         if (co.step != Concert.INSIDE || co.panelOpen) return;
@@ -2499,8 +2666,9 @@ final class World {
 
     /** The panel over the frame, while it is open: nothing of the frame's own buttons shows through it. */
     private void panelFlat(DrawList d, Px f) {
-        if (concert == null || !concert.panelOpen) return;
-        concert.panel.draw(f, Lang.lines("panel.plate", 0, null)[0]);
+        Panel p = solo != null ? solo : concert != null && concert.panelOpen ? concert.panel : null;
+        if (p == null) return;
+        p.draw(f, Lang.lines("panel.plate", 0, null)[0]);
         d.badgeN = 0;
         d.tube[0] = d.tube[2] = 0f;
     }
@@ -2660,6 +2828,7 @@ final class World {
         if (dispatch == null) buttons(d);
         if (dispatch == null && paused) pauseFlat(f);
         swapFlat(f);
+        nightFlat(f);
         panelFlat(d, f);
         storyFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
@@ -2774,6 +2943,7 @@ final class World {
             if (paused) pauseFlat(f);
         }
         swapFlat(f);
+        nightFlat(f);
         panelFlat(d, f);
         storyFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);

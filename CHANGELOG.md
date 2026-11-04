@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.72
+
+- Lights in the hall ends in the hall now: with the lights on, her own chair waits at the front,
+  against the stage, at the end of the middle aisle, a chair her size (a word and a mark of a
+  chair lead to it). Down in it, the pianist begins; a few seconds of the music, and the dark
+  comes down; she wakes at home on her sofa, in the morning, and the report is there ("Morning.
+  Last night the hall had its lights..."). The job's time runs till she sits.
+- Done once, the hall is hers: free in the town, the middle door takes her in on foot, the hall
+  lit and full, her chair kept; sitting in it, the music plays piece after piece, and a touch
+  gets her up. The job leaves home's screen once it is done.
+- In its place on home's screen, "Panel": the panel on its own, no way to go, open over the room;
+  new wiring each time, as on the job; mended and the switch thrown, its time against the best,
+  and the choice again. The sign of the way back puts it away.
+- A job done again no longer says it was paid already: the line of the pay is simply left out.
+- The story of the job says where the chair is and that the hall stays open; the briefing adds
+  the chair; the best time of the job is kept anew (the job has changed).
+- The stand: the concert scene goes on to the chair, the dark, the morning and the choice; a new
+  concerthall scene comes back to the hall, sits, gets up, and does the panel from the sofa.
+
 ## 0.71
 
 - The panel: while all three lamps burn and the wiring is not yet whole, the pieces the power has

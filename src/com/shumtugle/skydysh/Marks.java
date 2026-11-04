@@ -7,7 +7,7 @@ package com.shumtugle.skydysh;
  * is open to her; red, it is not, for now.
  */
 final class Marks {
-    static final int HOUSE = 0, PAW = 1, FACTORY = 2, WAREHOUSE = 3, TRUCK = 4, PASS = 5, VILLAGE = 6, CLINIC = 7, QUARRY = 8, WORKSHOP = 9, CONCERT = 10, PANEL = 11;
+    static final int HOUSE = 0, PAW = 1, FACTORY = 2, WAREHOUSE = 3, TRUCK = 4, PASS = 5, VILLAGE = 6, CLINIC = 7, QUARRY = 8, WORKSHOP = 9, CONCERT = 10, PANEL = 11, CHAIR = 12;
     static final int OPEN = 0xFF46D27E, SHUT = 0xFFF0583C;
     /** The pictures' squares: each this many frame pixels. */
     static final int SCALE = 1;
@@ -184,6 +184,20 @@ final class Marks {
             "....###......",
             "...##........",
             "...#........."},
+        { // a chair: a high back, a seat, two arms, legs
+            "...#######...",
+            "..#########..",
+            "..#########..",
+            "..#########..",
+            "..#########..",
+            "#############",
+            "##.........##",
+            "#############",
+            "#############",
+            "##.........##",
+            ".#.........#.",
+            ".#.........#.",
+            "............."},
     };
 
     /** A picture centred at (cx, cy) over the frame, in a colour (OPEN or SHUT), so much of it showing (0 to 1). */

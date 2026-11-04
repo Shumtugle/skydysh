@@ -157,8 +157,11 @@ final class Dispatch {
         return Lang.lines("home", round, null);
     }
 
-    /** What touching each line of home's screen picks: the hunt 1, the folder 2, the delivery 3, the call out 4, on 0. */
-    static final int[] HOME_PICKS = {-1, -1, -1, -1, 7, 6, 5, 4, 3, 2, 1};
+    /** What touching each line of home's screen picks: a kind of job (1 to 7), or the panel on its own (SOLO). */
+    static final int[] HOME_PICKS = {-1, -1, -1, -1, 8, 7, 6, 5, 4, 3, 2, 1};
+
+    /** A pick that takes the panel on its own, no way to go: it opens over the room. */
+    static final int SOLO = 8;
 
     /** A pick that takes no mission: she stays as she is (on the sofa, free). */
     static final int REST = 9;
@@ -185,7 +188,7 @@ final class Dispatch {
     }
 
     /** What touching each line of the sofa's screen picks (see HOME_PICKS); a rest, REST. */
-    static final int[] SOFA_PICKS = {-1, -1, -1, 7, 6, 5, 4, 3, 2, 1};
+    static final int[] SOFA_PICKS = {-1, -1, -1, 8, 7, 6, 5, 4, 3, 2, 1};
 
     /** After these lines, at the key, the next ones on the screen before the walls draw back. */
     Dispatch then(String[] more) {
@@ -213,13 +216,23 @@ final class Dispatch {
         return (paidKinds & (1 << kind)) != 0 ? 0 : reward;
     }
 
-    /** The line of a briefing with the pay in it: the sum, or, paid before, that it was. */
+    /** The line of a briefing with the pay in it: the sum; paid before, the line left out. */
     private static String[] priced(String[] lines, int round) {
         int due = due(round);
         for (int k = 0; k < lines.length; k++)
-            if (lines[k].contains("{reward}"))
-                lines[k] = due > 0 ? lines[k].replace("{reward}", World.money(due)) : Lang.lines("paid.before", round, null)[0];
-        return lines;
+            if (lines[k].contains("{reward}")) lines[k] = due > 0 ? lines[k].replace("{reward}", World.money(due)) : null;
+        return kept(lines);
+    }
+
+    /** The lines left out (null) dropped, and an empty line with them, so no two empty lines meet. */
+    private static String[] kept(String[] lines) {
+        java.util.ArrayList<String> out = new java.util.ArrayList<String>();
+        for (int k = 0; k < lines.length; k++) {
+            if (lines[k] == null) continue;
+            if (lines[k].isEmpty() && !out.isEmpty() && out.get(out.size() - 1).isEmpty()) continue;
+            out.add(lines[k]);
+        }
+        return out.toArray(new String[0]);
     }
 
     /** What the screen says before a mission. */
@@ -265,6 +278,11 @@ final class Dispatch {
         return fill(Lang.lines("report.concert", round, time), got, money);
     }
 
+    /** The panel on its own put right: the time. */
+    static String[] panelDone(String time) {
+        return Lang.lines("report.panel", 0, time);
+    }
+
     /** The brum's pickup brought to the workshop: the time. */
     static String[] towed(int round, String time) {
         return Lang.lines("report.tow", round, time);
@@ -280,11 +298,12 @@ final class Dispatch {
         return Lang.lines("report.lost", round, time);
     }
 
+    /** The pay and the balance put in; paid before, the line of the pay left out. */
     private static String[] fill(String[] lines, int reward, int money) {
         for (int k = 0; k < lines.length; k++)
-            lines[k] = lines[k].contains("{reward}") && reward <= 0 ? Lang.lines("paid.before", 0, null)[0]
+            lines[k] = lines[k].contains("{reward}") && reward <= 0 ? null
                     : lines[k].replace("{reward}", World.money(reward)).replace("{sum}", World.money(money));
-        return lines;
+        return kept(lines);
     }
 
     /** What the screen says when a mission is done. */

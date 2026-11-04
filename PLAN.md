@@ -72,6 +72,7 @@ release, each seen on the stand before the phone.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
+- 0.72 The concert ends in her chair and a morning at home; the hall hers after; the panel on its own from home.
 - 0.71 The panel shows what is left: with the lamps all lit, the dead pieces pulse.
 - 0.70 Thanks in CREDITS for the rules of the panel.
 - 0.69 Lights in the hall: the concert hall dark, the panel in the wings, wiring that is new each time.
