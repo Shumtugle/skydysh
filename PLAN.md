@@ -106,6 +106,12 @@ The missions in order, each teaching a thing; then the town is hers.
 
 The releases toward it, one thing each:
 
+- The archive job's second half: the helicopter kept where it leant on its broken skid; at the
+  archive's door the screen sends her to a pickup near by, to the workshop for a new skid, back,
+  the skid mended; she flies it herself to the town hall's roof (two sticks: the left for height
+  and turning, the right for speed and its way), then home; after that the helicopter is hers.
+  The eye at the town hall's door looking down too steeply, to be set right with it.
+
 - Districts about home, built by hand on fixed places; the town further off still from the seed.
   Next: an avenue along the second street up from the shore, broad, for speed; the main way north
   from home to the town's end and the road to the pass; the store become a harbour, quays, a
