@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.75
+
+- The hunted brums run from the runner: off away from her when they start, round about if she
+  comes at them head on along their street, and at a crossing on, left or right as it falls out
+  but never the way toward her.
+- After the first job won, the word at the top on the way home is "Go back home", and only that
+  once in a game (kept); after that she knows the way and nothing is said.
+- Home's screen shows the next job only, in the order the jobs come (the hunt, the folder, the
+  delivery, the call out, the puppy, the tow, the concert hall, the documents to the archive).
+  Over it, floating, the sign of the way back (out into the town, no job) and a new sign of the
+  list: the list is hers only, the next story and the games she has played (the hunt, the
+  folder; the panel once the concert hall is done), nothing of what is still to come. With no
+  story left, the list is the screen.
+- "Papers to the archive" is called "Documents to the archive", apart from the folder game.
+- The stand: a command touching the sign of the list; the choice scenes go through it.
+
 ## 0.74
 
 - The town's helicopter is new: a broad cabin with a rounded nose, two engine housings on the

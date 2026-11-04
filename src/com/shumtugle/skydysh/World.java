@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.74";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.75";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -113,6 +113,7 @@ final class World {
         if (next > 1) mission.round = next - 1;
         // the kinds won; a game kept before they were counted: those of the missions it had played
         kindsWon = host.loadInt(SAVE_KINDS);
+        told = host.loadInt(SAVE_TOLD) != 0;
         if (kindsWon == 0)
             for (int n = 1; n < next; n++) kindsWon |= 1 << kindOf(n);
         Dispatch.paidKinds = host.loadInt(SAVE_PAID);
@@ -230,8 +231,9 @@ final class World {
         runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - City.CURB - 1.2f, 0f);
         runner.recenter();
         runner.update(0f, city, cars, walkers);
-        int[] picks = known(Dispatch.home(free ? mission.round + 1 : mission.round), Dispatch.HOME_PICKS);
+        int[] picks = nextChoice("home.next", "home.list");
         dispatch = new Dispatch(host, keptLines).choices(picks);
+        if (!listing) dispatch.listed();
         letGo();
     }
 
@@ -718,6 +720,12 @@ final class World {
         if (dispatch != null) {
             if (type == DOWN && dispatch.onHelp(x, y)) {
                 openStory(dispatch.storyKind());
+                return;
+            }
+            if (type == DOWN && dispatch.listAt(x, y)) {
+                // the list on the screen after the key
+                int[] p = listChoice("list");
+                dispatch.then(keptLines, p);
                 return;
             }
             if (type == DOWN && dispatch.leaveAt(x, y)) {
@@ -2248,16 +2256,13 @@ final class World {
         }
         if (!sofaAsked && seatedFor > SIT_FOR) {
             sofaAsked = true;
-            String[] lines = Dispatch.sofa(free ? mission.round + 1 : mission.round, free && lost);
-            int[] picks = known(lines, Dispatch.SOFA_PICKS);
-            lines = keptLines;
+            sofaChoice(waiting);
             if (waiting != null) {
-                // a mission won out of doors: its report first, here at home, and the choice of the
-                // next on the same screen after it
-                dispatch = new Dispatch(host, waiting).then(lines, picks);
-                waiting = null;
-            } else dispatch = new Dispatch(host, lines).choices(picks);
-            letGo();
+                // the way home has been told once in this game: from now on she knows it
+                host.saveInt(SAVE_TOLD, 1);
+                told = true;
+            }
+            waiting = null;
         }
         return true;
     }
@@ -2374,12 +2379,20 @@ final class World {
         host.buzz(20);
     }
 
-    /** On the sofa again, home's choice on the screen; first, if given, these lines (a report). */
+    /**
+     * On the sofa, home's screen: the next job (the sign of the list over it), or the list, if no
+     * story is left to come; first, if given, these lines (a report), the choice after them.
+     */
     private void sofaChoice(String[] first) {
-        String[] lines = Dispatch.sofa(free ? mission.round + 1 : mission.round, free && lost);
-        int[] picks = known(lines, Dispatch.SOFA_PICKS);
-        lines = keptLines;
-        dispatch = first != null ? new Dispatch(host, first).then(lines, picks) : new Dispatch(host, lines).choices(picks);
+        int[] picks = nextChoice("sofa.next", "sofa.list");
+        String[] lines = keptLines;
+        if (first != null) {
+            dispatch = new Dispatch(host, first).then(lines, picks);
+            if (!listing) dispatch.listedNext();
+        } else {
+            dispatch = new Dispatch(host, lines).choices(picks);
+            if (!listing) dispatch.listed();
+        }
         letGo();
     }
 
@@ -2400,35 +2413,90 @@ final class World {
         host.buzz(40);
     }
 
-    // ---- the kinds of mission she knows: only those won are offered by name at home ----
+    // ---- the jobs she knows: the next one to come, and what she can choose ----
     static final String SAVE_KINDS = "kinds";
     /** The kinds of mission won at least once, a bit each (1 << kind). */
     private int kindsWon;
+    /** A choice's lines, as the last one was made. */
     private String[] keptLines;
+    /** The last choice made is the list (no next job over it). */
+    private boolean listing;
+    /** The kinds that are games, played again and again; the rest are stories, played once, in their order. */
+    static boolean game(int kind) {
+        return kind == 1 || kind == 2;
+    }
+
+    /** The next job to come: the first kind, in order, not yet done (0: none left). */
+    int nextKind() {
+        for (int k = 1; k <= KINDS; k++) if ((kindsWon & (1 << k)) == 0) return k;
+        return 0;
+    }
 
     /**
-     * A choice's lines and what each picks: the games (the hunt, the folder) always; the stories
-     * (the delivery, the call out, the puppy, the tow, the concert hall, the archive) till each is
-     * done once, as a thing that happens in a life; once the concert hall is done, the panel on
-     * its own. None is pushed on her. The lines kept are left in keptLines.
+     * Home's screen: under its head (head, from Lang), the next job and nothing else; or, if none
+     * is left to come, the list (under listHead). Its lines are left in keptLines; what each picks
+     * is given back.
      */
-    private int[] known(String[] lines, int[] picks) {
-        java.util.ArrayList<String> l = new java.util.ArrayList<String>();
+    private int[] nextChoice(String head, String listHead) {
+        int k = nextKind();
+        if (k == 0) return listChoice(listHead);
+        listing = false;
+        String[] h = Lang.lines(head, 0, null);
+        keptLines = new String[h.length + 2];
+        System.arraycopy(h, 0, keptLines, 0, h.length);
+        keptLines[h.length] = "";
+        keptLines[h.length + 1] = Lang.lines("kind." + k, 0, null)[0];
+        int[] picks = new int[keptLines.length];
+        java.util.Arrays.fill(picks, -1);
+        picks[h.length + 1] = k;
+        return picks;
+    }
+
+    /**
+     * The list, under its head: only what is hers to choose: the next story, if one is left; the
+     * games she has played (the hunt, the folder); the panel on its own, once the concert hall is
+     * done. Nothing of what is still to come after the next.
+     */
+    private int[] listChoice(String head) {
+        listing = true;
+        String[] h = Lang.lines(head, 0, null);
+        java.util.ArrayList<String> l = new java.util.ArrayList<String>(java.util.Arrays.asList(h));
         java.util.ArrayList<Integer> p = new java.util.ArrayList<Integer>();
-        boolean hallDone = (kindsWon & (1 << 7)) != 0;
-        for (int k = 0; k < lines.length; k++) {
-            int c = k < picks.length ? picks[k] : -1;
-            // a story is played once: done, it is gone from the screen
-            if (c >= 3 && c <= KINDS && (kindsWon & (1 << c)) != 0) continue;
-            if (c == Dispatch.SOLO && !hallDone) continue;
-            l.add(lines[k]);
-            p.add(c);
+        for (int k = 0; k < h.length; k++) p.add(-1);
+        l.add("");
+        p.add(-1);
+        int next = nextKind();
+        if (next > 0 && !game(next)) {
+            l.add(Lang.lines("kind." + next, 0, null)[0]);
+            p.add(next);
+        }
+        for (int k = 1; k <= KINDS; k++) {
+            if (!game(k) || (kindsWon & (1 << k)) == 0 && k != next) continue;
+            l.add(Lang.lines("kind." + k, 0, null)[0]);
+            p.add(k);
+        }
+        if ((kindsWon & (1 << 7)) != 0) {
+            l.add(Lang.lines("kind.panel", 0, null)[0]);
+            p.add(Dispatch.SOLO);
         }
         keptLines = l.toArray(new String[0]);
         int[] out = new int[p.size()];
         for (int k = 0; k < out.length; k++) out[k] = p.get(k);
         return out;
     }
+
+    /** For the desktop stand: a touch on the sign of the list over home's choice; false if it is not shown. */
+    boolean standList() {
+        float[] at = new float[2];
+        if (dispatch == null || !dispatch.listSignAt(at)) return false;
+        touch(DOWN, 0, at[0], at[1]);
+        touch(UP, 0, at[0], at[1]);
+        return true;
+    }
+
+    // ---- the way home told after a job: once in a game ----
+    static final String SAVE_TOLD = "told.home";
+    private boolean told;
 
     /** The screen let go by the sign of the way back: she gets up once the walls have drawn back. */
     private boolean standAfter;
@@ -2693,8 +2761,9 @@ final class World {
         float gx = City.HOME_DOOR_X - runner.x, gz = City.HOME_DOOR_Z - runner.z;
         float far = (float) Math.sqrt(gx * gx + gz * gz);
         if (far < 12f) return;
-        // nothing urged on her: only a job won, its report waiting at home, is said at the top
-        if (waiting != null) {
+        // nothing urged on her: only after the first job won, its report waiting at home, is the
+        // way home said at the top, once in a game; after that she knows it
+        if (waiting != null && !told) {
             String w = Lang.lines("goal.done", mission.round, null)[0];
             shadowed(f, w, (W - PixelFont.width(w, 1)) / 2, 14, 1, cream, ink);
         }

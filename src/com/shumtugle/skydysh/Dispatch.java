@@ -141,6 +141,54 @@ final class Dispatch {
         return backShown;
     }
 
+    // ---- the list: a floating sign high on the right over the choice of the next job; at a
+    // touch, the screen shows all she has to choose from (the next story, the games she knows) ----
+    private float listX = -99f, listY = -99f;
+    private boolean listShown, listOffered;
+    /** A pick that asks for the list. */
+    static final int LIST = 11;
+
+    /** This choice has the sign of the list over it. */
+    Dispatch listed() {
+        listOffered = true;
+        return this;
+    }
+
+    /** The choice that comes after these lines (see then) has the sign of the list over it. */
+    Dispatch listedNext() {
+        nextListed = true;
+        return this;
+    }
+
+    private boolean nextListed;
+
+    private void list(DrawList d) {
+        listShown = listOffered && choosing() && t >= CLOSE && d.tube[2] > d.tube[0];
+        if (!listShown) return;
+        float bob = 2.5f * (float) Math.sin(t * 2.2f + 2.6f);
+        listX = d.tube[2] - 20f;
+        listY = d.tube[1] - 14f + bob;
+        d.badge(listX, listY, HELP_HALF, Badges.LIST, 0.95f, 0.15f + 0.15f * (float) Math.sin(t * 3f + 2f));
+    }
+
+    /** A touch at (x, y) on the sign of the list: the key knocked, the list to come; true if it was. */
+    boolean listAt(float x, float y) {
+        if (!listShown || knockAt >= 0f) return false;
+        float m = HELP_HALF + 8f;
+        if (Math.abs(x - listX) >= m || Math.abs(y - listY) >= m) return false;
+        picked = LIST;
+        knockAt = t;
+        host.buzz(25);
+        return true;
+    }
+
+    /** Where the sign of the list is, into at (x, y); false while it is not shown (the desktop stand). */
+    boolean listSignAt(float[] at) {
+        at[0] = listX;
+        at[1] = listY;
+        return listShown;
+    }
+
     /** Where the line that picks c was drawn, its middle (x, y); false if it was not. */
     boolean rowOf(int c, float[] out) {
         for (int k = 0; k < rowTop.length && pick != null && k < pick.length; k++)
@@ -152,24 +200,12 @@ final class Dispatch {
         return false;
     }
 
-    /** At home: which mission now, the three of them, or on with the one now. */
-    static String[] home(int round) {
-        return Lang.lines("home", round, null);
-    }
-
-    /** What touching each line of home's screen picks: a kind of job (1 to 7), or the panel on its own (SOLO). */
-    static final int[] HOME_PICKS = {-1, -1, -1, -1, 10, 8, 7, 6, 5, 4, 3, 2, 1};
-
     /** A pick that takes the panel on its own, no way to go: it opens over the room. */
     static final int SOLO = 10;
 
     /** A pick that takes no mission: she stays as she is (on the sofa, free). */
     static final int REST = 9;
 
-    /** On home's sofa: kept; which mission now, the three of them, on to the next, or a rest. */
-    static String[] sofa(int round, boolean again) {
-        return Lang.lines(again ? "sofa.again" : "sofa", round, null);
-    }
 
     /**
      * A report of a mission won in so many seconds, with the best time before it (0, none): before
@@ -187,8 +223,6 @@ final class Dispatch {
         return out;
     }
 
-    /** What touching each line of the sofa's screen picks (see HOME_PICKS); a rest, REST. */
-    static final int[] SOFA_PICKS = {-1, -1, -1, 10, 8, 7, 6, 5, 4, 3, 2, 1};
 
     /** After these lines, at the key, the next ones on the screen before the walls draw back. */
     Dispatch then(String[] more) {
@@ -364,6 +398,8 @@ final class Dispatch {
             pick = nextPick;
             nextPick = null;
             picked = -1;
+            listOffered = nextListed;
+            nextListed = false;
             knockAt = -1f;
             pressed = false;
             host.sound(Synth.TV_OFF, 0.3f, 1.6f);
@@ -454,6 +490,7 @@ final class Dispatch {
             clock(d, f);
             help(d);
             back(d);
+            list(d);
         }
     }
 

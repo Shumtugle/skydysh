@@ -1,34 +1,30 @@
-# Home's choice, every kind won: in at home's door, her head, the screen asking which mission now;
-# the rest typed, the delivery picked, its briefing, out; then home again and the hunt; in Russian,
-# the screen.
+# Home's screen with the first five jobs done (the hunt to the puppy): in at home's door, her head,
+# the screen with the next job only (the tow), the sign of the list over it; the list asked for:
+# the tow, and the games played (the hunt, the folder), nothing still to come; the folder picked,
+# its briefing. Then home again: the next job again, the list, the hunt. In Russian.
 screen 1096 2560
 wait 0.4
+lang ru
 keep kinds 62
 restart
 at 32 -2 0
 wait 0.3
 tapsign home
 errand 8 0 x
-wait 2
+wait 3.5
 shot c0
-pick 3
-wait 0.25
-shot c2
-wait 1.5
-delivery
-shot c3
-down 137 300
-up 137 300
-wait 0.2
-down 137 300
-up 137 300
+listsign
+wait 3.5
+shot c1
+pick 2
 wait 2
-delivery
-shot c4
-lang ru
+shot c2
+close
 home
 wait 2.5
 shot c5
+listsign
+wait 2.5
 pick 1
 wait 2.5
 down 137 300

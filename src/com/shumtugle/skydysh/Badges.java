@@ -11,7 +11,7 @@ package com.shumtugle.skydysh;
  * nothing inside): boxes, discs, rods, polygons, joined, cut out of each other, thickened.
  */
 final class Badges {
-    static final int LIFT = 0, DOWN = 1, UP = 2, LEFT = 3, RIGHT = 4, MALLET = 5, WHEEL = 6, JETPACK = 7,
+    static final int LIFT = 0, DOWN = 1, UP = 2, LEFT = 3, RIGHT = 4, MALLET = 5, WHEEL = 6, LIST = 7,
             THROW = 8, PICK_UP = 9, MAP = 10, HELP = 11, PAUSE = 12, PLAY = 13, HOME = 14, LADDER = 15, EXIT = 16, ENTER = 17;
     // the stick: its round pane with nothing on it, and the knob in it, a white disc
     static final int BLANK = 18, KNOB = 19;
@@ -171,15 +171,14 @@ final class Badges {
                         seg(x, y, 0f, 0f, 0f, -0.74f, 0.1f));
                 return Math.min(rim, Math.max(Math.min(hub, spokes), -circle(x, y, 0f, 0f, 0.08f)));
             }
-            case JETPACK: {
-                // two tanks side by side, a band across them, a nozzle and a flame under each
+            case LIST: {
+                // a list: three rows, a dot and a line each
                 float d = 1e9f;
-                for (int e = -1; e <= 1; e += 2) {
-                    float cx = e * 0.42f;
-                    d = min(d, rbox(x, y, cx, 0.2f, 0.22f, 0.54f, 0.2f), box(x, y, cx, -0.42f, 0.12f, 0.08f),
-                            poly(x, y, cx - 0.13f, -0.58f, cx + 0.13f, -0.58f, cx, -0.98f));
+                for (int r = -1; r <= 1; r++) {
+                    float cy = -r * 0.52f;
+                    d = min(d, circle(x, y, -0.62f, cy, 0.13f), rbox(x, y, 0.2f, cy, 0.56f, 0.1f, 0.08f));
                 }
-                return Math.min(d, box(x, y, 0f, 0.36f, 0.3f, 0.07f));
+                return d;
             }
             case THROW: {
                 // a ball thrown along a dashed curve, the way it goes at the end

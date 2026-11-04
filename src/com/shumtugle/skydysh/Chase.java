@@ -4,9 +4,11 @@ import java.util.Random;
 
 /**
  * A chase: Freedie on fire runs off through the town and the player runs after her. She keeps
- * to the streets, on the right of the road, and at every crossing goes on, or turns left or
- * right, as it falls out; she never turns back. Near, she bolts; far behind her, she slows and
- * lets the chase come up; left very far behind, she stops, folds her arms and waits.
+ * to the streets, on the right of the road, and runs from the runner: at every crossing she goes
+ * on, or turns left or right, as it falls out, but never the way toward the runner; and if the
+ * runner comes at her from ahead along her street, she turns round. Near, she bolts; far
+ * behind her, she slows and lets the chase come up; left very far behind, she stops, folds her
+ * arms and waits. Starting off from waiting, she starts away from the runner.
  *
  * Caught (the runner within reach of her), she is jolted, counted, and breaks loose: for a few
  * seconds she runs faster than anyone can and cannot be caught, and the chase goes on.
@@ -296,6 +298,8 @@ final class Chase {
 
     void update(float dt, Runner r, City city, Cars cars) {
         clock += dt;
+        runnerX = r.x;
+        runnerZ = r.z;
         float dx = r.x - x, dz = r.z - z, dy = rival ? r.y - y : 0f;
         apart = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (state == STONE) {
@@ -317,7 +321,11 @@ final class Chase {
                 if (rival) {
                     // looking about, until it is time, or the runner comes by
                     if ((startIn -= dt) <= 0f || apart < NEAR) set(SEEK);
-                } else if (apart < RESUME) set(FLEE);
+                } else if (apart < RESUME) {
+                    set(FLEE);
+                    // off away from the runner, not at her
+                    if (ahead(r) > 0f) back();
+                }
                 break;
             case SEEK:
                 want = pace;
@@ -353,6 +361,8 @@ final class Chase {
                     // near, she bolts; far ahead, she lets the chase come up
                     float k = Math.max(0f, Math.min(1f, (apart - NEAR) / (FAR - NEAR)));
                     want = apart < NEAR ? BOLT : RUN + (LAG - RUN) * k;
+                    // the runner ahead of her on her street, coming at her: round she turns
+                    if (!rival && clock - turnedAt > TURN_WAIT && apart < HEAD_ON && ahead(r) > 0.7f * apart) back();
                 }
         }
         if (state != DOWN && state != RISING && state != JOLTED) {
@@ -595,26 +605,57 @@ final class Chase {
         stateAt = clock;
     }
 
-    /** At a crossing: on, left or right, as it falls out; then on to the next one that way. */
+    // the runner coming at her head on: within so far; she turns round no oftener than so often, seconds
+    static final float HEAD_ON = 40f, TURN_WAIT = 2.5f;
+    /** How much nearer the runner the next crossing may be than this one, and the way still taken (meters). */
+    static final float SLACK = 6f;
+    private float turnedAt = -9f, runnerX, runnerZ;
+
+    /** How far ahead of her, along her way, the runner is (less than 0: behind). */
+    private float ahead(Runner r) {
+        runnerX = r.x;
+        runnerZ = r.z;
+        return (r.x - x) * di + (r.z - z) * dj;
+    }
+
+    /** Round about: back the way she came, to the crossing behind her. */
+    private void back() {
+        di = -di;
+        dj = -dj;
+        ti += di;
+        tj += dj;
+        turnedAt = clock;
+    }
+
+    /**
+     * At a crossing: on, left or right, as it falls out, but never a way that brings her nearer
+     * the runner than the crossing she stands at; if every way does, the one that leaves the
+     * runner farthest. Never out to sea, never back while there is another way. Then on to the
+     * next crossing that way.
+     */
     private void turn() {
-        int roll = rnd.nextInt(4);
-        int ni = di, nj = dj;
-        if (roll == 2) {
-            ni = -dj;
-            nj = di;
-        } else if (roll == 3) {
-            ni = dj;
-            nj = -di;
+        int[][] ways = {{di, dj}, {-dj, di}, {dj, -di}};
+        float hx = ti * City.CELL - runnerX, hz = tj * City.CELL - runnerZ;
+        float here = (float) Math.sqrt(hx * hx + hz * hz);
+        int[] ok = new int[3];
+        int n = 0, far = -1;
+        float best = -1f;
+        for (int k = 0; k < 3; k++) {
+            int[] w = ways[k];
+            if (!City.road(tj, w[1])) continue;
+            float cx = (ti + w[0]) * City.CELL - runnerX, cz = (tj + w[1]) * City.CELL - runnerZ;
+            float there = (float) Math.sqrt(cx * cx + cz * cz);
+            if (there > here - SLACK) ok[n++] = k;
+            if (there > best) {
+                best = there;
+                far = k;
+            }
         }
-        // none out to sea from the shore road: straight on, or a turn that is a street
-        if (!City.road(tj, nj)) {
-            int[][] ways = {{di, dj}, {-dj, di}, {dj, -di}, {-di, -dj}};
-            for (int[] w : ways)
-                if (City.road(tj, w[1])) {
-                    ni = w[0];
-                    nj = w[1];
-                    break;
-                }
+        int ni = -di, nj = -dj;
+        if (n > 0 || far >= 0) {
+            int[] w = ways[n > 0 ? ok[rnd.nextInt(n)] : far];
+            ni = w[0];
+            nj = w[1];
         }
         di = ni;
         dj = nj;

@@ -11,7 +11,7 @@ wait 4
 down 137 300
 up 137 300
 wait 5
-pick 4
+pick 2
 wait 3
 down 24 67
 up 24 67
