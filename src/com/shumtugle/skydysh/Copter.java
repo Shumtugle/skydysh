@@ -10,7 +10,8 @@ package com.shumtugle.skydysh;
  * It stands, or it flies where it is sent: the blades run up, it rises over the roofs, turns to
  * its way, and goes in a long arc over the town, higher at the arc's middle, banked into it; it
  * slows over where it is to come down, and comes straight down. Come down onto a weak skid, the
- * skid gives way: it drops onto that side with a jolt, rocks, and stands leaning.
+ * skid gives way: it drops onto that side with a jolt, rocks, and stands leaning. Mended, it can
+ * be flown by hand, on two sticks (see pilot).
  */
 final class Copter {
     /** Its painted skin among the cars' (see DrawList.skin). */
@@ -37,6 +38,10 @@ final class Copter {
     private boolean breakOnLanding;
     private int phase;
     static final int STAND = 0, SPIN = 1, RISE = 2, CROSS = 3, DESCEND = 4, LANDED = 5;
+    /** The way it is going now, as STAND to HAND. */
+    int phase() {
+        return phase;
+    }
 
     Copter(float x, float y, float z, float heading) {
         this.x = x;
@@ -103,6 +108,16 @@ final class Copter {
             case LANDED:
                 spin = Math.max(0f, spin - dt / SPIN_DOWN);
                 pitch += (0f - pitch) * Math.min(1f, dt * 3f);
+                if (!broken) roll += (0f - roll) * Math.min(1f, dt * 3f);
+                if (settle >= 0f) {
+                    // mended: righted with a little hop
+                    settle += dt;
+                    hop = 0.22f * (float) Math.exp(-settle * 4f) * Math.abs((float) Math.sin(settle * 8f));
+                    if (settle > 2f) {
+                        settle = -1f;
+                        hop = 0f;
+                    }
+                }
                 break;
             case SPIN:
                 spin = Math.min(1f, spin + dt / SPIN_UP);
@@ -182,12 +197,151 @@ final class Copter {
     /** How far it leans when a skid has given way. */
     static final float LEAN = 0.2f;
 
-    /** The helicopter whole again (mended), at rest where it stands. */
+    /** The helicopter whole again (mended), at rest where it stands: it rights itself with a little hop. */
     void mend() {
         broken = false;
-        roll = 0f;
+        breakT = -1f;
+        // the body eased level, the left skid's foot let go of as it comes (see update and point)
+        settle = 0f;
+    }
+
+    /** Put down whole where it was left (a game kept): standing, its blades still. */
+    void standAt(float x, float y, float z, float heading, boolean broken) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.heading = heading;
+        this.broken = broken;
+        roll = broken ? LEAN : 0f;
+        pitch = 0f;
         hop = 0f;
         breakT = -1f;
+        spin = 0f;
+        phase = STAND;
+        vx = vz = vy = turnRate = 0f;
+        grounded = true;
+    }
+
+    // ---- flown by hand: two sticks, the left for height and turning, the right for the way ----
+    // top speed ahead, backing, aside; how fast it gathers and loses way; climbing, sinking, how
+    // fast either is taken up; turning; the highest it goes
+    static final float HAND_AHEAD = 30f, HAND_BACK = 10f, HAND_ASIDE = 12f, HAND_ACCEL = 7f,
+            HAND_CLIMB = 8f, HAND_SINK = 6f, HAND_LIFT = 10f, HAND_TURN = 1.3f, HAND_TOP = 140f;
+    /** At the controls, flown by hand. */
+    static final int HAND = 6;
+    /** How it moves when flown by hand (the town's x and z, up), and turns. */
+    float vx, vz, vy, turnRate;
+    /** Down on something it can stand on (not the sea). */
+    boolean grounded = true;
+    private float settle = -1f;
+
+    /** Taken in hand: the blades run up, and it answers the sticks. */
+    void takeControls() {
+        phase = HAND;
+        speed = 0f;
+        vx = vz = vy = turnRate = 0f;
+    }
+
+    /** Let go of, standing: its blades run down. */
+    void leave() {
+        phase = STAND;
+        vx = vz = vy = turnRate = 0f;
+    }
+
+    boolean inHand() {
+        return phase == HAND;
+    }
+
+    /**
+     * A frame at the controls: lift (up the left stick, -1 to 1), turn (aside on it), ahead (up the
+     * right stick) and aside (aside on it). It climbs and sinks as the left says and holds its height
+     * let be; it turns as fast as the left is over; it goes ahead, back and aside as the right says,
+     * gathering and losing way as a helicopter does. It stands on whatever is under it, the street or
+     * a roof, and is stopped by what stands higher than it: it cannot fly into a house. Over the sea
+     * it will not come down onto the water.
+     */
+    void pilot(float dt, float lift, float turn, float ahead, float aside, City city) {
+        spin = Math.min(1f, spin + dt / SPIN_UP);
+        rotor += dt * 26f * spin;
+        // the blades not up to speed yet: it stays down
+        if (spin < 1f) lift = Math.min(lift, 0f);
+        float want = lift > 0f ? lift * HAND_CLIMB : lift * HAND_SINK;
+        vy += Math.max(-HAND_LIFT * dt, Math.min(HAND_LIFT * dt, want - vy));
+        boolean down = grounded && vy <= 0.05f;
+        float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading), rx = fz, rz = -fx;
+        float tvx = 0f, tvz = 0f;
+        if (!down) {
+            float a = ahead >= 0f ? ahead * HAND_AHEAD : ahead * HAND_BACK, s = aside * HAND_ASIDE;
+            tvx = fx * a + rx * s;
+            tvz = fz * a + rz * s;
+            turnRate += (turn * HAND_TURN - turnRate) * Math.min(1f, dt * 5f);
+        } else turnRate = 0f;
+        float ax = tvx - vx, az = tvz - vz, am = (float) Math.sqrt(ax * ax + az * az), step = (down ? 30f : HAND_ACCEL) * dt;
+        if (am > step) {
+            ax *= step / am;
+            az *= step / am;
+        }
+        vx += ax;
+        vz += az;
+        heading += turnRate * dt;
+        // along the town's x, then its z: stopped by what stands higher than it is
+        float nx = x + vx * dt, nz = z + vz * dt;
+        if (blocked(nx, z, city)) vx *= -0.2f;
+        else x = nx;
+        if (blocked(x, nz, city)) vz *= -0.2f;
+        else z = nz;
+        y = Math.min(HAND_TOP, y + vy * dt);
+        float floor = floor(city);
+        boolean sea = City.overWater(x, z);
+        if (y <= floor) {
+            y = floor;
+            if (vy < 0f) vy = 0f;
+            // down only with both skids on it: a nose or a tail over a roof's edge holds it up, not down
+            grounded = !sea && level(city, floor);
+        } else if (y > floor + 0.05f) grounded = false;
+        if (grounded) {
+            vx = vz = 0f;
+        }
+        // its lean: the nose down as it goes ahead, the side down as it goes aside and turns
+        float goAhead = vx * fx + vz * fz, goAside = vx * rx + vz * rz;
+        float p = grounded ? 0f : goAhead / HAND_AHEAD * 0.2f + (tvx * fx + tvz * fz - goAhead) * 0.012f;
+        float r = grounded ? 0f : Math.max(-0.35f, Math.min(0.35f, goAside / HAND_ASIDE * 0.16f + turnRate * 0.18f));
+        pitch += (p - pitch) * Math.min(1f, dt * 3f);
+        roll += (r - roll) * Math.min(1f, dt * 3f);
+    }
+
+    // the points of its body tried against the town: its middle, its sides, its nose, its tail
+    private static final float[] FOOT = {0f, 0f, -1.7f, 0f, 1.7f, 0f, 0f, 3.9f, 0f, -4.9f};
+
+    /** The highest thing under it, of the town's, that it could stand on (no higher than a step over its skids). */
+    private float floor(City city) {
+        float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading), g = -1e9f;
+        for (int k = 0; k < FOOT.length; k += 2) {
+            float px = x + fz * FOOT[k] + fx * FOOT[k + 1], pz = z - fx * FOOT[k] + fz * FOOT[k + 1];
+            g = Math.max(g, City.overWater(px, pz) ? City.WATER + 0.6f : city.ground(px, pz, y, 0.6f));
+        }
+        return g;
+    }
+
+    /** Whether its middle and both its sides stand on ground at floor (or nearly). */
+    private boolean level(City city, float floor) {
+        float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
+        for (int k = 0; k < 6; k += 2) {
+            float px = x + fz * FOOT[k] + fx * FOOT[k + 1], pz = z - fx * FOOT[k] + fz * FOOT[k + 1];
+            if (City.overWater(px, pz) || city.ground(px, pz, y, 0.6f) < floor - 0.4f) return false;
+        }
+        return true;
+    }
+
+    /** Whether at (nx, nz) something of the town stands higher than its skids (and a step). */
+    private boolean blocked(float nx, float nz, City city) {
+        float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
+        for (int k = 0; k < FOOT.length; k += 2) {
+            float px = nx + fz * FOOT[k] + fx * FOOT[k + 1], pz = nz - fx * FOOT[k] + fz * FOOT[k + 1];
+            if (City.overWater(px, pz)) continue;
+            if (city.ground(px, pz, 1e4f, 0f) > y + 0.6f) return true;
+        }
+        return false;
     }
 
     // ---- its frame: right, up, ahead, as the columns of a turn ----
@@ -217,7 +371,7 @@ final class Copter {
     void point(float lx, float ly, float lz, float[] out) {
         frame();
         // leaning on a broken skid, the other skid stays on the ground
-        float py = y + hop - (broken ? SKID_X * (float) Math.sin(roll) : 0f);
+        float py = y + hop - (broken || settle >= 0f ? SKID_X * (float) Math.sin(roll) : 0f);
         out[0] = x + frame[0] * lx + frame[1] * ly + frame[2] * lz;
         out[1] = py + frame[3] * lx + frame[4] * ly + frame[5] * lz;
         out[2] = z + frame[6] * lx + frame[7] * ly + frame[8] * lz;

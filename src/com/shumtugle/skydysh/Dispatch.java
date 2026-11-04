@@ -278,6 +278,7 @@ final class Dispatch {
         if (Tow.its(round)) return Lang.lines("brief.tow", round, null);
         if (Concert.its(round)) return priced(Lang.lines("brief.concert", round, null), round);
         if (Archive.its(round)) return Lang.lines("brief.archive", round, null);
+        if (Mend.its(round)) return Lang.lines("brief.mend", round, null);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
@@ -316,6 +317,11 @@ final class Dispatch {
     /** The folders brought to the archive: the time. */
     static String[] archived(int round, String time) {
         return Lang.lines("report.archive", round, time);
+    }
+
+    /** The helicopter mended and flown back to the town hall's roof: the time. */
+    static String[] mended(int round, String time) {
+        return Lang.lines("report.mend", round, time);
     }
 
     /** The panel on its own put right: the time. */

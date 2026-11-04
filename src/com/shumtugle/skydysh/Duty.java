@@ -20,7 +20,7 @@ final class Duty {
         for (int k = all.size() - 1; k >= 0; k--) {
             Pickup p = all.get(k);
             // the one she drives, and one with a load on it, wherever it was left, stay out
-            if (p == driving || p.load > 0) continue;
+            if (p == driving || p.load > 0 || p.kept) continue;
             float dx = p.x - x, dz = p.z - z;
             if (dx * dx + dz * dz > FAR * FAR) {
                 all.remove(k);

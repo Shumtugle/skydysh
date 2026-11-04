@@ -1,0 +1,57 @@
+# The helicopter mended and flown back: the screen with the job; at the brums' workshop the new
+# skid put in the pickup's bed; by the archive, carried across her arms to the helicopter leaning
+# on its broken skid, the black brum waiting in it; the mending; in the air at the controls, the
+# two sticks under the thumbs, the pilot beside her; over the town; down on the town hall's roof.
+# In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 9
+wait 1
+shot m0
+close
+at 196.9 600 0
+wait 1
+drivein -3.4 608 0
+wait 1.6
+copter
+shot m1
+drivein 224 637.8 -1.5708
+wait 0.3
+getout
+at 216 601 0.9
+wait 1
+copter
+shot m2
+at 224.6 605.4 0
+wait 1.2
+copter
+shot m3
+wait 3.5
+copter
+finger down 0 68 540
+finger move 0 68 500
+finger down 1 206 540
+wait 3
+finger move 1 206 515
+wait 1.2
+copter
+shot m4
+finger up 1 206 515
+finger up 0 68 500
+copterat 120 46 230 -2.2
+wait 0.3
+finger down 1 206 540
+finger move 1 206 505
+wait 1.5
+copter
+shot m5
+finger up 1 206 505
+copterat 42.5 21 142.95 1.5708
+finger down 0 68 520
+finger move 0 68 560
+wait 4
+finger up 0 68 560
+wait 0.5
+copter
+shot m6

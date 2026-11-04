@@ -34,6 +34,8 @@ final class Pickup {
     float cap = -1f;
     float y;                                           // the ground under it
     boolean driven;                                    // she is in it
+    /** Kept out wherever it is left, however far she goes (a job's own). */
+    boolean kept;
     /** The crates in its bed, none to CRATES; and how long since the last was put on or taken off. */
     int load;
     float loadedAgo = 10f;

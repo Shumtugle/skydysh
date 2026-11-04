@@ -72,6 +72,7 @@ release, each seen on the stand before the phone.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
+- 0.80 The helicopter mended and flown home by hand on two sticks; after it, hers to fly; the eye in the town hall's door lower.
 - 0.79 The hand has the wheel: the rail leads only while the finger is straight; corners braked for, steered by hand; backing held; a brisk swing round when stuck.
 - 0.78 Hops over the low on the way to a pickup; the rail at the wheel; clear shallows, fish, fishermen on the rocks.
 - 0.77 Home's list newest at the top.
@@ -108,12 +109,6 @@ The missions in order, each teaching a thing; then the town is hers.
    taken.
 
 The releases toward it, one thing each:
-
-- The archive job's second half: the helicopter kept where it leant on its broken skid; at the
-  archive's door the screen sends her to a pickup near by, to the workshop for a new skid, back,
-  the skid mended; she flies it herself to the town hall's roof (two sticks: the left for height
-  and turning, the right for speed and its way), then home; after that the helicopter is hers.
-  The eye at the town hall's door looking down too steeply, to be set right with it.
 
 - Districts about home, built by hand on fixed places; the town further off still from the seed.
   Next: an avenue along the second street up from the shore, broad, for speed; the main way north

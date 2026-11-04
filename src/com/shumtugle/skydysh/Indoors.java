@@ -201,19 +201,27 @@ final class Indoors implements Ground {
 
     // ---- coming in ----
 
-    /** She comes in at the front door (or the back), a few steps in, facing into the hall. */
+    /**
+     * She comes in at the front door (or the back), a few steps in, facing into the hall; in a deep
+     * hall a few more, so that the eye has room behind her and does not rise against the wall by
+     * the door to look down on her.
+     */
     void enter(Runner r, boolean atBack) {
         cameBack = atBack;
+        float in = deep > DEEP_HALL ? IN_DEEP : IN_STEPS;
         if (atBack) {
             back = 1f;
-            r.put(wx(0f, deep - WALL - 2.6f), FLOOR, wz(0f, deep - WALL - 2.6f), heading(0f, -1f));
+            r.put(wx(0f, deep - WALL - in), FLOOR, wz(0f, deep - WALL - in), heading(0f, -1f));
         } else {
             front = 1f;
-            r.put(wx(0f, WALL + 2.6f), FLOOR, wz(0f, WALL + 2.6f), heading(0f, 1f));
+            r.put(wx(0f, WALL + in), FLOOR, wz(0f, WALL + in), heading(0f, 1f));
         }
         r.room = this;
         doorsInTheWay();
     }
+
+    // how far in from the door she comes; in a hall deeper than so much, how far
+    static final float IN_STEPS = 2.6f, DEEP_HALL = 16f, IN_DEEP = 4.6f;
 
     /** She comes down from the roof: in the cabin, facing its doors, on its way down. */
     void comeDown(Runner r) {

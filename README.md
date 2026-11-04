@@ -162,7 +162,19 @@ not come twice. With the light the concert begins: pieces written there and then
 from a bank of short phrases of old keyboard music in the public domain, played through the
 phone's own synthesizer, for as long as she stays.
 
-The jobs do not come in turn: on home's sofa, the screen offers them all, and the player picks.
+The eighth, papers to the archive: the town hall, its hall and its secretariat, a red folder, the
+lift to the roof, the town's helicopter with a brum of black brick at its controls, an arc over
+the town and down into the archive's garden, where a skid gives way. The ninth follows at once,
+at the archive's door: a duty pickup by the archive to the brums' workshop for a new skid, back,
+the skid carried to the helicopter and put on; then she flies it herself, the pilot beside her,
+to the pad on the town hall's roof. Two sticks under the thumbs: the left one up and down for
+height (let go, it holds it), aside to turn; the right one up and down to go ahead and back,
+aside to go sideways. It stands on whatever is level under it, a street or a roof, and is
+stopped by what is higher than it; it does not come down on the sea. After that it is hers:
+come to its door and stand a moment, and she is at the controls; set down, the button low on the
+right lets her out, and it stays where she left it, kept with the game.
+
+The jobs come in turn: home's screen offers the next one, and a list of her own (the games played, the panel) to play again.
 
 What is to come is in `PLAN.md`.
 

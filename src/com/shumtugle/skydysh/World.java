@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.79";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.80";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -50,8 +50,11 @@ final class World {
     Puppy puppy;                             // the mission now, when it is the puppy in the sea
     Tow tow;                                 // the mission now, when it is the tow out of the quarry
     Archive archive;                         // the mission now, when it is the papers to the archive
-    /** The town's helicopter left where the archive job left it, leaning on its broken skid. */
+    Mend mend;                               // the mission now, when it is the helicopter mended and flown back
+    /** The town's helicopter left where the archive job left it, leaning on its broken skid; mended, hers. */
     private Copter parked;
+    /** She flies it herself, on no job (it is hers). */
+    private boolean flying;
     /** Waking at home after the concert: the next story is on the screen at once. */
     private boolean morning;
     private final float[] handsAt = new float[3];
@@ -117,6 +120,7 @@ final class World {
         if (kindsWon == 0)
             for (int n = 1; n < next; n++) kindsWon |= 1 << kindOf(n);
         Dispatch.paidKinds = host.loadInt(SAVE_PAID);
+        loadCopter();
         // a game kept before pay was counted: the paid kinds it had won taken as paid
         if (Dispatch.paidKinds == 0) Dispatch.paidKinds = kindsWon & (1 << 2 | 1 << 3 | 1 << 4 | 1 << 5);
         // the way to play on foot: one finger, unless two thumbs are offered and were chosen (kept as 2)
@@ -149,10 +153,18 @@ final class World {
         puppy = null;
         tow = null;
         archive = null;
+        mend = null;
+        flying = false;
         if (concert != null) concert.stop();
         concert = null;
         city.extra = null;
-        if (Archive.its(n)) {
+        if (Mend.its(n)) {
+            mission.round = n;
+            folder = null;
+            if (parked == null) parked = brokenAtArchive();
+            mend = new Mend(parked);
+            chase = nobody;
+        } else if (Archive.its(n)) {
             mission.round = n;
             folder = null;
             archive = new Archive();
@@ -328,6 +340,7 @@ final class World {
     /** How long the mission just done took, seconds. */
     private float doneTime() {
         if (archive != null) return archive.doneAt;
+        if (mend != null) return mend.doneAt;
         if (concert != null) return concert.doneAt;
         if (tow != null) return tow.doneAt;
         if (puppy != null) return puppy.doneAt;
@@ -352,9 +365,9 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 2, 2, 1, 3, 1};
+    static final int[] REVISION = {0, 4, 4, 2, 2, 2, 1, 3, 1, 1};
     /** How many kinds of mission there are; they come in turn, round and round. */
-    static final int KINDS = 8;
+    static final int KINDS = 9;
 
     /** Mission n's kind: the hunt 1, the folder 2, the delivery 3. */
     static int kindOf(int n) {
@@ -480,18 +493,19 @@ final class World {
 
     /** The brums of the mission now. */
     Chase[] brums() {
-        if (free || delivery != null || rescue != null || puppy != null || tow != null || concert != null || archive != null) return NONE;
+        if (free || delivery != null || rescue != null || puppy != null || tow != null || concert != null || archive != null || mend != null) return NONE;
         return folder != null ? folder.rivals : mission.brums;
     }
 
     /** Whether the mission now is a hunt. */
     boolean hunt() {
-        return !free && folder == null && delivery == null && rescue == null && puppy == null && tow == null && concert == null && archive == null;
+        return !free && folder == null && delivery == null && rescue == null && puppy == null && tow == null && concert == null && archive == null && mend == null;
     }
 
     /** Whether the mission now is done with, won or not. */
     boolean over() {
         if (archive != null) return archive.over();
+        if (mend != null) return mend.over();
         if (concert != null) return concert.over();
         if (tow != null) return tow.over();
         if (puppy != null) return puppy.over();
@@ -532,13 +546,14 @@ final class World {
 
     /** Whether the mission just over was lost: the hunt's time out, the folder taken first, the puppy got out by others. */
     private boolean failed() {
-        if (puppy != null || tow != null || concert != null || archive != null) return false;
+        if (puppy != null || tow != null || concert != null || archive != null || mend != null) return false;
         return hunt() ? mission.late : folder != null && folder.theirs;
     }
 
     /** The report on the mission just done. */
     private String[] report() {
         if (archive != null) return Dispatch.archived(mission.round, clock(archive.doneAt));
+        if (mend != null) return Dispatch.mended(mission.round, clock(mend.doneAt));
         if (concert != null) return Dispatch.concerted(mission.round, clock(concert.doneAt), money, paidNow);
         if (tow != null) return Dispatch.towed(mission.round, clock(tow.doneAt));
         if (puppy != null) return Dispatch.puppied(mission.round, clock(puppy.doneAt), money, paidNow);
@@ -626,6 +641,7 @@ final class World {
         tow = null;
         if (archive != null) parked = archive.copter;
         archive = null;
+        mend = null;
         if (concert != null) concert.stop();
         concert = null;
         chase = nobody;
@@ -755,6 +771,10 @@ final class World {
                     again = false;
                 }
             } else if (type == DOWN) dispatch.touch();
+            return;
+        }
+        if (piloting()) {
+            pilotTouch(type, id, x, y);
             return;
         }
         if (aboard()) {
@@ -957,6 +977,7 @@ final class World {
      */
     private void letGo() {
         letGoAll();
+        leftStick = rightStick = -1;
         pedal = false;
         wheelIn = brakeIn = 0f;
         if (classicDown) {
@@ -1250,9 +1271,14 @@ final class World {
             crowd = null;
             if (tow != null) towed = tow;
             tow = null;
-            // the helicopter stays where the archive job left it
+            // the helicopter stays where the archive job left it; its second half begins at once,
+            // at the archive's door, the report and the next on one screen
+            boolean chain = archive != null;
             if (archive != null) parked = archive.copter;
             archive = null;
+            if (mend != null) parked = mend.copter;
+            mend = null;
+            saveCopter();
             // after the concert the dark has come down: she wakes at home, on her sofa, in the morning
             boolean slept = concert != null;
             if (concert != null) concert.stop();
@@ -1260,6 +1286,12 @@ final class World {
             city.extra = null;
             chase = nobody;
             waiting = said;
+            if (chain) {
+                waiting = null;
+                chooseMission(9);
+                dispatch = new Dispatch(host, said).then(briefing()).story(9);
+                return;
+            }
             if (slept) {
                 // no report: in the morning the screen has the next story on it at once
                 waiting = null;
@@ -1286,15 +1318,18 @@ final class World {
         else duty.all.clear();
         if (driving != null) drive(dt);
         else if (aboard()) ride(dt);
+        else if (piloting()) fly(dt);
         else {
             ladders(dt);
             doors(dt);
             errands(dt);
             getIn(dt);
+            board(dt);
         }
+        if (!piloting() && parked != null && archive == null && mend == null) parked.update(dt);
         // a beat of the arms (a flick, between frames): the air through them
         if (runner.beatsLeft() < beatsWere) host.sound(Synth.WHOOSH, 0.5f, 0.8f);
-        if (swapT < 0f && driving == null && !seated() && !inChair() && !aboard()) runner.update(dt, city, cars, walkers);
+        if (swapT < 0f && driving == null && !seated() && !inChair() && !aboard() && !piloting()) runner.update(dt, city, cars, walkers);
         // into deep water: a splash, and she swims
         boolean swims = runner.swimming();
         if (swims && !swimSeen) host.sound(Synth.SPLASH, 0.8f, 1f);
@@ -1353,6 +1388,8 @@ final class World {
                 runner.update(0f, city, cars, walkers);
                 letGo();
             }
+        } else if (mend != null) {
+            mendStep(dt);
         } else if (tow != null) {
             tow.update(dt, duty, driving, runner, city, host);
         } else if (puppy != null) {
@@ -1587,6 +1624,10 @@ final class World {
             return;
         }
         d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PAUSE, 0.75f, 0f);
+        if (piloting()) {
+            sticks(d);
+            return;
+        }
         if (driving != null) d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
         if (driving != null) {
             // the wheel: a steering wheel under the finger while it is down, turned as the pickup's is;
@@ -1904,7 +1945,7 @@ final class World {
         if (rescue != null) return DrawList.TINT_GREEN;
         if (puppy != null) return DrawList.TINT_TURQUOISE;
         if (tow != null) return DrawList.TINT_AMBER;
-        if (archive != null) return DrawList.TINT_TURQUOISE;
+        if (archive != null || mend != null) return DrawList.TINT_TURQUOISE;
         if (concert != null) return DrawList.TINT_CREAM;
         if (delivery != null) return DrawList.TINT_AMBER;
         if (folder != null) return DrawList.TINT_TURQUOISE;
@@ -2296,7 +2337,16 @@ final class World {
         cp.seat(false, seatAt);
         r.lounging = false;
         r.ride(dt, city, seatAt[0], seatAt[1], seatAt[2], cp.heading, 0f, seatAt[0], seatAt[1], seatAt[2], 0f);
-        // the eye follows the helicopter round, a little late
+        copterEye(cp, dt, false);
+    }
+
+    /**
+     * The eye on the helicopter, following it round a little late: behind it and off to the right
+     * as a passenger sees it fly (where its open side shows who sits in it); nearly straight behind,
+     * looking further ahead, while she flies it herself.
+     */
+    private void copterEye(Copter cp, float dt, boolean hands) {
+        Runner r = runner;
         if (Float.isNaN(flyYaw)) flyYaw = cp.heading;
         float d = cp.heading - flyYaw;
         while (d > Math.PI) d -= 2f * (float) Math.PI;
@@ -2307,10 +2357,16 @@ final class World {
         // higher as it comes down among the houses, so the eye stays out of them
         float low = Math.max(0f, Math.min(1f, (cp.y - City.WALK_TOP) / 20f));
         float back = FLY_BACK * (0.45f + 0.55f * low), aside = FLY_ASIDE * (0.5f + 0.5f * low), up = FLY_UP + 4f * (1f - low);
+        if (hands) {
+            back = FLY_BACK + 3f;
+            aside = 1.5f;
+            up = FLY_UP + 1.5f;
+        }
         eyeNow[0] = cp.x - fx * back + rx * aside;
         eyeNow[1] = cp.y + up;
         eyeNow[2] = cp.z - fz * back + rz * aside;
-        float lx = cp.x + fx * 3f - eyeNow[0], lz = cp.z + fz * 3f - eyeNow[2];
+        float ahead = hands ? 10f : 3f;
+        float lx = cp.x + fx * ahead - eyeNow[0], lz = cp.z + fz * ahead - eyeNow[2];
         eyeNow[3] = (float) Math.atan2(lx, lz);
         eyeNow[4] = (float) Math.atan2(cp.y + 1.5f - eyeNow[1], Math.sqrt(lx * lx + lz * lz));
         r.eyeAt(eyeNow);
@@ -2318,6 +2374,289 @@ final class World {
 
     // the eye on the helicopter: so far behind it, so far to its right, so high over it
     static final float FLY_BACK = 12f, FLY_ASIDE = 8f, FLY_UP = 4.5f;
+
+    // ---- the helicopter in her own hands: the mend's flight home, and after it whenever she likes ----
+    static final String SAVE_COPTER = "copter";
+    // the sticks: their rim's radius, frame pixels; no answer within so much of it; where each
+    // sits, faint, when no thumb is on it (parts of the frame's width, frame pixels up from the foot)
+    static final float HELI_R = 40f, HELI_DEAD = 0.15f, HELI_LEFT = 0.24f, HELI_RIGHT = 0.76f, HELI_UP = 110f;
+    /** Standing so near its door a moment, she gets in. */
+    static final float BOARD_NEAR = 2.8f, BOARD_AWAY = 3.6f;
+    // the thumbs on the sticks (-1: none), where each came down and where it is
+    private int leftStick = -1, rightStick = -1;
+    private float lCX, lCY, lTX, lTY, rCX, rCY, rTX, rTY;
+    private float copterWait;
+    private boolean copterArmed = true;
+    private final float[] copterDoor = new float[3];
+
+    /** The helicopter she can be at the controls of now: the mend's, or her own. */
+    private Copter heli() {
+        return mend != null ? mend.copter : parked;
+    }
+
+    /** Whether she flies the helicopter now, at its controls. */
+    boolean piloting() {
+        return flying || mend != null && mend.aboard();
+    }
+
+    /** The helicopter as the archive job leaves it: in the archive's garden on its pad, leaning on a broken skid. */
+    private static Copter brokenAtArchive() {
+        Copter c = new Copter(City.archivePadX(), City.WALK_TOP, City.archivePadZ(), 0f);
+        c.standAt(City.archivePadX(), City.WALK_TOP, City.archivePadZ(), (float) Math.PI * 0.5f, true);
+        return c;
+    }
+
+    /** The helicopter where it was left, kept with the game: broken (1) or whole (2), its place and way. */
+    private void saveCopter() {
+        Copter c = parked;
+        if (c == null) return;
+        host.saveInt(SAVE_COPTER, c.broken ? 1 : 2);
+        host.saveInt(SAVE_COPTER + ".x", Math.round(c.x * 100f));
+        host.saveInt(SAVE_COPTER + ".y", Math.round(c.y * 100f));
+        host.saveInt(SAVE_COPTER + ".z", Math.round(c.z * 100f));
+        host.saveInt(SAVE_COPTER + ".h", Math.round(c.heading * 1000f));
+    }
+
+    /** The helicopter as the game kept it; a game kept before it was: where the jobs done left it. */
+    private void loadCopter() {
+        int kept = host.loadInt(SAVE_COPTER);
+        if (kept == 0) {
+            if ((kindsWon & (1 << 9)) != 0) {
+                parked = new Copter(City.townPadX(), City.townRoof(), City.townPadZ(), 0f);
+                parked.standAt(City.townPadX(), City.townRoof(), City.townPadZ(), (float) Math.PI * 0.5f, false);
+            } else if ((kindsWon & (1 << 8)) != 0) parked = brokenAtArchive();
+            return;
+        }
+        float x = host.loadInt(SAVE_COPTER + ".x") / 100f, y = host.loadInt(SAVE_COPTER + ".y") / 100f;
+        float z = host.loadInt(SAVE_COPTER + ".z") / 100f, hd = host.loadInt(SAVE_COPTER + ".h") / 1000f;
+        parked = new Copter(x, y, z, hd);
+        parked.standAt(x, y, z, hd, kept == 1);
+    }
+
+    /** A frame of the mend: what its step brought, heard and done. */
+    private void mendStep(float dt) {
+        Mend m = mend;
+        int got = m.update(dt, driving, runner, host, boarding(dt, m.copter, m.step == Mend.BOARD));
+        if (m.van != null) m.van.kept = true;
+        switch (got) {
+            case Mend.LOADED:
+                // the skid put in the bed by the workshop's brums
+                host.sound(Synth.CLANG, 0.6f, 0.7f);
+                host.sound(Synth.WOOD, 0.5f, 0.8f);
+                host.buzz(60);
+                break;
+            case Mend.TAKEN:
+                host.sound(Synth.CLANG, 0.4f, 0.9f);
+                host.buzz(30);
+                break;
+            case Mend.BLOW:
+                host.sound(Synth.CLANG, 0.55f, 1.1f + 0.1f * (float) Math.sin(time * 7f));
+                host.buzz(25);
+                break;
+            case Mend.MENDED:
+                host.sound(Synth.CHIME, 0.5f, 1.2f);
+                host.buzz(60);
+                break;
+            case Mend.IN:
+                takeSeat();
+                break;
+            case Mend.OUT:
+                outOf(m.copter);
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
+     * Whether she has come to the helicopter's door to get in, on foot, standing there a moment
+     * (once she has been away from it since she last got out); allowed: whether getting in is open now.
+     */
+    private boolean boarding(float dt, Copter cp, boolean allowed) {
+        Runner r = runner;
+        if (cp == null || !allowed || driving != null || indoors != null || swapT >= 0f || r.climbing()) {
+            copterWait = 0f;
+            return false;
+        }
+        cp.door(copterDoor);
+        float dx = r.x - copterDoor[0], dz = r.z - copterDoor[1], dd = dx * dx + dz * dz;
+        if (dd > BOARD_AWAY * BOARD_AWAY) copterArmed = true;
+        if (dd > BOARD_NEAR * BOARD_NEAR || r.inAir() || Math.abs(r.y - cp.y) > 1.6f || !copterArmed) {
+            copterWait = 0f;
+            return false;
+        }
+        return (copterWait += dt) > GET_IN_STAND;
+    }
+
+    /** On foot by her own helicopter's door: in at the controls. */
+    private void board(float dt) {
+        Copter cp = parked;
+        // on a job with the helicopter in it, the job has the getting in (see mendStep)
+        if (archive != null || mend != null) return;
+        boolean hers = cp != null && !cp.broken && (kindsWon & (1 << 9)) != 0;
+        if (!boarding(dt, cp, hers)) return;
+        flying = true;
+        cp.takeControls();
+        takeSeat();
+    }
+
+    /** In at the controls: the blades run up. */
+    private void takeSeat() {
+        errand = NO_ERRAND;
+        runner.stopLead();
+        letGo();
+        copterWait = 0f;
+        flyYaw = Float.NaN;
+        host.sound(Synth.DOOR, 0.4f, 1.4f);
+        host.sound(Synth.WHOOSH, 0.5f, 0.6f);
+        host.buzz(30);
+    }
+
+    /** Out of the helicopter by its door, onto whatever it stands on. */
+    private void outOf(Copter cp) {
+        cp.door(copterDoor);
+        float x = copterDoor[0], z = copterDoor[1];
+        float y = Math.max(city.ground(x, z), city.ground(x, z, cp.y, 0.6f));
+        runner.getOut(x, y, z, cp.heading);
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        letGo();
+        copterArmed = false;
+        host.sound(Synth.DOOR, 0.4f, 1.3f);
+    }
+
+    /** Out of her own helicopter, set down: it stays where it stands, kept with the game. */
+    private void leaveCopter() {
+        Copter cp = parked;
+        flying = false;
+        cp.leave();
+        outOf(cp);
+        saveCopter();
+    }
+
+    /** A stick's answer along one way: -1 to 1, nothing near its middle. */
+    private static float stickAxis(float t, float c) {
+        float v = Math.max(-1f, Math.min(1f, (t - c) / HELI_R)), a = Math.abs(v);
+        return a < HELI_DEAD ? 0f : Math.signum(v) * (a - HELI_DEAD) / (1f - HELI_DEAD);
+    }
+
+    /** A frame at the controls: the sticks to the helicopter, she in the pilot's seat, the eye behind. */
+    private void fly(float dt) {
+        Copter cp = heli();
+        float turn = leftStick >= 0 ? stickAxis(lTX, lCX) : 0f, lift = leftStick >= 0 ? -stickAxis(lTY, lCY) : 0f;
+        float aside = rightStick >= 0 ? stickAxis(rTX, rCX) : 0f, ahead = rightStick >= 0 ? -stickAxis(rTY, rCY) : 0f;
+        cp.pilot(dt, lift, turn, ahead, aside, city);
+        cp.seat(true, seatAt);
+        Runner r = runner;
+        r.lounging = false;
+        r.ride(dt, city, seatAt[0], seatAt[1], seatAt[2], cp.heading, 0f, seatAt[0], seatAt[1], seatAt[2], 0f);
+        copterEye(cp, dt, true);
+    }
+
+    /** The thumbs at the controls: the left half of the glass the left stick, the right half the right; the pause; out, once down. */
+    private void pilotTouch(int type, int id, float x, float y) {
+        if (type == DOWN && paused) {
+            if (!pauseRow(x, y)) paused = false;
+            return;
+        }
+        if (type == DOWN && onButton(x, y, pauseX(), pauseY())) {
+            paused = true;
+            letGo();
+            return;
+        }
+        if (type == DOWN && flying && heli().grounded && onLiftButton(x, y)) {
+            leaveCopter();
+            return;
+        }
+        float m = HELI_R + 4f;
+        if (type == DOWN) {
+            if (x < W * 0.5f && leftStick < 0) {
+                leftStick = id;
+                lCX = Math.max(m, Math.min(W * 0.5f - HELI_R * 0.5f, x));
+                lCY = Math.max(h * 0.3f, Math.min(h - m, y));
+                lTX = x;
+                lTY = y;
+            } else if (x >= W * 0.5f && rightStick < 0) {
+                rightStick = id;
+                rCX = Math.max(W * 0.5f + HELI_R * 0.5f, Math.min(W - m, x));
+                rCY = Math.max(h * 0.3f, Math.min(h - m, y));
+                rTX = x;
+                rTY = y;
+            }
+        } else if (type == MOVE) {
+            if (id == leftStick) {
+                lTX = x;
+                lTY = y;
+            } else if (id == rightStick) {
+                rTX = x;
+                rTY = y;
+            }
+        } else if (type == UP) {
+            if (id == leftStick) leftStick = -1;
+            if (id == rightStick) rightStick = -1;
+        }
+    }
+
+    /** The two sticks: under the thumbs while they are down, faint where they would go; out, once it is down. */
+    private void sticks(DrawList d) {
+        for (int k = 0; k < 2; k++) {
+            int f = k == 0 ? leftStick : rightStick;
+            if (f < 0) {
+                d.badge(W * (k == 0 ? HELI_LEFT : HELI_RIGHT), h - HELI_UP, HELI_R + 6f, Badges.BLANK, 0.3f, 0f);
+                continue;
+            }
+            float cx = k == 0 ? lCX : rCX, cy = k == 0 ? lCY : rCY;
+            float ox = (k == 0 ? lTX : rTX) - cx, oy = (k == 0 ? lTY : rTY) - cy, m = (float) Math.sqrt(ox * ox + oy * oy);
+            if (m > HELI_R) {
+                ox *= HELI_R / m;
+                oy *= HELI_R / m;
+            }
+            d.badge(cx, cy, HELI_R + 6f, Badges.BLANK, 0.55f, 0f);
+            d.badge(cx + ox, cy + oy, KNOB, Badges.KNOB, 0.9f, 0f);
+        }
+        if (flying && heli().grounded) d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
+    }
+
+    /** For the desktop stand: the helicopter she flies put at (x, y, z) in the air, facing so, still. */
+    void standCopterAt(float x, float y, float z, float heading) {
+        Copter c = heli();
+        if (c == null) return;
+        c.x = x;
+        c.y = y;
+        c.z = z;
+        c.heading = heading;
+        c.vx = c.vz = c.vy = 0f;
+        c.grounded = false;
+        flyYaw = Float.NaN;
+    }
+
+    /** For the desktop stand: out of the pickup, or of her own helicopter once it is down. */
+    void standGetOut() {
+        if (driving != null) getOut();
+        else if (flying && parked.grounded) leaveCopter();
+    }
+
+    /** For the desktop stand: the helicopter, told. */
+    String standCopter() {
+        Copter c = heli();
+        if (c == null) return "no helicopter";
+        return String.format("helicopter at %.1f %.1f %.1f heading %.2f, %s%s%s, going %.1f %.1f up %.1f", c.x, c.y, c.z, c.heading,
+                c.broken ? "broken" : "whole", c.grounded ? ", down" : ", in the air", piloting() ? ", she flies it" : "", c.vx, c.vz, c.vy)
+                + (mend != null ? ", mend step " + mend.step : "") + String.format(", door %.1f %.1f, wait %.2f%s%s%s", copterDoor[0], copterDoor[1], copterWait,
+                copterArmed ? ", armed" : "", runner.inAir() ? ", her in the air" : "", runner.climbing() ? ", climbing" : "") + ", swap " + swapT;
+    }
+
+    /** Over the frame, the mend: the clock in the corner; where the way goes now, in a word and a mark. */
+    private void mendFlat(DrawList d, Px f) {
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E;
+        Mend m = mend;
+        String clock = clock(m.over() ? m.doneAt : m.clock);
+        shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        String w = m.goalWord(driving);
+        if (w == null || !m.goal(duty, driving, runner, goal)) return;
+        wordAtTop(f, Lang.lines(w, mission.round, null)[0], green, ink);
+        placeMark(d, f, goal[0], goal[1], goal[2], m.mark(driving), Marks.OPEN);
+    }
 
     // ---- her own chair in the concert hall: come up to it with the lights on, she sits ----
     /** The hall she is in, on the job or come back to (null: neither). */
@@ -3029,6 +3368,7 @@ final class World {
         else if (free) freeFlat(d, f);
         else if (concert != null) concertFlat(d, f);
         else if (archive != null) archiveFlat(d, f);
+        else if (mend != null) mendFlat(d, f);
         else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);
@@ -3107,7 +3447,8 @@ final class World {
         if (tow != null) tow.draw(d, time);
         shore.draw(d, city, eyeX, eyeZ, time);
         if (archive != null) archive.draw(d, r);
-        else if (parked != null) Archive.drawCopter(d, parked);
+        else if (mend != null) mend.draw(d, r);
+        else if (parked != null) Archive.drawCopter(d, parked, parked.broken ? Archive.AT_CONTROLS : Archive.NOBODY);
         if (towed != null) {
             // the brum's pickup left at the workshop, till she is well away from it
             float tx = towed.stuck.x - r.x, tz = towed.stuck.z - r.z;
@@ -3144,6 +3485,7 @@ final class World {
         else if (free) freeFlat(d, f);
         else if (concert != null) concertFlat(d, f);
         else if (archive != null) archiveFlat(d, f);
+        else if (mend != null) mendFlat(d, f);
         else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);

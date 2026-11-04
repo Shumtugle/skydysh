@@ -602,6 +602,8 @@ final class City implements Ground {
     boolean seeded(int i, int j) {
         if (sea(j) || country(j)) return false;
         if (Math.abs(i) <= 1 && Math.abs(j) <= 1) return false;
+        // one always at the curb by the archive
+        if (i == ARCHIVE_I && j == ARCHIVE_J) return true;
         return ((hash(i, j, 7) >>> 24) % 5) == 0;
     }
 

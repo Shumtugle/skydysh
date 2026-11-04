@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.80
+
+- The archive job's second half, a story of its own that begins at once at the archive's door,
+  the report and the next job on one screen: a duty pickup always stands by the archive; at the
+  brums' workshop, stopped in the bay, a new skid on its struts is put in the bed; brought back,
+  she gets out by the pickup and carries the skid across her arms to the helicopter; at its door
+  she puts it on (a few blows, and it rights itself with a little hop); then she takes the
+  controls, the black brum beside her, and flies it to the pad on the town hall's roof.
+- Flying by hand on two sticks, one for each thumb, each coming down where the thumb does: the
+  left up and down for height (let go, it holds it), aside to turn; the right up and down for
+  ahead and back, aside for sideways. The blades run up before it lifts; it leans into the way it
+  goes and into turns. It stands on whatever is level under it, both skids on it (a street, a
+  roof), is stopped by what is higher than it, and never comes down on the sea. The eye nearly
+  straight behind it, looking ahead.
+- After that the helicopter is hers: at its door a moment, she is in; set down, out by the
+  button low on the right. It stays where she left it, kept with the game; the broken one in the
+  archive's garden is kept too.
+- In the town hall (and any deep hall) she comes in a few steps further, so the eye has room
+  behind her and does not rise against the wall by the door to look down on her.
+
 ## 0.79
 
 - The hand has the wheel. The rail no longer takes corners or turns about by itself, nor holds

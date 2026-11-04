@@ -196,10 +196,19 @@ final class Archive {
         if (carrying()) carried(d, r);
     }
 
+    // where the black brum sits in it: nowhere (it is hers), at the controls, beside her as she flies it
+    static final int NOBODY = 0, AT_CONTROLS = 1, BESIDE = 2;
+
     /** The helicopter, its pilot at the controls, a brum of black brick. */
     static void drawCopter(DrawList d, Copter cp) {
+        drawCopter(d, cp, AT_CONTROLS);
+    }
+
+    /** The helicopter, the black brum where he sits in it (NOBODY, AT_CONTROLS, BESIDE). */
+    static void drawCopter(DrawList d, Copter cp, int pilot) {
         cp.draw(d);
-        cp.seat(true, pilotAt);
+        if (pilot == NOBODY) return;
+        cp.seat(pilot == AT_CONTROLS, pilotAt);
         Frida.black = true;
         Frida.draw(d, pilotAt[0], pilotAt[1] - Runner.SEAT_DROP, pilotAt[2], cp.heading + (float) Math.PI, Chase.SIZE, Frida.SIT, 0f);
         Frida.black = false;

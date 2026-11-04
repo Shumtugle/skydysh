@@ -307,6 +307,22 @@ public final class Stand implements World.Host {
             Runner r = world.runner;
             r.put(r.x, r.y, r.z, f(p[1]));
             step();
+        } else if (c.equals("finger")) {
+            // finger down|move|up ID X Y: one finger of several, by its number
+            int t = p[1].equals("down") ? World.DOWN : p[1].equals("move") ? World.MOVE : World.UP;
+            world.touch(t, Integer.parseInt(p[2]), f(p[3]), f(p[4]));
+            step();
+        } else if (c.equals("copter")) {
+            // copter: the helicopter, told
+            System.out.println(String.format("%7.2fs  %s", time, world.standCopter()));
+        } else if (c.equals("copterat")) {
+            // copterat X Y Z RADIANS: the helicopter she flies put there in the air, still
+            world.standCopterAt(f(p[1]), f(p[2]), f(p[3]), f(p[4]));
+            step();
+        } else if (c.equals("getout")) {
+            // getout: out of the pickup, or of the helicopter set down
+            world.standGetOut();
+            step();
         } else if (c.equals("at")) {
             // at X Z [RADIANS]: her put down at (x, z) on whatever is there, facing so, the eye behind her
             Runner r = world.runner;
