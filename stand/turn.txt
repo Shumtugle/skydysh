@@ -1,0 +1,38 @@
+# Standing, a swipe aside: she turns where she stands, no run, no jump. Then a swipe aside held on:
+# she turns, and only after a moment sets off, on a curve the way it went. Then a finger held
+# still: she is off at once.
+screen 1096 2560
+wait 0.4
+free
+at 32 -12 1.5708
+wait 1
+where
+shot t0
+down 137 500
+wait 0.03
+move 157 495
+wait 0.03
+move 177 490
+wait 0.03
+move 197 486
+up 197 486
+wait 0.8
+where
+shot t1
+down 137 500
+wait 0.03
+move 157 500
+wait 0.03
+move 177 500
+wait 0.25
+where
+shot t2
+wait 1.2
+where
+shot t3
+up 177 500
+wait 1.5
+down 137 500
+wait 0.4
+where
+up 137 500

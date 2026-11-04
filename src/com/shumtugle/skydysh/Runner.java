@@ -30,6 +30,11 @@ final class Runner {
     static final float TAP_S = 0.22f, TAP_PX = 14f, GRACE = 0.3f;
     // the finger: frame pixels moved sideways for a quarter turn; how far and how fast a flick goes
     static final float QUARTER = 110f, FLICK_PX = 26f, FLICK_S = 0.16f;
+    // standing, a finger down: held still so long, she runs; moved aside first, she turns where she
+    // stands, and only held on so long after it does she set off, on a curve the way it went
+    static final float STILL_GO = 0.15f, TURN_GO = 0.45f, STILL_PX = 8f, STANDING = 1f;
+    // a flick up or down counts only when it goes more up or down than aside (a swipe aside is a turn)
+    static final float FLICK_UPRIGHT = 1.2f;
     // the eye: so far behind her, so high, looking so far ahead of her; indoors, nearer
     static final float BACK = 6f, HIGH = 3.4f, AHEAD = 16f, LOOK_UP = 2.4f;
     static final float BACK_IN = 3.4f, HIGH_IN = 2.3f, AHEAD_IN = 8f, LOOK_UP_IN = 1.7f;
@@ -67,7 +72,10 @@ final class Runner {
     private float lockAt = -1f, lockFor, faceX, faceZ;
 
     // the finger: where it was last, and where it was a moment ago, for a flick
-    private float lastX, lastY, flickY, flickAt;
+    private float lastX, lastY, flickY, flickAt, flickX;
+    /** The finger came down while she stood: she does not run until it says so (see STILL_GO, TURN_GO). */
+    private boolean starting;
+    private float aside;
     private float downAt = -9f, upAt = -9f, moved;
     // a flick done with: none heard again till the finger has stopped or been lifted
     private boolean flicked;
@@ -334,23 +342,31 @@ final class Runner {
             lastX = fx;
             lastY = fy;
             flickY = fy;
+            flickX = fx;
             flickAt = clock;
             downAt = clock;
             moved = 0f;
+            aside = 0f;
             flicked = false;
+            starting = classic && speed < STANDING && state == RUN;
         } else if (type == World.MOVE && holding) {
             heading += (fx - lastX) / QUARTER * (float) (Math.PI / 2);
             moved += Math.abs(fx - lastX) + Math.abs(fy - lastY);
+            aside += Math.abs(fx - lastX);
             lastX = fx;
             lastY = fy;
             // a flick: far enough, quickly enough, up or down; one at a time
             if (flicked) {
                 if (Math.abs(fy - flickY) < 3f) flicked = false;
                 flickY = fy;
+                flickX = fx;
                 flickAt = clock;
             } else if (clock - flickAt > FLICK_S) {
                 flickY = fy;
+                flickX = fx;
                 flickAt = clock;
+            } else if (Math.abs(fy - flickY) < Math.abs(fx - flickX) * FLICK_UPRIGHT) {
+                // more aside than up or down: a turn, not a jump nor a slide
             } else if (flickY - fy > FLICK_PX) {
                 jump();
                 flicked = true;
@@ -419,6 +435,17 @@ final class Runner {
         jumpFrom = y;
         boosted = true;
         vy = LEAP;
+    }
+
+    /**
+     * Standing, the finger down: whether she sets off now. Held still a moment, at once; moved aside
+     * first (a turn where she stands), only once it has been held on a while longer; off, she is off.
+     */
+    private boolean setOff() {
+        float held = clock - downAt;
+        boolean go = aside < STILL_PX ? held > STILL_GO : held > TURN_GO;
+        if (go) starting = false;
+        return go;
     }
 
     /** Whether there was a tap since this was last asked; asked, it is forgotten. */
@@ -570,7 +597,10 @@ final class Runner {
             guide(dt, g, room == null ? cars : null);
         } else if (!classic) {
             sticks(dt);
-        } else if (holding || clock - upAt < GRACE) speed += (TOP_SPEED - speed) * Math.min(1f, dt * PICK_UP);
+        } else if (holding && starting && !setOff()) {
+            // the finger down, she still standing: turning where she stands, not yet off
+            speed = Math.max(0f, speed - BRAKE * dt);
+        } else if (holding || clock - upAt < GRACE && !starting) speed += (TOP_SPEED - speed) * Math.min(1f, dt * PICK_UP);
         else if (state != AIR) speed = Math.max(0f, speed - BRAKE * dt);
         if (state == SLIDE) {
             // a slide carries her on, a little slower, then she is up and running again

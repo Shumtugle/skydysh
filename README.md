@@ -39,7 +39,9 @@ village, a paw for the puppy, the vets'. Green, the place is open to her; red, s
 One finger leads her: held down, she runs; moved sideways, she turns; flicked up, she jumps,
 flicked down, she slides; a tap is the mallet's. Other fingers, while it leads, press what they
 come down on (the pause, the way out of the pickup, a lift's button, a sign), and on bare glass
-swing the mallet.
+swing the mallet. Standing, a swipe aside turns her where she stands, no more: held on after it
+a moment, she sets off on a curve the way it went; held still, she is off at once. A flick up or
+down counts only when it goes more up or down than aside.
 
 Two thumbs are set aside for now (the way they went is kept for later, not offered). The left half of the glass is a stick: where the thumb comes down is its
 middle, and pushed a little she walks, further she jogs, all the way she runs, the way it is

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.67
+
+- Standing, a swipe aside with the one finger turns her where she stands: she does not run, nor
+  jump. Held on after the swipe (0.45 s from when the finger came down), she sets off on a curve
+  the way it went; a finger held still sets her off at once (0.15 s). Lifted before that, she
+  stays where she is, turned; a short tap no longer has her lurch forward.
+- A flick up or down counts only when it goes more up or down than aside: a sideways swipe is a
+  turn, never a jump or a slide.
+- Stand: scene `turn.txt`.
+
 ## 0.66
 
 - A sixth job, the tow: a brum's pickup sunk in the mud at the bottom of a quarry out of town; a
