@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.70
+
+- CREDITS: thanks for the rules of the panel's puzzle, and where they come from; the closing
+  line about everything else moved to the end.
+
 ## 0.69
 
 - The seventh job is now a call out to the concert hall, "Lights in the hall", still paid

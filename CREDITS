@@ -79,8 +79,6 @@ were painted on drawings of those shapes for it. No one else's models or picture
 They are under the terms in LICENSE, as the code is.
 
 
-Everything else in this project stays under the terms in LICENSE.
-
 
 Music at the concert (assets/seeds.bin, Seeds, Composer, Piece)
 ==============================================================
@@ -93,3 +91,14 @@ the source, the composer, the title, the licence, a hash of the source file and 
 
 The bank and the generator come from another of the author's own projects, released by him
 under the MIT licence; they are used here by him, under the terms of this game.
+
+
+The panel in the wings (Panel)
+==============================
+
+The puzzle of the panel follows the rules of Net, one of the games of Simon Tatham's Portable
+Puzzle Collection (MIT licence): pieces of a network turned a quarter at a time until the
+source reaches every one of them. With thanks for the idea. No code of the collection is used:
+the rules, the generator and the drawing here are this game's own.
+
+Everything else in this project stays under the terms in LICENSE.
