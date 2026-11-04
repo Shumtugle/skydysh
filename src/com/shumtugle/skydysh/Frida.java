@@ -33,6 +33,9 @@ final class Frida {
 
     /** Drawn as a town's brum at work: slate grey brick where hers is red, the plate whole and cool. */
     static boolean slate;
+    /** Drawn as the town's pilot: black brick where hers is red, the plate whole and cool. */
+    static boolean black;
+    static final int BLACK = 0x2A2A2E, BLACK_DARK = 0x1C1C20;
     static final int SLATE = 0x6F8A94, SLATE_DARK = 0x557079;
 
     /** A block's color as a rival's: the brick violet, the rest as it is. */
@@ -371,7 +374,7 @@ final class Frida {
             rot[6] = -sy * r00 + cy * r20; rot[7] = -sy * r01 + cy * r21; rot[8] = -sy * r02 + cy * r22;
             float wx = x + cy * px + sy * pz, wz = z - sy * px + cy * pz;
             boolean plate = COL[i] == SHEM || COL[i] == SIGN;
-            if (plate && !fire && !violet && !slate) continue;
+            if (plate && !fire && !violet && !slate && !black) continue;
             if (capPos != null) {
                 if (plate) {
                     if (COL[i] == SHEM) {
@@ -395,9 +398,10 @@ final class Frida {
             }
             int col = COL[i] == EYES ? Street.mix(0x2A1C14, Street.mix(EYES, 0xFF6A12, eyeHeat), eyes) : COL[i];
             int mat = MAT[i];
-            if ((violet || slate) && !fire) {
+            if ((violet || slate || black) && !fire) {
                 int own = COL[i];
-                col = own == EYES ? EYES : slate ? (own == BRICK ? SLATE : own == BRICK_DARK ? SLATE_DARK : own) : rival(own);
+                col = own == EYES ? EYES : slate ? (own == BRICK ? SLATE : own == BRICK_DARK ? SLATE_DARK : own)
+                        : black ? (own == BRICK ? BLACK : own == BRICK_DARK ? BLACK_DARK : own) : rival(own);
                 if (plate) mat = DrawList.PLAIN;
             }
             if (fire) {

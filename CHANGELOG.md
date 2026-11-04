@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.73
+
+- Stories are played once: the delivery, the call out, the puppy, the tow, the concert hall and
+  the new archive job leave home's screen once done, as things that happen once in a life. The
+  hunt, the folder and the panel stay: they are games.
+- No report after the concert: she wakes on the sofa in the morning and the screen has the next
+  story on it at once.
+- New on the map: the town hall, on the main way two rows north of home (pale stone, a clock
+  over the door, a lift behind it, a pad and a flag on the roof); the archive, far off in the
+  north-east near the town's end (low, grey, heavy), its yard a garden with hedges, beds of
+  flowers and a round pad, a way in under an arch from the north.
+- New story, "Papers to the archive": into the town hall; in its hall, on the left, the
+  secretariat's counter, a clerk behind it, the folders on it; taken, the lift on the right up
+  to the roof; there the town's helicopter, a brum of black brick at its controls; in beside
+  him, the blades run up, it rises, turns and crosses the whole town, the eye behind it and to
+  the right; over the archive's garden it comes straight down onto the pad, and a skid gives way;
+  out, the folders to the archive's back door. Words and marks lead the way (town hall,
+  secretariat, lift, helicopter, archive).
+- The helicopter stays in the archive's garden, leaning on its broken skid.
+- The stand: an archive scene from the street to the archive's door; the hall scene picks the
+  panel by its new number.
+
 ## 0.72
 
 - Lights in the hall ends in the hall now: with the lights on, her own chair waits at the front,

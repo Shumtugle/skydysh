@@ -1,0 +1,14 @@
+screen 1096 2560
+wait 0.4
+lang ru
+free
+close
+at 26 124 0.2
+wait 1
+shot t0
+at 224 571 0
+wait 1
+shot t1
+at 218 598 0.2
+wait 1
+shot t2

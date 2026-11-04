@@ -1,0 +1,47 @@
+# Papers to the archive: before the town hall, its name and mark; in at the middle door, the hall,
+# the secretariat on the left, the folders on its counter; taken, to the lift and up; on the roof
+# the helicopter, its pilot of black brick; in beside him, up, across the town, down onto the pad
+# in the archive's garden, a skid giving way; out, the folders to the back door. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 8
+close
+at 32 124 0
+wait 0.5
+shot a0
+at 32 135.6 0
+wait 2.5
+where
+shot a1
+inroom 2.3 4.2
+wait 1
+where
+shot a2
+walk 14 100 w
+where
+shot a3
+at 45.4 140.4 0
+wait 1
+where
+shot a4
+wait 6
+shot a5
+wait 12
+where
+shot a6
+wait 12
+where
+shot a7
+wait 14
+where
+shot a8
+wait 4
+where
+shot a9
+at 224 600 3.14
+wait 1
+where
+shot a10
+wait 4
+shot a11

@@ -203,6 +203,60 @@ final class City implements Ground {
      */
     static final int CONCERT_I = -2, CONCERT_J = 4;
 
+    /**
+     * The town hall: built by hand, on the main way north from home, two rows inland; pale stone,
+     * five storeys, a lift behind its middle door up to the roof, and on the roof a pad for a
+     * helicopter, a flag over it. In its hall, the secretariat (see Rooms.townHall).
+     */
+    static final int TOWNHALL_I = 0, TOWNHALL_J = 2;
+    static final float TOWNHALL_HIGH = 17f;
+
+    /** Where on the town hall's roof the helicopter stands: east of the hut, the roof's middle (x, z). */
+    static float townPadX() {
+        return TOWNHALL_I * CELL + CELL * 0.5f + 13f;
+    }
+
+    static float townPadZ() {
+        return TOWNHALL_J * CELL + FRONT + DEPTH * 0.5f;
+    }
+
+    /** The town hall's roof, its top. */
+    static float townRoof() {
+        return TOWNHALL_HIGH + 0.5f;
+    }
+
+    /** Whether the house whose middle is at (x, z) is the town hall. */
+    static boolean townHall(float x, float z) {
+        return index(x) == TOWNHALL_I && index(z) == TOWNHALL_J && z < TOWNHALL_J * CELL + FRONT + DEPTH + 1f;
+    }
+
+    /**
+     * The archive: built by hand, far to the north-east, near the town's end; a low, heavy house of
+     * grey stone, small windows, the south row of its block. Behind it the yard is a garden,
+     * hedges and beds, and in the garden's middle a round pad for a helicopter. A way through the
+     * north row into the yard, under an arch; the archive's own back door on the garden.
+     */
+    static final int ARCHIVE_I = 3, ARCHIVE_J = 9;
+    static final float ARCHIVE_HIGH = 11f, PAD_R = 6.2f;
+
+    /** The pad in the archive's garden, its middle (x, z). */
+    static float archivePadX() {
+        return ARCHIVE_I * CELL + CELL * 0.5f;
+    }
+
+    static float archivePadZ() {
+        return ARCHIVE_J * CELL + CELL * 0.5f + 1f;
+    }
+
+    /** The archive's back door on the garden, a step before it (x, z). */
+    static float archiveDoorX() {
+        return ARCHIVE_I * CELL + CELL * 0.5f;
+    }
+
+    static float archiveDoorZ() {
+        return ARCHIVE_J * CELL + FRONT + DEPTH + 1.2f;
+    }
+
     static float concertDoorX() {
         return CONCERT_I * CELL + CELL * 0.5f;
     }
@@ -522,6 +576,7 @@ final class City implements Ground {
         if (i == HOME_I - 1 && j == HOME_J) return true;
         if (i == 0 && j == 0) return false;
         if (j == SHORE && (i == FACTORY_I || i == STORE_I)) return false;
+        if (i == TOWNHALL_I && j == TOWNHALL_J || i == ARCHIVE_I && j == ARCHIVE_J) return false;
         return (hash(i, j, 1) & 0xFF) < 30;
     }
 
@@ -1264,17 +1319,149 @@ final class City implements Ground {
         boolean open = arched(i, j), north = mine || ((hash(i, j, 8) >>> 9) & 1) == 0;
         boolean works = j == SHORE && (i == FACTORY_I || i == STORE_I);
         if (works) north = true;
+        // the archive's garden: a way in under an arch through the north row
+        boolean archive = i == ARCHIVE_I && j == ARCHIVE_J;
+        if (archive) {
+            open = true;
+            north = true;
+        }
         if (mine) home(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else if (works && i == FACTORY_I) factory(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else if (works) store(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else if (i == CLINIC_I && j == CLINIC_J) clinic(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else if (i == CONCERT_I && j == CONCERT_J) concertHall(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
+        else if (i == TOWNHALL_I && j == TOWNHALL_J) townHall(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
+        else if (archive) archive(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else row(c, rnd, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH, true, -1, open && !north);
         row(c, rnd, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b, true, 1, open && north);
         row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + a, x0 + a + DEPTH, false, -1, false);
         if (i == WORKSHOP_I && j == WORKSHOP_J) workshop(c, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b);
         else row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b, false, 1, false);
         yard(c, open, new Random(hash(i, j, 9)));
+        if (archive) garden(c, x0 + a + DEPTH, x0 + b - DEPTH, z0 + a + DEPTH, z0 + b - DEPTH);
+    }
+
+    /**
+     * The town hall: pale stone, five storeys, a cornice and a band of darker stone under each row
+     * of windows; in the middle a front stood out a little, four pilasters, the lift's door
+     * behind them under a clock; on the roof the lift's hut, the pad and its letter, a flagpole.
+     */
+    private void townHall(Cell c, float x0, float x1, float z0, float z1) {
+        DrawList d = c.boxes, small = c.detail;
+        float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f;
+        float high = TOWNHALL_HIGH, top = high + 0.5f;
+        int stone = 0xE6DFD0, band = 0xB9AE9A, blue = 0x3E5872, glass = 0x2A3A48, gold = 0xC9A15A;
+        d.box(cx, top * 0.5f, cz, hx, top * 0.5f, hz, null, stone, DrawList.STONE);
+        d.box(cx, top + 0.25f, cz, hx + 0.25f, 0.25f, hz + 0.25f, null, band, DrawList.STONE);
+        // the middle stood out: four pilasters, a pediment of stone
+        d.box(cx, top * 0.5f, z0 - 0.35f, 6f, top * 0.5f, 0.35f, null, stone, DrawList.STONE);
+        for (int k = 0; k < 4; k++)
+            small.box(cx - 4.5f + k * 3f, top * 0.5f, z0 - 0.75f, 0.35f, top * 0.5f, 0.1f, null, band, DrawList.STONE);
+        d.box(cx, top + 1f, z0 - 0.3f, 6.3f, 0.6f, 0.4f, null, band, DrawList.STONE);
+        // the clock over the door
+        small.box(cx, 7.4f, z0 - 0.8f, 1f, 1f, 0.05f, null, 0xF2EAD6, DrawList.PLAIN);
+        small.box(cx, 7.4f, z0 - 0.84f, 0.06f, 0.65f, 0.02f, null, 0x23262C, DrawList.PLAIN);
+        small.box(cx + 0.22f, 7.5f, z0 - 0.84f, 0.3f, 0.05f, 0.02f, null, 0x23262C, DrawList.PLAIN);
+        small.box(cx, 7.4f, z0 - 0.78f, 1.12f, 1.12f, 0.03f, null, gold, DrawList.GOLD);
+        // windows, four rows of them, a band under each
+        for (int fl = 0; fl < 4; fl++) {
+            float wy = 4.6f + fl * 3.2f;
+            d.box(cx, wy - 1.2f, z0 - 0.04f, hx, 0.12f, 0.06f, null, band, DrawList.STONE);
+            for (float u = x0 + 2f; u < x1 - 1.5f; u += 2.8f) {
+                if (Math.abs(u - cx) < 6.5f && fl == 0) continue;
+                d.box(u, wy, z0 - 0.04f, 0.6f, 0.95f, 0.04f, null, glass, DrawList.GLASS);
+            }
+        }
+        // the steps up to the door
+        for (int k = 0; k < 2; k++)
+            d.box(cx, WALK_TOP + 0.08f * (k + 0.5f), z0 - 1.6f + k * 0.45f, 3.4f - k * 0.3f, 0.08f * (k + 0.5f), 0.9f - k * 0.3f, null, band, DrawList.STONE);
+        // the lift: its door in the front, the hut on the roof
+        lift(c, d, cx, z0, true, -1, high, stone);
+        // the pad on the roof: a ring and a letter, yellow on the roof's grey
+        float px = townPadX(), pz = townPadZ();
+        pad(small, px, top + 0.02f, pz, 4.6f, 0xF2C230);
+        // the flagpole and its flag
+        small.box(x1 - 3f, top + 4f, z0 + 2f, 0.06f, 4f, 0.06f, null, 0xC9CCD0, DrawList.POLISHED);
+        small.box(x1 - 3f + 1f, top + 7.2f, z0 + 2f, 0.95f, 0.6f, 0.02f, null, blue, DrawList.PAINT);
+        small.box(x1 - 3f + 1f, top + 7.2f, z0 + 1.98f, 0.95f, 0.2f, 0.02f, null, 0xF2EAD6, DrawList.PAINT);
+        c.wall(x0, z0, x1, z1, top);
+        c.house(cx, cz, hx, hz, top, 0f, -1f, LIFT);
+    }
+
+    /** A helicopter pad on a flat top at y: a ring of so many parts, the letter H across it. */
+    static void pad(DrawList d, float x, float y, float z, float r, int color) {
+        int parts = 16;
+        float w = (float) (Math.PI * r / parts) + 0.05f;
+        float[] turn = new float[9];
+        for (int k = 0; k < parts; k++) {
+            double a = k * 2 * Math.PI / parts;
+            float c = (float) Math.cos(a), s = (float) Math.sin(a);
+            // its length along the ring, across the way out from the middle
+            turn[0] = -s; turn[1] = 0f; turn[2] = c;
+            turn[3] = 0f; turn[4] = 1f; turn[5] = 0f;
+            turn[6] = -c; turn[7] = 0f; turn[8] = -s;
+            d.box(x + s * r, y, z + c * r, 0.22f, 0.012f, w, turn, color, DrawList.PAINT);
+        }
+        d.box(x - 1.2f, y, z, 0.25f, 0.012f, 1.9f, null, color, DrawList.PAINT);
+        d.box(x + 1.2f, y, z, 0.25f, 0.012f, 1.9f, null, color, DrawList.PAINT);
+        d.box(x, y, z, 1.2f, 0.012f, 0.25f, null, color, DrawList.PAINT);
+    }
+
+    /**
+     * The archive: grey stone, heavy, three storeys; small deep windows; a door of dark wood in the
+     * middle of the street front, a board over it; the same door at the back, on the garden.
+     */
+    private void archive(Cell c, float x0, float x1, float z0, float z1) {
+        DrawList d = c.boxes, small = c.detail;
+        float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f;
+        float top = ARCHIVE_HIGH + 0.5f;
+        int stone = 0x8F918F, dark = 0x6E706E, wood = 0x3A2A20, glass = 0x1E2830;
+        d.box(cx, top * 0.5f, cz, hx, top * 0.5f, hz, null, stone, DrawList.STONE);
+        d.box(cx, top + 0.3f, cz, hx + 0.3f, 0.3f, hz + 0.3f, null, dark, DrawList.STONE);
+        d.box(cx, 0.6f, cz, hx + 0.15f, 0.6f, hz + 0.15f, null, dark, DrawList.STONE);
+        for (int e = -1; e <= 1; e += 2) {
+            float fz = e < 0 ? z0 : z1;
+            for (int fl = 0; fl < 3; fl++)
+                for (float u = x0 + 2.4f; u < x1 - 2f; u += 3.4f) {
+                    if (Math.abs(u - cx) < 2.4f && fl == 0) continue;
+                    d.box(u, 3f + fl * 3.3f, fz + e * 0.04f, 0.45f, 0.7f, 0.04f, null, glass, DrawList.GLASS);
+                }
+            // the door, a board over it
+            d.box(cx, WALK_TOP + 1.4f, fz + e * 0.05f, 1.1f, 1.4f, 0.05f, null, wood, DrawList.WOOD);
+            d.box(cx, WALK_TOP + 3.1f, fz + e * 0.07f, 1.8f, 0.3f, 0.04f, null, 0x2B3A32, DrawList.PAINT);
+            small.box(cx, WALK_TOP + 3.1f, fz + e * 0.1f, 1.5f, 0.06f, 0.02f, null, 0xC9A15A, DrawList.GOLD);
+        }
+        c.wall(x0, z0, x1, z1, top);
+        c.house(cx, cz, hx, hz, top, 0f, -1f, 0f);
+    }
+
+    /** The archive's yard, a garden: hedges along its sides, beds of flowers, the pad of gravel and paint in the middle. */
+    private void garden(Cell c, float x0, float x1, float z0, float z1) {
+        DrawList d = c.boxes, small = c.detail;
+        float px = archivePadX(), pz = archivePadZ(), y = WALK_TOP;
+        int hedge = 0x3E6B34, grass = 0x5E8A44, bed = 0x6A4632;
+        d.box((x0 + x1) * 0.5f, y + 0.01f, (z0 + z1) * 0.5f, (x1 - x0) * 0.5f, 0.01f, (z1 - z0) * 0.5f, null, grass, DrawList.GRASS);
+        // the hedges, a gap in the north one for the way in from the arch, and one in the south for the door
+        for (int e = -1; e <= 1; e += 2) {
+            float hz = e < 0 ? z0 + 0.6f : z1 - 0.6f;
+            for (int s = -1; s <= 1; s += 2) {
+                float a = px + s * 2f, b = s < 0 ? x0 + 0.5f : x1 - 0.5f;
+                d.box((a + b) * 0.5f, y + 0.45f, hz, Math.abs(b - a) * 0.5f, 0.45f, 0.5f, null, hedge, DrawList.LEAVES);
+            }
+            float hx = e < 0 ? x0 + 0.6f : x1 - 0.6f;
+            d.box(hx, y + 0.45f, (z0 + z1) * 0.5f, 0.5f, 0.45f, (z1 - z0) * 0.5f - 1.1f, null, hedge, DrawList.LEAVES);
+        }
+        // beds of flowers in the corners
+        int[] flowers = {0xE0506A, 0xF2C230, 0xF2EAD6, 0x9A6AD0};
+        for (int k = 0; k < 4; k++) {
+            float bx = (k & 1) == 0 ? x0 + 3f : x1 - 3f, bz = (k & 2) == 0 ? z0 + 3f : z1 - 3f;
+            d.box(bx, y + 0.12f, bz, 1.6f, 0.12f, 1.6f, null, bed, DrawList.GRAIN);
+            for (int f = 0; f < 6; f++)
+                small.box(bx - 1.1f + (f % 3) * 1.1f, y + 0.36f, bz - 0.6f + (f / 3) * 1.2f, 0.28f, 0.14f, 0.28f, null, flowers[(k + f) % 4], DrawList.LEAVES);
+        }
+        // the pad: gravel, a white ring and letter
+        d.box(px, y + 0.02f, pz, PAD_R, 0.02f, PAD_R, null, 0x9C968A, DrawList.GRAVEL);
+        pad(small, px, y + 0.05f, pz, PAD_R - 1.2f, 0xF2EAD6);
     }
 
     /** A bay painted on the road before a gate: an amber frame, a stripe across it now and then. */

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.72";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.73";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -49,6 +49,11 @@ final class World {
     Rescue rescue;                           // the mission now, when it is a call out
     Puppy puppy;                             // the mission now, when it is the puppy in the sea
     Tow tow;                                 // the mission now, when it is the tow out of the quarry
+    Archive archive;                         // the mission now, when it is the papers to the archive
+    /** The town's helicopter left where the archive job left it, leaning on its broken skid. */
+    private Copter parked;
+    /** Waking at home after the concert: the next story is on the screen at once. */
+    private boolean morning;
     Concert concert;                         // the mission now, when it is the concert
     /** The hall come back to after the job is done (lit, her chair kept), while she stays in it. */
     private Concert stayed;
@@ -141,10 +146,16 @@ final class World {
         rescue = null;
         puppy = null;
         tow = null;
+        archive = null;
         if (concert != null) concert.stop();
         concert = null;
         city.extra = null;
-        if (Concert.its(n)) {
+        if (Archive.its(n)) {
+            mission.round = n;
+            folder = null;
+            archive = new Archive();
+            chase = nobody;
+        } else if (Concert.its(n)) {
             mission.round = n;
             folder = null;
             // the panel's wiring new every time: a count of them kept, mixed into its seed
@@ -313,6 +324,7 @@ final class World {
 
     /** How long the mission just done took, seconds. */
     private float doneTime() {
+        if (archive != null) return archive.doneAt;
         if (concert != null) return concert.doneAt;
         if (tow != null) return tow.doneAt;
         if (puppy != null) return puppy.doneAt;
@@ -337,9 +349,9 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 2, 2, 1, 3};
+    static final int[] REVISION = {0, 4, 4, 2, 2, 2, 1, 3, 1};
     /** How many kinds of mission there are; they come in turn, round and round. */
-    static final int KINDS = 7;
+    static final int KINDS = 8;
 
     /** Mission n's kind: the hunt 1, the folder 2, the delivery 3. */
     static int kindOf(int n) {
@@ -465,17 +477,18 @@ final class World {
 
     /** The brums of the mission now. */
     Chase[] brums() {
-        if (free || delivery != null || rescue != null || puppy != null || tow != null || concert != null) return NONE;
+        if (free || delivery != null || rescue != null || puppy != null || tow != null || concert != null || archive != null) return NONE;
         return folder != null ? folder.rivals : mission.brums;
     }
 
     /** Whether the mission now is a hunt. */
     boolean hunt() {
-        return !free && folder == null && delivery == null && rescue == null && puppy == null && tow == null && concert == null;
+        return !free && folder == null && delivery == null && rescue == null && puppy == null && tow == null && concert == null && archive == null;
     }
 
     /** Whether the mission now is done with, won or not. */
     boolean over() {
+        if (archive != null) return archive.over();
         if (concert != null) return concert.over();
         if (tow != null) return tow.over();
         if (puppy != null) return puppy.over();
@@ -516,12 +529,13 @@ final class World {
 
     /** Whether the mission just over was lost: the hunt's time out, the folder taken first, the puppy got out by others. */
     private boolean failed() {
-        if (puppy != null || tow != null || concert != null) return false;
+        if (puppy != null || tow != null || concert != null || archive != null) return false;
         return hunt() ? mission.late : folder != null && folder.theirs;
     }
 
     /** The report on the mission just done. */
     private String[] report() {
+        if (archive != null) return Dispatch.archived(mission.round, clock(archive.doneAt));
         if (concert != null) return Dispatch.concerted(mission.round, clock(concert.doneAt), money, paidNow);
         if (tow != null) return Dispatch.towed(mission.round, clock(tow.doneAt));
         if (puppy != null) return Dispatch.puppied(mission.round, clock(puppy.doneAt), money, paidNow);
@@ -607,6 +621,8 @@ final class World {
         puppy = null;
         crowd = null;
         tow = null;
+        if (archive != null) parked = archive.copter;
+        archive = null;
         if (concert != null) concert.stop();
         concert = null;
         chase = nobody;
@@ -730,6 +746,14 @@ final class World {
                     again = false;
                 }
             } else if (type == DOWN) dispatch.touch();
+            return;
+        }
+        if (aboard()) {
+            // a passenger: the pause as ever, nothing else to do but look
+            if (type == DOWN && paused) {
+                if (!pauseRow(x, y)) paused = false;
+            } else if (type == DOWN && onButton(x, y, pauseX(), pauseY())) paused = true;
+            leadFinger = -1;
             return;
         }
         if (inChair()) {
@@ -1217,6 +1241,9 @@ final class World {
             crowd = null;
             if (tow != null) towed = tow;
             tow = null;
+            // the helicopter stays where the archive job left it
+            if (archive != null) parked = archive.copter;
+            archive = null;
             // after the concert the dark has come down: she wakes at home, on her sofa, in the morning
             boolean slept = concert != null;
             if (concert != null) concert.stop();
@@ -1224,7 +1251,11 @@ final class World {
             city.extra = null;
             chase = nobody;
             waiting = said;
-            if (slept) wake();
+            if (slept) {
+                // no report: in the morning the screen has the next story on it at once
+                waiting = null;
+                wake();
+            }
             return;
         }
         whiteOut = Math.max(0f, whiteOut - dt);
@@ -1244,6 +1275,7 @@ final class World {
         if (dutyOut()) duty.update(runner.x, runner.z, city, driving);
         else duty.all.clear();
         if (driving != null) drive(dt);
+        else if (aboard()) ride(dt);
         else {
             ladders(dt);
             doors(dt);
@@ -1252,7 +1284,7 @@ final class World {
         }
         // a beat of the arms (a flick, between frames): the air through them
         if (runner.beatsLeft() < beatsWere) host.sound(Synth.WHOOSH, 0.5f, 0.8f);
-        if (swapT < 0f && driving == null && !seated() && !inChair()) runner.update(dt, city, cars, walkers);
+        if (swapT < 0f && driving == null && !seated() && !inChair() && !aboard()) runner.update(dt, city, cars, walkers);
         // into deep water: a splash, and she swims
         boolean swims = runner.swimming();
         if (swims && !swimSeen) host.sound(Synth.SPLASH, 0.8f, 1f);
@@ -1288,6 +1320,28 @@ final class World {
                     host.sound(Synth.DOOR, 0.45f, 0.9f);
                     go(TO_CONCERT);
                 }
+            }
+        } else if (archive != null) {
+            int got = archive.update(dt, runner, indoors, host);
+            if (got == Archive.IN) {
+                // in beside the pilot: the blades run up
+                errand = NO_ERRAND;
+                runner.stopLead();
+                letGo();
+                host.sound(Synth.WHOOSH, 0.5f, 0.6f);
+            } else if (got == Archive.CRACK) {
+                host.sound(Synth.CLANG, 0.9f, 0.55f);
+                host.sound(Synth.STONE, 0.7f, 0.7f);
+                host.buzz(160);
+            }
+            if (got == Archive.OUT || got == Archive.CRACK && !archive.aboard()) {
+                // out of the right-hand door, onto the garden
+                Copter cp = archive.copter;
+                cp.door(seatAt);
+                runner.getOut(seatAt[0], city.ground(seatAt[0], seatAt[1]), seatAt[1], cp.heading);
+                runner.recenter();
+                runner.update(0f, city, cars, walkers);
+                letGo();
             }
         } else if (tow != null) {
             tow.update(dt, duty, driving, runner, city, host);
@@ -1829,6 +1883,7 @@ final class World {
         if (rescue != null) return DrawList.TINT_GREEN;
         if (puppy != null) return DrawList.TINT_TURQUOISE;
         if (tow != null) return DrawList.TINT_AMBER;
+        if (archive != null) return DrawList.TINT_TURQUOISE;
         if (concert != null) return DrawList.TINT_CREAM;
         if (delivery != null) return DrawList.TINT_AMBER;
         if (folder != null) return DrawList.TINT_TURQUOISE;
@@ -2095,7 +2150,8 @@ final class World {
         long seed = ((long) Math.floor(houseOf[0] * 4f) * 73856093L) ^ ((long) Math.floor(houseOf[1] * 4f) * 19349663L);
         switch (swapTo) {
             case TO_HALL:
-                indoors = Rooms.hall(houseOf, seed, city.backClear(houseOf, 0), houseOf[7] == City.LIFT);
+                indoors = City.townHall(houseOf[0], houseOf[1]) ? Rooms.townHall(houseOf)
+                        : Rooms.hall(houseOf, seed, city.backClear(houseOf, 0), houseOf[7] == City.LIFT);
                 indoors.enter(r, l[10] > 0.5f);
                 break;
             case TO_CABIN:
@@ -2180,6 +2236,15 @@ final class World {
         r.ride(dt, in, sofaAt[0], sofaAt[1], sofaAt[2], in.seatHeading(), 0f, sofaAt[0], sofaAt[1] - 0.03f, sofaAt[2], 0f);
         // the eye where the room is seen from while she sits (the screen in her head comes on from there)
         if (in.shot(eyeNow)) r.eyeAt(eyeNow);
+        if (!sofaAsked && seatedFor > SIT_FOR && morning) {
+            // the morning after the concert: the next story on the screen at once
+            sofaAsked = true;
+            morning = false;
+            chooseMission(8);
+            dispatch = new Dispatch(host, briefing()).story(8);
+            letGo();
+            return true;
+        }
         if (!sofaAsked && seatedFor > SIT_FOR) {
             sofaAsked = true;
             String[] lines = Dispatch.sofa(free ? mission.round + 1 : mission.round, free && lost);
@@ -2195,6 +2260,44 @@ final class World {
         }
         return true;
     }
+
+    // ---- in the town's helicopter, beside its pilot ----
+    /** Whether she sits in the helicopter now. */
+    boolean aboard() {
+        return archive != null && archive.aboard();
+    }
+
+    private float flyYaw = Float.NaN;
+
+    /** A frame of it: in the seat beside the pilot, the eye behind and over the helicopter. */
+    private void ride(float dt) {
+        Copter cp = archive.copter;
+        Runner r = runner;
+        cp.seat(false, seatAt);
+        r.lounging = false;
+        r.ride(dt, city, seatAt[0], seatAt[1], seatAt[2], cp.heading, 0f, seatAt[0], seatAt[1], seatAt[2], 0f);
+        // the eye follows the helicopter round, a little late
+        if (Float.isNaN(flyYaw)) flyYaw = cp.heading;
+        float d = cp.heading - flyYaw;
+        while (d > Math.PI) d -= 2f * (float) Math.PI;
+        while (d < -Math.PI) d += 2f * (float) Math.PI;
+        flyYaw += d * Math.min(1f, dt * 1.6f);
+        float fx = (float) Math.sin(flyYaw), fz = (float) Math.cos(flyYaw), rx = fz, rz = -fx;
+        // behind it and off to the right, where its open side shows who sits in it; nearer and
+        // higher as it comes down among the houses, so the eye stays out of them
+        float low = Math.max(0f, Math.min(1f, (cp.y - City.WALK_TOP) / 20f));
+        float back = FLY_BACK * (0.45f + 0.55f * low), aside = FLY_ASIDE * (0.5f + 0.5f * low), up = FLY_UP + 4f * (1f - low);
+        eyeNow[0] = cp.x - fx * back + rx * aside;
+        eyeNow[1] = cp.y + up;
+        eyeNow[2] = cp.z - fz * back + rz * aside;
+        float lx = cp.x + fx * 3f - eyeNow[0], lz = cp.z + fz * 3f - eyeNow[2];
+        eyeNow[3] = (float) Math.atan2(lx, lz);
+        eyeNow[4] = (float) Math.atan2(cp.y + 1.5f - eyeNow[1], Math.sqrt(lx * lx + lz * lz));
+        r.eyeAt(eyeNow);
+    }
+
+    // the eye on the helicopter: so far behind it, so far to its right, so high over it
+    static final float FLY_BACK = 12f, FLY_ASIDE = 8f, FLY_UP = 4.5f;
 
     // ---- her own chair in the concert hall: come up to it with the lights on, she sits ----
     /** The hall she is in, on the job or come back to (null: neither). */
@@ -2256,6 +2359,7 @@ final class World {
         // the screen comes on once the dark has lifted and she has sat a moment
         seatedFor = -DAWN;
         dawn = DAWN;
+        morning = (kindsWon & (1 << 8)) == 0;
     }
 
     /** The panel on its own, from home's screen: new wiring each time, as on a call out. */
@@ -2302,9 +2406,10 @@ final class World {
     private String[] keptLines;
 
     /**
-     * A choice's lines and what each picks (every kind of job is offered: the player picks what to
-     * play; none is pushed on her), but for the concert hall: offered till it is done once, and
-     * after that, in its place, the panel on its own. The lines kept are left in keptLines.
+     * A choice's lines and what each picks: the games (the hunt, the folder) always; the stories
+     * (the delivery, the call out, the puppy, the tow, the concert hall, the archive) till each is
+     * done once, as a thing that happens in a life; once the concert hall is done, the panel on
+     * its own. None is pushed on her. The lines kept are left in keptLines.
      */
     private int[] known(String[] lines, int[] picks) {
         java.util.ArrayList<String> l = new java.util.ArrayList<String>();
@@ -2312,7 +2417,9 @@ final class World {
         boolean hallDone = (kindsWon & (1 << 7)) != 0;
         for (int k = 0; k < lines.length; k++) {
             int c = k < picks.length ? picks[k] : -1;
-            if (c == 7 && hallDone || c == Dispatch.SOLO && !hallDone) continue;
+            // a story is played once: done, it is gone from the screen
+            if (c >= 3 && c <= KINDS && (kindsWon & (1 << c)) != 0) continue;
+            if (c == Dispatch.SOLO && !hallDone) continue;
             l.add(lines[k]);
             p.add(c);
         }
@@ -2673,6 +2780,18 @@ final class World {
         d.tube[0] = d.tube[2] = 0f;
     }
 
+    /** Over the frame, the archive: the clock in the corner; where the way goes now, in a word and a mark. */
+    private void archiveFlat(DrawList d, Px f) {
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E;
+        Archive ar = archive;
+        String clock = clock(ar.over() ? ar.doneAt : ar.clock);
+        shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        String w = ar.goalWord(indoors, runner);
+        if (w == null || !ar.goal(indoors, runner, goal)) return;
+        wordAtTop(f, Lang.lines(w, mission.round, null)[0], green, ink);
+        placeMark(d, f, goal[0], goal[1], goal[2], ar.mark(indoors, runner), Marks.OPEN);
+    }
+
     /** Over the frame, the tow: the clock in the corner; where the way goes now, in a word and a mark. */
     private void towFlat(DrawList d, Px f) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E;
@@ -2809,14 +2928,20 @@ final class World {
             indoors.draw(d);
             Concert on = concert != null ? concert : stayed;
             if (indoors.concert && on != null) on.draw(d, indoors);
+            if (indoors.townHall) {
+                Rooms.clerk(d, indoors);
+                if (archive != null) archive.drawIndoors(d, indoors);
+            }
         }
         if (!r.hidden && (dispatch == null || dispatch.showsHer())) {
             r.draw(d);
             toss.draw(d, r);
+            if (archive != null && archive.carrying()) archive.carried(d, r);
         }
         if (dispatch != null) dispatch.draw(d, f, h);
         else if (free) freeFlat(d, f);
         else if (concert != null) concertFlat(d, f);
+        else if (archive != null) archiveFlat(d, f);
         else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);
@@ -2893,6 +3018,8 @@ final class World {
         felled.draw(d, eyeX, eyeZ, ex, ez);
         if (rescue != null) rescue.draw(d, eyeX, eyeZ, ex, ez);
         if (tow != null) tow.draw(d, time);
+        if (archive != null) archive.draw(d, r);
+        else if (parked != null) Archive.drawCopter(d, parked);
         if (towed != null) {
             // the brum's pickup left at the workshop, till she is well away from it
             float tx = towed.stuck.x - r.x, tz = towed.stuck.z - r.z;
@@ -2928,6 +3055,7 @@ final class World {
         if (dispatch != null) dispatch.draw(d, f, h);
         else if (free) freeFlat(d, f);
         else if (concert != null) concertFlat(d, f);
+        else if (archive != null) archiveFlat(d, f);
         else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);

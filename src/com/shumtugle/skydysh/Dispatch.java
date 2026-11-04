@@ -158,10 +158,10 @@ final class Dispatch {
     }
 
     /** What touching each line of home's screen picks: a kind of job (1 to 7), or the panel on its own (SOLO). */
-    static final int[] HOME_PICKS = {-1, -1, -1, -1, 8, 7, 6, 5, 4, 3, 2, 1};
+    static final int[] HOME_PICKS = {-1, -1, -1, -1, 10, 8, 7, 6, 5, 4, 3, 2, 1};
 
     /** A pick that takes the panel on its own, no way to go: it opens over the room. */
-    static final int SOLO = 8;
+    static final int SOLO = 10;
 
     /** A pick that takes no mission: she stays as she is (on the sofa, free). */
     static final int REST = 9;
@@ -188,7 +188,7 @@ final class Dispatch {
     }
 
     /** What touching each line of the sofa's screen picks (see HOME_PICKS); a rest, REST. */
-    static final int[] SOFA_PICKS = {-1, -1, -1, 8, 7, 6, 5, 4, 3, 2, 1};
+    static final int[] SOFA_PICKS = {-1, -1, -1, 10, 8, 7, 6, 5, 4, 3, 2, 1};
 
     /** After these lines, at the key, the next ones on the screen before the walls draw back. */
     Dispatch then(String[] more) {
@@ -243,6 +243,7 @@ final class Dispatch {
         if (Puppy.its(round)) return priced(Lang.lines("brief.puppy", round, null), round);
         if (Tow.its(round)) return Lang.lines("brief.tow", round, null);
         if (Concert.its(round)) return priced(Lang.lines("brief.concert", round, null), round);
+        if (Archive.its(round)) return Lang.lines("brief.archive", round, null);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
@@ -276,6 +277,11 @@ final class Dispatch {
     /** The concert hall's lights on: the pay, what has been won in all, the time. */
     static String[] concerted(int round, String time, int money, int got) {
         return fill(Lang.lines("report.concert", round, time), got, money);
+    }
+
+    /** The folders brought to the archive: the time. */
+    static String[] archived(int round, String time) {
+        return Lang.lines("report.archive", round, time);
     }
 
     /** The panel on its own put right: the time. */

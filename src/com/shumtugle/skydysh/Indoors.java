@@ -411,6 +411,9 @@ final class Indoors implements Ground {
     float high = HALL_HIGH;
     /** Whether this is the concert hall's room: its seats, its stage, its piano (see Concert). */
     boolean concert;
+    /** Whether this is the town hall's hall: the secretariat's counter across from the lift, its front's middle (across, in). */
+    boolean townHall;
+    float deskU, deskV;
     /** The lights out but one lamp on a wall: where it is (across, in, up from the floor), how far it reaches. */
     boolean dark;
     float lampU, lampV, lampY, lampReach;

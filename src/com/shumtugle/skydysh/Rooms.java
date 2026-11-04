@@ -25,6 +25,65 @@ final class Rooms {
      * when the back looks on no yard, shut at the back), with its lift in one side wall; or, in a
      * house with only a way in, no lift, the side wall whole.
      */
+    /** The secretariat's counter in the town hall: its top over the floor. */
+    static final float DESK_TOP = 1.05f;
+
+    /**
+     * The town hall's hall, behind its middle door: wider than a house's, pale walls, a floor of
+     * tiles, a blue runner, gilt lamps; the lift on the right; across from it, on the left, the secretariat, a
+     * long counter of dark wood, shelves of folders behind it on the wall, a clerk behind it.
+     */
+    static Indoors townHall(float[] house) {
+        float cx = house[0], cz = house[1], hx = house[2], hz = house[3], nx = house[5], nz = house[6];
+        float halfN = Math.abs(nx) * hx + Math.abs(nz) * hz, deep = 2f * halfN, half = 4.4f;
+        // the lift on her right as she comes in, the secretariat on her left
+        int side = -1;
+        float liftV = deep * 0.6f;
+        Indoors in = new Indoors(cx + nx * halfN, cz + nz * halfN, nx, nz, half, deep, side, liftV, 5);
+        in.backDoor = false;
+        in.hasLift = true;
+        in.townHall = true;
+        in.frameColor = 0xC9A15A;
+        in.frameMat = DrawList.GOLD;
+        in.cabColor = 0x7A5236;
+        shell(in, TILE[2], true, WALL[3], LOW[3], DrawList.PAINT);
+        cabin(in);
+        lamps(in, 3);
+        DrawList d = in.still();
+        float f = Indoors.FLOOR;
+        in.box(d, 0f, f + 0.006f, deep * 0.5f, 1f, 0.006f, deep * 0.5f - 1.2f, 0x2E4A6A, DrawList.GRAIN);
+        // the counter, along the wall across from the lift
+        float wallU = -side * half, cu = -side * (half - 1.1f), cv = deep * 0.42f, len = 1.7f;
+        in.deskU = -side * (half - 2.1f);
+        in.deskV = cv;
+        in.box(d, cu, f + DESK_TOP * 0.5f, cv, 0.35f, DESK_TOP * 0.5f, len, 0x4A3226, DrawList.WOOD);
+        in.box(d, cu - side * 0.05f, f + DESK_TOP + 0.03f, cv, 0.45f, 0.03f, len + 0.08f, 0x6A4A36, DrawList.WOOD);
+        in.box(d, cu - side * 0.37f, f + 0.7f, cv, 0.02f, 0.18f, 0.5f, 0xC9A15A, DrawList.GOLD);
+        in.solid(Math.min(cu - 0.4f, cu + 0.4f), cv - len - 0.1f, Math.max(cu - 0.4f, cu + 0.4f), cv + len + 0.1f, f + 1.2f);
+        // the shelves of folders on the wall behind it
+        int[] card = {0x5C7088, 0x8A6A4A, 0x6E7F92, 0x7A5A3A, 0x56687C};
+        for (int r = 0; r < 3; r++) {
+            float sy = f + 1.4f + r * 0.55f;
+            in.box(d, wallU - side * 0.2f, sy, cv, 0.2f, 0.025f, len + 0.4f, 0x4A3226, DrawList.WOOD);
+            for (int k = 0; k < 12; k++)
+                in.box(d, wallU - side * 0.2f, sy + 0.22f, cv - len - 0.2f + k * 0.33f, 0.16f, 0.2f, 0.06f, card[(k + r * 2) % card.length], DrawList.PAINT);
+        }
+        // a flag of the town on its pole in the corner by the door
+        in.box(d, wallU - side * 0.4f, f + 1.3f, 1.2f, 0.04f, 1.3f, 0.04f, 0xC9A15A, DrawList.GOLD);
+        in.box(d, wallU - side * 0.4f, f + 2.1f, 1.65f, 0.02f, 0.45f, 0.4f, 0x3E5872, DrawList.PAINT);
+        in.done();
+        return in;
+    }
+
+    /** The town hall's clerk at the secretariat's counter, sitting behind it, facing the room. */
+    static void clerk(DrawList d, Indoors in) {
+        if (FolkPack.town == null || !Frida.ready()) return;
+        int m = 11 % FolkPack.town.count;
+        float u = -in.side * (in.half - 0.45f), v = in.deskV;
+        float y = Indoors.FLOOR + 0.5f - Walkers.HIPS * FolkPack.town.size[m];
+        FolkPack.sitter(d, m, in.wx(u, v), y, in.wz(u, v), in.heading(in.side, 0f) + (float) Math.PI, 1f, 0f, 0f);
+    }
+
     static Indoors hall(float[] house, long seed, boolean backDoor, boolean lift) {
         Random rnd = new Random(seed);
         float cx = house[0], cz = house[1], hx = house[2], hz = house[3], top = house[4], nx = house[5], nz = house[6];

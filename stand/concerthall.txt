@@ -24,7 +24,7 @@ shot h2
 sofa
 wait 2.5
 shot h3
-pick 8
+pick 10
 wait 2
 shot h4
 panel 25
