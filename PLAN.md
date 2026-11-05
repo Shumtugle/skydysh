@@ -72,6 +72,7 @@ release, each seen on the stand before the phone.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
+- 0.81 No hop onto the pickup she is led to; a point beside a mark off the frame; the pass one mountain.
 - 0.80 The helicopter mended and flown home by hand on two sticks; after it, hers to fly; the eye in the town hall's door lower.
 - 0.79 The hand has the wheel: the rail leads only while the finger is straight; corners braked for, steered by hand; backing held; a brisk swing round when stuck.
 - 0.78 Hops over the low on the way to a pickup; the rail at the wheel; clear shallows, fish, fishermen on the rocks.

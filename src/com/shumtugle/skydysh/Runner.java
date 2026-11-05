@@ -157,6 +157,9 @@ final class Runner {
 
     // how high a thing she hops over on her way, at most, over her feet; how near before her it is looked for
     static final float HOP_TOP = 2.1f, HOP_LOOK = 1.5f;
+    // so near where she is led, she goes round, never over (what is there is what she came to: a
+    // pickup's door is beside the pickup); so far beyond, she must have somewhere clear to come down
+    static final float HOP_NEAR = 4.5f, HOP_LAND = 1.5f;
     private float hopFor;
 
     /**
@@ -177,7 +180,16 @@ final class Runner {
             top = Math.max(top, g.ground(qx, qz, y, 3.2f));
             if (cars != null) top = Math.max(top, cars.topAt(qx, qz));
         }
-        return blocked && top - y < HOP_TOP;
+        if (!blocked || top - y >= HOP_TOP) return false;
+        // somewhere to come down beyond it: clear, and not up on it (a car's bed, a roof)
+        float t = HOP_LOOK + HOP_LAND, qx = x + fx * t, qz = z + fz * t;
+        probe[0] = qx;
+        probe[1] = qz;
+        if (g.push(probe, RADIUS * 0.8f, y)) return false;
+        probe[0] = qx;
+        probe[1] = qz;
+        if (cars != null && cars.push(probe, RADIUS * 0.8f, 0f)) return false;
+        return g.ground(qx, qz, y, 3.2f) - y < 0.5f && (cars == null || cars.topAt(qx, qz) - y < 0.5f);
     }
 
     /** Whether the way from her a few steps along heading a is clear of walls and cars (so far, at most). */
@@ -200,7 +212,7 @@ final class Runner {
             leadCommit -= dt;
             // something low just before her on the straight way (a bench, a bollard, a fence, a car):
             // over it in one bound, not round it
-            boolean over = state == RUN && speed > 1f && hopFor <= 0f && low(straight, g, cars);
+            boolean over = state == RUN && speed > 1f && hopFor <= 0f && d > HOP_NEAR && low(straight, g, cars);
             hopFor -= dt;
             if (over) {
                 heading = straight;

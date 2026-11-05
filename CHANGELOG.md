@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.81
+
+- On her way to a pickup by its sign she no longer hops onto it: so near where she is led she
+  goes round, never over, and anywhere a hop needs somewhere clear to come down beyond, not on
+  top of what it hops (a car's bed, a roof). Behind a pickup's rear wing, it is round its end to
+  the door and in, not four bounds at its side.
+- A mark off the frame has a sharp point beside it, out toward the way it lies.
+- The pass's mark is one mountain: a peak, a low shoulder, the saddle between, the road up
+  through it (it was two peaks apart, read as a pause).
+
 ## 0.80
 
 - The archive job's second half, a story of its own that begins at once at the archive's door,

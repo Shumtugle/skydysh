@@ -1,0 +1,21 @@
+# To the pickup by its sign: she stands behind its right rear wing on the sidewalk, the wheel
+# sign tapped; she goes round its nose to the door and gets in, never over it. At the wheel,
+# the pass off the frame: its mark at the edge, a sharp point beside it toward the way it lies.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 4
+close
+at 199.4 601.2 0
+wait 0.8
+tapsign wheel
+wait 0.5
+shot b0
+wait 3.6
+where
+shot b1
+down 137 480
+move 177 480
+wait 0.6
+shot b2
+up 177 480

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.80";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.81";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -3272,8 +3272,35 @@ final class World {
         float vx = x - runner.x, vz = z - runner.z;
         float ang = (float) Math.atan2(vx * az - vz * ax, vx * ax + vz * az);
         float ex = (float) Math.sin(ang), ey = -(float) Math.cos(ang);
-        float k = Math.min((W * 0.5f - half - 4f) / Math.max(1e-3f, Math.abs(ex)), (h * 0.5f - 70f) / Math.max(1e-3f, Math.abs(ey)));
-        Marks.draw(f, pic, W * 0.5f + ex * k, h * 0.5f + ey * k + bob, color, 0.85f);
+        float k = Math.min((W * 0.5f - half - 10f) / Math.max(1e-3f, Math.abs(ex)), (h * 0.5f - 76f) / Math.max(1e-3f, Math.abs(ey)));
+        float mx = W * 0.5f + ex * k, my = h * 0.5f + ey * k + bob;
+        Marks.draw(f, pic, mx, my, color, 0.85f);
+        // off the frame: a sharp point beside it, out toward the way it lies
+        chevron(f, mx + ex * (half + 2f), my + ey * (half + 2f), ex, ey, color);
+    }
+
+    // the point beside a mark off the frame: how far out its tip is, how wide (half) its base
+    static final float CHEV_LONG = 7f, CHEV_WIDE = 5f;
+
+    /** A small sharp point over the frame at (cx, cy), its tip out along (ex, ey): a dark edge, the colour within. */
+    private static void chevron(Px f, float cx, float cy, float ex, float ey, int color) {
+        float m = (float) Math.sqrt(ex * ex + ey * ey);
+        ex /= m;
+        ey /= m;
+        for (int pass = 0; pass < 2; pass++) {
+            float grow = pass == 0 ? 1.2f : 0f;
+            int c = pass == 0 ? 0xD0232A4A : color;
+            float len = CHEV_LONG + grow * 1.6f, wide = CHEV_WIDE + grow * 1.6f, back = grow * 0.8f;
+            int r0 = (int) Math.ceil(len + wide);
+            for (int y = -r0; y <= r0; y++)
+                for (int x = -r0; x <= r0; x++) {
+                    float px = x + 0.5f, py = y + 0.5f;
+                    float a = px * ex + py * ey + back, b = Math.abs(-px * ey + py * ex);
+                    if (a < 0f || a > len + back) continue;
+                    if (b > wide * (1f - a / (len + back))) continue;
+                    f.rect(Math.round(cx) + x, Math.round(cy) + y, Math.round(cx) + x + 1, Math.round(cy) + y + 1, c);
+                }
+        }
     }
 
     /** A ring over the frame round (cx, cy): between radii in and out, in one colour. */
