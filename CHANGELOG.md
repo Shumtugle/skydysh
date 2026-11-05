@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.82
+
+- The violet seekers of the folder go up honestly, as she must: from the street into the yard
+  behind the folder's row, under its arch or through a house's hall (out of sight a moment, out
+  at the back door), across the yard to the row's fire escape and up it, then along the roofs,
+  up the ladders between them as before. No more climbing a front where there is nothing to
+  climb by; they come up behind the row, on its roofs, where she can see them coming.
+- The folder always lies in a row with a fire escape in it: when no house fits the first wish
+  (an escape two houses off or more, no lift near), the second wish is any row with an escape,
+  not any house at all.
+- A fire escape at the end of a row is put at the end of the house's back that looks on the yard,
+  not behind the corner house of the next row, where no one could reach it.
+
 ## 0.81
 
 - On her way to a pickup by its sign she no longer hops onto it: so near where she is led she

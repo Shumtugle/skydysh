@@ -1989,6 +1989,52 @@ final class City implements Ground {
     }
 
     /**
+     * The ways into the yard of the block in cell (i, j) from its streets, at most max of them,
+     * seven floats each into out: where to stand on the pavement before it (x, z), where it comes
+     * out in the yard (x, z), whether it is through a house's hall (1) or under an arch (0), and the
+     * way the front it is in faces (x, z). Through a hall: a house with its door on the street and
+     * another on the yard (a lift's or a hall's). How many; none for a cell that is no block.
+     */
+    int yardWays(int i, int j, float[] out, int max) {
+        if (sea(j) || country(j) || oldTown(i, j) || square(i, j)) return 0;
+        int n = 0;
+        float x0 = i * CELL, z0 = j * CELL, mid = CELL * 0.5f, a = FRONT, b = CELL - FRONT;
+        // the arch, as block makes it: through the north row, or the south one
+        boolean mine = i == HOME_I && j == HOME_J, archive = i == ARCHIVE_I && j == ARCHIVE_J;
+        boolean works = j == SHORE && (i == FACTORY_I || i == STORE_I);
+        boolean open = arched(i, j) || archive, north = mine || works || archive || ((hash(i, j, 8) >>> 9) & 1) == 0;
+        boolean ownSouth = mine || works || i == CLINIC_I && j == CLINIC_J || i == CONCERT_I && j == CONCERT_J
+                || i == TOWNHALL_I && j == TOWNHALL_J || archive;
+        if (open && (north || !ownSouth) && n < max) {
+            float s = north ? 1f : -1f, front = north ? z0 + b : z0 + a, back = north ? z0 + b - DEPTH : z0 + a + DEPTH;
+            n = way(out, n, x0 + mid, front + s * 1.2f, x0 + mid, back - s * 1.5f, 0f, 0f, s);
+        }
+        Cell c = cell(i, j);
+        for (int k = 0; k < c.houseN && n < max; k++) {
+            int o = k * Cell.HOUSE;
+            float kind = c.houses[o + 7];
+            if (kind != LIFT && kind != DOOR || !backClear(c.houses, o)) continue;
+            float nx = c.houses[o + 5], nz = c.houses[o + 6];
+            float half = Math.abs(nx) * c.houses[o + 2] + Math.abs(nz) * c.houses[o + 3];
+            float cx = c.houses[o], cz = c.houses[o + 1];
+            n = way(out, n, cx + nx * (half + 0.9f), cz + nz * (half + 0.9f), cx - nx * (half + 1.2f), cz - nz * (half + 1.2f), 1f, nx, nz);
+        }
+        return n;
+    }
+
+    private static int way(float[] out, int n, float sx, float sz, float yx, float yz, float hall, float nx, float nz) {
+        int o = n * 7;
+        out[o] = sx;
+        out[o + 1] = sz;
+        out[o + 2] = yx;
+        out[o + 3] = yz;
+        out[o + 4] = hall;
+        out[o + 5] = nx;
+        out[o + 6] = nz;
+        return n + 1;
+    }
+
+    /**
      * Fire escapes in the yard, up the backs of houses that look on it: a yard shut in has one at
      * least (no one is shut in there), an open one now and then.
      */
@@ -2010,14 +2056,37 @@ final class City implements Ground {
         if (made == 0 && !open && first >= 0) backEscape(c, first);
     }
 
-    /** A fire escape up the back of the house at o, near its one end, from the yard to the roof. */
+    /** A fire escape up the back of the house at o, near one end of it, from the yard to the roof. */
     private static void backEscape(Cell c, int o) {
-        float cx = c.houses[o], cz = c.houses[o + 1], hx = c.houses[o + 2], hz = c.houses[o + 3], top = c.houses[o + 4];
-        float nx = c.houses[o + 5], nz = c.houses[o + 6];
-        boolean alongX = Math.abs(nz) > 0.5f;
-        float x = alongX ? cx - hx + 1.1f : cx - nx * hx, z = alongX ? cz - nz * hz : cz - hz + 1.1f;
-        ladder(c, x, z, WALK_TOP, top, -nx, -nz, true);
+        float[] at = new float[2];
+        escapeAt(c, c.houses, o, at);
+        ladder(c, at[0], at[1], WALK_TOP, c.houses[o + 4], -c.houses[o + 5], -c.houses[o + 6], true);
         c.houses[o + 7] = ESCAPE;
+    }
+
+    /**
+     * Where the fire escape of the house at o in h goes (on the wall, x, z into out): at its back,
+     * near the end of it that looks on the yard. A house at the end of a row has its back's one
+     * end behind the next row's corner house: not that end.
+     */
+    private static void escapeAt(Cell c, float[] h, int o, float[] out) {
+        float cx = h[o], cz = h[o + 1], hx = h[o + 2], hz = h[o + 3], nx = h[o + 5], nz = h[o + 6];
+        boolean alongX = Math.abs(nz) > 0.5f;
+        for (int e = -1; e <= 1; e += 2) {
+            float x = alongX ? cx + e * (hx - 1.1f) : cx - nx * hx, z = alongX ? cz - nz * hz : cz + e * (hz - 1.1f);
+            out[0] = x;
+            out[1] = z;
+            if (c.houseAt(x - nx * 1.2f, z - nz * 1.2f) < 0) return;
+        }
+        out[0] = alongX ? cx - hx + 1.1f : cx - nx * hx;
+        out[1] = alongX ? cz - nz * hz : cz - hz + 1.1f;
+    }
+
+    /** The foot of the fire escape of house h (as house tells it), where one stands to climb it: into out (x, z). */
+    void escapeFoot(float[] h, float[] out) {
+        escapeAt(cell(index(h[0]), index(h[1])), h, 0, out);
+        out[0] -= h[5] * 0.55f;
+        out[1] -= h[6] * 0.55f;
     }
 
     /**

@@ -110,8 +110,9 @@ the way each one out of sight is. A hunt has five minutes: when the last is caug
 more are let loose; when the time runs out first, five again.
 
 The second mission, the folder: dropped from a helicopter somewhere on the roofs, a reward for
-it, and three seekers after it too: brums of violet brick with true plates, not on fire, each
-climbing a house of its row and running along the roofs. The mallet stops a seeker as it stops a
+it, and three seekers after it too: brums of violet brick with true plates, not on fire, who go
+up as she must: into the yard behind its row (under an arch, or through a house's hall), up a
+fire escape, and along the roofs. The mallet stops a seeker as it stops a
 runaway: broken, it is out of the race.
 Up by a lift or a fire escape in a house of the row, then roof to roof: up the iron ladders
 where the next roof stands higher, down onto the lower ones, leaping, gliding, beating the air

@@ -20,10 +20,12 @@ import java.util.Random;
  * One of a hunt (see Mission) is caught for good: she goes out on the spot, falls apart, and
  * her blocks lie cooling to stone on the road a while and sink into it.
  *
- * A rival (see Folder) is after something on a roof: she looks about a while, then runs the
- * streets the shortest way to the front of a house in its row, climbs it, and runs along the
- * roofs to it: up the wall where the next roof stands higher, down off the edge where it is lower.
- * She does not run from the runner; caught, she falls apart as one of a hunt does.
+ * A rival (see Folder) is after something on a roof, and goes up as the runner must: she looks
+ * about a while, then runs the streets the shortest way to a way into the yard behind its row (an
+ * arch, or a house's hall through to the yard, where she is out of sight a moment), across the
+ * yard to the foot of the fire escape, up it, and along the roofs to the thing: up the ladder on
+ * the wall where the next roof stands higher, down off the edge where it is lower. She does not
+ * run from the runner; caught, she falls apart as one of a hunt does.
  */
 final class Chase {
     static final float SIZE = 1.3f;
@@ -35,7 +37,9 @@ final class Chase {
     static final float FALL_FROM = 0.5f, FALL_PACE = 1.5f, FALL_END = 1.25f, LIE = 1.6f, RISE_PACE = 1.3f;
 
     static final int FLEE = 0, JOLTED = 1, LOOSE = 2, WAITING = 3, DOWN = 4, RISING = 5, STONE = 6;
-    static final int SEEK = 7, CLIMB = 8, ROOF = 9;
+    static final int SEEK = 7, CLIMB = 8, ROOF = 9, HALL = 10, YARD = 11;
+    // a rival through a hall: how long she is in it; how near a place in the yard is reached
+    static final float HALL_TIME = 2.6f, YARD_NEAR = 0.5f;
     // a rival: how fast she climbs, and walks on the roof; how near the thing she is after is reached
     static final float CLIMBS = 1.6f, ROOF_WALK = 5f, GOT = 0.9f, OFF_WALL = 0.5f, DROP = 22f;
     static final float SIDE = City.CURB + 1.1f;            // where one of a hunt waits: on the pavement
@@ -92,8 +96,13 @@ final class Chase {
     // a rival: whether she is one, how long she looks about first, how fast she runs
     private boolean rival;
     private float startIn, pace;
-    // the foot of the front she climbs, the way it faces, the roof's top, and what she is after
+    // the place on the pavement before the way into the yard, then the foot of what she climbs,
+    // the way its wall faces, the roof's top, and what she is after
     private float footX, footZ, wallX, wallZ, roofTop, prizeX, prizeZ;
+    // where the way into the yard comes out, whether through a hall; the fire escape's foot, the
+    // way its wall faces, its top; whether she is past the way in yet
+    private float inX, inZ, escX, escZ, escNX, escNZ, escTop;
+    private boolean hall, inYard;
     // the stretch of street the foot is on: from crossing (gi, gj) one step along (gdi, gdj)
     private int gi, gj, gdi, gdj;
     /** A rival that has got to what she was after. */
@@ -116,24 +125,45 @@ final class Chase {
         if (rival && state == WAITING) startIn = Math.min(startIn, in);
     }
 
-    /** Whether she is on the roofs (or up a wall). */
+    /** Whether she is on the roofs (or up a ladder). */
     boolean above() {
         return state == CLIMB || state == ROOF;
     }
 
+    /** For the desktop stand: her way in and up, told. */
+    String standWay() {
+        return String.format("in at %.1f %.1f from %.1f %.1f%s, escape foot %.1f %.1f facing %.0f %.0f, top %.1f", inX, inZ, footX, footZ,
+                hall ? " through a hall" : " under an arch", escX, escZ, escNX, escNZ, escTop);
+    }
+
+    /** Whether she is out of sight, in a hall on her way through. */
+    boolean hidden() {
+        return state == HALL;
+    }
+
     /**
-     * Made a rival, after (px, pz) on the roof (top) of the house whose front faces (nx, nz),
-     * climbing it from (fx, fz) on that front; she sets off so many seconds from now, running so
-     * fast.
+     * Made a rival, after (px, pz) on the roof: into the yard by the way at way[o..o+6] (as
+     * City.yardWays keeps it: the pavement before it, where it comes out, through a hall or not,
+     * the way its front faces), then up the fire escape whose foot is (ex, ez), its wall facing
+     * (enx, enz), to the roof at top; she sets off so many seconds from now, running so fast.
      */
-    void rival(float fx, float fz, float nx, float nz, float top, float px, float pz, float delay, float runs) {
+    void rival(float[] way, int o, float ex, float ez, float enx, float enz, float top, float px, float pz, float delay, float runs) {
         rival = true;
         startIn = delay;
         pace = runs;
-        footX = fx + nx * OFF_WALL;
-        footZ = fz + nz * OFF_WALL;
-        wallX = nx;
-        wallZ = nz;
+        float fx = way[o], fz = way[o + 1], nx = way[o + 5], nz = way[o + 6];
+        footX = fx;
+        footZ = fz;
+        inX = way[o + 2];
+        inZ = way[o + 3];
+        hall = way[o + 4] > 0.5f;
+        escX = ex;
+        escZ = ez;
+        escNX = enx;
+        escNZ = enz;
+        escTop = top;
+        wallX = enx;
+        wallZ = enz;
         roofTop = top;
         prizeX = px;
         prizeZ = pz;
@@ -151,10 +181,13 @@ final class Chase {
         }
     }
 
-    /** For the desktop stand: a rival already at the foot of her front, so far up it. */
+    /** For the desktop stand: a rival already at the foot of the fire escape, so far up it. */
     void standClimb(float up) {
-        x = footX;
-        z = footZ;
+        x = footX = escX;
+        z = footZ = escZ;
+        wallX = escNX;
+        wallZ = escNZ;
+        roofTop = escTop;
         y = City.WALK_TOP + up;
         startIn = 0f;
         set(CLIMB);
@@ -198,7 +231,61 @@ final class Chase {
         tj += dj;
     }
 
-    /** A rival up the front and on the roof: climbing, then walking to what she is after. */
+    /**
+     * A rival on her way in: in a hall, out of sight a moment, out at its back door into the yard;
+     * across the yard (under the arch first, if that is the way) to the fire escape's foot.
+     */
+    private void yard(float dt, City city) {
+        if (state == HALL) {
+            speed = 0f;
+            if (clock - stateAt > HALL_TIME) {
+                x = inX;
+                z = inZ;
+                y = city.ground(x, z);
+                inYard = true;
+                heading = (float) Math.atan2(escX - x, escZ - z);
+                set(YARD);
+            }
+            return;
+        }
+        float tx = inYard ? escX : inX, tz = inYard ? escZ : inZ;
+        float ex = tx - x, ez = tz - z, e = (float) Math.sqrt(ex * ex + ez * ez);
+        if (e < YARD_NEAR) {
+            if (!inYard) {
+                inYard = true;
+                return;
+            }
+            // at the foot of the fire escape: up it
+            x = footX = escX;
+            z = footZ = escZ;
+            wallX = escNX;
+            wallZ = escNZ;
+            roofTop = escTop;
+            speed = 0f;
+            set(CLIMB);
+            return;
+        }
+        speed += (pace - speed) * Math.min(1f, dt * 3f);
+        float aim = (float) Math.atan2(ex, ez), d = aim - heading;
+        while (d > Math.PI) d -= 2f * (float) Math.PI;
+        while (d < -Math.PI) d += 2f * (float) Math.PI;
+        heading += Math.max(-8f * dt, Math.min(8f * dt, d));
+        float go = Math.min(e, speed * dt), ux = (float) Math.sin(heading), uz = (float) Math.cos(heading);
+        float[] p = {x + ux * go, z + uz * go};
+        city.push(p, 0.45f, 1.2f);
+        // straight into a tree or a table: round it, along its side
+        for (int side = 1; side >= -1 && go > 1e-4f && (p[0] - x) * ux + (p[1] - z) * uz < go * 0.3f; side -= 2) {
+            p[0] = x - uz * side * go;
+            p[1] = z + ux * side * go;
+            city.push(p, 0.45f, 1.2f);
+        }
+        x = p[0];
+        z = p[1];
+        y += (city.ground(x, z) - y) * Math.min(1f, dt * 18f);
+        stride += dt * Math.max(0.3f, speed) / (speed > 6f ? 7f : 3.3f);
+    }
+
+    /** A rival up a ladder and on the roof: climbing, then walking to what she is after. */
     private void above(float dt, City city) {
         if (state == CLIMB) {
             heading = (float) Math.atan2(-wallX, -wallZ);
@@ -334,6 +421,10 @@ final class Chase {
             case ROOF:
                 above(dt, city);
                 return;
+            case HALL:
+            case YARD:
+                yard(dt, city);
+                return;
             case DOWN:
                 want = 0f;
                 if (!forGood && apart < REACH && !caughtDown) {
@@ -379,7 +470,7 @@ final class Chase {
         float tx = ti * City.CELL + rx * LANE, tz = tj * City.CELL + rz * LANE;
         float ex = tx - x, ez = tz - z;
         if (rival && onGoal()) {
-            // on the stretch the front is on: across to its foot, and up
+            // on the stretch the way into the yard is on: across to it, and in
             float fx = footX - x, fz = footZ - z;
             float along = fx * di + fz * dj;
             if (along < 12f) {
@@ -388,8 +479,8 @@ final class Chase {
                 ex = fx;
                 ez = fz;
                 if (fx * fx + fz * fz < 0.6f * 0.6f) {
-                    speed = 0f;
-                    set(CLIMB);
+                    inYard = false;
+                    set(hall ? HALL : YARD);
                     return;
                 }
             }
@@ -704,6 +795,7 @@ final class Chase {
             return;
         }
         if (rival) {
+            if (state == HALL) return;
             // a rival is no runaway: her plate is a true one, cool; she does not burn
             Frida.violet = true;
             Frida.draw(d, x, y + lift, z, heading + (float) Math.PI, SIZE, motion(), motionTime(), false);

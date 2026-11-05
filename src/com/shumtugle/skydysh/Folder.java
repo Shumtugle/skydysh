@@ -34,7 +34,7 @@ final class Folder {
     float houseX, houseZ, houseHX, houseHZ, top, frontX, frontZ;
     private float heliX, heliZ, heliA, rotor;
     private final Random rnd;
-    private final float[] h = new float[8], hand = new float[3], turn = new float[9];
+    private final float[] h = new float[8], hand = new float[3], turn = new float[9], foot = new float[2];
 
     Folder(long seed) {
         rnd = new Random(seed);
@@ -72,14 +72,17 @@ final class Folder {
             rowOf(city, ci, cj);
             // the way up is a fire escape two houses off or more, and nothing in the row is quicker:
             // no lift in it, no way up next door; the rest is over the roofs
-            boolean up = false, near = false;
+            boolean up = false, near = false, any = false;
             for (int k = 0; k < rowN; k++) {
                 if (k == mine) continue;
                 if (row[k][7] == City.LIFT) near = true;
                 if (row[k][7] != 0f && Math.abs(k - mine) < 2) near = true;
                 if (row[k][7] == City.ESCAPE && Math.abs(k - mine) >= 2) up = true;
+                if (row[k][7] == City.ESCAPE) any = true;
             }
             if ((rowN < 3 || !up || near) && tries < 400) continue;
+            // not found so: a row with a fire escape in it at least, for the rivals go up as she does
+            if (!any && tries < 4000) continue;
             if (lie(city)) break;
         }
         // the helicopter over it, a little off; the rivals far round it, each from its own way
@@ -87,33 +90,56 @@ final class Folder {
         heliZ = z + (rnd.nextFloat() - 0.5f) * 20f;
         heliA = rnd.nextFloat() * 6.2832f;
         float turned = rnd.nextFloat() * 6.2832f;
-        // the houses they climb: the farthest along the row from the folder's first, on both sides
-        int[] from = new int[rowN - 1];
-        int fn = 0;
-        for (int k = 0; k < rowN; k++) if (k != mine) from[fn++] = k;
-        for (int a = 1; a < fn; a++)
-            for (int b = a; b > 0 && Math.abs(from[b] - mine) > Math.abs(from[b - 1] - mine); b--) {
-                int t = from[b];
-                from[b] = from[b - 1];
-                from[b - 1] = t;
+        // the way they go up, as she must: into the yard behind the row (under its arch or through a
+        // hall), up a fire escape of the row, along the roofs; each her own escape, the nearest
+        // the folder first, and the way into the yard nearest the foot of it
+        int[] esc = new int[rowN];
+        int en = 0;
+        for (int k = 0; k < rowN; k++) if (row[k][7] == City.ESCAPE && k != mine) esc[en++] = k;
+        for (int a = 1; a < en; a++)
+            for (int b = a; b > 0 && Math.abs(esc[b] - mine) < Math.abs(esc[b - 1] - mine); b--) {
+                int t = esc[b];
+                esc[b] = esc[b - 1];
+                esc[b - 1] = t;
             }
+        float[] ways = new float[8 * 7];
+        int wn = city.yardWays(ci, cj, ways, 8);
         boolean alongX = Math.abs(frontZ) > 0.5f;
+        float side = alongX ? frontZ : frontX;
         for (int k = 0; k < RIVALS; k++) {
             float a = turned + k * 6.2832f / RIVALS;
             int gi = Math.round((x + (float) Math.sin(a) * RIVALS_FROM) / City.CELL);
             int gj = Math.round((z + (float) Math.cos(a) * RIVALS_FROM) / City.CELL);
             if (gj < City.SHORE) gj = 2 * City.SHORE - gj;
             Chase g = new Chase(rnd.nextLong(), gi, gj, City.way(gj, rnd.nextInt(4)));
-            int s = fn > 0 ? from[k % fn] : mine;
+            int s = en > 0 ? esc[k % en] : mine;
             float[] o = row[s];
             float cu = alongX ? o[0] : o[1], hu = alongX ? o[2] : o[3];
             float cv = alongX ? o[1] : o[0], hv = alongX ? o[3] : o[2];
-            float side = alongX ? frontZ : frontX;
-            // up the front, each a little apart (the fire escapes are at the backs, in the yards)
-            float along = cu + (k - 1) * Math.min(1.6f, hu * 0.4f);
-            float fv = cv + side * hv;
-            float fx = alongX ? along : fv, fz = alongX ? fv : along;
-            g.rival(fx, fz, frontX, frontZ, o[4], x, z, SETS_OFF[k] + rnd.nextFloat() * 4f, RIVAL_RUN + rnd.nextFloat() * 0.8f);
+            // the escape's foot, at the back in the yard
+            city.escapeFoot(o, foot);
+            float ex = foot[0], ez = foot[1];
+            int pick = 0;
+            float best = 1e18f;
+            for (int w = 0; w < wn; w++) {
+                float dx = ways[w * 7 + 2] - ex, dz = ways[w * 7 + 3] - ez, dd = dx * dx + dz * dz;
+                if (dd < best) {
+                    best = dd;
+                    pick = w;
+                }
+            }
+            if (wn == 0) {
+                // no way into the yard at all (it should not be): the front of the escape's house, as a door
+                ways[0] = alongX ? cu : cv + side * (hv + 0.9f);
+                ways[1] = alongX ? cv + side * (hv + 0.9f) : cu;
+                ways[2] = ex;
+                ways[3] = ez;
+                ways[4] = 1f;
+                ways[5] = frontX;
+                ways[6] = frontZ;
+                wn = 1;
+            }
+            g.rival(ways, pick * 7, ex, ez, -frontX, -frontZ, o[4], x, z, SETS_OFF[k] + rnd.nextFloat() * 4f, RIVAL_RUN + rnd.nextFloat() * 0.8f);
             // then along the roofs: before each wall between it and the folder's house
             int dir = Integer.signum(mine - s), n = Math.abs(mine - s);
             float[] w = new float[n * 5];
@@ -136,7 +162,7 @@ final class Folder {
      * (x, z), the way its wall faces (x, z), and the middle line of the row across (along x, its
      * z; along z, its x); false if the row has none.
      */
-    boolean wayUp(float[] out) {
+    boolean wayUp(City city, float[] out) {
         boolean alongX = Math.abs(frontZ) > 0.5f;
         int best = -1;
         for (int k = 0; k < rowN; k++)
@@ -145,9 +171,9 @@ final class Folder {
         float[] o = row[best];
         float cu = alongX ? o[0] : o[1], hu = alongX ? o[2] : o[3], cv = alongX ? o[1] : o[0], hv = alongX ? o[3] : o[2];
         // at the back, in the yard
-        float side = alongX ? frontZ : frontX, fv = cv - side * (hv + 0.55f), u = cu - hu + 1.1f;
-        out[0] = alongX ? u : fv;
-        out[1] = alongX ? fv : u;
+        city.escapeFoot(o, foot);
+        out[0] = foot[0];
+        out[1] = foot[1];
         out[2] = -frontX;
         out[3] = -frontZ;
         out[4] = cv;

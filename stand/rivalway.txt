@@ -1,0 +1,18 @@
+# The rivals' honest way up: no one playing; a rival goes into a hall at the folder's row, comes
+# out of its back door into the yard, runs across to the fire escape and goes up it, as she would
+# have to; then her put on the folder's roof, looking down the row at them coming along the roofs.
+screen 1096 2560
+lang ru
+mission 2
+idle 84.8 0 x
+rivalwatch 2
+shot w0
+idle 3.6 0 x
+rivalwatch 2
+shot w1
+idle 5 0 x
+rivalwatch 2
+shot w2
+onfolder 1.6 3.1416
+wait 6
+shot w3

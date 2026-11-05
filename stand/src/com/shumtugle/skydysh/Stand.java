@@ -710,7 +710,7 @@ public final class Stand implements World.Host {
             // to it, up the ladders where a roof stands higher, off the edges where it is lower
             Folder fo = world.folder;
             float[] w = new float[5];
-            if (!fo.wayUp(w)) {
+            if (!fo.wayUp(world.city, w)) {
                 System.out.println("no fire escape in the folder's row");
                 return;
             }
@@ -1059,6 +1059,34 @@ public final class Stand implements World.Host {
             float px = g.x + nx * 5f + nz * 16f, pz = g.z + nz * 5f - nx * 16f;
             world.runner.put(px, City.WALK_TOP, pz, (float) Math.atan2(g.x - px, g.z - pz));
             step();
+        } else if (c.equals("rivalwatch")) {
+            // rivalwatch K: her put a way off rival K of the folder, on the ground, behind and up a little, facing her
+            Chase g = world.folder.rivals[Integer.parseInt(p[1])];
+            float a = g.heading + (float) Math.PI, px = g.x + (float) Math.sin(a) * 9f, pz = g.z + (float) Math.cos(a) * 9f;
+            world.runner.put(px, world.city.ground(px, pz), pz, (float) Math.atan2(g.x - px, g.z - pz));
+            System.out.println(String.format("%7.2fs  watching rival %s at %.1f %.1f %.1f, state %d", time, p[1], g.x, g.y, g.z, g.state));
+            step();
+        } else if (c.equals("escapes")) {
+            // escapes I J: the cell's houses with a fire escape, where its foot is taken to be, and the fire escapes' signs about
+            int ci = Integer.parseInt(p[1]), cj = Integer.parseInt(p[2]);
+            float[] hh = new float[8], ft = new float[2];
+            for (int k = 0, n = world.city.houses(ci, cj); k < n; k++) {
+                world.city.house(ci, cj, k, hh);
+                if (hh[7] != City.ESCAPE) continue;
+                world.city.escapeFoot(hh, ft);
+                System.out.println(String.format("house at %.1f %.1f half %.1f %.1f facing %.0f %.0f: escape foot %.1f %.1f", hh[0], hh[1], hh[2], hh[3], hh[5], hh[6], ft[0], ft[1]));
+            }
+            if (world.folder != null) {
+                float[] wu = new float[5];
+                System.out.println(world.folder.wayUp(world.city, wu) ? String.format("the folder's row: its fire escape's foot %.1f %.1f facing %.0f %.0f", wu[0], wu[1], wu[2], wu[3])
+                        : "the folder's row: no fire escape");
+                System.out.println(String.format("the folder at %.1f %.1f %.1f, the front facing %.0f %.0f", world.folder.x, world.folder.y, world.folder.z, world.folder.frontX, world.folder.frontZ));
+            }
+            float[] m = new float[6 * 80];
+            int n = world.city.marks(ci * City.CELL + 32f, cj * City.CELL + 32f, 40f, m, 80);
+            for (int k = 0; k < n; k++)
+                if (m[k * 6 + 5] == City.MARK_ESCAPE)
+                    System.out.println(String.format("fire escape sign at %.1f %.1f facing %.0f %.0f", m[k * 6], m[k * 6 + 2], m[k * 6 + 3], m[k * 6 + 4]));
         } else if (c.equals("catchall")) {
             // catchall: every brum of the hunt knocked down at once, as if the mallet had got them all
             for (Chase g : world.mission.brums) g.take(world.runner, world.city, 1f, 0f);
@@ -1074,12 +1102,13 @@ public final class Stand implements World.Host {
                 for (int g = 0; g < Folder.RIVALS; g++)
                     if (fo.rivals[g].state != was[g]) {
                         was[g] = fo.rivals[g].state;
-                        System.out.println(String.format("%7.2fs  rival %d: state %d, %.0f m to go", time, g, was[g], fo.toGo(fo.rivals[g])));
+                        System.out.println(String.format("%7.2fs  rival %d: state %d, %.0f m to go", time, g, was[g], fo.toGo(fo.rivals[g]))
+                                + (was[g] == Chase.HALL || was[g] == Chase.YARD ? "; " + fo.rivals[g].standWay() : ""));
                     }
                 if (System.getenv("FOLDERLOG") != null && i % 120 == 0)
                     for (int g = 0; g < Folder.RIVALS; g++) {
                         Chase r = fo.rivals[g];
-                        if (r.above()) System.out.println(String.format("%7.2fs  rival %d at %.1f %.1f %.1f speed %.1f", time, g, r.x, r.y, r.z, r.speed));
+                        if (r.above() || r.state == Chase.YARD) System.out.println(String.format("%7.2fs  rival %d at %.1f %.1f %.1f speed %.1f", time, g, r.x, r.y, r.z, r.speed));
                     }
                 if (every > 0f && i * DT >= next) {
                     shot(p[3] + (k++));
