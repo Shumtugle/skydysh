@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.83";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.84";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -3058,11 +3058,25 @@ final class World {
      * is left to come, the list (under listHead). Its lines are left in keptLines; what each picks
      * is given back.
      */
+    /** Home's head with what has been won in all under its first line, once there is anything. */
+    private String[] balanced(String[] h) {
+        if (money <= 0 || h.length == 0) return h;
+        String sum = Lang.lines("home.sum", 0, null)[0].replace("{sum}", money(money));
+        boolean gap = h.length > 1 && h[1].isEmpty();
+        String[] out = new String[h.length + (gap ? 2 : 1)];
+        int at = gap ? 2 : 1;
+        System.arraycopy(h, 0, out, 0, at);
+        out[at] = sum;
+        if (gap) out[at + 1] = "";
+        System.arraycopy(h, at, out, at + (gap ? 2 : 1), h.length - at);
+        return out;
+    }
+
     private int[] nextChoice(String head, String listHead) {
         int k = nextKind();
         if (k == 0) return listChoice(listHead);
         listing = false;
-        String[] h = Lang.lines(head, 0, null);
+        String[] h = balanced(Lang.lines(head, 0, null));
         keptLines = new String[h.length + 2];
         System.arraycopy(h, 0, keptLines, 0, h.length);
         keptLines[h.length] = "";
@@ -3081,7 +3095,7 @@ final class World {
      */
     private int[] listChoice(String head) {
         listing = true;
-        String[] h = Lang.lines(head, 0, null);
+        String[] h = balanced(Lang.lines(head, 0, null));
         java.util.ArrayList<String> l = new java.util.ArrayList<String>(java.util.Arrays.asList(h));
         java.util.ArrayList<Integer> p = new java.util.ArrayList<Integer>();
         for (int k = 0; k < h.length; k++) p.add(-1);

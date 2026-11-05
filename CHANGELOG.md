@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.84
+
+- A job's screen says what the job is, not what it pays: no reward on the briefings any more.
+  What was paid is told on the report after the job; what has been won in all, under the head of
+  home's screen (on the sofa and at the door), once there is anything.
+
 ## 0.83
 
 - The port, by the store on the shore road: a concrete yard, the containers' field behind a

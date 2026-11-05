@@ -23,15 +23,15 @@ final class Lang {
         EN.put("report", "Dispatch \u2014 {kind}||All five plates are off.|The brums are already being|put back together.||Time: {time}"
                 + "||Touch to go on");
         EN.put("brief.folder", "Dispatch \u2014 {kind}||Find the folder on the roofs.|The helicopter circles over the place."
-                + "||Three brums are after it too.|Get there first.||Up a fire escape,|then over the roofs.||Reward: {reward}.||Touch to go");
-        EN.put("brief.again", "Dispatch \u2014 {kind}||Replay job.||Find the folder on the roofs|before the others.||Reward: {reward}.||Touch to go");
+                + "||Three brums are after it too.|Get there first.||Up a fire escape,|then over the roofs.||Touch to go");
+        EN.put("brief.again", "Dispatch \u2014 {kind}||Replay job.||Find the folder on the roofs|before the others.||Touch to go");
         EN.put("report.folder", "Dispatch \u2014 {kind}||The folder is ours.|Paid: {reward}.|Balance: {sum}.||Time: {time}"
                 + "||Touch to go on");
         EN.put("report.lost", "Dispatch \u2014 {kind}||Another brum took the folder.||Touch to go on");
         EN.put("lost.short", "TOO LATE");
         EN.put("brief.delivery", "Dispatch \u2014 {kind}||Carry four crates|from the factory to the warehouse."
                 + "||Take a duty pickup.|The factory is west of home,|the warehouse east.||At each gate stop in the bay|and wait for the crates."
-                + "|Then home.||Pay: {reward}.||Touch to go");
+                + "|Then home.||Touch to go");
         EN.put("report.delivery", "Dispatch \u2014 {kind}||Four crates in the warehouse.|Paid: {reward}.|Balance: {sum}.||Time: {time}"
                 + "||Touch to go on");
         EN.put("goal.pickup", "PICKUP");
@@ -50,6 +50,7 @@ final class Lang {
         EN.put("home.next", "Dispatch \u2014 home||The next job:");
         EN.put("sofa.list", "Home. Progress saved.|Your jobs:");
         EN.put("home.list", "Dispatch \u2014 home||Your jobs:");
+        EN.put("home.sum", "Balance: {sum}");
         EN.put("list", "Your jobs:");
         EN.put("kind.panel", "Panel");
         EN.put("kind.8", "Documents to the archive");
@@ -69,14 +70,14 @@ final class Lang {
         EN.put("goal.controls", "TAKE THE CONTROLS");
         EN.put("story.9", "#Skid|=What happened|The helicopter came down in the archive's garden and its right skid gave way. It stands leaning; the pilot, the black brum, waits in the cabin. Nothing takes off on one skid.||There is a new skid at the brums' workshop, by the road out of town.|=The job|A pickup stands at the curb by the archive. Drive it to the workshop and stop on the yellow lines before its gate: the skid is put in the bed.||Drive back to the archive and get out by the pickup. You carry the skid yourself. Come to the helicopter's right side, to its door, and put it on.||Then take the controls. The pilot sits beside you.|=Flying|Two sticks. The left: up to climb, down to come down, aside to turn. The right: up to go ahead, down to go back, aside to go sideways. Let go of the left and it holds its height.||Fly to the town hall's roof, to the pad with the H. The town hall is north of home, on the main street.||After that the helicopter is yours: come to its door whenever you like and get in. It comes down anywhere level, the street or a roof. Not on the water.");
         EN.put("kind.10", "Containers");
-        EN.put("brief.port", "Dispatch \u2014 {kind}||In the port, by the store,|the containers stand anyhow.||Climb up to the crane|and sort them by colour.||Reward: {reward}.||Touch to begin");
+        EN.put("brief.port", "Dispatch \u2014 {kind}||In the port, by the store,|the containers stand anyhow.||Climb up to the crane|and sort them by colour.||Touch to begin");
         EN.put("report.port", "Dispatch \u2014 {kind}||The containers are in their places.|Paid: {reward}.|Balance: {sum}.||Time: {time}||Touch to go on");
         EN.put("goal.crane", "TO THE CRANE");
         EN.put("crane.done", "DONE");
         EN.put("story.10", "#Containers|=What happened|A ship was unloaded in the port, by the store, and the containers were put down anyhow: every colour mixed in the stacks.|=The job|The port is on the waterfront, past the store. The yard with the containers is behind a fence, the crane over it. By the fence stands a tower with a ladder: climb it and you are in the cabin.||Sort the containers so that every stack is four of one colour.|=How to play|Touch a stack and the crane takes its top container. Touch another and it puts it there. It goes on an empty bay or on a container of its own colour, no more than four high.||The arrow left takes a move back. The arrow down gets you out of the cabin. Once all is in place, the box with the arrow brings new ones, one colour more.||After that the containers are in the list at home: straight into the cabin, no way to go. Or come to the port and climb the crane whenever you like.");
         EN.put("report.panel", "Panel||The panel is put right.||Time: {time}||Touch to go on");
         EN.put("panel.plate", "LIGHTING");
-        EN.put("brief.concert", "Dispatch \u2014 {kind}||A technical call:|the concert hall, north of the old town.|The hall is full, and one wall lamp|is all that burns.||The panel is in the wings.|Mend its wiring, throw the switch.|Then take your chair by the stage.||Pay: {reward}.||Touch to go");
+        EN.put("brief.concert", "Dispatch \u2014 {kind}||A technical call:|the concert hall, north of the old town.|The hall is full, and one wall lamp|is all that burns.||The panel is in the wings.|Mend its wiring, throw the switch.|Then take your chair by the stage.||Touch to go");
         EN.put("report.concert", "Dispatch \u2014 {kind}||Morning.|Last night the hall had its lights,|and the concert went ahead.|Paid: {reward}.|Balance: {sum}.||Time: {time}||Touch to go on");
         EN.put("story.7", "#Lights in the hall|=What happened|The concert hall stands north of the old town: columns, broad steps, a gilt lyre over the doors. In the evenings a pianist plays there, and every time something new: he sits down at the piano and makes up a piece there and then, out of old tunes he remembers.||Tonight the hall is full, and the lights have not come on. One lamp burns on a wall: it is on a line of its own. The people sit in the dark, the pianist waits at the piano. The keeper has called dispatch: in the panel in the wings the wiring has come apart.||=The job|Get to the concert hall and go in by the middle doors. The door to the wings is on the right, by the stage.||In the panel the wires run through squares. Touch a square, and it turns. The power comes from the feed in the middle; what it reaches glows. The three lamps are not all of it: the lights come on when the power reaches every square. Then no wire points into the frame or into nothing. While the lamps burn and the panel is not yet whole, the dead squares blink.||Then the switch goes green. Throw it.||With the lights on, go to your chair: by the stage, at the end of the middle aisle, and made to your size. Sit down, and the pianist begins.||After that the hall is yours to come back to any time, no call needed: the chair stays yours.");
         EN.put("kind.6", "Tow");
@@ -112,8 +113,8 @@ final class Lang {
         EN.put("kind.4", "Call out");
         EN.put("brief.rescue", "Dispatch \u2014 {kind}||The road to the village over the hills|is blocked in the pass:|rocks, fallen trunks."
                 + "||Take a duty pickup.|The road goes north,|up the street by home and out of town."
-                + "||Clear the way \u2014|with the pickup or the mallet.|Get to the village square.||Pay: {reward}.||Touch to go");
-        EN.put("brief.rescue.again", "Dispatch \u2014 {kind}||Replay job.||Clear the pass|and get to the village.||Pay: {reward}.||Touch to go");
+                + "||Clear the way \u2014|with the pickup or the mallet.|Get to the village square.||Touch to go");
+        EN.put("brief.rescue.again", "Dispatch \u2014 {kind}||Replay job.||Clear the pass|and get to the village.||Touch to go");
         EN.put("report.rescue", "Dispatch \u2014 {kind}||The pass is clear.|The road to the village is open.|Paid: {reward}.|Balance: {sum}.||Time: {time}"
                 + "||Touch to go on");
         EN.put("goal.pass", "PASS");

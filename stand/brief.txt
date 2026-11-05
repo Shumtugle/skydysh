@@ -1,0 +1,15 @@
+# The job's screen says what the job is, not what it pays: the folder's screen, then home's with
+# the balance under its head. In Russian.
+screen 1096 2560
+lang ru
+keep money 22500
+keep kinds 6
+restart
+wait 0.4
+mission 2
+wait 6
+shot q0
+close
+sofa
+wait 4
+shot q1

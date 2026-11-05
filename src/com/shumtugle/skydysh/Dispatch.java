@@ -255,9 +255,9 @@ final class Dispatch {
 
     /** The line of a briefing with the pay in it: the sum; paid before, the line left out. */
     private static String[] priced(String[] lines, int round) {
-        int due = due(round);
+        // the job's screen says what the job is, not what it pays: what is paid is told after it
         for (int k = 0; k < lines.length; k++)
-            if (lines[k].contains("{reward}")) lines[k] = due > 0 ? lines[k].replace("{reward}", World.money(due)) : null;
+            if (lines[k].contains("{reward}")) lines[k] = null;
         return kept(lines);
     }
 
