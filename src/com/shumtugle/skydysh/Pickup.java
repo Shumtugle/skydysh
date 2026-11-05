@@ -208,6 +208,30 @@ final class Pickup {
         return (float) Math.sqrt(across * across + along * along);
     }
 
+    /**
+     * The nearest place beside it from (px, pz), on any side or at any corner, so far off its body
+     * (x, z into out): she gets in wherever she comes up to it, the nose or the tail as well.
+     */
+    void beside(float px, float pz, float off, float[] out) {
+        float c = (float) Math.cos(heading), s = (float) Math.sin(heading), dx = px - x, dz = pz - z;
+        float across = dx * c - dz * s, along = dx * s + dz * c;
+        float a = Math.max(-HALF_WIDE, Math.min(HALF_WIDE, across)), b = Math.max(-HALF_LONG, Math.min(HALF_LONG, along));
+        if (a == across && b == along) {
+            // within its body: out by its nearest side
+            if (HALF_WIDE - Math.abs(across) < HALF_LONG - Math.abs(along)) a = Math.signum(across == 0f ? -1f : across) * HALF_WIDE;
+            else b = Math.signum(along == 0f ? 1f : along) * HALF_LONG;
+        }
+        float ox = across - a, oz = along - b, m = (float) Math.sqrt(ox * ox + oz * oz);
+        if (m < 1e-3f) {
+            ox = Math.abs(a) >= HALF_WIDE ? Math.signum(a) : 0f;
+            oz = ox == 0f ? Math.signum(b) : 0f;
+            m = 1f;
+        }
+        float la = a + ox / m * off, lb = b + oz / m * off;
+        out[0] = x + c * la + s * lb;
+        out[1] = z - s * la + c * lb;
+    }
+
     /** Where she gets in and out: beside the driver's door, so far off it (x, z into out). */
     void door(float off, float[] out) {
         float c = (float) Math.cos(heading), s = (float) Math.sin(heading);

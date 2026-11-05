@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.84";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.85";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1033,11 +1033,11 @@ final class World {
         return dx * dx + dy * dy < m * m;
     }
 
-    /** At the wheel, low on the left: how fast, in kilometers an hour. */
+    /** At the wheel, up on the left under the pause, out from under the thumb: how fast, in kilometers an hour. */
     private void speedFlat(Px f) {
         if (driving == null || dispatch != null) return;
         String v = String.valueOf(Math.round(Math.abs(driving.speed) * 3.6f));
-        int ink = 0xFF232A4A, y = h - 44;
+        int ink = 0xFF232A4A, y = Math.round(pauseY() + PAUSE_HALF + 12f);
         shadowed(f, v, 12, y, 3, driving.speed > Pickup.VMAX * 0.8f ? 0xFFFFD45A : 0xFFF4E8D2, ink);
         shadowed(f, "KM/H", 14 + PixelFont.width(v, 3), y + 14, 1, 0xFFF4E8D2, ink);
     }
@@ -1373,12 +1373,9 @@ final class World {
         if (free) {
             chase = nobody;
             // the job at the concert hall done once: its middle door is open to her, on foot
-            if ((kindsWon & (1 << 7)) != 0 && indoors == null && swapT < 0f && driving == null) {
-                float dx = runner.x - City.concertDoorX(), dz = runner.z - City.concertDoorZ();
-                if (dx * dx + dz * dz < Concert.DOOR_NEAR * Concert.DOOR_NEAR) {
-                    host.sound(Synth.DOOR, 0.45f, 0.9f);
-                    go(TO_CONCERT);
-                }
+            if ((kindsWon & (1 << 7)) != 0 && indoors == null && swapT < 0f && driving == null && concertDoor(dt)) {
+                host.sound(Synth.DOOR, 0.45f, 0.9f);
+                go(TO_CONCERT);
             }
         } else if (concert != null) {
             boolean in = indoors != null && indoors.concert;
@@ -1393,12 +1390,9 @@ final class World {
                 host.buzz(60);
             }
             // at the hall's middle door, on foot, she goes in
-            if (!in && swapT < 0f && driving == null && concert.step == Concert.GO) {
-                float dx = runner.x - City.concertDoorX(), dz = runner.z - City.concertDoorZ();
-                if (dx * dx + dz * dz < Concert.DOOR_NEAR * Concert.DOOR_NEAR) {
-                    host.sound(Synth.DOOR, 0.45f, 0.9f);
-                    go(TO_CONCERT);
-                }
+            if (!in && swapT < 0f && driving == null && concert.step == Concert.GO && concertDoor(dt)) {
+                host.sound(Synth.DOOR, 0.45f, 0.9f);
+                go(TO_CONCERT);
             }
         } else if (archive != null) {
             int got = archive.update(dt, runner, indoors, host);
@@ -1670,11 +1664,17 @@ final class World {
         }
         if (driving != null) d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
         if (driving != null) {
-            // the wheel: a steering wheel under the finger while it is down, turned as the pickup's is;
-            // a faint one where it would go
-            float turn = driving.steer * WHEEL_TURNS;
-            if (pedal) d.badge(carCX, carCY, WHEEL_HALF, Badges.STEER, 0.85f, brakeIn > 0.05f ? 0.7f : 0.1f, ringTint(), turn);
-            else d.badge(W * 0.5f, h - WHEEL_HALF - 12f, WHEEL_HALF, Badges.STEER, 0.35f, 0f, ringTint(), turn);
+            // the ring under the finger while it is down, the knob where the finger is (the way it
+            // is to go); the ring lit red while it brakes; a faint one where it would go
+            if (pedal) {
+                float ox = carTX - carCX, oy = carTY - carCY, m = (float) Math.sqrt(ox * ox + oy * oy);
+                if (m > CAR_R) {
+                    ox *= CAR_R / m;
+                    oy *= CAR_R / m;
+                }
+                d.badge(carCX, carCY, WHEEL_HALF, Badges.BLANK, 0.75f, brakeIn > 0.05f ? 0.7f : 0.1f, ringTint(), 0f);
+                d.badge(carCX + ox, carCY + oy, KNOB, Badges.KNOB, 0.9f, 0f);
+            } else d.badge(W * 0.5f, h - WHEEL_HALF - 12f, WHEEL_HALF, Badges.BLANK, 0.35f, 0f, ringTint(), 0f);
         }
         if (footButtons() && !Runner.classic) {
             for (int b = 0; b < 3; b++) {
@@ -1804,6 +1804,8 @@ final class World {
     // ---- the duty pickups: in, driven, out ----
     // how near its sides or ends she stands to get in, and how long
     static final float BY_IT = 1f, GET_IN_STAND = 0.5f;
+    /** So near it, walking at it: she gets in at once. */
+    static final float BY_TOUCH = 0.55f;
     private boolean pedal;
     private float wheelIn, brakeIn, doorWait;
     private boolean doorArmed = true;         // not got in again until she has been away from the door
@@ -1833,13 +1835,17 @@ final class World {
     /** Standing by a pickup a moment, on any side of it, she gets in. */
     private void getIn(float dt) {
         Runner r = runner;
-        if (!dutyOut() || indoors != null || swapT >= 0f || r.inAir() || r.climbing() || r.speed > 1f) {
+        if (!dutyOut() || indoors != null || swapT >= 0f || r.inAir() || r.climbing()) {
             doorWait = 0f;
             return;
         }
         for (Pickup p : duty.all) {
             if (p.apart(r.x, r.z) < BY_IT && Math.abs(r.y - p.y) < 1f) {
-                if (doorArmed && (doorWait += dt) > GET_IN_STAND) getIn(p);
+                // walked up against it, from any side or end: in at once; standing by it a moment: in
+                float tx = p.x - r.x, tz = p.z - r.z, tm = (float) Math.sqrt(tx * tx + tz * tz);
+                boolean into = r.speed > 0.4f && p.apart(r.x, r.z) < BY_TOUCH
+                        && ((float) Math.sin(r.heading) * tx + (float) Math.cos(r.heading) * tz) > 0.45f * tm;
+                if (doorArmed && (into || r.speed <= 1f && (doorWait += dt) > GET_IN_STAND)) getIn(p);
                 return;
             }
         }
@@ -1903,13 +1909,34 @@ final class World {
         float sx = pedal ? (carTX - carCX) / CAR_R : 0f, sy = pedal ? (carTY - carCY) / CAR_R : 0f;
         float wheel = 0f;
         brakeIn = 0f;
+        boolean shown = false;
         if (pedal) {
-            float u = Math.min(1f, Math.abs(sx));
-            if (u > CAR_DEAD) wheel = Math.signum(sx) * (float) Math.pow((u - CAR_DEAD) / (1f - CAR_DEAD), CAR_CURVE);
-            if (sy > CAR_BRAKE) brakeIn = Math.min(1f, 0.35f + 0.65f * (sy - CAR_BRAKE) / (1f - CAR_BRAKE));
-            // backing: it goes on backing, the wheel free to turn, till the finger is pushed back up
+            float u = (float) Math.sqrt(sx * sx + sy * sy), a = (float) Math.atan2(sx, -sy);
+            boolean down = sy > CAR_BRAKE && Math.abs(a) > CAR_BACK_ARC;
+            if (down) brakeIn = Math.min(1f, 0.35f + 0.65f * (Math.min(1f, sy) - CAR_BRAKE) / (1f - CAR_BRAKE));
+            // backing: it goes on backing till the finger is pushed back up
             else if (p.speed < -0.3f && sy > CAR_BACK_HOLD) brakeIn = 0.35f;
-        }
+            if (p.speed < -0.3f || brakeIn > 0f) {
+                // backing (or braking): the finger aside swings it as a wheel does, the back going its way
+                float ux = Math.min(1f, Math.abs(sx));
+                if (ux > CAR_DEAD) wheel = Math.signum(sx) * (float) Math.pow((ux - CAR_DEAD) / (1f - CAR_DEAD), CAR_CURVE);
+                wayLatched = false;
+            } else if (u > CAR_DEAD) {
+                // going: the finger shows the way it is to go, as it was facing when the finger
+                // left the middle and so far round from it; it turns till it goes that way, and keeps it
+                if (!wayLatched) {
+                    wayFrom = p.heading;
+                    wayLatched = true;
+                }
+                float want = wayFrom + Math.max(-CAR_WAY_MOST, Math.min(CAR_WAY_MOST, a));
+                float off = want - p.heading;
+                while (off > Math.PI) off -= 2f * (float) Math.PI;
+                while (off < -Math.PI) off += 2f * (float) Math.PI;
+                wheel = Math.max(-1f, Math.min(1f, off * CAR_WAY_GAIN));
+                shown = true;
+            } else wayLatched = false;
+        } else wayLatched = false;
+        wayShown = shown;
         boolean go = pedal && brakeIn == 0f;
         p.cap = -1f;
         wheelIn = wheel;
@@ -1939,8 +1966,8 @@ final class World {
             }
         }
         if (rescue != null) rescue.ram(p, dt);
-        // the rail: the street leads her, as on a string (see Rail)
-        float steerTo = rail.wheel(p, wheel, go, dt, cars);
+        // the rail: the street leads her, as on a string, while the finger shows no way of its own (see Rail)
+        float steerTo = rail.wheel(p, wheel, go, dt, cars, shown);
         if (rail.cap >= 0f) p.cap = rail.cap;
         int ramsWere = cars.rams;
         float brakes = Math.max(brakeIn, rail.brake);
@@ -1955,7 +1982,7 @@ final class World {
         }
         // the wheel let be, or nearly: along the street it is nearly along, the less the more it is turned
         float let = 1f - Math.min(1f, Math.abs(p.steer) / SETTLE_WHEEL);
-        if (let > 0f && Math.abs(p.speed) > 3f && !rail.on) {
+        if (let > 0f && Math.abs(p.speed) > 3f && !rail.on && !wayShown) {
             float d;
             if (p.z > City.EDGE_J * City.CELL + City.CURB) {
                 // out of the town: along the road out, if it is on it or near, the way it runs here
@@ -1998,6 +2025,12 @@ final class World {
     static final float CAR_DEAD = 0.3f, CAR_CURVE = 1.3f, CAR_BRAKE = 0.55f;
     // backing, the finger may wander up so far (above where it came down) and it still backs
     static final float CAR_BACK_HOLD = -0.25f;
+    // the finger down past the ring's middle and within so far round of straight down: the brakes;
+    // the most round from straight ahead the finger shows a way; how hard the wheel goes for it
+    static final float CAR_BACK_ARC = 2.35f, CAR_WAY_MOST = 2.35f, CAR_WAY_GAIN = 2.2f;
+    /** The finger shows a way: which way she faced when it left the ring's middle; whether it does now. */
+    private float wayFrom;
+    private boolean wayLatched, wayShown;
     static final float CAR_R = 44f;
     // the steering wheel drawn under the finger: half its size, frame pixels; turned so far at full lock (radians)
     static final float WHEEL_HALF = 66f, WHEEL_TURNS = 2.2f;            // the ring at the wheel, its radius: wider than her stick on foot
@@ -2120,7 +2153,8 @@ final class World {
         if (kind == MARK_PICKUP) {
             Pickup p = pickupAt(mx, mz);
             if (p == null) return;
-            p.door(0.9f, way);
+            // to the nearest of it, whichever side or corner: she gets in wherever she comes up to it
+            p.beside(r.x, r.z, 0.7f, way);
             r.lead(way[0], way[1], (float) Math.atan2(p.x - way[0], p.z - way[1]));
             errandPickup = p;
             errand = ERRAND_DRIVE;
@@ -2167,7 +2201,7 @@ final class World {
                 } else if (!r.led()) errand = NO_ERRAND;
                 break;
             case ERRAND_DRIVE:
-                if (arrived) {
+                if (arrived || errandPickup != null && errandPickup.apart(r.x, r.z) < BY_IT && !r.inAir()) {
                     getIn(errandPickup);
                     errand = NO_ERRAND;
                 } else if (!r.led()) errand = NO_ERRAND;
@@ -2800,6 +2834,25 @@ final class World {
     /** For the desktop stand: the field solved but for its last move, as if played so far. */
     void standNearlySolved() {
         quay.standNearly();
+    }
+
+    private float porticoWait;
+
+    /**
+     * Whether she goes in at the concert hall's doors now: on its portico anywhere, its steps or its
+     * floor, walking toward the doors, or standing there a moment; through any of the three.
+     */
+    private boolean concertDoor(float dt) {
+        Runner r = runner;
+        if (r.inAir() || r.climbing() || !City.onPortico(r.x, r.z)) {
+            porticoWait = 0f;
+            return false;
+        }
+        boolean toward = r.speed > 0.3f && (float) Math.cos(r.heading) > 0.3f;
+        porticoWait = r.speed < 1f ? porticoWait + dt : 0f;
+        if (!toward && porticoWait < LIFT_STAND) return false;
+        porticoWait = 0f;
+        return true;
     }
 
     /** A stick's answer along one way: -1 to 1, nothing near its middle. */

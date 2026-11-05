@@ -1,7 +1,7 @@
 # The concert hall: its portico; in at the middle door, the hall dark but for one lamp on the
 # right wall, the people in their seats; to the door to the wings, the panel open over everything,
 # its wiring apart; half of it mended, then the lamps lit with a piece still dead (it pulses, two
-# frames), then all; the switch thrown: the lights on, her chair at the front to go to; down in it,
+# frames), then all; the switch thrown: the lights on, her chair in the back row by the left wall; down in it,
 # the pianist plays; the dark comes down; home, on the sofa, the morning: the report, then the
 # choice, the panel on its own in the hall's place. In Russian.
 screen 1096 2560
@@ -39,7 +39,7 @@ shot k6
 wait 2
 where
 shot k7
-inroom 0 16.9
+inroom 8.25 4.3
 wait 1.5
 where
 shot k8

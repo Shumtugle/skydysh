@@ -44,8 +44,12 @@ final class Rail {
         cornerFor = -1f;
     }
 
-    /** The wheel for the pickup now: hand is where the finger turns it (-1 to 1); off the rail, hand itself. */
-    float wheel(Pickup p, float hand, boolean going, float dt, Cars cars) {
+    /**
+     * The wheel for the pickup now: hand is where the finger turns it (-1 to 1); off the rail, hand
+     * itself. own: the finger shows a way of its own: the rail does not lead then, only brakes for a
+     * corner it is turned into.
+     */
+    float wheel(Pickup p, float hand, boolean going, float dt, Cars cars, boolean own) {
         cap = -1f;
         brake = 0f;
         on = false;
@@ -83,7 +87,7 @@ final class Rail {
                 return hand;
             }
         }
-        if (h >= HAND_ALL) {
+        if (h >= HAND_ALL || own) {
             // the hand has it alone; back in the right lane once it lets go
             lane = LANE;
             return hand;

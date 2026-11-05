@@ -69,15 +69,20 @@ phone's own, Russian or English, kept as chosen) and the results: the best time 
 played, on the screen in her head. The eye behind her keeps out of
 the leaves: when a tree's crown or a palm's comes between, it drops under it, or comes in nearer.
 
-At the wheel, while a finger is down the pickup goes; a steering wheel of glass shows where the
-finger came down, turning as the pickup's wheel turns,
-coloured for the mission (coral for a hunt, turquoise for the folder, amber for a delivery, cream
-when free). Moved aside from the ring's middle, the finger turns the wheel (not at all near the middle, then more and more)
-and full over at its edge, the pickup slowing by itself to make the corner; drawn down, it brakes,
-and held so standing, it backs, and goes on backing, the wheel free to turn, till the finger is
-pushed back up. Lifted, the pickup slows to a stop. With the finger held straight, the street
-leads it in its lane; the moment the finger moves aside, the wheel is the hand's. Nosed into a
-wall, the wheel turned still swings it round.
+At the wheel, while a finger is down the pickup goes; a ring of glass shows where the finger came
+down, a knob in it where the finger is, coloured for the mission (coral for a hunt, turquoise for
+the folder, amber for a delivery, cream when free). The finger shows the way the pickup is to go,
+not a wheel to turn: moved off the ring's middle, the way it points is the way to go, as round
+from the way the pickup faced as the finger is from straight up; the pickup turns till it goes
+that way and keeps it (right across: into the side street, and on along it). Drawn straight
+down, it brakes, and held so standing, it backs, and goes on backing, the finger aside swinging
+it, till the finger is pushed back up. Lifted, the pickup slows to a stop. With the finger in the
+ring's middle, the street leads it in its lane. Nosed into a wall, the finger aside still swings
+it round. How fast, up on the left under the pause, out from under the thumb.
+
+She gets in where she comes up to a pickup, any side or end, the nose as well as the doors:
+walked against it, at once; stood by it, in a moment; its sign touched, she goes to the nearest of
+it.
 
 The town ends at the sea: along its southmost street a promenade with palms and a parapet, steps
 down to a beach with sunshades, people lying on the loungers and strolling the sand, and the
@@ -152,14 +157,15 @@ last street by the road out, a dark brick house with two gates and a turquoise p
 and into the bay painted on the road before it. No pay, no clock but the time it takes.
 
 The seventh, the lights in the hall, paid: the concert hall north of the old town, a portico of
-columns on broad steps, three tall doors. In by the middle one: a long hall under a high ceiling,
+columns on broad steps, three tall doors. In by any of them, up the steps anywhere along the
+portico: a long hall under a high ceiling,
 rows of red seats full of people, a stage with red curtains and a black grand piano, a pianist at
 it; and dark, but for one lamp on the right wall. The door to the wings is in that wall by the
 stage, and behind it the panel: a grid of wiring pieces, the feed in the middle. A touch turns a
 piece; the power runs from the feed wherever wires meet, and glows where it gets to. When it
 gets everywhere (and to the three lamps among the ends) the main switch goes green; thrown, it
-puts the lights on. Each panel is grown new, a tree of wires turned about at random, and does
-not come twice. With the light the concert begins: pieces written there and then by a generator
+puts the lights on. Each panel is grown new, a tree of wires turned about at random, and does not come twice. Her chair, a high one her size, stands in the back row at its left end by the
+wall, among the people; down in it, the concert begins: pieces written there and then by a generator
 from a bank of short phrases of old keyboard music in the public domain, played through the
 phone's own synthesizer, for as long as she stays.
 

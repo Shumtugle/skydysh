@@ -1,4 +1,5 @@
-# The hand has the wheel: up a street, a hard turn right at the crossing, the wheel let back, she
+# The finger shows the way: up a street, the finger right across at the crossing, into the side
+# street and on along it, the finger back to the middle; she
 # is in the new street's lane; then backing, the finger drawn down, and moved aside without being
 # pushed back up: it goes on backing, swinging round.
 screen 1096 2560

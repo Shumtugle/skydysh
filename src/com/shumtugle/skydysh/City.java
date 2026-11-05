@@ -267,6 +267,15 @@ final class City implements Ground {
         return CONCERT_J * CELL + FRONT + 3f;
     }
 
+    /**
+     * Whether (x, z) is on the concert hall's portico, its steps or its floor before the doors, the
+     * whole width of it: the way in is anywhere there, through any of its three doors.
+     */
+    static boolean onPortico(float x, float z) {
+        float half = (CELL * 0.5f - FRONT) * 0.55f, front = CONCERT_J * CELL + FRONT;
+        return Math.abs(x - concertDoorX()) < half + 0.4f && z > front - 1.4f && z < concertDoorZ() + 0.3f;
+    }
+
     /** Whether (x, z) is within home's walls. */
     static boolean home(float x, float z) {
         float x0 = HOME_I * CELL + FRONT, z0 = HOME_J * CELL + FRONT;

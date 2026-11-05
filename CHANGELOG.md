@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.85
+
+- The finger at the wheel shows the way the pickup is to go, not a wheel to turn: moved off the
+  ring's middle, the way it points, as round from straight up, is the way to go, as round from
+  where the pickup faced; it turns till it goes so and keeps it. Right across, into the side
+  street and on along it; back to the middle, the street leads again. Backing as before, the
+  finger aside swinging it. The ring is a ring with a knob where the finger is, no wheel; the
+  street's own lead gives way altogether while the finger shows a way.
+- How fast, up on the left under the pause, out from under the thumb.
+- She gets into a pickup from any side or end, its nose and tail as well as its doors: walked
+  against it, at once; its sign touched, to the nearest of it, not round to the driver's door.
+- The concert hall's way in is its whole portico: up the steps anywhere along it toward the doors,
+  or standing on it a moment, through any of the three; not only the middle door, threaded
+  between two columns.
+- Her chair in the concert hall stands in the back row at its left end by the wall, among the
+  people, not before them all; the eye on her sitting there from the aisle a little ahead.
+
 ## 0.84
 
 - A job's screen says what the job is, not what it pays: no reward on the briefings any more.

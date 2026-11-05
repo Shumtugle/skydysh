@@ -468,19 +468,22 @@ final class Rooms {
             float v = Concert.rowV(r);
             for (int e = -1; e <= 1; e += 2)
                 for (int k = 0; k < Concert.SEATS; k++) {
+                    if (Concert.underChair(r, e, k)) continue;
                     float u = e * Concert.seatU(k);
                     in.box(d, u, f + 0.22f, v, 0.38f, 0.22f, 0.36f, 0x3A2A24, DrawList.WOOD);
                     in.box(d, u, f + 0.47f, v, 0.36f, 0.05f, 0.34f, 0xA8323A, DrawList.GRAIN);
                     in.box(d, u, f + 0.75f, v + 0.33f, 0.36f, 0.32f, 0.05f, 0xA8323A, DrawList.GRAIN);
                 }
             for (int e = -1; e <= 1; e += 2) {
-                float u0 = Concert.seatU(0) - 0.45f, u1 = Concert.seatU(Concert.SEATS - 1) + 0.45f;
+                int last = Concert.underChair(r, e, Concert.SEATS - 1) ? Concert.CHAIR_FROM - 1 : Concert.SEATS - 1;
+                float u0 = Concert.seatU(0) - 0.45f, u1 = Concert.seatU(last) + 0.45f;
                 in.solid(e > 0 ? u0 : -u1, v - 0.45f, e > 0 ? u1 : -u0, v + 0.45f, f + 1.1f);
             }
         }
-        // her chair, at the front against the stage, in her way as the rows are
+        // her chair, in the back row at its left end, in her way as the rows are
         Concert.drawChair(d, in);
-        in.solid(-Concert.CHAIR_HALF, Concert.CHAIR_V - Concert.CHAIR_DEEP, Concert.CHAIR_HALF, Concert.CHAIR_V + Concert.CHAIR_DEEP, f + 1.2f);
+        in.solid(Concert.CHAIR_U - Concert.CHAIR_HALF, Concert.CHAIR_V - Concert.CHAIR_DEEP, Concert.CHAIR_U + Concert.CHAIR_HALF,
+                Concert.CHAIR_V + Concert.CHAIR_DEEP, f + 1.2f);
         // the stage: boards a step high the width of the hall, its edge gilt; the curtains behind
         float st = Concert.STAGE, sy = f + Concert.STAGE_HIGH;
         in.box(d, 0f, (f + sy) * 0.5f, (st + deep - w) * 0.5f, half, (sy - f) * 0.5f, (deep - w - st) * 0.5f, 0x8A5A34, DrawList.WOOD);
