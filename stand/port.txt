@@ -1,0 +1,30 @@
+# The port: the job on the screen; on the shore road by the store, the container yard behind its fence, the crane over
+# it, the tower with its ladder at the corner, the way marked to the crane. Up the ladder: the
+# eye over the field from the cabin's side, the stacks mixed; a stack touched, its top in the air;
+# the field put in order, the word over it, out and a new field at the foot of the frame.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 10
+wait 5
+shot pb
+close
+at 392 2 0.6
+wait 1
+shot p0
+at 398.5 12 0
+ladder street 1
+wait 7
+crane
+shot p1
+bay 4
+wait 1.6
+crane
+shot p2
+nearly
+bay 6
+wait 0.3
+bay 5
+wait 3
+crane
+shot p3

@@ -72,6 +72,7 @@ release, each seen on the stand before the phone.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
+- 0.83 The port and its crane: the containers, a sorting game; on home's list after the first; the sofa's picks no longer taken for kinds.
 - 0.82 The folder's seekers up the fire escape through the yard, as she must; the folder always in a row with an escape; escapes on the yard end.
 - 0.81 No hop onto the pickup she is led to; a point beside a mark off the frame; the pass one mountain.
 - 0.80 The helicopter mended and flown home by hand on two sticks; after it, hers to fly; the eye in the town hall's door lower.
@@ -100,6 +101,10 @@ release, each seen on the stand before the phone.
 
 ## Next
 
+- A way past a story that will not go: offered after it is lost, or after long at one place (the
+  panel), not at the start; the story skipped goes into home's list, not done, to be played when
+  she likes; no pay for it. The panel skipped in the concert: the light comes on for her, the
+  panel stays on the list unplayed.
 The missions in order, each teaching a thing; then the town is hers.
 
 1. The hunt: in the streets only (the lifts shut), learning to run them.

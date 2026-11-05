@@ -175,6 +175,17 @@ stopped by what is higher than it; it does not come down on the sea. After that 
 come to its door and stand a moment, and she is at the controls; set down, the button low on the
 right lets her out, and it stays where she left it, kept with the game.
 
+The tenth, the containers: a game. In the port on the shore road, past the store, a yard of
+containers behind a fence and a gantry crane over it; up the ladder of the tower at the fence's
+corner, and she is in the cabin, the eye over the field from far off on a long lens. Touch a
+stack and the crane takes its top container up; touch another and it lets it down there, on an
+empty bay or on its own colour, no more than four high. Done when every stack is four of one
+colour (paid the first time). At the foot of the frame: down out of the cabin, a move taken back,
+and once the field is done, a new one brought in, one colour more. Every field is dealt by taking
+a sorted one apart with moves that could each be made back, so it always has a way to order.
+After the first, the containers are on home's list: straight into the cabin with no way to go,
+and back on the sofa when she comes down; or at the crane whenever she climbs it.
+
 The jobs come in turn: home's screen offers the next one, and a list of her own (the games played, the panel) to play again.
 
 What is to come is in `PLAN.md`.

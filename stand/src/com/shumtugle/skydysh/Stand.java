@@ -1066,6 +1066,17 @@ public final class Stand implements World.Host {
             world.runner.put(px, world.city.ground(px, pz), pz, (float) Math.atan2(g.x - px, g.z - pz));
             System.out.println(String.format("%7.2fs  watching rival %s at %.1f %.1f %.1f, state %d", time, p[1], g.x, g.y, g.z, g.state));
             step();
+        } else if (c.equals("crane")) {
+            // crane: the crane and its field, told
+            System.out.println(String.format("%7.2fs  %s", time, world.standCrane()));
+        } else if (c.equals("bay")) {
+            // bay N|out|back|load: a stack of the field touched at the crane, or one of its buttons
+            world.standBay(p[1]);
+            step();
+        } else if (c.equals("nearly")) {
+            // nearly: the field in order but for its last move
+            world.standNearlySolved();
+            step();
         } else if (c.equals("escapes")) {
             // escapes I J: the cell's houses with a fire escape, where its foot is taken to be, and the fire escapes' signs about
             int ci = Integer.parseInt(p[1]), cj = Integer.parseInt(p[2]);

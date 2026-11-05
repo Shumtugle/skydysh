@@ -131,6 +131,8 @@ final class City implements Ground {
      * middle and a bay painted on the road before it where a pickup stands to be loaded or unloaded.
      */
     static final int FACTORY_I = HOME_I - 4, STORE_I = HOME_I + 5;
+    /** The port: the container yard by the store, its crane over it. */
+    static final int PORT_I = STORE_I + 1, PORT_J = SHORE;
     // the bay: half its length along the road, and its middle across it (in the lane by the gate)
     static final float BAY_HALF = 4.5f, BAY_Z = 3.4f, BAY_DEEP = 1.9f;
 
@@ -1372,6 +1374,10 @@ final class City implements Ground {
         boolean open = arched(i, j), north = mine || ((hash(i, j, 8) >>> 9) & 1) == 0;
         boolean works = j == SHORE && (i == FACTORY_I || i == STORE_I);
         if (works) north = true;
+        if (i == PORT_I && j == PORT_J) {
+            port(c, rnd, x0, z0);
+            return;
+        }
         // the archive's garden: a way in under an arch through the north row
         boolean archive = i == ARCHIVE_I && j == ARCHIVE_J;
         if (archive) {
@@ -1392,6 +1398,79 @@ final class City implements Ground {
         else row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b, false, 1, false);
         yard(c, open, new Random(hash(i, j, 9)));
         if (archive) garden(c, x0 + a + DEPTH, x0 + b - DEPTH, z0 + a + DEPTH, z0 + b - DEPTH);
+    }
+
+    /**
+     * The port: no houses, a yard of concrete. In its middle the field of the containers' bays,
+     * fenced in; over it the crane, a gantry on two rails (drawn with the puzzle, see Quay); at
+     * the fence's south-west corner, toward the shore road, a steel tower with a ladder up its face
+     * and a catwalk at its top over to the crane's rail end; round the fence, along the yard's
+     * north and east edges, containers stacked one to three high, waiting.
+     */
+    private void port(Cell c, Random rnd, float x0, float z0) {
+        DrawList d = c.boxes, small = c.detail;
+        float cx = Quay.CX, cz = Quay.CZ;
+        float in0x = x0 + CURB, in1x = x0 + CELL - CURB, in0z = z0 + CURB, in1z = z0 + CELL - CURB;
+        // the concrete, a shade darker than the pavements, its joints
+        d.box((in0x + in1x) * 0.5f, WALK_TOP + 0.005f, (in0z + in1z) * 0.5f, (in1x - in0x) * 0.5f, 0.006f, (in1z - in0z) * 0.5f, null, 0xA9A49A, DrawList.PAVING);
+        for (float z = in0z + 6f; z < in1z; z += 6f)
+            small.box((in0x + in1x) * 0.5f, WALK_TOP + 0.013f, z, (in1x - in0x) * 0.5f, 0.003f, 0.03f, null, 0x8C877E, DrawList.PLAIN);
+        // the rails the crane runs on
+        for (int e = -1; e <= 1; e += 2)
+            for (int r = -1; r <= 1; r += 2)
+                small.box(cx + e * Quay.GANTRY_HALF + r * 0.5f, WALK_TOP + 0.06f, cz, 0.06f, 0.05f, Quay.RAILS_HALF, null, 0x3E3A36, DrawList.POLISHED);
+        // the fence round the field: posts, a dark mesh, a yellow rail along its top; on the walls
+        float fx = Quay.FENCE_X, fz = Quay.FENCE_Z, fh = 3.2f;
+        int post = 0x5A5E62, mesh = 0x3A3F44, yellow = 0xE8B830;
+        for (int side = 0; side < 4; side++) {
+            boolean alongX = side < 2;
+            float v = side == 0 ? cz - fz : side == 1 ? cz + fz : side == 2 ? cx - fx : cx + fx;
+            float u0 = alongX ? cx - fx : cz - fz, u1 = alongX ? cx + fx : cz + fz, um = (u0 + u1) * 0.5f, uh = (u1 - u0) * 0.5f;
+            float bx = alongX ? um : v, bz = alongX ? v : um;
+            small.box(bx, WALK_TOP + fh * 0.5f, bz, alongX ? uh : 0.02f, fh * 0.5f, alongX ? 0.02f : uh, null, mesh, DrawList.RAIL);
+            small.box(bx, WALK_TOP + fh, bz, alongX ? uh : 0.05f, 0.05f, alongX ? 0.05f : uh, null, yellow, DrawList.PAINT);
+            for (float u = u0; u <= u1 + 0.01f; u += 3f)
+                small.box(alongX ? u : v, WALK_TOP + fh * 0.5f, alongX ? v : u, 0.05f, fh * 0.5f, 0.05f, null, post, DrawList.PLAIN);
+            c.wall(alongX ? u0 : v - 0.15f, alongX ? v - 0.15f : u0, alongX ? u1 : v + 0.15f, alongX ? v + 0.15f : u1, fh + 0.3f);
+        }
+        // the tower at the fence's south-west corner: four yellow legs braced, a platform at the
+        // top with its railing, the ladder up its south face, a catwalk east to the crane's rail end
+        float tx = Quay.TOWER_X, tz = Quay.TOWER_Z, th = Quay.TOWER_TOP, half = 1.2f;
+        for (int a = -1; a <= 1; a += 2)
+            for (int b = -1; b <= 1; b += 2)
+                d.box(tx + a * (half - 0.12f), th * 0.5f, tz + b * (half - 0.12f), 0.12f, th * 0.5f, 0.12f, null, yellow, DrawList.PAINT);
+        for (float y = 2.5f; y < th - 1f; y += 3f)
+            for (int a = -1; a <= 1; a += 2) {
+                small.box(tx + a * (half - 0.12f), y, tz, 0.06f, 0.06f, half, null, yellow, DrawList.PAINT);
+                small.box(tx, y + 1.5f, tz + a * (half - 0.12f), half, 0.06f, 0.06f, null, yellow, DrawList.PAINT);
+            }
+        d.box(tx, th - 0.1f, tz, half + 0.3f, 0.1f, half + 0.3f, null, 0x6A6E72, DrawList.PLAIN);
+        for (int a = -1; a <= 1; a += 2) {
+            small.box(tx + a * (half + 0.28f), th + 0.55f, tz, 0.04f, 0.55f, half + 0.3f, null, yellow, DrawList.RAIL);
+            small.box(tx, th + 0.55f, tz + (half + 0.28f), half + 0.3f, 0.55f, 0.04f, null, yellow, DrawList.RAIL);
+        }
+        c.wall(tx - half - 0.3f, tz - half - 0.3f, tx + half + 0.3f, tz + half + 0.3f, th);
+        ladder(c, tx, tz - half - 0.3f, WALK_TOP, th, 0f, -1f, false);
+        float cw0 = tx + half + 0.3f, cw1 = cx - Quay.GANTRY_HALF;
+        d.box((cw0 + cw1) * 0.5f, th - 0.1f, tz, (cw1 - cw0) * 0.5f, 0.08f, 0.6f, null, 0x6A6E72, DrawList.PLAIN);
+        for (int b = -1; b <= 1; b += 2)
+            small.box((cw0 + cw1) * 0.5f, th + 0.55f, tz + b * 0.6f, (cw1 - cw0) * 0.5f, 0.55f, 0.03f, null, yellow, DrawList.RAIL);
+        // the containers waiting round the edges, along the north and the east
+        int[] cols = Quay.COLORS;
+        for (float x = in0x + 2f; x < in1x - 3f; x += 2.9f) {
+            if (rnd.nextInt(5) == 0) continue;
+            float z = in1z - 3.4f;
+            int n = 1 + rnd.nextInt(3);
+            for (int k = 0; k < n; k++) Quay.box(d, small, x + 1.22f, WALK_TOP + k * Quay.HIGH_EACH, z, false, cols[rnd.nextInt(cols.length)]);
+            c.wall(x, z - Quay.HALF_LONG, x + 2.44f, z + Quay.HALF_LONG, WALK_TOP + n * Quay.HIGH_EACH);
+        }
+        for (float z = in0z + 3f; z < cz + fz - 3f; z += 2.9f) {
+            if (rnd.nextInt(5) == 0) continue;
+            float x = in1x - 3.4f;
+            int n = 1 + rnd.nextInt(3);
+            for (int k = 0; k < n; k++) Quay.box(d, small, x, WALK_TOP + k * Quay.HIGH_EACH, z + 1.22f, true, cols[rnd.nextInt(cols.length)]);
+            c.wall(x - Quay.HALF_LONG, z, x + Quay.HALF_LONG, z + 2.44f, WALK_TOP + n * Quay.HIGH_EACH);
+        }
     }
 
     /**
@@ -1996,7 +2075,7 @@ final class City implements Ground {
      * another on the yard (a lift's or a hall's). How many; none for a cell that is no block.
      */
     int yardWays(int i, int j, float[] out, int max) {
-        if (sea(j) || country(j) || oldTown(i, j) || square(i, j)) return 0;
+        if (sea(j) || country(j) || oldTown(i, j) || square(i, j) || i == PORT_I && j == PORT_J) return 0;
         int n = 0;
         float x0 = i * CELL, z0 = j * CELL, mid = CELL * 0.5f, a = FRONT, b = CELL - FRONT;
         // the arch, as block makes it: through the north row, or the south one

@@ -201,10 +201,12 @@ final class Dispatch {
     }
 
     /** A pick that takes the panel on its own, no way to go: it opens over the room. */
-    static final int SOLO = 10;
+    static final int SOLO = 98;
+    /** A pick that takes the containers in the port, no way to go: the crane over the field. */
+    static final int YARD = 97;
 
     /** A pick that takes no mission: she stays as she is (on the sofa, free). */
-    static final int REST = 9;
+    static final int REST = 99;
 
 
     /**
@@ -246,7 +248,8 @@ final class Dispatch {
     /** What a mission of round's kind pays now: its reward the first time, nothing after. */
     static int due(int round) {
         int kind = World.kindOf(round);
-        int reward = kind == 2 ? Folder.REWARD : kind == 3 ? Delivery.REWARD : kind == 4 ? Rescue.REWARD : kind == 7 ? Concert.REWARD : 0;
+        int reward = kind == 2 ? Folder.REWARD : kind == 3 ? Delivery.REWARD : kind == 4 ? Rescue.REWARD : kind == 7 ? Concert.REWARD
+                : kind == 10 ? Quay.REWARD : 0;
         return (paidKinds & (1 << kind)) != 0 ? 0 : reward;
     }
 
@@ -279,6 +282,7 @@ final class Dispatch {
         if (Concert.its(round)) return priced(Lang.lines("brief.concert", round, null), round);
         if (Archive.its(round)) return Lang.lines("brief.archive", round, null);
         if (Mend.its(round)) return Lang.lines("brief.mend", round, null);
+        if (Port.its(round)) return priced(Lang.lines("brief.port", round, null), round);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
@@ -317,6 +321,11 @@ final class Dispatch {
     /** The folders brought to the archive: the time. */
     static String[] archived(int round, String time) {
         return Lang.lines("report.archive", round, time);
+    }
+
+    /** The field in the port put in order: the pay, what has been won in all, the time. */
+    static String[] ported(int round, String time, int money, int got) {
+        return fill(Lang.lines("report.port", round, time), got, money);
     }
 
     /** The helicopter mended and flown back to the town hall's roof: the time. */

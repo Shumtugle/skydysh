@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.83
+
+- The port, by the store on the shore road: a concrete yard, the containers' field behind a
+  fence, a yellow gantry crane on two rails over it, a tower with a ladder at the fence's corner
+  and a catwalk over to the crane, containers waiting stacked round the yard's edges.
+- The containers, the tenth kind and a third game: up the tower and into the crane's cabin; the
+  field from far off on a long lens, the stacks' sides showing. A stack touched, the crane goes
+  over it and takes its top container up; another touched, it carries it there and lets it down,
+  on an empty bay or on its own colour, four high at most. Up, across, down, as a crane does; a
+  touch made while it is on its way is kept and done when it is free. Every field dealt by taking
+  a sorted one apart with moves that could each be made back: never one with no way out. Six
+  colours the first time, one more for each field done, to nine. Paid 10 000, once.
+- At the crane: down out of the cabin (bottom left), a move taken back (bottom middle), and once
+  the field is done, a new one brought in (bottom right).
+- After the first field the containers are on home's list: straight into the cabin with no way
+  to go, back on the sofa on coming down. And the crane is hers whenever she climbs its tower.
+- Home's choice: the pick that leaves her on the sofa was numbered as the ninth kind, so the
+  helicopter's story could not be taken up again from home; the picks that are not kinds now
+  stand far past them.
+
 ## 0.82
 
 - The violet seekers of the folder go up honestly, as she must: from the street into the yard

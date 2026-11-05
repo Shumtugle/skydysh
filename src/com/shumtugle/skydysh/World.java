@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.82";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.83";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -51,6 +51,13 @@ final class World {
     Tow tow;                                 // the mission now, when it is the tow out of the quarry
     Archive archive;                         // the mission now, when it is the papers to the archive
     Mend mend;                               // the mission now, when it is the helicopter mended and flown back
+    Port port;                               // the mission now, when it is the port, the first time
+    /** The containers in the port and the crane over them; she at its controls or not. */
+    final Quay quay;
+    /** She is in the crane's cabin, working it; so from home's list, with no way to go. */
+    private boolean craning, craneSolo;
+    /** The containers from home's list: the crane once the walls have drawn back. */
+    private boolean yardNext;
     /** The town's helicopter left where the archive job left it, leaning on its broken skid; mended, hers. */
     private Copter parked;
     /** She flies it herself, on no job (it is hers). */
@@ -121,6 +128,8 @@ final class World {
             for (int n = 1; n < next; n++) kindsWon |= 1 << kindOf(n);
         Dispatch.paidKinds = host.loadInt(SAVE_PAID);
         loadCopter();
+        quay = new Quay(0x9047C0DEL + host.loadInt(SAVE_FIELDS) * 7919L);
+        quay.deal(fieldColours());
         // a game kept before pay was counted: the paid kinds it had won taken as paid
         if (Dispatch.paidKinds == 0) Dispatch.paidKinds = kindsWon & (1 << 2 | 1 << 3 | 1 << 4 | 1 << 5);
         // the way to play on foot: one finger, unless two thumbs are offered and were chosen (kept as 2)
@@ -154,11 +163,18 @@ final class World {
         tow = null;
         archive = null;
         mend = null;
+        port = null;
         flying = false;
         if (concert != null) concert.stop();
         concert = null;
         city.extra = null;
-        if (Mend.its(n)) {
+        if (Port.its(n)) {
+            mission.round = n;
+            folder = null;
+            port = new Port();
+            chase = nobody;
+            if (quay.solved || quay.moves > 0) quay.deal(fieldColours());
+        } else if (Mend.its(n)) {
             mission.round = n;
             folder = null;
             if (parked == null) parked = brokenAtArchive();
@@ -341,6 +357,7 @@ final class World {
     private float doneTime() {
         if (archive != null) return archive.doneAt;
         if (mend != null) return mend.doneAt;
+        if (port != null) return port.doneAt;
         if (concert != null) return concert.doneAt;
         if (tow != null) return tow.doneAt;
         if (puppy != null) return puppy.doneAt;
@@ -365,9 +382,9 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 2, 2, 1, 3, 1, 1};
+    static final int[] REVISION = {0, 4, 4, 2, 2, 2, 1, 3, 1, 1, 1};
     /** How many kinds of mission there are; they come in turn, round and round. */
-    static final int KINDS = 9;
+    static final int KINDS = 10;
 
     /** Mission n's kind: the hunt 1, the folder 2, the delivery 3. */
     static int kindOf(int n) {
@@ -493,19 +510,20 @@ final class World {
 
     /** The brums of the mission now. */
     Chase[] brums() {
-        if (free || delivery != null || rescue != null || puppy != null || tow != null || concert != null || archive != null || mend != null) return NONE;
+        if (free || delivery != null || rescue != null || puppy != null || tow != null || concert != null || archive != null || mend != null || port != null) return NONE;
         return folder != null ? folder.rivals : mission.brums;
     }
 
     /** Whether the mission now is a hunt. */
     boolean hunt() {
-        return !free && folder == null && delivery == null && rescue == null && puppy == null && tow == null && concert == null && archive == null && mend == null;
+        return !free && folder == null && delivery == null && rescue == null && puppy == null && tow == null && concert == null && archive == null && mend == null && port == null;
     }
 
     /** Whether the mission now is done with, won or not. */
     boolean over() {
         if (archive != null) return archive.over();
         if (mend != null) return mend.over();
+        if (port != null) return port.over();
         if (concert != null) return concert.over();
         if (tow != null) return tow.over();
         if (puppy != null) return puppy.over();
@@ -546,7 +564,7 @@ final class World {
 
     /** Whether the mission just over was lost: the hunt's time out, the folder taken first, the puppy got out by others. */
     private boolean failed() {
-        if (puppy != null || tow != null || concert != null || archive != null || mend != null) return false;
+        if (puppy != null || tow != null || concert != null || archive != null || mend != null || port != null) return false;
         return hunt() ? mission.late : folder != null && folder.theirs;
     }
 
@@ -554,6 +572,7 @@ final class World {
     private String[] report() {
         if (archive != null) return Dispatch.archived(mission.round, clock(archive.doneAt));
         if (mend != null) return Dispatch.mended(mission.round, clock(mend.doneAt));
+        if (port != null) return Dispatch.ported(mission.round, clock(port.doneAt), money, paidNow);
         if (concert != null) return Dispatch.concerted(mission.round, clock(concert.doneAt), money, paidNow);
         if (tow != null) return Dispatch.towed(mission.round, clock(tow.doneAt));
         if (puppy != null) return Dispatch.puppied(mission.round, clock(puppy.doneAt), money, paidNow);
@@ -642,6 +661,7 @@ final class World {
         if (archive != null) parked = archive.copter;
         archive = null;
         mend = null;
+        port = null;
         if (concert != null) concert.stop();
         concert = null;
         chase = nobody;
@@ -754,6 +774,9 @@ final class World {
                 if (c == Dispatch.SOLO) {
                     // the panel on its own: it opens once the walls have drawn back
                     soloNext = true;
+                } else if (c == Dispatch.YARD) {
+                    // the containers, no way to go: at the crane once the walls have drawn back
+                    yardNext = true;
                 } else if (c > 0 && c < Dispatch.REST) {
                     chooseMission(c);
                     dispatch.then(briefing()).story(kindOf(mission.round));
@@ -775,6 +798,10 @@ final class World {
         }
         if (piloting()) {
             pilotTouch(type, id, x, y);
+            return;
+        }
+        if (craning) {
+            craneTouch(type, id, x, y);
             return;
         }
         if (aboard()) {
@@ -1227,6 +1254,9 @@ final class World {
                 if (soloNext) {
                     soloNext = false;
                     openSolo();
+                } else if (yardNext) {
+                    yardNext = false;
+                    startCrane(true);
                 } else if (resultsOpen) resultsOpen = false;
                 else if (standAfter) {
                     standAfter = false;
@@ -1278,6 +1308,7 @@ final class World {
             archive = null;
             if (mend != null) parked = mend.copter;
             mend = null;
+            port = null;
             saveCopter();
             // after the concert the dark has come down: she wakes at home, on her sofa, in the morning
             boolean slept = concert != null;
@@ -1319,17 +1350,20 @@ final class World {
         if (driving != null) drive(dt);
         else if (aboard()) ride(dt);
         else if (piloting()) fly(dt);
+        else if (craning) crane(dt);
         else {
             ladders(dt);
             doors(dt);
             errands(dt);
             getIn(dt);
             board(dt);
+            toCrane();
         }
+        if (!craning) quay.update(dt);
         if (!piloting() && parked != null && archive == null && mend == null) parked.update(dt);
         // a beat of the arms (a flick, between frames): the air through them
         if (runner.beatsLeft() < beatsWere) host.sound(Synth.WHOOSH, 0.5f, 0.8f);
-        if (swapT < 0f && driving == null && !seated() && !inChair() && !aboard() && !piloting()) runner.update(dt, city, cars, walkers);
+        if (swapT < 0f && driving == null && !seated() && !inChair() && !aboard() && !piloting() && !craning) runner.update(dt, city, cars, walkers);
         // into deep water: a splash, and she swims
         boolean swims = runner.swimming();
         if (swims && !swimSeen) host.sound(Synth.SPLASH, 0.8f, 1f);
@@ -1390,6 +1424,8 @@ final class World {
             }
         } else if (mend != null) {
             mendStep(dt);
+        } else if (port != null) {
+            port.update(dt, craning, quay.solved);
         } else if (tow != null) {
             tow.update(dt, duty, driving, runner, city, host);
         } else if (puppy != null) {
@@ -1626,6 +1662,10 @@ final class World {
         d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PAUSE, 0.75f, 0f);
         if (piloting()) {
             sticks(d);
+            return;
+        }
+        if (craning) {
+            craneButtons(d);
             return;
         }
         if (driving != null) d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
@@ -1945,7 +1985,7 @@ final class World {
         if (rescue != null) return DrawList.TINT_GREEN;
         if (puppy != null) return DrawList.TINT_TURQUOISE;
         if (tow != null) return DrawList.TINT_AMBER;
-        if (archive != null || mend != null) return DrawList.TINT_TURQUOISE;
+        if (archive != null || mend != null || port != null) return DrawList.TINT_TURQUOISE;
         if (concert != null) return DrawList.TINT_CREAM;
         if (delivery != null) return DrawList.TINT_AMBER;
         if (folder != null) return DrawList.TINT_TURQUOISE;
@@ -2534,6 +2574,234 @@ final class World {
         saveCopter();
     }
 
+    // ---- the crane in the port ----
+    static final String SAVE_FIELDS = "port.fields";
+    // a stack touched within so far of its middle on the frame, frame pixels
+    static final float BAY_REACH = 46f;
+    // the eye over the field: so high, so far back toward the shore, looking down at it
+    static final float CRANE_EYE_UP = 50f, CRANE_EYE_BACK = 28f, CRANE_LENS = 2.6f, CRANE_LOOK_Z = -1f;
+    private final float[] bayAt = new float[Quay.SLOTS * 2];
+    private boolean baysSeen;
+
+    /** How many colours the next field has: one more for every field done, to the most. */
+    private int fieldColours() {
+        return Quay.FEWEST + Math.min(Quay.MOST - Quay.FEWEST, host.loadInt(SAVE_FIELDS));
+    }
+
+    /** On foot at the top of the crane's tower: into its cabin, on the port's job or on none. */
+    private void toCrane() {
+        Runner r = runner;
+        if (!(free || port != null) || indoors != null || r.climbing() || r.inAir()) return;
+        if (r.y < Quay.TOWER_TOP - 0.6f || Math.abs(r.x - Quay.TOWER_X) > 1.6f || Math.abs(r.z - Quay.TOWER_Z) > 1.6f) return;
+        startCrane(false);
+    }
+
+    /** Into the crane's cabin: the eye over the field; a field done is dealt anew. From home's list: no way to go. */
+    private void startCrane(boolean solo) {
+        if (solo) {
+            if (driving != null) getOut();
+            runner.getOut(runner.x, runner.y, runner.z, runner.heading);
+            if (indoors != null) {
+                indoors = null;
+                swapT = -1f;
+            }
+        }
+        craning = true;
+        craneSolo = solo;
+        baysSeen = false;
+        errand = NO_ERRAND;
+        runner.stopLead();
+        letGo();
+        if (quay.solved) quay.deal(fieldColours());
+        crane(0f);
+        host.sound(Synth.LATCH, 0.5f, 1.1f);
+        host.buzz(20);
+    }
+
+    /** Out of the cabin: down the tower to its foot; from home's list, back on her sofa. */
+    private void leaveCrane() {
+        craning = false;
+        quay.putBack();
+        letGo();
+        if (craneSolo) {
+            craneSolo = false;
+            runner.getOut(runner.x, runner.y, runner.z, runner.heading);
+            indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+            indoors.enter(runner, false);
+            runner.recenter();
+            runner.update(0f, city, cars, walkers);
+            sitDown();
+            sofaChoice(null);
+            return;
+        }
+        runner.getOut(Quay.TOWER_X - 1.2f, City.WALK_TOP, Quay.TOWER_Z - 4.2f, (float) Math.PI);
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        host.sound(Synth.DOOR, 0.4f, 1.2f);
+    }
+
+    /** A frame at the crane: it on its way, what it brought heard; she in the cabin; the eye over the field. */
+    private void crane(float dt) {
+        Quay q = quay;
+        boolean was = q.solved;
+        int got = q.update(dt);
+        if (got == 1) {
+            host.sound(Synth.CLANG, 0.5f, 0.75f);
+            host.buzz(25);
+        } else if (got == 2) host.sound(Synth.CLANG, 0.3f, 1.3f);
+        if (q.lastWaited == Quay.NO) {
+            host.buzz(50);
+            host.sound(Synth.TOCK, 0.5f, 0.6f);
+        }
+        q.lastWaited = Quay.NONE;
+        if (q.solved && !was) {
+            host.sound(Synth.CHIME, 0.6f, 1.1f);
+            host.buzz(80);
+            host.saveInt(SAVE_FIELDS, host.loadInt(SAVE_FIELDS) + 1);
+        }
+        q.seat(seatAt);
+        Runner r = runner;
+        r.lounging = false;
+        r.ride(dt, city, seatAt[0], seatAt[1], seatAt[2], (float) Math.PI, 0f, seatAt[0], seatAt[1], seatAt[2], 0f);
+        eyeNow[0] = Quay.CX;
+        eyeNow[1] = City.WALK_TOP + CRANE_EYE_UP;
+        eyeNow[2] = Quay.CZ + CRANE_LOOK_Z - CRANE_EYE_BACK;
+        eyeNow[3] = 0f;
+        eyeNow[4] = -(float) Math.atan2(CRANE_EYE_UP - 5f, CRANE_EYE_BACK);
+        r.eyeAt(eyeNow);
+    }
+
+    /** Where on the frame the buttons at the crane sit: out (left), back a move (middle), a new field (right). */
+    private int craneButtonY() {
+        return h - 70;
+    }
+
+    /** The thumb at the crane: a stack touched; the pause; out; a move back; a new field once one is done. */
+    private void craneTouch(int type, int id, float x, float y) {
+        if (type != DOWN) return;
+        if (paused) {
+            if (!pauseRow(x, y)) paused = false;
+            return;
+        }
+        if (onButton(x, y, pauseX(), pauseY())) {
+            paused = true;
+            return;
+        }
+        int by = craneButtonY();
+        if (onButton(x, y, 44, by)) {
+            leaveCrane();
+            return;
+        }
+        if (!quay.solved && quay.canUndo() && onButton(x, y, W / 2, by)) {
+            quay.undo();
+            host.sound(Synth.WOOD, 0.4f, 1.1f);
+            host.buzz(15);
+            return;
+        }
+        if (quay.solved && onButton(x, y, W - 44, by)) {
+            // a new field brought in
+            quay.deal(fieldColours());
+            baysSeen = false;
+            host.sound(Synth.WHOOSH, 0.5f, 0.8f);
+            host.buzz(30);
+            return;
+        }
+        if (!baysSeen) return;
+        int best = -1;
+        float bd = BAY_REACH * BAY_REACH;
+        for (int b = 0; b < quay.bays; b++) {
+            float dx = x - bayAt[b * 2], dy = y - bayAt[b * 2 + 1], dd = dx * dx + dy * dy;
+            if (dd < bd) {
+                bd = dd;
+                best = b;
+            }
+        }
+        if (best < 0) return;
+        int did = quay.touch(best);
+        if (did == Quay.NO) {
+            host.buzz(50);
+            host.sound(Synth.TOCK, 0.5f, 0.6f);
+        } else if (did != Quay.NONE) host.buzz(12);
+    }
+
+    /** At the crane: the pause; out; a move back, while one can be; a new field, once this one is done. */
+    private void craneButtons(DrawList d) {
+        float by = craneButtonY();
+        d.badge(44f, by, BUTTON + 4, Badges.DOWN, 0.95f, 0f);
+        if (!quay.solved && quay.canUndo()) d.badge(W * 0.5f, by, BUTTON + 2, Badges.LEFT, 0.85f, 0f);
+        if (quay.solved) d.badge(W - 44f, by, BUTTON + 4, Badges.PICK_UP, 0.95f, 0f);
+    }
+
+    /** Over the frame at the crane: where each stack is on it (for the thumb); the moves made; done, the word. */
+    private void craneFlat(DrawList d, Px f) {
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E;
+        float[] b3 = new float[3], at2 = new float[2];
+        baysSeen = true;
+        for (int b = 0; b < quay.bays; b++) {
+            quay.bay(b, at2);
+            float y = City.WALK_TOP + Math.max(1, quay.high[b]) * Quay.HIGH_EACH * 0.5f;
+            if (d.project(at2[0], y, at2[1], b3)) {
+                bayAt[b * 2] = b3[0];
+                bayAt[b * 2 + 1] = b3[1];
+            } else baysSeen = false;
+        }
+        String m = String.valueOf(quay.moves);
+        shadowed(f, m, W - PixelFont.width(m, 2) - 8, 14, 2, cream, ink);
+        if (quay.solved) wordAtTop(f, Lang.lines("crane.done", 0, null)[0], green, ink);
+    }
+
+    /** Over the frame, the port the first time: the clock; on the way, the word and the mark for the crane. */
+    private void portFlat(DrawList d, Px f) {
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E;
+        Port pt = port;
+        if (craning) return;
+        String clock = clock(pt.over() ? pt.doneAt : pt.clock);
+        shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        if (!pt.goal(goal)) return;
+        wordAtTop(f, Lang.lines("goal.crane", mission.round, null)[0], green, ink);
+        placeMark(d, f, goal[0], goal[1], goal[2], Marks.CRANE, Marks.OPEN);
+    }
+
+    /** For the desktop stand: the crane and its field, told. */
+    String standCrane() {
+        Quay q = quay;
+        StringBuilder sb = new StringBuilder(String.format("crane at %.1f %.1f %.1f, %s; %d colours, %d moves%s; held %d:", q.hx, q.hy, q.hz,
+                craning ? "she works it" : "no one in it", q.colors, q.moves, q.solved ? ", done" : "", q.held));
+        for (int b = 0; b < q.bays; b++) {
+            sb.append(' ');
+            for (int k = 0; k < q.high[b]; k++) sb.append((char) ('a' + q.stack[b][k]));
+            if (q.high[b] == 0) sb.append('-');
+        }
+        return sb.toString();
+    }
+
+    /** For the desktop stand: bay b touched at the crane (its place on the frame as last drawn); or a button (out, back, load). */
+    void standBay(String what) {
+        float by = craneButtonY();
+        float x, y;
+        if (what.equals("out")) {
+            x = 44f;
+            y = by;
+        } else if (what.equals("back")) {
+            x = W * 0.5f;
+            y = by;
+        } else if (what.equals("load")) {
+            x = W - 44f;
+            y = by;
+        } else {
+            int b = Integer.parseInt(what);
+            x = bayAt[b * 2];
+            y = bayAt[b * 2 + 1];
+        }
+        touch(DOWN, 0, x, y);
+        touch(UP, 0, x, y);
+    }
+
+    /** For the desktop stand: the field solved but for its last move, as if played so far. */
+    void standNearlySolved() {
+        quay.standNearly();
+    }
+
     /** A stick's answer along one way: -1 to 1, nothing near its middle. */
     private static float stickAxis(float t, float c) {
         float v = Math.max(-1f, Math.min(1f, (t - c) / HELI_R)), a = Math.abs(v);
@@ -2776,7 +3044,7 @@ final class World {
     private boolean listing;
     /** The kinds that are games, played again and again; the rest are stories, played once, in their order. */
     static boolean game(int kind) {
-        return kind == 1 || kind == 2;
+        return kind == 1 || kind == 2 || kind == 10;
     }
 
     /** The next job to come: the first kind, in order, not yet done (0: none left). */
@@ -2831,7 +3099,8 @@ final class World {
         for (int k = KINDS; k >= 1; k--) {
             if (!game(k) || (kindsWon & (1 << k)) == 0 && k != next) continue;
             l.add(Lang.lines("kind." + k, 0, null)[0]);
-            p.add(k);
+            // the containers once done: at the crane from here, no way to go
+            p.add(k == 10 && (kindsWon & (1 << 10)) != 0 ? Dispatch.YARD : k);
         }
         keptLines = l.toArray(new String[0]);
         int[] out = new int[p.size()];
@@ -3396,6 +3665,7 @@ final class World {
         else if (concert != null) concertFlat(d, f);
         else if (archive != null) archiveFlat(d, f);
         else if (mend != null) mendFlat(d, f);
+        else if (port != null) portFlat(d, f);
         else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);
@@ -3464,7 +3734,9 @@ final class World {
             eyeYaw = eyeNow[3];
             eyePitch = eyeNow[4];
         }
-        d.camera(eyeX, eyeY, eyeZ, eyeYaw, eyePitch, dispatch != null ? dispatch.focal(W * 1.6f, W) : W * 1.6f, 0.03f, 500f);
+        // at the crane, a long lens from far off: the field nearly as drawn on a plan, the stacks' sides showing
+        float focal = craning && dispatch == null ? W * CRANE_LENS : W * 1.6f;
+        d.camera(eyeX, eyeY, eyeZ, eyeYaw, eyePitch, dispatch != null ? dispatch.focal(W * 1.6f, W) : focal, 0.03f, 500f);
         fliers.strokes(d);
         float ex = (float) Math.sin(eyeYaw), ez = (float) Math.cos(eyeYaw);
         city.draw(d, eyeX, eyeZ, ex, ez);
@@ -3476,6 +3748,7 @@ final class World {
         if (archive != null) archive.draw(d, r);
         else if (mend != null) mend.draw(d, r);
         else if (parked != null) Archive.drawCopter(d, parked, parked.broken ? Archive.AT_CONTROLS : Archive.NOBODY);
+        quay.draw(d, craning);
         if (towed != null) {
             // the brum's pickup left at the workshop, till she is well away from it
             float tx = towed.stuck.x - r.x, tz = towed.stuck.z - r.z;
@@ -3509,10 +3782,12 @@ final class World {
             g.draw(d, g == lit);
         }
         if (dispatch != null) dispatch.draw(d, f, h);
+        else if (craning) craneFlat(d, f);
         else if (free) freeFlat(d, f);
         else if (concert != null) concertFlat(d, f);
         else if (archive != null) archiveFlat(d, f);
         else if (mend != null) mendFlat(d, f);
+        else if (port != null) portFlat(d, f);
         else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);
