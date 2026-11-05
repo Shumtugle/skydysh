@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.85";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.86";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -3013,7 +3013,7 @@ final class World {
         return true;
     }
 
-    /** Up from her chair, behind it, facing the stage: the music stops. */
+    /** Up from her chair, behind it, facing the stage: the music plays on. */
     private void offChair() {
         Concert co = hall();
         if (co == null || !co.seated) return;
@@ -3345,10 +3345,9 @@ final class World {
         Folder fo = folder;
         String clock = clock(fo.over() ? fo.doneAt : fo.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        // what it pays: the sum, until it has been paid once
+        // what it pays: told big once done (not before: the job is the job)
         int due = Dispatch.due(mission.round);
         String sum = money(due);
-        if (due > 0) shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
         // the rivals: a mark each, alight while it is about, and what it has still to go
         for (int k = 0; k < Folder.RIVALS; k++) {
             Chase g = fo.rivals[k];
@@ -3408,10 +3407,9 @@ final class World {
         Delivery dv = delivery;
         String clock = clock(dv.over() ? dv.doneAt : dv.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        // what it pays: the sum, until it has been paid once
+        // what it pays: told big once done (not before: the job is the job)
         int due = Dispatch.due(mission.round);
         String sum = money(due);
-        if (due > 0) shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
         // the crates on the pickup she drives, in a row of little squares
         Pickup p = driving != null ? driving : dv.carrying;
         for (int k = 0; k < Pickup.CRATES; k++) {
@@ -3472,7 +3470,6 @@ final class World {
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
         int due = Dispatch.due(mission.round);
         String sum = money(due);
-        if (due > 0) shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
         if (pu.over()) {
             String big = "+" + sum;
             if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
@@ -3502,7 +3499,6 @@ final class World {
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
         int due = Dispatch.due(mission.round);
         String sum = money(due);
-        if (due > 0) shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
         if (co.step >= Concert.SEATED) {
             // the pay, big, a moment after she sits; then only the music
             String big = "+" + sum;
@@ -3570,10 +3566,9 @@ final class World {
         Rescue rs = rescue;
         String clock = clock(rs.over() ? rs.doneAt : rs.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        // what it pays: the sum, until it has been paid once
+        // what it pays: told big once done (not before: the job is the job)
         int due = Dispatch.due(mission.round);
         String sum = money(due);
-        if (due > 0) shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 32, 1, gold, ink);
         if (rs.over()) {
             String big = "+" + sum;
             if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
@@ -3722,7 +3717,7 @@ final class World {
                 if (holding) Archive.folder(d, handsAt[0], handsAt[1], handsAt[2], indoors.heading(indoors.side, 0f) + (float) Math.PI);
             }
         }
-        if (!r.hidden && (dispatch == null || dispatch.showsHer())) {
+        if (!r.hidden && !inChair() && (dispatch == null || dispatch.showsHer())) {
             r.draw(d);
             toss.draw(d, r);
             if (archive != null && archive.carrying()) archive.carried(d, r);

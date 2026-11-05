@@ -72,6 +72,7 @@ release, each seen on the stand before the phone.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
+- 0.86 The concert with the light, sitting or not; her eye in her chair; the seats in three blocks; no pay under the clock.
 - 0.85 The finger shows the way to go; speed up out of the thumb's way; into a pickup from any side; the concert hall in by its portico; her chair at the back among the people.
 - 0.84 No reward on a job's screen; the balance on home's.
 - 0.83 The port and its crane: the containers, a sorting game; on home's list after the first; the sofa's picks no longer taken for kinds.

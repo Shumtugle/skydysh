@@ -8,12 +8,13 @@ import java.util.Random;
  * burns, on a line of its own, and the rest is dark. She goes in by the middle door, through the
  * dark to the door to the wings beside the stage, and there is the panel: its wiring come apart
  * (see Panel). Mended and its main switch thrown, the lights come on; her own chair waits in the
- * back row, at its left end by the wall, among the people, a chair her size. Down in it, the concert begins: a piece
- * written there and then from the seed bank (see Composer). A few seconds of it, and the dark
- * comes down: she wakes at home on her sofa, in the morning. That is the job done.
+ * back row, at its left end by the wall, among the people, a chair her size. With the light the
+ * concert begins, whether she sits or not: a piece written there and then from the seed bank (see
+ * Composer). Down in her chair a few seconds of it, and the dark comes down (or gone out of the
+ * hall): she wakes at home on her sofa, in the morning. That is the job done.
  *
- * Done once, the hall is hers to come back to: open, lit, full, her chair kept; sitting in it the
- * music plays, piece after piece, till she gets up.
+ * Done once, the hall is hers to come back to: open, lit, full, her chair kept; the music plays,
+ * piece after piece, while she is in it.
  */
 final class Concert {
     static final int REWARD = 40000;
@@ -24,8 +25,22 @@ final class Concert {
 
     // the hall's room: half its width, its depth, its height; the rows and the seats, the stage, the piano
     static final float HALF = 10f, DEEP = 26f, HIGH = 8f;
-    static final int ROWS = 8, SEATS = 7;
-    static final float ROW0 = 6f, ROW_STEP = 1.45f, SEAT0 = 2.3f, SEAT_STEP = 0.95f;
+    static final int ROWS = 8;
+    static final float ROW0 = 6f, ROW_STEP = 1.45f, SEAT_STEP = 0.95f;
+    // the seats across a row, in three blocks: eight in the middle, four by each wall, an aisle
+    // between each; the blocks' edges (across, from and to) and the aisles' middles
+    static final float[] SEAT_U = seats();
+    static final int SEATS = SEAT_U.length;
+    static final float MID_HALF = 3.8f, SIDE_FROM = 5.45f, SIDE_TO = 9.2f, AISLE_U = (MID_HALF + SIDE_FROM) * 0.5f;
+
+    private static float[] seats() {
+        float[] u = new float[16];
+        int n = 0;
+        for (int k = 0; k < 8; k++) u[n++] = (k - 3.5f) * SEAT_STEP;
+        for (int e = -1; e <= 1; e += 2)
+            for (int k = 0; k < 4; k++) u[n++] = e * (5.9f + k * SEAT_STEP);
+        return u;
+    }
     static final float STAGE = 19.5f, STAGE_HIGH = 1f, PIANO_U = -1.5f, PIANO_V = 22.8f;
     // the door to the wings, in the right wall before the stage; the one lamp burning, on the same wall
     static final float WINGS_V = 18f, WINGS_HALF = 0.55f, WINGS_HIGH = 2.2f;
@@ -41,12 +56,11 @@ final class Concert {
     // stage (in the place of the row's last two seats there); across, along; its half width and
     // depth, its seat's height; how near she comes to sit in it
     static final float CHAIR_U = 8.25f, CHAIR_V = ROW0, CHAIR_HALF = 1.25f, CHAIR_DEEP = 0.8f, CHAIR_SEAT = 0.6f, CHAIR_NEAR = 1.9f;
-    /** The seats of the back row on her chair's side from this one on are where her chair stands. */
-    static final int CHAIR_FROM = 5;
+
     // in the chair on the job: so long the music is heard; the last of it the dark coming down
     static final float LISTEN = 9f, DUSK = 2.5f;
     // the eye on her in her chair: across, along, how high; what it looks at, across and along
-    static final float SHOT_U = -3.4f, SHOT_V = 3.6f, SHOT_Y = 3.1f, SHOT_TU = 0.3f, SHOT_TV = -0.3f;
+    static final float SHOT_U = 0f, SHOT_V = 0.2f, SHOT_Y = 2.9f, SHOT_TU = 0.8f, SHOT_TV = -2.5f;
     /** How many of the seats are taken. */
     static final float FULL = 0.72f;
 
@@ -55,15 +69,15 @@ final class Concert {
     }
 
     static float seatU(int k) {
-        return SEAT0 + k * SEAT_STEP;
+        return SEAT_U[k];
     }
 
     /** Which way across is her right, facing the stage. */
     static final float RIGHT = -1f;
 
-    /** Whether seat k of row r on side (-1, 1) is where her chair stands, not a seat. */
-    static boolean underChair(int r, int side, int k) {
-        return r == 0 && side == Math.signum(CHAIR_U) && k >= CHAIR_FROM;
+    /** Whether seat k of row r is where her chair stands, not a seat. */
+    static boolean underChair(int r, int k) {
+        return r == 0 && Math.abs(SEAT_U[k] - CHAIR_U) < CHAIR_HALF + 0.2f;
     }
 
     /** Across, the door to the wings (against the right wall). */
@@ -93,7 +107,7 @@ final class Concert {
     private final long panelSeed;
 
     // the listeners: a seat each (row, side, place), who sits there (a townsperson's look)
-    private final int count = ROWS * 2 * SEATS;
+    private final int count = ROWS * SEATS;
     private final boolean[] taken = new boolean[count];
     private final int[] look = new int[count];
     private final float[] lean = new float[count];
@@ -161,7 +175,7 @@ final class Concert {
         return near && chairArmed && !r.inAir();
     }
 
-    /** Down in her chair: the music in a moment. */
+    /** Down in her chair (the music plays on, as it did). */
     void sit() {
         seated = true;
         chairArmed = false;
@@ -170,13 +184,11 @@ final class Concert {
             step = SEATED;
             doneAt = clock;
         }
-        nextIn = FIRST;
     }
 
-    /** Up from her chair: the music stops. */
+    /** Up from her chair: the music plays on. */
     void rise() {
         seated = false;
-        quiet();
     }
 
     private void quiet() {
@@ -199,12 +211,12 @@ final class Concert {
     }
 
     /**
-     * The eye while she sits: from the aisle a little before her and over the row ahead, back at
-     * her in her chair among the people round her (x, y, z, yaw, pitch into eye).
+     * The eye while she sits: hers, from her chair at the back, over the heads of the rows before
+     * her to the stage and the pianist at the piano (x, y, z, yaw, pitch into eye); she is not seen.
      */
     void shot(Indoors room, float[] eye) {
         float eu = CHAIR_U + SHOT_U, ev = CHAIR_V + SHOT_V, ey = Indoors.FLOOR + SHOT_Y;
-        float tu = CHAIR_U + SHOT_TU, tv = CHAIR_V + SHOT_TV, ty = Indoors.FLOOR + 1.4f;
+        float tu = PIANO_U + SHOT_TU, tv = PIANO_V + SHOT_TV, ty = STAGE_HIGH + 1.3f;
         eye[0] = room.wx(eu, ev);
         eye[1] = ey;
         eye[2] = room.wz(eu, ev);
@@ -240,9 +252,13 @@ final class Concert {
         }
         if (step == GO && in) step = INSIDE;
         if (!in) {
-            // out of the hall: the music stops
+            // out of the hall: the music stops; on the job, the lights on, gone out: the evening over
             seated = false;
             quiet();
+            if (!open && step == LIT) {
+                step = DONE;
+                doneAt = clock;
+            }
             return false;
         }
         if (step == INSIDE) {
@@ -257,13 +273,17 @@ final class Concert {
             }
             return false;
         }
-        if (!seated) return false;
-        // in her chair: the concert; on the job, a few seconds of it and the dark
-        listened += dt;
-        if (!open && step == SEATED && listened >= LISTEN) {
-            step = DONE;
-            quiet();
-            return false;
+        if (!lit()) return false;
+        // the lights on: the concert, whether she sits or not, the people do; in her chair on the
+        // job, a few seconds of it and the dark
+        if (nextIn < 0f && pieceLeft <= 0f) nextIn = FIRST;
+        if (seated) {
+            listened += dt;
+            if (!open && step == SEATED && listened >= LISTEN) {
+                step = DONE;
+                quiet();
+                return false;
+            }
         }
         if (nextIn >= 0f) {
             nextIn -= dt;
@@ -298,8 +318,7 @@ final class Concert {
 
     /** Across, the seat of listener i. */
     private static float seatUOf(int i) {
-        int side = (i / SEATS) % 2 == 0 ? -1 : 1, k = i % SEATS;
-        return side * seatU(k);
+        return SEAT_U[i % SEATS];
     }
 
     /** Where the door to the wings is, a little over it, into out (x, y, z), in the town's terms. */
@@ -349,8 +368,8 @@ final class Concert {
         float yaw = (float) Math.atan2(room.wx(0f, 1f) - room.wx(0f, 0f), room.wz(0f, 1f) - room.wz(0f, 0f));
         // facing the stage: in, away from the doors
         for (int i = 0; i < count; i++) {
-            if (!taken[i] || underChair(i / (2 * SEATS), (i / SEATS) % 2 == 0 ? -1 : 1, i % SEATS)) continue;
-            float u = seatUOf(i), v = rowV(i / (2 * SEATS));
+            if (!taken[i] || underChair(i / SEATS, i % SEATS)) continue;
+            float u = seatUOf(i), v = rowV(i / SEATS);
             float x = room.wx(u, v), z = room.wz(u, v);
             int m = look[i] % FolkPack.town.count;
             float y = f + 0.5f - Walkers.HIPS * FolkPack.town.size[m];

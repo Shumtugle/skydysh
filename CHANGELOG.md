@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.86
+
+- The concert begins with the light, whether she sits or not: the people sit, the pianist
+  plays. On the job, the lights on, she may sit for a few seconds of it before the dark comes
+  down, or go out of the hall: either way the evening is over.
+- In her chair the eye is hers: from the back row over the heads to the stage and the pianist;
+  she is not drawn.
+- The hall's seats in three blocks, eight in the middle and four by each wall, with two aisles
+  between, a lighter runner edged with gilt down each and one across behind the back row; gilt on
+  the seats' arms. Her chair stays at the back row's left end.
+- No sum under the clock while a job is on: the pay is told once done (the big figure), as on the
+  job's screen.
+
 ## 0.85
 
 - The finger at the wheel shows the way the pickup is to go, not a wheel to turn: moved off the

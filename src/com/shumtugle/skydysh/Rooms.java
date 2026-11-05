@@ -415,7 +415,7 @@ final class Rooms {
     /**
      * The concert hall's room, behind its doors on the street: a long hall under a high ceiling,
      * cream walls with gilt pilasters, a carpet of wine red, three lamps hung from the ceiling;
-     * rows of seats either side of an aisle down the middle, a narrow aisle along each wall; at the
+     * rows of seats in three blocks with an aisle between each, a narrow aisle along each wall; at the
      * far end a stage of boards a step high, red curtains behind it, a grand piano on it, black,
      * its lid up, and the bench before its keys. The seats' rows and the stage stand in her way.
      */
@@ -431,9 +431,17 @@ final class Rooms {
         shell(in, wine, false, cream, 0x5E1E22, DrawList.PAINT);
         DrawList d = in.still();
         float f = Indoors.FLOOR, w = Indoors.WALL, half = in.half, deep = in.deep, top = f + in.high;
-        // the carpet over the tiles, and a runner of gold down the aisle
+        // the carpet over the tiles; down each of the two aisles a lighter runner edged with gilt,
+        // and one across behind the back row, from the door
         in.box(d, 0f, f + 0.004f, deep * 0.5f, half, 0.004f, deep * 0.5f - w, wine, DrawList.GRAIN);
-        in.box(d, 0f, f + 0.008f, (Concert.ROW0 + Concert.STAGE) * 0.5f, 0.5f, 0.004f, (Concert.STAGE - Concert.ROW0) * 0.5f, 0xB98A3A, DrawList.GRAIN);
+        float rv0 = Concert.ROW0 - 1.2f, rv1 = Concert.STAGE;
+        for (int e = -1; e <= 1; e += 2) {
+            float au = e * Concert.AISLE_U;
+            in.box(d, au, f + 0.008f, (rv0 + rv1) * 0.5f, 0.62f, 0.004f, (rv1 - rv0) * 0.5f, 0xA8423E, DrawList.GRAIN);
+            for (int g = -1; g <= 1; g += 2)
+                in.box(d, au + g * 0.64f, f + 0.01f, (rv0 + rv1) * 0.5f, 0.03f, 0.004f, (rv1 - rv0) * 0.5f, 0xC9A15A, DrawList.GOLD);
+        }
+        in.box(d, 0f, f + 0.008f, rv0 - 0.6f, Concert.AISLE_U + 0.62f, 0.004f, 0.6f, 0xA8423E, DrawList.GRAIN);
         // gilt pilasters along the walls, a cornice under the ceiling
         for (float v = 3f; v < deep - 1f; v += 4f)
             for (int e = -1; e <= 1; e += 2)
@@ -463,22 +471,23 @@ final class Rooms {
         in.box(d, wallU - rs * 0.05f, f + wh * 0.5f, wv, 0.04f, wh * 0.5f, Concert.WINGS_HALF, 0x5A4232, DrawList.WOOD);
         in.box(d, wallU - rs * 0.1f, f + 1.05f, wv - Concert.WINGS_HALF + 0.12f, 0.04f, 0.03f, 0.1f, 0x9AA3A8, DrawList.POLISHED);
         in.box(d, wallU - rs * 0.1f, f + 1.75f, wv, 0.02f, 0.08f, 0.2f, 0xE8E1CC, DrawList.PLAIN);
-        // the seats: rows either side of the middle aisle, each a red cushion and a back
+        // the seats: rows in three blocks, the middle and one by each wall, an aisle between each;
+        // each seat a red cushion and a back, gilt on its arms; each block's row stands in her way
         for (int r = 0; r < Concert.ROWS; r++) {
             float v = Concert.rowV(r);
-            for (int e = -1; e <= 1; e += 2)
-                for (int k = 0; k < Concert.SEATS; k++) {
-                    if (Concert.underChair(r, e, k)) continue;
-                    float u = e * Concert.seatU(k);
-                    in.box(d, u, f + 0.22f, v, 0.38f, 0.22f, 0.36f, 0x3A2A24, DrawList.WOOD);
-                    in.box(d, u, f + 0.47f, v, 0.36f, 0.05f, 0.34f, 0xA8323A, DrawList.GRAIN);
-                    in.box(d, u, f + 0.75f, v + 0.33f, 0.36f, 0.32f, 0.05f, 0xA8323A, DrawList.GRAIN);
-                }
-            for (int e = -1; e <= 1; e += 2) {
-                int last = Concert.underChair(r, e, Concert.SEATS - 1) ? Concert.CHAIR_FROM - 1 : Concert.SEATS - 1;
-                float u0 = Concert.seatU(0) - 0.45f, u1 = Concert.seatU(last) + 0.45f;
-                in.solid(e > 0 ? u0 : -u1, v - 0.45f, e > 0 ? u1 : -u0, v + 0.45f, f + 1.1f);
+            float[] lo = {1e9f, 1e9f, 1e9f}, hi = {-1e9f, -1e9f, -1e9f};
+            for (int k = 0; k < Concert.SEATS; k++) {
+                if (Concert.underChair(r, k)) continue;
+                float u = Concert.seatU(k);
+                in.box(d, u, f + 0.22f, v, 0.38f, 0.22f, 0.36f, 0x3A2A24, DrawList.WOOD);
+                in.box(d, u, f + 0.47f, v, 0.36f, 0.05f, 0.34f, 0xA8323A, DrawList.GRAIN);
+                in.box(d, u, f + 0.75f, v + 0.33f, 0.36f, 0.32f, 0.05f, 0xA8323A, DrawList.GRAIN);
+                in.box(d, u + 0.42f, f + 0.6f, v, 0.04f, 0.03f, 0.3f, 0xC9A15A, DrawList.GOLD);
+                int b = Math.abs(u) < Concert.MID_HALF ? 1 : u > 0f ? 2 : 0;
+                lo[b] = Math.min(lo[b], u - 0.45f);
+                hi[b] = Math.max(hi[b], u + 0.45f);
             }
+            for (int b = 0; b < 3; b++) if (hi[b] > lo[b]) in.solid(lo[b], v - 0.45f, hi[b], v + 0.45f, f + 1.1f);
         }
         // her chair, in the back row at its left end, in her way as the rows are
         Concert.drawChair(d, in);
