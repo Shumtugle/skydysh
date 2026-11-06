@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.88";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.89";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -134,6 +134,7 @@ final class World {
         if (Dispatch.paidKinds == 0) Dispatch.paidKinds = kindsWon & (1 << 2 | 1 << 3 | 1 << 4 | 1 << 5);
         // the way to play on foot: one finger, unless two thumbs are offered and were chosen (kept as 2)
         Runner.classic = !TWO_THUMBS_OFFERED || host.loadInt(SAVE_CONTROLS) != 2;
+        navShut = host.loadInt(SAVE_NAV) == 1;
         plates = host.loadInt(SAVE_PLATES);
         money = host.loadInt(SAVE_MONEY);
         // every game begins at home: on the promenade across the shore road from its door, facing it
@@ -723,6 +724,13 @@ final class World {
     private float pressedAt = -9f;
 
     void touch(int type, int id, float x, float y) {
+        // the navigator touched: folded or opened, wherever she is
+        if (type == DOWN && !paused && onNav(x, y)) {
+            navShut = !navShut;
+            host.saveInt(SAVE_NAV, navShut ? 1 : 2);
+            host.buzz(12);
+            return;
+        }
         if (type == BACK) return;
         if (type == LEFT) {
             // the game left and come back to: paused, every finger let go
@@ -1007,6 +1015,55 @@ final class World {
         if (!TWO_THUMBS_OFFERED) return false;
         float m = TOGGLE_HALF + 8f, dx = x - toggleX(), dy = y - toggleY();
         return dx * dx + dy * dy < m * m;
+    }
+
+    // ---- the navigator: a map in the corner up on the right, the way on it to the mission's mark ----
+    final Nav nav = new Nav();
+    static final String SAVE_NAV = "nav";
+    private boolean navShut;
+    private float navTime = -1f;
+    // the folded navigator: a small square, its side
+    static final int NAV_TILE = 22;
+
+    int navX() {
+        return W - Nav.SIDE - 8;
+    }
+
+    static final int NAV_Y = 36;
+
+    /** Whether (x, y) is on the navigator, open or folded. */
+    private boolean onNav(float x, float y) {
+        if (!navShows()) return false;
+        if (navShut) return x > W - 8 - NAV_TILE - 6 && y > NAV_Y - 6 && y < NAV_Y + NAV_TILE + 6;
+        return x > navX() - 4 && y > NAV_Y - 4 && y < NAV_Y + Nav.TALL + 4;
+    }
+
+    /** Whether the navigator is out now: on the street, the eye not elsewhere. */
+    private boolean navShows() {
+        return indoors == null && dispatch == null && !craning && story == null && opening == null && solo == null;
+    }
+
+    /** The navigator, over the frame: the map and its strip, or folded. */
+    private void navFlat(Px f) {
+        float dt = navTime < 0f ? 0f : Math.max(0f, Math.min(0.1f, time - navTime));
+        navTime = time;
+        float x = driving != null ? driving.x : runner.x, z = driving != null ? driving.z : runner.z;
+        float heading = driving != null ? driving.heading : runner.heading;
+        nav.update(dt, x, z, aboard() || piloting(), heading);
+        if (!navShows()) return;
+        if (navShut) {
+            int x0 = W - 8 - NAV_TILE;
+            for (int py = 0; py < NAV_TILE; py++)
+                for (int px = 0; px < NAV_TILE; px++) {
+                    int dx = Math.max(0, Math.max(4 - px, px - (NAV_TILE - 5))), dy = Math.max(0, Math.max(4 - py, py - (NAV_TILE - 5)));
+                    if (dx * dx + dy * dy <= 16) f.set(x0 + px, NAV_Y + py, Nav.BLOCK);
+                }
+            Nav.point(f, x0, NAV_Y, NAV_TILE * 0.5f, NAV_TILE * 0.55f, 0f, -1f, 6f, nav.led() ? Nav.LINE : Nav.TEXT);
+            return;
+        }
+        float speed = driving != null ? driving.speed : 0f;
+        nav.draw(f, navX(), NAV_Y, x, z, runner.eyeYaw, heading, speed, dt);
+        nav.strip(f, navX(), NAV_Y + Nav.SIDE);
     }
 
     /** At the wheel, up on the left under the pause, out from under the thumb: how fast, in kilometers an hour. */
@@ -3543,6 +3600,7 @@ final class World {
      * Green, open to her; red, shut for now.
      */
     private void placeMark(DrawList d, Px f, float x, float y, float z, int pic, int color) {
+        nav.aim(x, z);
         float bob = 1.5f * (float) Math.sin(time * 2.4f);
         float half = Marks.SIDE * Marks.SCALE * 0.5f + 2f;
         boolean seen = d.project(x, y, z, at) && at[0] > half && at[0] < W - half && at[1] > 60 && at[1] < h - half;
@@ -3809,6 +3867,7 @@ final class World {
         else chaseFlat(d, f);
         beatsFlat(f);
         speedFlat(f);
+        navFlat(f);
         if (dispatch == null) {
             if (driving == null) signs(d);
             buttons(d);

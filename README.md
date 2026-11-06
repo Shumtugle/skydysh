@@ -69,6 +69,15 @@ phone's own, Russian or English, kept as chosen) and the results: the best time 
 played, on the screen in her head. The eye behind her keeps out of
 the leaves: when a tree's crown or a palm's comes between, it drops under it, or comes in nearer.
 
+Up on the right, the navigator: a small map turned the way the eye looks, the streets drawn
+from the town itself (the sea, the beach, the blocks, the fields and the road out), she a blue
+dot with a white point her way, and to the mission's mark a line along the streets by the
+shortest way through the crossings, and on along the road out. Off it, a new way is found from
+where she is, and the line flashes white. In the helicopter, the line goes straight. The faster
+she goes, the farther the map shows. Under it, the next turn and how far it is; turn round, if
+the way goes off behind her; the place itself, if there is no turn before it. A touch folds it
+to a small square, and opens it again; it stays as it was left.
+
 At the wheel, one thumb on a steering wheel, drawn under it where it comes down (anywhere but a
 button) and turned as the pickup's wheel is, a knob where the thumb is. Aside, the wheel turns,
 gently near the middle, full over at the edge, the less the faster the pickup goes. Up, the

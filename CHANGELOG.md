@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.89
+
+- The navigator, up on the right: a map turned the way the eye looks, the streets drawn from the
+  town, the line to the mission's mark along the streets by the shortest way, and along the road
+  out; found anew when she goes off it, the line flashing; straight in the air. The faster, the
+  farther it shows.
+- Under the map, the next turn and how far, or turn round, or the place.
+- A touch folds it and opens it; it stays as left. For now it is there from the start, to drive
+  with; the mission at the laboratory will give it later.
+- A new stand scene, nav.
+
 ## 0.88
 
 - At the wheel, one thumb again, on the steering wheel: aside the wheel, up the throttle (the

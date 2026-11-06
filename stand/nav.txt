@@ -1,0 +1,19 @@
+# The navigator: at the wheel by the shore, the place behind her (turn round, it says); the map
+# folded at a touch, opened at another; out on the road out to the pass; on foot in the town.
+screen 1096 2560
+wait 0.4
+mission 3
+drivein 66.2 14 0
+wait 0.5
+shot n0
+down 220 80
+up 220 80
+wait 0.2
+shot n1
+down 252 46
+up 252 46
+wait 0.2
+mission 4
+drivein 13.6 700 0.167
+wait 0.6
+shot n2
