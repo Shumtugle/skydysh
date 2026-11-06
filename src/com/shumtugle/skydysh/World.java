@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.86";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.87";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -804,6 +804,11 @@ final class World {
             craneTouch(type, id, x, y);
             return;
         }
+        if (driving != null) {
+            leadFinger = -1;
+            carTouch(type, id, x, y);
+            return;
+        }
         if (aboard()) {
             // a passenger: the pause as ever, nothing else to do but look
             if (type == DOWN && paused) {
@@ -870,17 +875,6 @@ final class World {
         if (onButton(x, y, pauseX(), pauseY())) {
             paused = true;
             letGoAll();
-            return;
-        }
-        if (driving != null) {
-            if (onLiftButton(x, y)) {
-                getOut();
-                return;
-            }
-            if (wheelFinger >= 0) return;
-            wheelFinger = id;
-            role[id] = WHEEL_FINGER;
-            drivingTouch(DOWN, x, y);
             return;
         }
         // a sign: she goes where it says by herself
@@ -952,9 +946,6 @@ final class World {
                     flickY[id] = y;
                 }
                 break;
-            case WHEEL_FINGER:
-                drivingTouch(MOVE, x, y);
-                break;
             default:
         }
         fingerX[id] = x;
@@ -970,16 +961,6 @@ final class World {
             case LOOK:
                 if (time - fingerAt[id] < TAP_S && fingerMoved[id] < TAP_PX) runner.tap();
                 break;
-            case WHEEL_FINGER:
-                drivingTouch(UP, x, y);
-                wheelFinger = -1;
-                break;
-            case GAS_FINGER:
-                gasHeld = false;
-                break;
-            case BRAKE_FINGER:
-                brakeHeld = false;
-                break;
             default:
         }
         role[id] = NOBODY;
@@ -990,11 +971,7 @@ final class World {
         for (int i = 0; i < FINGERS; i++) role[i] = NOBODY;
         stickFinger = -1;
         runner.stick(0f, 0f, false);
-        if (wheelFinger >= 0) {
-            drivingTouch(UP, 0f, 0f);
-            wheelFinger = -1;
-        }
-        gasHeld = brakeHeld = false;
+        wheelFinger = gasFinger = brakeFinger = -1;
     }
 
     /**
@@ -1005,7 +982,6 @@ final class World {
     private void letGo() {
         letGoAll();
         leftStick = rightStick = -1;
-        pedal = false;
         wheelIn = brakeIn = 0f;
         if (classicDown) {
             runner.touch(UP, 0f, 0f);
@@ -1057,25 +1033,29 @@ final class World {
         host.buzz(20);
     }
 
-    // ---- the pedals at the wheel, two thumbs: the throttle and the brake, low on the right ----
+    // ---- the pedals at the wheel: the throttle and the brake, low on the right, under the right thumb ----
     static final int GAS_PEDAL = 0, BRAKE_PEDAL = 1;
-    static final float GAS_HALF = 25f, BRAKE_HALF = 21f;
-    private boolean gasHeld, brakeHeld, classicDown;
+    static final float GAS_HALF = 30f, BRAKE_HALF = 26f;
+    private boolean classicDown;
 
     float pedalX(int k) {
-        return k == GAS_PEDAL ? W - 40f : W - 100f;
+        return k == GAS_PEDAL ? W - 46f : W - 116f;
     }
 
     float pedalY(int k) {
-        return k == GAS_PEDAL ? h - 66f : h - 42f;
+        return k == GAS_PEDAL ? h - 104f : h - 84f;
     }
 
-    private boolean onPedal(int k, float x, float y) {
-        float m = (k == GAS_PEDAL ? GAS_HALF : BRAKE_HALF) + 7f, dx = x - pedalX(k), dy = y - pedalY(k);
-        return dx * dx + dy * dy < m * m;
+    /** The pedal a thumb on the right is on: the nearer of the two, low on the glass; -1 if neither. */
+    private int pedalAt(float x, float y) {
+        if (x < W * 0.5f || y < h - 190f) return -1;
+        float g = (x - pedalX(GAS_PEDAL)) * (x - pedalX(GAS_PEDAL)) + (y - pedalY(GAS_PEDAL)) * (y - pedalY(GAS_PEDAL));
+        float b = (x - pedalX(BRAKE_PEDAL)) * (x - pedalX(BRAKE_PEDAL)) + (y - pedalY(BRAKE_PEDAL)) * (y - pedalY(BRAKE_PEDAL));
+        return g <= b ? GAS_PEDAL : BRAKE_PEDAL;
     }
 
-    private int wheelFinger = -1;
+    /** The fingers at the wheel: the steering wheel's, the throttle's, the brake's (-1, none). */
+    private int wheelFinger = -1, gasFinger = -1, brakeFinger = -1;
 
     // ---- her own buttons, low on the right: jump, slide, the mallet ----
     static final int JUMP_BUTTON = 0, SLIDE_BUTTON = 1, MALLET_BUTTON = 2;
@@ -1135,10 +1115,6 @@ final class World {
             letGo();
             return;
         }
-        if (driving != null) {
-            if (Math.abs(x - liftButtonX()) < BUTTON + 8 && Math.abs(y - liftButtonY()) < BUTTON + 8) getOut();
-            return;
-        }
         if (liftOffer && onLiftButton(x, y)) {
             liftPressed = true;
             return;
@@ -1170,10 +1146,6 @@ final class World {
             paused = true;
             buttonHeld = true;
             runner.touch(UP, x, y);
-            return;
-        }
-        if (driving != null) {
-            drivingTouch(type, x, y);
             return;
         }
         // a sign: she goes where it says by herself
@@ -1605,9 +1577,8 @@ final class World {
     }
 
     int liftButtonY() {
-        // on foot it sits over her own buttons; at the wheel, where the jump would be (over the
-        // pedals, with two thumbs)
-        return driving != null ? h - 70 : h - 190;
+        // on foot it sits over her own buttons; at the wheel, over the pedals
+        return driving != null ? h - 196 : h - 190;
     }
 
     private boolean onLiftButton(float x, float y) {
@@ -1662,19 +1633,18 @@ final class World {
             craneButtons(d);
             return;
         }
-        if (driving != null) d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
         if (driving != null) {
-            // the ring under the finger while it is down, the knob where the finger is (the way it
-            // is to go); the ring lit red while it brakes; a faint one where it would go
-            if (pedal) {
-                float ox = carTX - carCX, oy = carTY - carCY, m = (float) Math.sqrt(ox * ox + oy * oy);
-                if (m > CAR_R) {
-                    ox *= CAR_R / m;
-                    oy *= CAR_R / m;
-                }
-                d.badge(carCX, carCY, WHEEL_HALF, Badges.BLANK, 0.75f, brakeIn > 0.05f ? 0.7f : 0.1f, ringTint(), 0f);
-                d.badge(carCX + ox, carCY + oy, KNOB, Badges.KNOB, 0.9f, 0f);
-            } else d.badge(W * 0.5f, h - WHEEL_HALF - 12f, WHEEL_HALF, Badges.BLANK, 0.35f, 0f, ringTint(), 0f);
+            d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
+            // the steering wheel under the left thumb while it is down, turned as the pickup's is;
+            // a faint one where it would go; the pedals on the right, lit while held
+            float turn = driving.steer * WHEEL_TURNS;
+            if (wheelFinger >= 0) d.badge(carCX, carCY, WHEEL_HALF, Badges.STEER, 0.85f, 0.1f, ringTint(), turn);
+            else d.badge(WHEEL_REST_X, h - WHEEL_REST_UP, WHEEL_HALF, Badges.STEER, 0.35f, 0f, ringTint(), turn);
+            boolean g = gasFinger >= 0, b = brakeFinger >= 0;
+            d.badge(pedalX(GAS_PEDAL), pedalY(GAS_PEDAL), GAS_HALF + (g ? 3f : 0f), Badges.GAS, g ? 1f : 0.7f, g ? 0.9f : 0f,
+                    g ? DrawList.TINT_GREEN : 0, 0f);
+            d.badge(pedalX(BRAKE_PEDAL), pedalY(BRAKE_PEDAL), BRAKE_HALF + (b ? 3f : 0f), Badges.BRAKE, b ? 1f : 0.7f, b ? 0.9f : 0f,
+                    b ? DrawList.TINT_CORAL : 0, 0f);
         }
         if (footButtons() && !Runner.classic) {
             for (int b = 0; b < 3; b++) {
@@ -1806,7 +1776,6 @@ final class World {
     static final float BY_IT = 1f, GET_IN_STAND = 0.5f;
     /** So near it, walking at it: she gets in at once. */
     static final float BY_TOUCH = 0.55f;
-    private boolean pedal;
     private float wheelIn, brakeIn, doorWait;
     private boolean doorArmed = true;         // not got in again until she has been away from the door
     private final Rail rail = new Rail();
@@ -1861,7 +1830,6 @@ final class World {
         p.driven = true;
         p.speed = 0f;
         duty.driven(p);
-        pedal = false;
         wheelIn = brakeIn = 0f;
         doorWait = 0f;
         errand = NO_ERRAND;
@@ -1898,47 +1866,20 @@ final class World {
     }
 
     /**
-     * A frame at the wheel: the pickup driven as the finger has it, she carried in it. While a
-     * finger is down, it goes, as fast as the way ahead lets it; the finger moved aside from where
-     * it came down turns the wheel, gently near the middle, full over at the ring's edge; drawn down
-     * past the ring's middle, it brakes, and held so standing, it backs, on till the finger is pushed
-     * back up past where it came down. Lifted, the pickup slows to a stop. With the wheel let be, it settles along the street it is nearly along.
+     * A frame at the wheel: the pickup driven as the thumbs have it. The left one on the steering
+     * wheel turns it, gently near the middle, full over at the edge, the less the faster it goes;
+     * let go, the wheel comes back straight. The right one on the throttle: it goes, the longer the
+     * faster; on the brake: it stops, and standing, it backs at once, as long as the brake is held.
+     * Neither: it rolls on and slows. No hand of its own on the wheel: where it goes is the driver's.
      */
     private void drive(float dt) {
         Pickup p = driving;
-        float sx = pedal ? (carTX - carCX) / CAR_R : 0f, sy = pedal ? (carTY - carCY) / CAR_R : 0f;
-        float wheel = 0f;
-        brakeIn = 0f;
-        boolean shown = false;
-        if (pedal) {
-            float u = (float) Math.sqrt(sx * sx + sy * sy), a = (float) Math.atan2(sx, -sy);
-            boolean down = sy > CAR_BRAKE && Math.abs(a) > CAR_BACK_ARC;
-            if (down) brakeIn = Math.min(1f, 0.35f + 0.65f * (Math.min(1f, sy) - CAR_BRAKE) / (1f - CAR_BRAKE));
-            // backing: it goes on backing till the finger is pushed back up
-            else if (p.speed < -0.3f && sy > CAR_BACK_HOLD) brakeIn = 0.35f;
-            if (p.speed < -0.3f || brakeIn > 0f) {
-                // backing (or braking): the finger aside swings it as a wheel does, the back going its way
-                float ux = Math.min(1f, Math.abs(sx));
-                if (ux > CAR_DEAD) wheel = Math.signum(sx) * (float) Math.pow((ux - CAR_DEAD) / (1f - CAR_DEAD), CAR_CURVE);
-                wayLatched = false;
-            } else if (u > CAR_DEAD) {
-                // going: the finger shows the way it is to go, as it was facing when the finger
-                // left the middle and so far round from it; it turns till it goes that way, and keeps it
-                if (!wayLatched) {
-                    wayFrom = p.heading;
-                    wayLatched = true;
-                }
-                float want = wayFrom + Math.max(-CAR_WAY_MOST, Math.min(CAR_WAY_MOST, a));
-                float off = want - p.heading;
-                while (off > Math.PI) off -= 2f * (float) Math.PI;
-                while (off < -Math.PI) off += 2f * (float) Math.PI;
-                wheel = Math.max(-1f, Math.min(1f, off * CAR_WAY_GAIN));
-                shown = true;
-            } else wayLatched = false;
-        } else wayLatched = false;
-        wayShown = shown;
-        boolean go = pedal && brakeIn == 0f;
-        p.cap = -1f;
+        float wheel = wheelFinger >= 0 ? wheelAxis() : 0f;
+        brakeIn = brakeFinger >= 0 ? 1f : 0f;
+        boolean go = gasFinger >= 0 && brakeIn == 0f;
+        // in the town no faster than its streets take; out on the road, all it has
+        boolean town = p.z < City.EDGE_J * City.CELL + City.CURB;
+        p.cap = town ? TOWN_TOP : -1f;
         wheelIn = wheel;
         // a street lamp in the way, going fast enough: down it goes, the pickup hardly slowed
         if (Math.abs(p.speed) > Cars.RAM_FROM) {
@@ -1966,12 +1907,8 @@ final class World {
             }
         }
         if (rescue != null) rescue.ram(p, dt);
-        // the rail: the street leads her, as on a string, while the finger shows no way of its own (see Rail)
-        float steerTo = rail.wheel(p, wheel, go, dt, cars, shown);
-        if (rail.cap >= 0f) p.cap = rail.cap;
         int ramsWere = cars.rams;
-        float brakes = Math.max(brakeIn, rail.brake);
-        p.drive(dt, go && brakes == 0f, steerTo, brakes, false, city, cars, walkers);
+        p.drive(dt, go, wheel, brakeIn, false, city, cars, walkers);
         if (cars.rams != ramsWere) {
             // a car rammed: a jolt in the hand, the people off; the pickup, not a scratch
             p.speed *= 0.9f;
@@ -1980,9 +1917,10 @@ final class World {
             pets.alarm(cars.ramX, cars.ramZ, 10f);
             cars.alarm(cars.ramX, cars.ramZ, 14f);
         }
-        // the wheel let be, or nearly: along the street it is nearly along, the less the more it is turned
+        // the wheel straight (let go, or held in its middle): a car a little off the street's way
+        // finds it, as a car's wheels do; anything more is the driver's
         float let = 1f - Math.min(1f, Math.abs(p.steer) / SETTLE_WHEEL);
-        if (let > 0f && Math.abs(p.speed) > 3f && !rail.on && !wayShown) {
+        if (let > 0f && Math.abs(p.speed) > 3f) {
             float d;
             if (p.z > City.EDGE_J * City.CELL + City.CURB) {
                 // out of the town: along the road out, if it is on it or near, the way it runs here
@@ -2019,19 +1957,20 @@ final class World {
         return DrawList.TINT_CORAL;
     }
 
-    // the finger at the wheel, as parts of the ring's radius from where it came down: aside, no
-    // turn within so far, then more and more (so steep a curve) to full over at the edge; drawn
-    // down past so far, the brake
-    static final float CAR_DEAD = 0.3f, CAR_CURVE = 1.3f, CAR_BRAKE = 0.55f;
-    // backing, the finger may wander up so far (above where it came down) and it still backs
-    static final float CAR_BACK_HOLD = -0.25f;
-    // the finger down past the ring's middle and within so far round of straight down: the brakes;
-    // the most round from straight ahead the finger shows a way; how hard the wheel goes for it
-    static final float CAR_BACK_ARC = 2.35f, CAR_WAY_MOST = 2.35f, CAR_WAY_GAIN = 2.2f;
-    /** The finger shows a way: which way she faced when it left the ring's middle; whether it does now. */
-    private float wayFrom;
-    private boolean wayLatched, wayShown;
-    static final float CAR_R = 44f;
+    // the thumb on the steering wheel, as parts of so far aside from where it came down: no turn
+    // within so far, then more and more (so steep a curve) to full over at the edge
+    static final float CAR_DEAD = 0.08f, CAR_CURVE = 1.4f, CAR_R = 50f;
+    /** In the town, the fastest it goes (meters a second); out on the road, its top. */
+    static final float TOWN_TOP = 22f;
+    /** The steering wheel at rest, where the left thumb would come down: across, up from the bottom. */
+    static final float WHEEL_REST_X = 78f, WHEEL_REST_UP = 96f;
+
+    /** The steering wheel as the left thumb has it: -1 (full left) to 1. */
+    private float wheelAxis() {
+        float v = Math.max(-1f, Math.min(1f, (carTX - carCX) / CAR_R)), a = Math.abs(v);
+        return a < CAR_DEAD ? 0f : Math.signum(v) * (float) Math.pow((a - CAR_DEAD) / (1f - CAR_DEAD), CAR_CURVE);
+    }
+
     // the steering wheel drawn under the finger: half its size, frame pixels; turned so far at full lock (radians)
     static final float WHEEL_HALF = 66f, WHEEL_TURNS = 2.2f;            // the ring at the wheel, its radius: wider than her stick on foot
     static final float SETTLE_RATE = 3.5f;     // how fast it settles along the street, the wheel let be
@@ -2066,33 +2005,60 @@ final class World {
         }
     }
     private final float[] fellAt = new float[2];
-    static final float SETTLE_WITHIN = 0.5f;   // radians off a street's way, at most, for the pickup to settle along it
-    static final float SETTLE_WHEEL = 0.25f;   // turned so far or more, it is let go its own way
+    static final float SETTLE_WITHIN = 0.2f;   // radians off a street's way, at most, for the pickup to settle along it
+    static final float SETTLE_WHEEL = 0.05f;   // turned so far or more, it is let go its own way
     private float carCX, carCY, carTX, carTY;
 
-    /** The finger at the wheel: where it comes down, the ring's middle, fixed till it is lifted; the button low on the right: out. */
-    private void drivingTouch(int type, float x, float y) {
-        if (type == DOWN && Math.abs(x - liftButtonX()) < BUTTON + 8 && Math.abs(y - liftButtonY()) < BUTTON + 8) {
-            getOut();
+    /**
+     * The thumbs at the wheel: on the left half of the glass the steering wheel, its middle where the
+     * thumb came down; on the right, low, the pedals, held while a thumb is on them (slid from one
+     * to the other, the other); the pause; the way out, over the pedals.
+     */
+    private void carTouch(int type, int id, float x, float y) {
+        if (type == DOWN && paused) {
+            if (!pauseRow(x, y)) paused = false;
             return;
         }
-        if (buttonHeld) {
-            if (type == UP) buttonHeld = false;
+        if (type == DOWN && onButton(x, y, pauseX(), pauseY())) {
+            paused = true;
+            letGo();
+            return;
+        }
+        if (type == DOWN && onLiftButton(x, y)) {
+            getOut();
+            // one finger to play: this one is the lead now, so its lifting is the button's
+            if (Runner.classic) leadFinger = id;
             return;
         }
         if (type == DOWN) {
-            pedal = true;
-            // the wheel's middle where the finger came down, as near the edges as it can be drawn whole
-            float m = WHEEL_HALF * 0.85f;
-            carCX = Math.max(m, Math.min(W - m, x));
-            carCY = Math.max(h * 0.3f, Math.min(h - m, y));
-            carTX = x;
-            carTY = y;
-        } else if (type == MOVE && pedal) {
-            carTX = x;
-            carTY = y;
+            if (x < W * 0.5f) {
+                if (wheelFinger >= 0) return;
+                wheelFinger = id;
+                float m = WHEEL_HALF * 0.85f;
+                carCX = Math.max(m, Math.min(W * 0.5f - WHEEL_HALF * 0.3f, x));
+                carCY = Math.max(h * 0.3f, Math.min(h - m, y));
+                carTX = x;
+                carTY = y;
+            } else {
+                int k = pedalAt(x, y);
+                if (k == GAS_PEDAL && gasFinger < 0) gasFinger = id;
+                else if (k == BRAKE_PEDAL && brakeFinger < 0) brakeFinger = id;
+            }
+        } else if (type == MOVE) {
+            if (id == wheelFinger) {
+                carTX = x;
+                carTY = y;
+            } else if (id == gasFinger && pedalAt(x, y) == BRAKE_PEDAL && brakeFinger < 0) {
+                gasFinger = -1;
+                brakeFinger = id;
+            } else if (id == brakeFinger && pedalAt(x, y) == GAS_PEDAL && gasFinger < 0) {
+                brakeFinger = -1;
+                gasFinger = id;
+            }
         } else if (type == UP) {
-            pedal = false;
+            if (id == wheelFinger) wheelFinger = -1;
+            if (id == gasFinger) gasFinger = -1;
+            if (id == brakeFinger) brakeFinger = -1;
         }
     }
 

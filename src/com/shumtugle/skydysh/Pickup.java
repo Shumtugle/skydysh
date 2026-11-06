@@ -5,27 +5,27 @@ package com.shumtugle.skydysh;
  * with a coral stripe, the plate's sign on its doors and an amber lamp behind the cab; a bed
  * behind for a load. Parked, it stands at a curb; got into, she drives it.
  *
- * It drives as a car in a town game should: easier than going on foot, and fast. A finger on
- * the glass: while it is down, it goes; moved aside, the wheel turns, the car going where its nose
- * points, as sharply as the wheel says, less at the top of its speed, and never slides; hard over,
- * it slows by itself to make the corner. Drawn down, it brakes, and held so standing still, it
- * backs, and goes on backing while the finger is not pushed back up; lifted, it slows to a stop. The engine pulls hard all the way up. Run into a wall, it runs
- * along it, losing only what went into it.
+ * It drives as a car in a town game should: easier than going on foot, and quick. The throttle
+ * held, it goes, the longer the faster; the wheel turns it where its nose points, as sharply as the
+ * wheel says, less and less the faster it goes, and it never slides; hard over, it slows by itself
+ * to make the corner. The brake stops it, and held standing, it backs at once; neither held, it
+ * rolls on, slowing. It turns only as it goes, as a car does: no swinging round on the spot. Run
+ * into a wall, it runs along it, losing only what went into it.
  *
  * Its own frame: x to its right, y up, its nose along +z; the road at y = 0.
  */
 final class Pickup {
     static final float VMAX = 36f;                     // top speed, meters a second
-    static final float ACCEL = 13f, BRAKE = 22f, HARD_BRAKE = 30f, COAST = 3f;
-    static final float LET_GO = 11f;                   // the finger lifted: it slows so hard to a stop
+    static final float ACCEL = 9f, BRAKE = 22f, HARD_BRAKE = 30f, COAST = 3f;
+    static final float LET_GO = 4f;                    // the throttle let go: it rolls on, slowing so
+    static final float BACK_AFTER = 0.12f;             // stopped with the brake held: so long, and it backs
     static final float BACK_TOP = 8f;                  // backing, no faster than this
     static final float CREEP = 1.5f;
     // the wheel full over, the speed it is held to is so much less than the top; how hard it slows for it
     static final float TURN_SLOWS = 0.55f, EASE = 15f;                   // the driver noses along at least this fast
     // the tightest turn, its radius; how fast it may turn at a middling speed and at the top
-    static final float TIGHTEST = 4.5f, YAW_MID = 2.4f, YAW_TOP = 1.5f;
-    static final float PIVOT = 3.5f;                   // stuck or crawling, the wheel turns it as fast as at this speed
-    static final float STEER_RATE = 18f;               // how fast the wheel follows the hand: a tremble of it is lost
+    static final float TIGHTEST = 4.5f, YAW_MID = 2.4f, YAW_TOP = 0.9f;
+    static final float STEER_RATE = 9f;                // how fast the wheel follows the hand, and comes back straight
     static final float HALF_LONG = 2.5f, HALF_WIDE = 1f, TOP = 1.7f, ENDS = 1.3f, END_R = 1.05f;
     static final int CREAM = 0xF1E8D4, TEAL = 0x2F8A86, CORAL = 0xE0644A, AMBER = 0xF6B54A;
 
@@ -65,9 +65,9 @@ final class Pickup {
                 speed = Math.max(0f, speed - (brake > 0.6f ? HARD_BRAKE : BRAKE) * brake * dt);
                 still = 0f;
             } else {
-                // held down, standing: after a moment it backs
+                // held, standing: it backs
                 still += dt;
-                if (still > 0.4f) speed = Math.max(-BACK_TOP, speed - ACCEL * 0.5f * dt);
+                if (still > BACK_AFTER) speed = Math.max(-BACK_TOP, speed - ACCEL * 0.5f * dt);
             }
         } else if (!throttle) {
             still = 0f;
@@ -79,10 +79,9 @@ final class Pickup {
             else accelerate(dt, flat ? VMAX : cap >= 0f ? Math.min(cap, target(fx, fz, city, cars)) : target(fx, fz, city, cars));
         }
         // the wheel: it turns the car as sharply as it says, as tight as the tightest turn when slow,
-        // a little less at the top; nosed up against something, or hardly going, with the finger down
-        // and the wheel over, it still swings round, briskly, as if it were going. It goes where its
-        // nose points: no sliding
-        float v = throttle && Math.abs(speed) < PIVOT && Math.abs(steer) > 0.2f ? PIVOT : speed;
+        // less and less toward the top; only as it goes, backing the other way round. It goes where
+        // its nose points: no sliding
+        float v = speed;
         float cap = YAW_MID + (YAW_TOP - YAW_MID) * Math.min(1f, Math.abs(speed) / VMAX);
         float yaw = steer * Math.min(Math.abs(v) / TIGHTEST, cap) * Math.signum(v);
         heading += yaw * dt;

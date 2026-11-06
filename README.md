@@ -69,16 +69,16 @@ phone's own, Russian or English, kept as chosen) and the results: the best time 
 played, on the screen in her head. The eye behind her keeps out of
 the leaves: when a tree's crown or a palm's comes between, it drops under it, or comes in nearer.
 
-At the wheel, while a finger is down the pickup goes; a ring of glass shows where the finger came
-down, a knob in it where the finger is, coloured for the mission (coral for a hunt, turquoise for
-the folder, amber for a delivery, cream when free). The finger shows the way the pickup is to go,
-not a wheel to turn: moved off the ring's middle, the way it points is the way to go, as round
-from the way the pickup faced as the finger is from straight up; the pickup turns till it goes
-that way and keeps it (right across: into the side street, and on along it). Drawn straight
-down, it brakes, and held so standing, it backs, and goes on backing, the finger aside swinging
-it, till the finger is pushed back up. Lifted, the pickup slows to a stop. With the finger in the
-ring's middle, the street leads it in its lane. Nosed into a wall, the finger aside still swings
-it round. How fast, up on the left under the pause, out from under the thumb.
+At the wheel, two thumbs. On the left half of the glass a steering wheel, drawn under the thumb
+where it comes down and turned as the pickup's wheel is, coloured for the mission (coral for a
+hunt, turquoise for the folder, amber for a delivery, cream when free): the thumb aside turns it,
+gently near the middle, full over at the edge, the less the faster the pickup goes; let go, it
+comes back straight. Low on the right, the pedals: the throttle (held, it goes, the longer the
+faster; in the town no faster than its streets take, out on the road all it has) and the brake
+(it stops, and held standing, it backs at once); a thumb slid from one to the other takes the
+other. Neither held, it rolls on and slows. It turns only as it goes: a turn in the street is
+made in three, forward, back, forward. The wheel straight, a pickup a little off the street's way
+finds it; the rest is the driver's. The way out over the pedals. How fast, up on the left under the pause, out from under the thumb.
 
 She gets in where she comes up to a pickup, any side or end, the nose as well as the doors:
 walked against it, at once; stood by it, in a moment; its sign touched, she goes to the nearest of

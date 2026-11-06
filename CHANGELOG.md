@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.87
+
+- At the wheel, two thumbs: a steering wheel on the left under the thumb, turned as the pickup's
+  is; the throttle and the brake low on the right, lit while held (green, coral). The way out
+  over them.
+- The throttle no longer comes with the touch: the pickup goes only while it is held, rolls on
+  and slows when it is let go. In the town no faster than 80 km/h; out on the road, all it has.
+  It pulls up more gently.
+- The brake held standing backs it at once, as long as it is held; the throttle takes it forward
+  again.
+- The wheel the driver's alone: the street's lead in the lane and the turn by the way shown are
+  gone; only, the wheel straight, a pickup a little off the street's way finds it. The wheel
+  softer the faster it goes, and it no longer swings round on the spot.
+
 ## 0.86
 
 - The concert begins with the light, whether she sits or not: the people sit, the pianist
