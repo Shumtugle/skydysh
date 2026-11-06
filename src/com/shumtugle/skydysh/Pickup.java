@@ -8,8 +8,8 @@ package com.shumtugle.skydysh;
  * It drives as a car in a town game should: easier than going on foot, and quick. The throttle
  * held, it goes, the longer the faster; the wheel turns it where its nose points, as sharply as the
  * wheel says, less and less the faster it goes, and it never slides; hard over, it slows by itself
- * to make the corner. The brake stops it, and held standing, it backs at once; neither held, it
- * rolls on, slowing. It turns only as it goes, as a car does: no swinging round on the spot. Run
+ * to make the corner. The brake stops it, and held standing, after a breath it backs; neither,
+ * it rolls on, slowing. It turns only as it goes, as a car does: no swinging round on the spot. Run
  * into a wall, it runs along it, losing only what went into it.
  *
  * Its own frame: x to its right, y up, its nose along +z; the road at y = 0.
@@ -18,7 +18,7 @@ final class Pickup {
     static final float VMAX = 36f;                     // top speed, meters a second
     static final float ACCEL = 9f, BRAKE = 22f, HARD_BRAKE = 30f, COAST = 3f;
     static final float LET_GO = 4f;                    // the throttle let go: it rolls on, slowing so
-    static final float BACK_AFTER = 0.12f;             // stopped with the brake held: so long, and it backs
+    static final float BACK_AFTER = 0.2f;              // stopped with the brake held: so long, and it backs
     static final float BACK_TOP = 8f;                  // backing, no faster than this
     static final float CREEP = 1.5f;
     // the wheel full over, the speed it is held to is so much less than the top; how hard it slows for it
@@ -67,7 +67,8 @@ final class Pickup {
             } else {
                 // held, standing: it backs
                 still += dt;
-                if (still > BACK_AFTER) speed = Math.max(-BACK_TOP, speed - ACCEL * 0.5f * dt);
+                // as fast back as the brake is held hard, never slower than a crawl
+                if (still > BACK_AFTER) speed = Math.max(-BACK_TOP * Math.max(0.35f, brake), speed - ACCEL * 0.5f * dt);
             }
         } else if (!throttle) {
             still = 0f;

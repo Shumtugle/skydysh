@@ -848,17 +848,14 @@ public final class Stand implements World.Host {
             System.out.println(String.format("%7.2fs  by a duty pickup at %.1f %.1f", time, best.x, best.z));
             step();
         } else if (c.equals("pedal")) {
-            // pedal SECONDS SIDEWAYS DOWNWARD EVERY PREFIX: at the wheel, the left thumb on the steering
-            // wheel held so far aside, the right on the throttle (or on the brake, DOWNWARD past 20),
-            // shot so often; the speed told
+            // pedal SECONDS SIDEWAYS DOWNWARD EVERY PREFIX: at the wheel, the thumb on the steering
+            // wheel held so far aside, and up full on the throttle (or, DOWNWARD past 20, so far down
+            // on the brake), shot so often; the speed told
             float secs = f(p[1]), sx = f(p[2]), sy = f(p[3]), every = f(p[4]), next = 0f;
-            float wx = World.W * 0.28f, wy = 520f;
-            int k0 = sy > 20f ? World.BRAKE_PEDAL : World.GAS_PEDAL;
-            float px = world.pedalX(k0), py = world.pedalY(k0);
+            float wx = World.W * 0.4f, wy = 520f, dy = sy > 20f ? sy : -World.CAR_R;
             world.touch(World.DOWN, 0, wx, wy);
-            world.touch(World.DOWN, 1, px, py);
             step();
-            world.touch(World.MOVE, 0, wx + sx, wy);
+            world.touch(World.MOVE, 0, wx + sx, wy + dy);
             int n = Math.round(secs / DT), k = 0;
             for (int i = 0; i < n; i++) {
                 step();
@@ -867,8 +864,7 @@ public final class Stand implements World.Host {
                     next += every;
                 }
             }
-            world.touch(World.UP, 0, wx + sx, wy);
-            world.touch(World.UP, 1, px, py);
+            world.touch(World.UP, 0, wx + sx, wy + dy);
             Pickup q = world.driving;
             System.out.println(q == null ? String.format("%7.2fs  not at the wheel", time)
                     : String.format("%7.2fs  at the wheel: %.1f m/s, gear %d, at %.1f %.1f heading %.2f", time, q.speed, q.gear, q.x, q.z, q.heading));

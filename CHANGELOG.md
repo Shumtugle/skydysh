@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.88
+
+- At the wheel, one thumb again, on the steering wheel: aside the wheel, up the throttle (the
+  higher the faster, from a crawl), down the brake (the lower the harder); held down standing,
+  after a breath it backs. The middle is still: the touch no longer starts it. Up and down with a
+  wider middle than aside, so the wheel does not touch the throttle.
+- The wheel green while the throttle is on, coral while the brake is; a knob where the thumb is.
+  It comes down anywhere but on a button. The pedals are gone.
+- Backing as fast as the thumb is held low, never slower than a crawl.
+
 ## 0.87
 
 - At the wheel, two thumbs: a steering wheel on the left under the thumb, turned as the pickup's

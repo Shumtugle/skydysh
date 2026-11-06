@@ -69,16 +69,17 @@ phone's own, Russian or English, kept as chosen) and the results: the best time 
 played, on the screen in her head. The eye behind her keeps out of
 the leaves: when a tree's crown or a palm's comes between, it drops under it, or comes in nearer.
 
-At the wheel, two thumbs. On the left half of the glass a steering wheel, drawn under the thumb
-where it comes down and turned as the pickup's wheel is, coloured for the mission (coral for a
-hunt, turquoise for the folder, amber for a delivery, cream when free): the thumb aside turns it,
-gently near the middle, full over at the edge, the less the faster the pickup goes; let go, it
-comes back straight. Low on the right, the pedals: the throttle (held, it goes, the longer the
-faster; in the town no faster than its streets take, out on the road all it has) and the brake
-(it stops, and held standing, it backs at once); a thumb slid from one to the other takes the
-other. Neither held, it rolls on and slows. It turns only as it goes: a turn in the street is
-made in three, forward, back, forward. The wheel straight, a pickup a little off the street's way
-finds it; the rest is the driver's. The way out over the pedals. How fast, up on the left under the pause, out from under the thumb.
+At the wheel, one thumb on a steering wheel, drawn under it where it comes down (anywhere but a
+button) and turned as the pickup's wheel is, a knob where the thumb is. Aside, the wheel turns,
+gently near the middle, full over at the edge, the less the faster the pickup goes. Up, the
+throttle, the higher the faster, from a crawl to the top (in the town no faster than its streets
+take, out on the road all it has); the wheel green. Down, the brake, the lower the harder, the
+wheel coral; held so standing, after a breath it backs, as fast as it is held low. Up and down
+have a wider middle than aside, so turning the wheel does not touch the throttle. In the middle
+or let go, it rolls on and slows, and the wheel comes back straight. Otherwise coloured for the
+mission (coral for a hunt, turquoise for the folder, amber for a delivery, cream when free). It
+turns only as it goes: a turn in the street is made in three. The wheel straight, a pickup a
+little off the street's way finds it; the rest is the driver's. The way out up on the right. How fast, up on the left under the pause, out from under the thumb.
 
 She gets in where she comes up to a pickup, any side or end, the nose as well as the doors:
 walked against it, at once; stood by it, in a moment; its sign touched, she goes to the nearest of

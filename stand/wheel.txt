@@ -1,42 +1,37 @@
-# Two thumbs at the wheel: the right on the throttle, up a street; the left on the steering wheel,
-# right over at the crossing, into the side street, the wheel let back straight; the throttle let
-# go, it rolls and slows; the brake held, it stops and backs at once. Then a turn in three: hard
-# left on the throttle, the brake held with the wheel right over, backing round, the throttle again.
+# One thumb on the steering wheel: up, the throttle, up a street; eased off and right over at the crossing,
+# into the side street, back to straight up; to the middle, it rolls and slows; down, the brake,
+# held: it stops, and after a breath it backs. Then a turn in three: up and hard left, down and
+# right over, backing round, up again.
 screen 1096 2560
 wait 0.4
 mission 3
 drivein 66.2 14 0
 shot w0
-finger down 1 228 536
+finger down 0 110 520
+finger move 0 110 470
 trace 2.5 0.5
-finger down 0 78 544
-finger move 0 124 544
-trace 1.2 0.2
+finger move 0 110 500
+trace 0.5 0.25
+finger move 0 156 500
+trace 0.9 0.2
 shot w1
-finger move 0 78 544
+finger move 0 110 470
 trace 1.5 0.5
-finger up 1 228 536
+finger move 0 110 520
 trace 1.5 0.5
-finger up 0 78 544
-finger down 2 158 556
+finger move 0 110 570
 trace 2.4 0.2
 shot w2
-finger up 2 158 556
+finger up 0 110 570
 wait 1
 drivein 66.2 300 0
-finger down 0 78 544
-finger move 0 32 544
-finger down 1 228 536
+finger down 0 110 520
+finger move 0 64 470
 trace 1.4 0.35
-finger up 1 228 536
-finger move 0 124 544
-finger down 2 158 556
+finger move 0 156 570
 trace 2 0.25
 shot w3
-finger up 2 158 556
-finger move 0 78 544
-finger down 1 228 536
+finger move 0 110 470
 trace 1.5 0.5
 shot w4
-finger up 1 228 536
-finger up 0 78 544
+finger up 0 110 470
