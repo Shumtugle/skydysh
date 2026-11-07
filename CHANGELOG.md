@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.9
+
+- A ride on a car's roof. The roofs of the cars in the streets are a floor now, to come down on
+  and stand on: a leap onto one going by, and it carries her along and round the corners with
+  it, as she stood on it; leapt up off it, she goes on with it till she lands. No car stops for
+  her up there. When it goes from under her, she falls.
+- Riding, the stream gives its likes: a few hearts drifting up all the while, likes with them.
+
 ## 1.0.8
 
 - The compass a button of the same glass as the pause and the way out: a round pane, its rim

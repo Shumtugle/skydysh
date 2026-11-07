@@ -1,0 +1,27 @@
+# A ride on a car's roof: put on one going along, she goes with it, round the corner with it,
+# the car not stopping for her; the hearts drifting up, likes with them. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 4
+keep kinds 14
+keep where 0
+keep likes 1000
+restart
+free
+at 100 60 0
+wait 3
+onroof
+where
+likes
+wait 2
+where
+shot r0
+wait 3
+where
+likes
+shot r1
+wait 4
+where
+likes
+shot r2

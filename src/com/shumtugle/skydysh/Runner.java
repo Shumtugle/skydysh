@@ -727,7 +727,7 @@ final class Runner {
             // gliding, once past the top of the jump, she sinks slowly
             if (gliding && vy < -(auto ? AUTO_SINK : SINK)) vy = -(auto ? AUTO_SINK : SINK);
             y += vy * dt;
-            float ground = g.ground(x, z, y - vy * dt, 0.05f);
+            float ground = floor(g, cars, y - vy * dt, 0.05f);
             // falling, high over what is below: arms out
             if (vy < 0f && y - ground > GLIDE_ABOVE) gliding = true;
             if (y <= ground && vy < 0f) {
@@ -744,7 +744,7 @@ final class Runner {
                 }
             }
         } else {
-            float ground = g.ground(x, z, y, City.STEP);
+            float ground = floor(g, cars, y, City.STEP);
             if (ground < y - 0.7f) {
                 // off an edge: into the air
                 state = AIR;
@@ -767,6 +767,18 @@ final class Runner {
         // the stride: run on in step with the ground going by
         stride += dt * Math.max(0.3f, speed) / strideSpeed();
         eye(dt, g);
+    }
+
+    /**
+     * What is under her feet: the town's ground (or the room's), or the roof of a car in the street
+     * under her, if it is no higher than she reaches from (from, so far up): a car's roof is a floor
+     * to come down on and to stand on, and it goes from under her when the car does.
+     */
+    private float floor(Ground g, Cars cars, float from, float step) {
+        float ground = g.ground(x, z, from, step);
+        if (room != null || cars == null) return ground;
+        float roof = cars.topAt(x, z);
+        return roof > ground && roof <= from + step ? roof : ground;
     }
 
     /** Going down by herself: to the edge at a run and off it in a leap; in the air, round along the street. */

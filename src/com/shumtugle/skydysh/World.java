@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.0.8";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.0.9";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1611,7 +1611,11 @@ final class World {
         }
         toss.update(dt, runner, brums(), city, runner.tapped(), hunt());
         frighten();
+        int rode = riding();
+        float rx0 = rode >= 0 ? cars.x[rode] : 0f, rz0 = rode >= 0 ? cars.z[rode] : 0f, rh0 = rode >= 0 ? cars.heading[rode] : 0f;
         cars.update(dt, runner, brums());
+        if (rode >= 0) carried(rode, rx0, rz0, rh0, dt);
+        else rideFor = 0f;
         walkers.update(dt, runner, chase, city);
         pets.update(dt, runner, walkers, city);
         int caught = mission.caught(), struck = 0;
@@ -3344,6 +3348,56 @@ final class World {
 
     private static boolean sane(float v) {
         return !Float.isNaN(v) && !Float.isInfinite(v) && Math.abs(v) < 20000f;
+    }
+
+    // ---- a ride on a car's roof: the car carries her along and round with it, and the stream
+    // gives its likes all the while ----
+    /** Likes a second riding, and hearts a second drifting up; how long a ride is before they come. */
+    static final float RIDE_LIKES = 30f, RIDE_HEARTS = 2.5f, RIDE_FROM = 1f;
+    private float rideFor, rideOwed;
+
+    /** The car she rode last step, or -1. */
+    private int rodeLast = -1;
+
+    /**
+     * The car that carries her now, on foot over its roof: she stands on it, or comes down onto
+     * it, or has leapt up off it (and goes on with it, as she would, till she lands); -1 for none.
+     */
+    private int riding() {
+        int c = driving != null || indoors != null || aboard() || piloting() || craning ? -1 : cars.over(runner.x, runner.z);
+        if (c >= 0) {
+            float above = runner.y - cars.roofOf(c);
+            boolean air = runner.state == Runner.AIR;
+            boolean on = !air && runner.state == Runner.RUN && Math.abs(above) < Cars.RIDE_SLACK;
+            boolean landing = air && runner.vy <= 0f && above > -Cars.RIDE_SLACK && above < 0.6f;
+            boolean leapt = air && c == rodeLast && above > -Cars.RIDE_SLACK;
+            if (!on && !landing && !leapt) c = -1;
+        }
+        rodeLast = c;
+        return c;
+    }
+
+    /** The car c moved from (x0, z0) turned h0: she goes with it, where she stood on it, turned as it turned. */
+    private void carried(int c, float x0, float z0, float h0, float dt) {
+        float dh = cars.heading[c] - h0, cs = (float) Math.cos(dh), sn = (float) Math.sin(dh);
+        float ox = runner.x - x0, oz = runner.z - z0;
+        // turned about the up axis as its heading is (0 along +z, growing toward +x)
+        float nx = ox * cs + oz * sn, nz = -ox * sn + oz * cs;
+        runner.x = cars.x[c] + nx;
+        runner.z = cars.z[c] + nz;
+        runner.heading += dh;
+        runner.eyeYaw += dh;
+        float moved = Math.abs(cars.speed[c]);
+        if (moved < 0.5f) return;
+        rideFor += dt;
+        if (rideFor < RIDE_FROM) return;
+        hearts.drift(RIDE_HEARTS);
+        rideOwed += RIDE_LIKES * dt;
+        int n = (int) rideOwed;
+        if (n > 0) {
+            rideOwed -= n;
+            like(n, 0);
+        }
     }
 
     // ---- likes: what a job brings, a moment worth it, music listened to, a long flight in the town ----

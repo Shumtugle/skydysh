@@ -178,8 +178,9 @@ the folder, the containers, the panel on its own) every time it is won. They pou
 side of the screen as a stream of small hearts, as if many hands were tapping at once: a burst
 when a job is won and again over its report at home, a smaller one at a moment worth it (a plate
 struck, the road through the pass open), a few drifting up all the while the music plays in the
-hall. In the town between jobs a long flight off a roof, landed, brings likes too; nothing she
-knocks down does. Their sum stands at the stream's foot, and on home's screen. Over each
+hall. In the town between jobs a long flight off a roof, landed, brings likes too, and so does a ride
+on a car's roof (leapt onto one going by, it carries her along and round its corners); nothing
+she knocks down does. Their sum stands at the stream's foot, and on home's screen. Over each
 briefing a sign of a question floats by the screen: touched, a still page of what lies behind the
 mission and what it asks; the same from under the pause while it is played.
 

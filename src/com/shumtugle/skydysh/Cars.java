@@ -54,6 +54,42 @@ final class Cars {
         return best;
     }
 
+    /** The car whose roof is over (px, pz), however high she is: its number, or -1 for none. */
+    int over(float px, float pz) {
+        for (int c = 0; c < MOST; c++) {
+            if (!live[c]) continue;
+            float fx = (float) Math.sin(heading[c]), fz = (float) Math.cos(heading[c]);
+            float ox = px - x[c], oz = pz - z[c];
+            if (Math.abs(ox * fx + oz * fz) < half(kind[c]) + 0.2f && Math.abs(ox * fz - oz * fx) < 1.15f) return c;
+        }
+        return -1;
+    }
+
+    /** For the desktop stand: the nearest car going along to (px, pz), at least so fast; -1 for none. */
+    int nearestGoing(float px, float pz, float fast) {
+        int best = -1;
+        float bd = Float.MAX_VALUE;
+        for (int c = 0; c < MOST; c++) {
+            if (!live[c] || speed[c] < fast) continue;
+            float dx = x[c] - px, dz = z[c] - pz, dd = dx * dx + dz * dz;
+            if (dd < bd) {
+                bd = dd;
+                best = c;
+            }
+        }
+        return best;
+    }
+
+    /** How high car c's roof is. */
+    float roofOf(int c) {
+        return top(kind[c]);
+    }
+
+    /** How near the roof's height her feet must be to stand on it, meters. */
+    static final float RIDE_SLACK = 0.15f;
+    /** Feet so high off the road are over the cars: no car stops for her up there. */
+    static final float OVER_ROAD = 1f;
+
     static float top(int kind) {
         return kind == VAN ? 2.1f : kind == SMALL ? 1.5f : TOP;
     }
@@ -129,7 +165,7 @@ final class Cars {
             float want = turns && left < 14f ? TURNING : CRUISE;
             float fx = (float) Math.sin(heading[c]), fz = (float) Math.cos(heading[c]);
             // someone in the road ahead: stop short of them (the runner, a brum down, a pickup left)
-            float others = clear(c, fx, fz, r.x, r.z);
+            float others = r.y > OVER_ROAD ? CRUISE : clear(c, fx, fz, r.x, r.z);
             for (Chase g : brums) if (g.down()) others = Math.min(others, clear(c, fx, fz, g.x, g.z));
             if (duty != null) for (int k = 0; k < duty.all.size(); k++) {
                 Pickup p = duty.all.get(k);

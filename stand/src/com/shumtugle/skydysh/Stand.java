@@ -930,6 +930,17 @@ public final class Stand implements World.Host {
         } else if (c.equals("paid")) {
             // paid N: as if the job just done had brought so many likes (for "dispatch done")
             world.standPaid(Integer.parseInt(p[1]));
+        } else if (c.equals("onroof")) {
+            // onroof: her put on the roof of the nearest car going along, facing as it goes
+            Cars k = world.cars;
+            int best = k.nearestGoing(world.runner.x, world.runner.z, 3f);
+            if (best < 0) System.out.println("no car going along");
+            else {
+                world.runner.put(k.x[best], k.roofOf(best), k.z[best], k.heading[best]);
+                world.runner.recenter();
+                step();
+                System.out.println(String.format("%7.2fs  on the roof of car %d at %.1f %.1f, going %.1f", time, best, k.x[best], k.z[best], k.speed[best]));
+            }
         } else if (c.equals("pickups")) {
             // pickups: the duty pickups out now, where each stands
             StringBuilder b = new StringBuilder();
