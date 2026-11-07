@@ -32,7 +32,7 @@ final class Rooms {
     // the secretariat, a room of its own at the front on the left: its wall's place across, its
     // front and back, the doorway in its wall (from, to, in), where the clerk who gives out the
     // folders stands
-    static final float SEC_U = 4.2f, SEC_FRONT = 2f, SEC_BACK = 10.5f, DOOR_V0 = 5.6f, DOOR_V1 = 7.2f, CLERK_U = 4.9f, CLERK_V = 6.4f;
+    static final float SEC_U = 4.2f, SEC_FRONT = 2f, SEC_BACK = 10.5f, DOOR_V0 = 5.4f, DOOR_V1 = 7.6f, CLERK_U = 5.1f, CLERK_V = 6.5f;
     // the stairs: the foot of the middle flight, its top and the landing's back; the side
     // flights' inner and outer edges; the galleries' inner edge across, and where they begin
     static final float STAIR_V0 = 13.5f, STAIR_V1 = 18f, LANDING_V = 21f, MID_HALF = 1.8f, SIDE_IN = 3.4f, SIDE_OUT = 5.4f, GALLERY_V0 = 11.5f;
@@ -93,9 +93,11 @@ final class Rooms {
             }
         for (int e = -1; e <= 1; e += 2)
             in.box(d, e * (half - 0.1f), f + h - 0.15f, deep * 0.5f, 0.15f, 0.15f, deep * 0.5f, gold, DrawList.GOLD);
-        // the columns along the way in: marble shafts, gilt heads and feet
+        // the columns along the way in: marble shafts, gilt heads and feet; none across from the
+        // secretariat's door
         for (float v = 3.5f; v < 11f; v += 3.5f)
             for (int e = -1; e <= 1; e += 2) {
+                if (v > DOOR_V0 - 1f && v < DOOR_V1 + 1f) continue;
                 float u = e * 3f;
                 column(in, d, u, v, f, g - 0.3f, marble, gold);
                 in.solid(u - 0.4f, v - 0.4f, u + 0.4f, v + 0.4f, tall);
@@ -176,11 +178,19 @@ final class Rooms {
         in.box(d, 0f, f + h - 0.06f, (sv0 + sv1) * 0.5f, su + 0.4f, 0.03f, (sv1 - sv0) * 0.5f + 0.4f, gold, DrawList.GOLD);
         // two chandeliers of crystal over the way in
         for (int k = 0; k < 2; k++) chandelier(in, d, 0f, 4.5f + k * 5f, f + h - 3.2f, gold);
-        // the secretariat: its wall along the hall, the doorway in it; its front; its ceiling
-        float wu = l * SEC_U, t = 0.12f, sh = 4.2f;
+        // the secretariat: its wall along the hall, dark wood panelling low and over it windows
+        // open onto the hall (posts between the panes, a gilt sill and head), so the room and who
+        // is in it are seen from the hall; the doorway between them; its front; its ceiling
+        float wu = l * SEC_U, t = 0.12f, sh = 4.2f, sill = 1.05f, head = 2.9f;
         for (int k = 0; k < 2; k++) {
-            float v0 = k == 0 ? SEC_FRONT : DOOR_V1, v1 = k == 0 ? DOOR_V0 : SEC_BACK;
-            in.box(d, wu, f + sh * 0.5f, (v0 + v1) * 0.5f, t, sh * 0.5f, (v1 - v0) * 0.5f, cream, DrawList.PLAIN);
+            float v0 = k == 0 ? SEC_FRONT : DOOR_V1, v1 = k == 0 ? DOOR_V0 : SEC_BACK, vm = (v0 + v1) * 0.5f, vh = (v1 - v0) * 0.5f;
+            in.box(d, wu, f + sill * 0.5f, vm, t, sill * 0.5f, vh, wood, DrawList.WOOD);
+            in.box(d, wu, f + (head + sh) * 0.5f, vm, t, (sh - head) * 0.5f, vh, cream, DrawList.PLAIN);
+            in.box(d, wu, f + sill + 0.04f, vm, t + 0.08f, 0.04f, vh, gold, DrawList.GOLD);
+            in.box(d, wu, f + head - 0.05f, vm, t + 0.04f, 0.06f, vh, gold, DrawList.GOLD);
+            int panes = Math.max(2, Math.round((v1 - v0) / 1.2f));
+            for (int q = 0; q <= panes; q++)
+                in.box(d, wu, f + (sill + head) * 0.5f, v0 + (v1 - v0) * q / panes, t, (head - sill) * 0.5f, 0.07f, wood, DrawList.WOOD);
             in.solid(Math.min(wu - t, wu + t), v0, Math.max(wu - t, wu + t), v1, tall);
         }
         in.box(d, wu, f + 3f + (sh - 3f) * 0.5f, (DOOR_V0 + DOOR_V1) * 0.5f, t, (sh - 3f) * 0.5f, (DOOR_V1 - DOOR_V0) * 0.5f, cream, DrawList.PLAIN);
@@ -192,17 +202,66 @@ final class Rooms {
         }
         in.box(d, l * mid, f + sh + 0.1f, (SEC_FRONT + SEC_BACK) * 0.5f, hw, 0.1f, (SEC_BACK - SEC_FRONT) * 0.5f, 0xF4EEDC, DrawList.PLAIN);
         in.box(d, l * mid, f + sh + 0.25f, (SEC_FRONT + SEC_BACK) * 0.5f, hw + 0.05f, 0.06f, (SEC_BACK - SEC_FRONT) * 0.5f + 0.05f, gold, DrawList.GOLD);
-        in.box(d, l * mid, f + sh - 0.04f, (SEC_FRONT + SEC_BACK) * 0.5f, 0.5f, 0.03f, 0.5f, 0xFFE9BE, DrawList.GLOW);
+        // a lamp hung in its middle: a chain, a shade of warm glass
+        float lv = (SEC_FRONT + SEC_BACK) * 0.5f;
+        in.box(d, l * mid, f + sh - 0.35f, lv, 0.02f, 0.35f, 0.02f, gold, DrawList.GOLD);
+        in.box(d, l * mid, f + sh - 0.8f, lv, 0.42f, 0.12f, 0.42f, 0xFFE2B0, DrawList.GLOW);
+        in.box(d, l * mid, f + sh - 0.66f, lv, 0.46f, 0.03f, 0.46f, gold, DrawList.GOLD);
+        // its own look: a parquet floor and a rug on it; its walls green over dark wood panelling
+        float su0 = SEC_U + t, su1 = half, smu = l * (su0 + su1) * 0.5f, shu = (su1 - su0) * 0.5f;
+        float rv0 = SEC_FRONT + t, rv1 = SEC_BACK - t, smv = (rv0 + rv1) * 0.5f, shv = (rv1 - rv0) * 0.5f;
+        int green = 0x3F5E4E, panel = 0x5A3B28;
+        in.box(d, smu, f + 0.012f, smv, shu, 0.004f, shv, 0x8A5A3A, DrawList.GRAIN);
+        in.box(d, l * (SEC_U + 1.5f), f + 0.02f, smv, 0.9f, 0.004f, 2.6f, 0x7A2A30, DrawList.GRAIN);
+        in.box(d, l * (SEC_U + 1.5f), f + 0.022f, smv, 0.75f, 0.004f, 2.45f, 0xB08A4A, DrawList.GRAIN);
+        in.box(d, l * (SEC_U + 1.5f), f + 0.024f, smv, 0.68f, 0.004f, 2.38f, 0x7A2A30, DrawList.GRAIN);
+        for (int k = 0; k < 2; k++) {
+            float v = k == 0 ? rv0 + 0.01f : rv1 - 0.01f;
+            in.box(d, smu, f + 0.55f, v, shu, 0.55f, 0.01f, panel, DrawList.WOOD);
+            in.box(d, smu, f + (1.1f + sh) * 0.5f, v, shu, (sh - 1.1f) * 0.5f, 0.01f, green, DrawList.PAINT);
+            in.box(d, smu, f + 1.12f, v, shu, 0.03f, 0.02f, gold, DrawList.GOLD);
+        }
+        in.box(d, l * (half - 0.02f), f + 0.55f, smv, 0.01f, 0.55f, shv, panel, DrawList.WOOD);
+        in.box(d, l * (half - 0.02f), f + (1.1f + sh) * 0.5f, smv, 0.01f, (sh - 1.1f) * 0.5f, shv, green, DrawList.PAINT);
+        // a clock on its front wall; a palm in a pot in the corner; two chairs for callers
+        in.box(d, l * (SEC_U + 1.9f), f + 3.1f, rv0 + 0.04f, 0.32f, 0.32f, 0.03f, 0xF4EEDC, DrawList.PLAIN);
+        in.box(d, l * (SEC_U + 1.9f), f + 3.1f, rv0 + 0.03f, 0.37f, 0.37f, 0.02f, gold, DrawList.GOLD);
+        in.box(d, l * (SEC_U + 1.9f), f + 3.2f, rv0 + 0.08f, 0.02f, 0.13f, 0.01f, 0x23262C, DrawList.PLAIN);
+        in.box(d, l * (SEC_U + 1.98f), f + 3.1f, rv0 + 0.08f, 0.09f, 0.02f, 0.01f, 0x23262C, DrawList.PLAIN);
+        float plu = l * (half - 0.55f), plv = rv0 + 0.55f;
+        in.box(d, plu, f + 0.3f, plv, 0.28f, 0.3f, 0.28f, 0x9A5A3A, DrawList.STONE);
+        for (int k = 0; k < 5; k++) {
+            float a = k * 1.256f;
+            in.box(d, plu + (float) Math.sin(a) * 0.35f, f + 1.15f + (k % 2) * 0.2f, plv + (float) Math.cos(a) * 0.35f,
+                    0.28f, 0.05f, 0.12f, 0x3E7A3A, DrawList.PAINT);
+        }
+        in.box(d, plu, f + 0.85f, plv, 0.05f, 0.35f, 0.05f, 0x5A4030, DrawList.WOOD);
+        in.solid(Math.min(plu - 0.35f, plu + 0.35f), plv - 0.35f, Math.max(plu - 0.35f, plu + 0.35f), plv + 0.35f, f + 1.4f);
+        for (int k = 0; k < 2; k++) {
+            float cu = l * (half - 1.9f), cv = k == 0 ? 4.4f : 8.4f;
+            in.box(d, cu, f + 0.48f, cv, 0.26f, 0.04f, 0.26f, 0x7A2A30, DrawList.GRAIN);
+            in.box(d, cu - l * 0.24f, f + 0.85f, cv, 0.03f, 0.35f, 0.26f, wood, DrawList.WOOD);
+            for (int a = -1; a <= 1; a += 2)
+                for (int b = -1; b <= 1; b += 2)
+                    in.box(d, cu + a * 0.22f, f + 0.22f, cv + b * 0.22f, 0.025f, 0.22f, 0.025f, wood, DrawList.WOOD);
+        }
         // the doorway's gilt frame and the plate over it
         for (int e = 0; e < 2; e++)
             in.box(d, wu - l * 0.14f, f + 1.5f, e == 0 ? DOOR_V0 : DOOR_V1, 0.05f, 1.5f, 0.07f, gold, DrawList.GOLD);
         in.box(d, wu - l * 0.14f, f + 3.05f, (DOOR_V0 + DOOR_V1) * 0.5f, 0.05f, 0.07f, (DOOR_V1 - DOOR_V0) * 0.5f + 0.07f, gold, DrawList.GOLD);
+        in.box(d, wu - l * 0.13f, f + 3.5f, (DOOR_V0 + DOOR_V1) * 0.5f, 0.02f, 0.25f, 0.78f, gold, DrawList.GOLD);
         in.box(d, wu - l * 0.15f, f + 3.5f, (DOOR_V0 + DOOR_V1) * 0.5f, 0.02f, 0.2f, 0.7f, 0x2B3A52, DrawList.PAINT);
         // in it: the counter along its far wall, shelves of folders over it
         float cu = l * (half - 0.9f), cv = (SEC_FRONT + SEC_BACK) * 0.5f, len = 2.6f;
         in.box(d, cu, f + DESK_TOP * 0.5f, cv, 0.35f, DESK_TOP * 0.5f, len, wood, DrawList.WOOD);
         in.box(d, cu - l * 0.05f, f + DESK_TOP + 0.03f, cv, 0.45f, 0.03f, len + 0.08f, 0x6A4A36, DrawList.WOOD);
         in.solid(Math.min(cu - 0.4f, cu + 0.4f), cv - len - 0.1f, Math.max(cu - 0.4f, cu + 0.4f), cv + len + 0.1f, f + 1.2f);
+        // on it, a lamp of green glass, a stack of papers, an inkstand
+        in.box(d, cu, f + DESK_TOP + 0.2f, cv - 1.4f, 0.02f, 0.14f, 0.02f, gold, DrawList.GOLD);
+        in.box(d, cu, f + DESK_TOP + 0.36f, cv - 1.4f, 0.12f, 0.06f, 0.2f, 0x2E7A4E, DrawList.GLASS);
+        in.box(d, cu, f + DESK_TOP + 0.3f, cv - 1.4f, 0.09f, 0.02f, 0.16f, 0xFFE9BE, DrawList.GLOW);
+        in.box(d, cu, f + DESK_TOP + 0.1f, cv + 0.9f, 0.18f, 0.04f, 0.24f, 0xEFE6D2, DrawList.PLAIN);
+        in.box(d, cu, f + DESK_TOP + 0.09f, cv + 1.6f, 0.08f, 0.03f, 0.12f, 0x23262C, DrawList.POLISHED);
         int[] card = {0x5C7088, 0x8A6A4A, 0x6E7F92, 0x7A5A3A, 0x56687C, 0xB0302A};
         float wallU = l * half;
         for (int r = 0; r < 3; r++) {

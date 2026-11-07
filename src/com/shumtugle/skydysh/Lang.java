@@ -58,6 +58,7 @@ final class Lang {
         EN.put("report.archive", "Dispatch \u2014 {kind}||The folder is in the archive.|The helicopter stands in its garden|on a broken skid.||Time: {time}||Touch to go on");
         EN.put("goal.townhall", "TOWN HALL");
         EN.put("goal.desk", "SECRETARIAT");
+        EN.put("archive.hand", "Papers for the archive.|Carefully. The helicopter|is waiting on the roof.");
         EN.put("goal.lift", "TO THE LIFT");
         EN.put("goal.copter", "TO THE HELICOPTER");
         EN.put("goal.archive", "ARCHIVE");

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.90
+
+- The town hall's way in: a great door of dark wood with lit glass, a lit fan over it, lanterns
+  either side; the balcony's columns three and three, the middle open; no lamp post before the
+  door.
+- No column across from the secretariat's door.
+- The secretariat an office: windows onto the hall over panelling, a wide doorway; green walls,
+  parquet, a rug, a hung lamp, a green lamp on the counter, chairs, a palm, a clock; a gilt
+  frame round the plate over the door.
+- The folder handed over to be seen: she stands, the eye on the two of them, the clerk's word
+  on the frame, the folder from the clerk's hands into hers.
+- A new stand scene, hand.
+
 ## 0.89
 
 - The navigator, up on the right: a map turned the way the eye looks, the streets drawn from the

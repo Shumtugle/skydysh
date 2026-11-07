@@ -122,6 +122,8 @@ final class City implements Ground {
             if (Math.abs(x - gateX(k == 0)) < 7f && z > SHORE * CELL - 0.5f && z < SHORE * CELL + FRONT) return true;
         if (Math.abs(x - clinicDoorX()) < 7f && z > CLINIC_J * CELL - 0.5f && z < CLINIC_J * CELL + FRONT) return true;
         if (Math.abs(z - workshopZ()) < 9f && x < 0.5f && x > -FRONT) return true;
+        // the town hall's steps and door, from the curb
+        if (Math.abs(x - (TOWNHALL_I * CELL + CELL * 0.5f)) < 6f && z > TOWNHALL_J * CELL - 0.5f && z < TOWNHALL_J * CELL + FRONT) return true;
         return false;
     }
 
@@ -1530,8 +1532,10 @@ final class City implements Ground {
             small.box(u, by + 0.6f, bz + 0.2f, 0.08f, 0.38f, 0.08f, null, stone, DrawList.STONE);
         d.box(cx, by + 1.02f, bz + 0.2f, bw, 0.07f, 0.16f, null, band, DrawList.STONE);
         for (int e = -1; e <= 1; e += 2) d.box(cx + e * (bw - 0.15f), by + 0.6f, (bz + z0) * 0.5f, 0.15f, 0.45f, (z0 - bz) * 0.5f, null, band, DrawList.STONE);
-        // the columns along it, and the roof they carry, the shield on its front
+        // the columns along it, three and three, the way to the door wide between them; the roof
+        // they carry, the shield on its front
         for (int k = 0; k < 8; k++) {
+            if (k == 3 || k == 4) continue;
             float u = cx - bw + 0.8f + k * (2f * bw - 1.6f) / 7f;
             d.box(u, by + 0.35f, bz + 0.6f, 0.32f, 0.12f, 0.32f, null, band, DrawList.STONE);
             d.box(u, by + 2.3f, bz + 0.6f, 0.24f, 1.9f, 0.24f, null, stone, DrawList.STONE);
@@ -1546,8 +1550,25 @@ final class City implements Ground {
         // the window doors out onto the balcony
         for (int k = -2; k <= 2; k++)
             d.box(cx + k * 3f, by + 1.85f, z0 - 0.83f, 0.7f, 1.6f, 0.04f, null, glass, DrawList.GLASS);
-        // the arch over the middle door, two reliefs beside it
-        small.box(cx, 3.9f, z0 - 0.85f, 2.2f, 0.3f, 0.06f, null, dark, DrawList.STONE);
+        // the great door in the middle, on the face stood out: a frame of stone, two leaves of dark
+        // wood with lit glass in their tops and gilt down their meeting, a lit fan over them under
+        // the arch, a lantern either side; two reliefs beyond
+        float fz = z0 - 0.8f;
+        int wood = 0x4A3226;
+        d.box(cx, WALK_TOP + 2.05f, fz - 0.04f, 1.75f, 2.05f, 0.05f, null, band, DrawList.STONE);
+        for (int e = -1; e <= 1; e += 2) {
+            float lu = cx + e * 0.68f;
+            d.box(lu, WALK_TOP + 1.65f, fz - 0.1f, 0.66f, 1.65f, 0.05f, null, wood, DrawList.WOOD);
+            small.box(lu, WALK_TOP + 2.45f, fz - 0.16f, 0.42f, 0.55f, 0.02f, null, 0xFFD9A0, DrawList.GLOW);
+            small.box(lu, WALK_TOP + 0.85f, fz - 0.16f, 0.42f, 0.5f, 0.02f, null, 0x3A281E, DrawList.WOOD);
+            small.box(cx + e * 0.12f, WALK_TOP + 1.5f, fz - 0.2f, 0.035f, 0.22f, 0.035f, null, gold, DrawList.GOLD);
+            small.box(cx + e * 1.95f, WALK_TOP + 2.9f, fz - 0.22f, 0.16f, 0.24f, 0.16f, null, 0xFFE9BE, DrawList.GLOW);
+            small.box(cx + e * 1.95f, WALK_TOP + 3.2f, fz - 0.22f, 0.2f, 0.05f, 0.2f, null, 0x2B2F3A, DrawList.PLAIN);
+            small.box(cx + e * 1.95f, WALK_TOP + 2.6f, fz - 0.14f, 0.05f, 0.08f, 0.12f, null, 0x2B2F3A, DrawList.PLAIN);
+        }
+        small.box(cx, WALK_TOP + 1.65f, fz - 0.17f, 0.04f, 1.65f, 0.03f, null, gold, DrawList.GOLD);
+        small.box(cx, WALK_TOP + 3.65f, fz - 0.1f, 1.3f, 0.3f, 0.03f, null, 0xFFD9A0, DrawList.GLOW);
+        small.box(cx, WALK_TOP + 4.15f, fz - 0.06f, 1.9f, 0.22f, 0.08f, null, dark, DrawList.STONE);
         for (int e = -1; e <= 1; e += 2) small.box(cx + e * 3.2f, 2.6f, z0 - 0.84f, 0.9f, 1.3f, 0.05f, null, 0xF2E8D4, DrawList.STONE);
         // the steps up to the door
         for (int k = 0; k < 2; k++)

@@ -9,9 +9,12 @@ package com.shumtugle.skydysh;
  * leaning. She gets out and takes the folders in at the archive's back door. A story: played once.
  */
 final class Archive {
-    // the steps: to the town hall, to the secretariat in its hall, the folders to the lift and up,
-    // on the roof to the helicopter, in the air, down and getting out, the folders to the door, done
-    static final int GO = 0, DESK = 1, LIFT = 2, ROOF = 3, FLY = 4, CARRY = 5, DONE = 6;
+    // the steps: to the town hall, to the secretariat in its hall, the folder handed over, the
+    // folders to the lift and up, on the roof to the helicopter, in the air, down and getting out,
+    // the folders to the door, done
+    static final int GO = 0, DESK = 1, HAND = 2, LIFT = 3, ROOF = 4, FLY = 5, CARRY = 6, DONE = 7;
+    // the handing over: how long in all; the folder leaves the clerk's hands, and is in hers
+    static final float HAND_TIME = 3.4f, GIVE_FROM = 1.0f, GIVE_TO = 2.2f;
     // how near the desk, the helicopter's door, the archive's door she has to come
     static final float DESK_NEAR = 1.9f, BOARD_NEAR = 2.6f, DOOR_NEAR = 2.2f;
     /** Down on the pad, a moment before she gets out. */
@@ -26,6 +29,8 @@ final class Archive {
 
     int step = GO;
     float clock, doneAt = -1f;
+    /** How long the folder has been being handed over. */
+    float handT;
     /** The helicopter, on the town hall's roof at first. */
     final Copter copter;
     private float downFor;
@@ -40,7 +45,23 @@ final class Archive {
 
     /** Whether she has the folder with her, on foot. */
     boolean carrying() {
-        return step == LIFT || step == ROOF || step == CARRY;
+        return step == HAND && handT >= GIVE_TO || step == LIFT || step == ROOF || step == CARRY;
+    }
+
+    /** Whether the folder is being handed over now: she stands, the eye on the two of them. */
+    boolean handing() {
+        return step == HAND;
+    }
+
+    /** Whether the clerk holds it out still (her hands out till it has gone into the other's). */
+    boolean giverHolds() {
+        return step <= DESK || step == HAND && handT < GIVE_TO;
+    }
+
+    /** The folder on its way from the clerk's hands to hers: so far (0 to 1), or -1 if not now. */
+    float giving() {
+        if (step != HAND || handT < GIVE_FROM || handT >= GIVE_TO) return -1f;
+        return (handT - GIVE_FROM) / (GIVE_TO - GIVE_FROM);
     }
 
     /** Whether she sits in the helicopter now. */
@@ -65,13 +86,23 @@ final class Archive {
                 if (in != null && in.townHall) {
                     float du = in.u(r.x, r.z) - in.deskU, dv = in.v(r.x, r.z) - in.deskV;
                     if (du * du + dv * dv < DESK_NEAR * DESK_NEAR) {
-                        step = LIFT;
-                        host.sound(Synth.WOOD, 0.4f, 1.6f);
-                        host.sound(Synth.CHIME, 0.35f, 1.4f);
-                        host.buzz(30);
+                        step = HAND;
+                        handT = 0f;
+                        host.sound(Synth.CHIME, 0.25f, 1.8f);
                     }
                 }
                 break;
+            case HAND: {
+                float was = handT;
+                handT += dt;
+                if (was < GIVE_TO && handT >= GIVE_TO) {
+                    host.sound(Synth.WOOD, 0.4f, 1.6f);
+                    host.sound(Synth.CHIME, 0.35f, 1.4f);
+                    host.buzz(30);
+                }
+                if (handT >= HAND_TIME) step = LIFT;
+                break;
+            }
             case LIFT:
                 if (in == null && r.y > City.townRoof() - 1f) step = ROOF;
                 break;
@@ -180,7 +211,8 @@ final class Archive {
     /** The mark for where the way goes now. */
     int mark(Indoors in, Runner r) {
         switch (step) {
-            case DESK: return in != null && in.townHall ? Marks.DESK : Marks.TOWNHALL;
+            case DESK:
+            case HAND: return in != null && in.townHall ? Marks.DESK : Marks.TOWNHALL;
             case LIFT: return in != null && in.townHall ? Marks.LIFT : Marks.TOWNHALL;
             case ROOF: return in == null && r.y > City.townRoof() - 1f ? Marks.COPTER : Marks.TOWNHALL;
             case CARRY: return Marks.ARCHIVE;
@@ -222,9 +254,9 @@ final class Archive {
         folder(d, hand[0], hand[1] - 0.05f, hand[2], r.heading + (float) Math.PI * 0.5f);
     }
 
-    /** Whether the clerk in the secretariat still has the folder to give. */
+    /** Whether the clerk in the secretariat still has the folder in her hands, not yet held out to go. */
     boolean waiting() {
-        return step <= DESK;
+        return step <= DESK || step == HAND && handT < GIVE_FROM;
     }
 
     private static final float[] turn = new float[9];

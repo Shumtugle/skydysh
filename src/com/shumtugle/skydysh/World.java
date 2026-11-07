@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.89";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.90";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1406,7 +1406,10 @@ final class World {
                 go(TO_CONCERT);
             }
         } else if (archive != null) {
+            boolean wasHanding = archive.handing();
             int got = archive.update(dt, runner, indoors, host);
+            if (archive.handing()) handOver(wasHanding);
+            else if (wasHanding) runner.held = false;
             if (got == Archive.IN) {
                 // in beside the pilot: the blades run up
                 errand = NO_ERRAND;
@@ -3550,11 +3553,58 @@ final class World {
         Archive ar = archive;
         String clock = clock(ar.over() ? ar.doneAt : ar.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        if (ar.handing()) {
+            // what the clerk says, handing it over: low on the frame, over a dark band
+            String[] say = Lang.lines("archive.hand", mission.round, null);
+            int y = (int) (h * 0.66f);
+            for (int k = 0; k < say.length; k++) {
+                int wd = PixelFont.width(say[k], 1);
+                for (int py = y - 3; py < y + 10; py++)
+                    for (int px = (W - wd) / 2 - 5; px < (W + wd) / 2 + 5; px++) f.set(px, py, 0xB0141A24);
+                shadowed(f, say[k], (W - wd) / 2, y, 1, cream, ink);
+                y += 13;
+            }
+            return;
+        }
         String w = ar.goalWord(indoors, runner);
         if (w == null || !ar.goal(indoors, runner, goal)) return;
         wordAtTop(f, Lang.lines(w, mission.round, null)[0], green, ink);
         placeMark(d, f, goal[0], goal[1], goal[2], ar.mark(indoors, runner), Marks.OPEN);
     }
+
+    /**
+     * The folder handed over in the secretariat: she stands still, turned to the clerk, the
+     * finger not heard; the eye off to the side, low, on the two of them, from toward the hall's back.
+     * First, a stop to whatever led her.
+     */
+    private void handOver(boolean already) {
+        Runner r = runner;
+        Indoors in = indoors;
+        if (in == null) return;
+        if (!already) {
+            errand = NO_ERRAND;
+            r.stopLead();
+            letGo();
+        }
+        r.held = true;
+        r.speed = 0f;
+        float gx = in.wx(in.deskU, in.deskV), gz = in.wz(in.deskU, in.deskV);
+        r.heading = (float) Math.atan2(gx - r.x, gz - r.z);
+        // between them, and off to the front of the hall and back toward its middle
+        float mu = (in.u(r.x, r.z) + in.deskU) * 0.5f, mv = (in.v(r.x, r.z) + in.deskV) * 0.5f;
+        float eu = mu - Math.signum(in.deskU) * HAND_EYE_IN, ev = mv - HAND_EYE_SIDE;
+        handEye[0] = in.wx(eu, ev);
+        handEye[1] = Indoors.FLOOR + HAND_EYE_UP;
+        handEye[2] = in.wz(eu, ev);
+        float tx = in.wx(mu, mv) - handEye[0], tz = in.wz(mu, mv) - handEye[2];
+        handEye[3] = (float) Math.atan2(tx, tz);
+        handEye[4] = (float) Math.atan2(Indoors.FLOOR + 1.6f - handEye[1], Math.sqrt(tx * tx + tz * tz));
+        r.eyeAt(handEye);
+    }
+
+    // the eye on the handing over: so far toward the hall's middle from the two, so far toward its front (less than none: its back, on the side of the hand she takes it in), so high
+    static final float HAND_EYE_IN = 2.2f, HAND_EYE_SIDE = -2.2f, HAND_EYE_UP = 2.4f;
+    private final float[] handEye = new float[5], handTo = new float[3];
 
     /** Over the frame, the tow: the clock in the corner; where the way goes now, in a word and a mark. */
     private void towFlat(DrawList d, Px f) {
@@ -3720,10 +3770,19 @@ final class World {
             Concert on = concert != null ? concert : stayed;
             if (indoors.concert && on != null) on.draw(d, indoors);
             if (indoors.townHall) {
-                // the hall's people, and the clerk with the red folder in her hands till she gives it
-                boolean holding = archive != null && archive.waiting();
+                // the hall's people, and the clerk with the red folder in her hands till she gives it;
+                // handed over, it goes from her hands to the other's, up a little on the way
+                boolean holding = archive != null && archive.giverHolds();
                 Rooms.townHallFolk(d, indoors, time, holding, handsAt);
-                if (holding) Archive.folder(d, handsAt[0], handsAt[1], handsAt[2], indoors.heading(indoors.side, 0f) + (float) Math.PI);
+                float face = indoors.heading(indoors.side, 0f) + (float) Math.PI;
+                if (archive != null && archive.waiting()) Archive.folder(d, handsAt[0], handsAt[1], handsAt[2], face);
+                else if (archive != null && archive.giving() >= 0f) {
+                    float a = archive.giving(), e = a * a * (3f - 2f * a);
+                    r.bone("hand_l", handTo);
+                    float x = handsAt[0] + (handTo[0] - handsAt[0]) * e, z = handsAt[2] + (handTo[2] - handsAt[2]) * e;
+                    float y = handsAt[1] + (handTo[1] - 0.05f - handsAt[1]) * e + 0.35f * (float) Math.sin(Math.PI * a);
+                    Archive.folder(d, x, y, z, face + (r.heading + (float) Math.PI * 0.5f - face) * e);
+                }
             }
         }
         if (!r.hidden && !inChair() && (dispatch == null || dispatch.showsHer())) {

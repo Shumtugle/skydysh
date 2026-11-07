@@ -72,6 +72,7 @@ release, each seen on the stand before the phone.
 - 0.55 The dispatch's voice; a try again is the same task; language and results under the pause; parked cars rammed; the opening without cracks.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
+- 0.90 The town hall: its door, the secretariat as an office, the folder handed over to be seen.
 - 0.89 The navigator: a map in the corner, the way along the streets to the mission's mark, the next turn.
 - 0.88 One thumb at the wheel: aside the wheel, up the throttle, down the brake and back.
 - 0.87 Two thumbs at the wheel: a steering wheel on the left, the throttle and the brake on the right; backing at once; the wheel the driver's.

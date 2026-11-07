@@ -1,0 +1,25 @@
+# The folder handed over: in through the town hall's great door; to the secretariat's doorway;
+# she stands, the eye off to the side on the two of them, the clerk's word low on the frame; the
+# folder from the clerk's hands to hers; then the eye back behind her, the folder with her, the
+# way to the lift. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 8
+close
+at 32 126.5 0
+wait 1
+at 32 135.6 0
+wait 2.5
+inroom 3.4 6.5
+face -1.57
+wait 0.3
+shot h0
+wait 1.1
+shot h1
+wait 0.4
+shot h2
+wait 0.4
+shot h3
+wait 1.6
+shot h4

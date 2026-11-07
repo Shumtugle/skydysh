@@ -69,6 +69,16 @@ phone's own, Russian or English, kept as chosen) and the results: the best time 
 played, on the screen in her head. The eye behind her keeps out of
 the leaves: when a tree's crown or a palm's comes between, it drops under it, or comes in nearer.
 
+The town hall's great door in the middle of its front, between the balcony's columns (three and
+three, the way to it wide), two leaves of dark wood with lit glass, a lit fan over them, a
+lantern either side; no lamp post on the pavement before it. In its hall, the secretariat on the
+left reads as an office from the hall: windows onto the hall over dark wood panelling, a wide
+doorway, inside green walls over panelling, parquet and a rug, a lamp hung in the middle, the
+counter with its green lamp, chairs for callers, a palm, a clock; no column across from its door.
+The folder is handed over: at the doorway she stands, the eye off to the side on the two of
+them, the clerk's word low on the frame; the clerk holds it out, and it goes from her hands into
+hers. Then the way to the lift.
+
 Up on the right, the navigator: a small map turned the way the eye looks, the streets drawn
 from the town itself (the sea, the beach, the blocks, the fields and the road out), she a blue
 dot with a white point her way, and to the mission's mark a line along the streets by the
