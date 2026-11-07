@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- The icon: the mallet bigger behind her head, both its ends well out past it, so that it shows
+  in a launcher that takes only the middle of the icon.
+
 ## 1.0
 
 - The first whole version.

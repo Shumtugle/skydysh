@@ -78,6 +78,7 @@ release, each seen on the stand before the phone.
 - 0.99 The heap a heap again, no game on it: cleared by blows, by her weight, by the pickup, till a way through is open; the village's people; the icon her with the mallet on her shoulder.
 - 0.99.1 The icon drawn by the game itself.
 - 1.0 The first whole version; the icon her head, the mallet slung behind it.
+- 1.0.1 The icon's mallet bigger.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
