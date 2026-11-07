@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.0.6";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.0.7";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -141,6 +141,7 @@ final class World {
         // the way to play on foot: one finger, unless two thumbs are offered and were chosen (kept as 2)
         Runner.classic = !TWO_THUMBS_OFFERED || host.loadInt(SAVE_CONTROLS) != 2;
         navShut = host.loadInt(SAVE_NAV) == 1;
+        coordsShown = host.loadInt(SAVE_COORDS) == 1;
         plates = host.loadInt(SAVE_PLATES);
         likes = host.loadInt(SAVE_LIKES);
         if (likes == 0) likes = host.loadInt(SAVE_MONEY);
@@ -152,7 +153,10 @@ final class World {
         if (!passed(1)) {
             mission.round = 0;
             begin(runner.x, runner.z);
-        } else standFree();
+        } else {
+            standFree();
+            resume();
+        }
         opening = new Opening(host, city);
     }
 
@@ -795,6 +799,13 @@ final class World {
             host.buzz(12);
             return;
         }
+        // the compass touched: where she is shown in numbers, or not
+        if (type == DOWN && !paused && onCompass(x, y)) {
+            coordsShown = !coordsShown;
+            host.saveInt(SAVE_COORDS, coordsShown ? 1 : 0);
+            host.buzz(12);
+            return;
+        }
         if (type == BACK) return;
         if (type == LEFT) {
             // the game left and come back to: paused, every finger let go
@@ -1122,6 +1133,7 @@ final class World {
         float x = driving != null ? driving.x : runner.x, z = driving != null ? driving.z : runner.z;
         float heading = driving != null ? driving.heading : runner.heading;
         nav.update(dt, x, z, aboard() || piloting(), heading);
+        if (compassShows()) compassFlat(f);
         if (!navShows()) return;
         if (navShut) {
             int x0 = W - 8 - NAV_TILE;
@@ -1145,6 +1157,49 @@ final class World {
             }
         nav.draw(f, navX(), NAV_Y, x, z, runner.eyeYaw, heading, speed, dt, navDots, dots);
         nav.strip(f, navX(), NAV_Y + Nav.SIDE);
+        // the map open: where she is, in numbers, under it
+        String at = coords();
+        shadowed(f, at, W - 8 - PixelFont.width(at, 1), NAV_Y + Nav.TALL + 5, 1, Nav.TEXT, Nav.INK);
+    }
+
+    // ---- the compass: till the navigator is hers, a tile where it will be, north on it; touched,
+    // where she is in numbers under it (to tell a place by), touched again, not ----
+    static final String SAVE_COORDS = "coords";
+    private boolean coordsShown;
+
+    /** Whether the compass is out: the navigator not hers yet, on the street, the eye not elsewhere. */
+    private boolean compassShows() {
+        return !navGiven() && indoors == null && dispatch == null && !craning && story == null && opening == null && solo == null;
+    }
+
+    /** Whether (x, y) is on the compass. */
+    private boolean onCompass(float x, float y) {
+        return compassShows() && x > W - 8 - NAV_TILE - 6 && y > NAV_Y - 6 && y < NAV_Y + NAV_TILE + 6;
+    }
+
+    /** Where she is (or what she drives), in whole meters: across, along, how high. */
+    private String coords() {
+        float x = driving != null ? driving.x : runner.x, z = driving != null ? driving.z : runner.z;
+        float y = driving != null ? driving.y : runner.y;
+        return "X " + Math.round(x) + "  Z " + Math.round(z) + "  H " + Math.round(y);
+    }
+
+    /** The compass: the navigator's folded tile, a needle on it, coral to the north, as the eye looks. */
+    private void compassFlat(Px f) {
+        int x0 = W - 8 - NAV_TILE;
+        for (int py = 0; py < NAV_TILE; py++)
+            for (int px = 0; px < NAV_TILE; px++) {
+                int dx = Math.max(0, Math.max(4 - px, px - (NAV_TILE - 5))), dy = Math.max(0, Math.max(4 - py, py - (NAV_TILE - 5)));
+                if (dx * dx + dy * dy <= 16) f.set(x0 + px, NAV_Y + py, Nav.BLOCK);
+            }
+        // north on the screen: the world's +z as the eye turns it
+        float ex = -(float) Math.sin(runner.eyeYaw), ey = -(float) Math.cos(runner.eyeYaw);
+        float c = NAV_TILE * 0.5f;
+        Nav.point(f, x0, NAV_Y, c - ex * 1.5f, c - ey * 1.5f, -ex, -ey, 5f, Nav.TEXT);
+        Nav.point(f, x0, NAV_Y, c + ex * 1.5f, c + ey * 1.5f, ex, ey, 6f, 0xFFFF6F61);
+        if (!coordsShown) return;
+        String at = coords();
+        shadowed(f, at, W - 8 - PixelFont.width(at, 1), NAV_Y + NAV_TILE + 5, 1, Nav.TEXT, Nav.INK);
     }
 
     /** At the wheel, up on the left under the pause, out from under the thumb: how fast, in kilometers an hour. */
@@ -1296,6 +1351,7 @@ final class World {
 
     void update(float dt) {
         hearts.update(dt, W, h);
+        if (opening == null && (whereKeptAgo += dt) > WHERE_KEPT_EVERY) keepWhere();
         if (likesDirty && (likesKeptAgo += dt) > LIKES_KEPT_EVERY) saveLikes();
         if (story != null) {
             // the town stands still while its page is read
@@ -2000,6 +2056,7 @@ final class World {
             q[1] = p.z - s * (Pickup.HALF_WIDE + 0.9f) + c * Pickup.SEAT_Z;
         }
         runner.getOut(q[0], city.ground(q[0], q[1]), q[1], p.heading);
+        duty.settle(p);
         doorArmed = false;
         runner.recenter();
         buttonHeld = true;
@@ -3238,6 +3295,48 @@ final class World {
     /** Whether a kind is behind her: won, or put by to be played when she likes. */
     boolean passed(int k) {
         return ((kindsWon | kindsSkipped) & (1 << k)) != 0;
+    }
+
+    // ---- where she was: kept now and then, so that a game the system closed opens there again.
+    // Between jobs on foot or at the wheel, just there; in a job, indoors, in the air or at the
+    // crane, at home on the sofa, the job's screen to come (a job is not taken up halfway) ----
+    static final String SAVE_WHERE = "where", SAVE_WX = "where.x", SAVE_WY = "where.y", SAVE_WZ = "where.z", SAVE_WH = "where.h";
+    static final int WHERE_NONE = 0, WHERE_FOOT = 1, WHERE_WHEEL = 2, WHERE_SOFA = 3;
+    /** How often it is kept, seconds. */
+    static final float WHERE_KEPT_EVERY = 2f;
+    private float whereKeptAgo;
+
+    private void keepWhere() {
+        whereKeptAgo = 0f;
+        if (!passed(1)) return;
+        int how = !free || indoors != null || aboard() || piloting() || craning ? WHERE_SOFA : driving != null ? WHERE_WHEEL : WHERE_FOOT;
+        host.saveInt(SAVE_WHERE, how);
+        if (how == WHERE_SOFA) return;
+        boolean wheel = driving != null;
+        host.saveInt(SAVE_WX, Float.floatToIntBits(wheel ? driving.x : runner.x));
+        host.saveInt(SAVE_WY, Float.floatToIntBits(wheel ? driving.y : runner.y));
+        host.saveInt(SAVE_WZ, Float.floatToIntBits(wheel ? driving.z : runner.z));
+        host.saveInt(SAVE_WH, Float.floatToIntBits(wheel ? driving.heading : runner.heading));
+    }
+
+    /** The game opened again: where she was kept, if she was anywhere but at home's door. */
+    private void resume() {
+        int how = host.loadInt(SAVE_WHERE);
+        if (how == WHERE_SOFA) {
+            standSofa();
+            return;
+        }
+        float x = Float.intBitsToFloat(host.loadInt(SAVE_WX)), y = Float.intBitsToFloat(host.loadInt(SAVE_WY));
+        float z = Float.intBitsToFloat(host.loadInt(SAVE_WZ)), hd = Float.intBitsToFloat(host.loadInt(SAVE_WH));
+        if (!sane(x) || !sane(y) || !sane(z) || !sane(hd)) return;
+        if (how == WHERE_FOOT) {
+            runner.put(x, Math.max(y, city.ground(x, z, y + 0.5f, 0f)), z, hd);
+            runner.recenter();
+        } else if (how == WHERE_WHEEL) standDrive(x, z, hd);
+    }
+
+    private static boolean sane(float v) {
+        return !Float.isNaN(v) && !Float.isInfinite(v) && Math.abs(v) < 20000f;
     }
 
     // ---- likes: what a job brings, a moment worth it, music listened to, a long flight in the town ----

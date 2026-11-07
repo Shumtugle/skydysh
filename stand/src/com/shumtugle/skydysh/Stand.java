@@ -930,6 +930,16 @@ public final class Stand implements World.Host {
         } else if (c.equals("paid")) {
             // paid N: as if the job just done had brought so many likes (for "dispatch done")
             world.standPaid(Integer.parseInt(p[1]));
+        } else if (c.equals("pickups")) {
+            // pickups: the duty pickups out now, where each stands
+            StringBuilder b = new StringBuilder();
+            for (Pickup q : world.duty.all) b.append(String.format(" (%.0f %.0f)", q.x, q.z));
+            System.out.println(String.format("%7.2fs  %d pickups out:%s", time, world.duty.all.size(), b));
+        } else if (c.equals("where2")) {
+            // where2: on foot, at the wheel, or at home, and the mission
+            System.out.println(String.format("%7.2fs  %s, free %b, mission %d", time,
+                    world.indoors != null ? "indoors" + (world.indoors.home ? " at home" : "") : world.driving != null ? "at the wheel" : "on foot",
+                    world.free, world.mission.round));
         } else if (c.equals("likes")) {
             // likes: how many in all, and whether hearts are in the air
             System.out.println(String.format("%7.2fs  likes %d%s", time, world.likes, world.hearts.busy() ? ", hearts up" : ""));

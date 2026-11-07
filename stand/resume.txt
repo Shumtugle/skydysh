@@ -1,0 +1,46 @@
+# Where she was, kept: a game closed and opened again opens there. On foot between jobs: just
+# there; at the wheel: at the wheel there; in a job: at home on the sofa, the job to come. And the
+# compass: the navigator's tile, north on it; touched, where she is in numbers; with the navigator
+# hers, the numbers under its map. And no second pickup at home: got out of one by home's own,
+# home's is taken in. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 4
+keep kinds 14
+restart
+free
+wait 0.5
+shot c0
+tap 255 47
+wait 0.3
+shot c1
+at 100 60 1.0
+wait 2.5
+where2
+restart
+where
+where2
+drivein 96 40 0
+wait 2.5
+restart
+where2
+pickups
+drivein 30 9 1.57
+wait 0.3
+getout
+wait 0.5
+pickups
+mission 4
+wait 2.5
+restart
+where2
+wait 8
+shot c2
+keep where 0
+restart
+free
+navon
+at 100 60 1.0
+wait 0.5
+shot c3

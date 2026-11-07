@@ -42,8 +42,8 @@ final class Pickup {
     static final int CRATES = 4;
     int gear = 1;
     private float still;
-    /** Where it was first parked: the cell it belongs to (see Duty). */
-    final long home;
+    /** The cell whose place at the curb it stands for: where it was first parked, or one it took over (see Duty). */
+    long home;
 
     Pickup(float x, float z, float heading, long home) {
         this.x = x;

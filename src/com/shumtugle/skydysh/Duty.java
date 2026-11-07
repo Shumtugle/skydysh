@@ -48,6 +48,28 @@ final class Duty {
         return false;
     }
 
+    /** So near another pickup at its own curb that two would stand there, meters. */
+    static final float CLOSE = 20f;
+
+    /**
+     * She has got out of p here: one standing at its own curb close by (home's, as a rule) is
+     * taken in, and p stands for it, so that there are not two. p's own place, if it had one,
+     * gets its pickup back when she comes to it again.
+     */
+    void settle(Pickup p) {
+        if (p.kept || p.load > 0) return;
+        for (int k = all.size() - 1; k >= 0; k--) {
+            Pickup q = all.get(k);
+            if (q == p || q.kept || q.load > 0 || moved.contains(q.home)) continue;
+            float dx = q.x - p.x, dz = q.z - p.z;
+            if (dx * dx + dz * dz > CLOSE * CLOSE) continue;
+            all.remove(k);
+            moved.remove(p.home);
+            p.home = q.home;
+            return;
+        }
+    }
+
     /** It has been driven off its place at the curb: the place stays empty while it is out. */
     void driven(Pickup p) {
         moved.add(p.home);

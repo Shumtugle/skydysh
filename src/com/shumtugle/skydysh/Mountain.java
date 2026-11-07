@@ -167,6 +167,39 @@ final class Mountain {
         }
     }
 
+    // the laboratory's podium (half across, how high), the steps up to it on the town's side (how
+    // many, half across, how deep each, each so much higher), its stem (half across, how high)
+    static final float PODIUM = 13f, PODIUM_HIGH = 2f;
+    // (each no higher than she steps up without a jump, City.LOW)
+    static final int STAIRS = 5;
+    static final float STAIR_HALF = 3.5f, STAIR_DEEP = 0.8f, STAIR_RISE = PODIUM_HIGH / (STAIRS + 1);
+    static final float STEM = 4.6f, STEM_HIGH = 26f;
+    // the cable way's halls: half across, half deep; how high each stands (its roof)
+    static final float HALL_HALF = 5f, TOP_HALL_HIGH = 7.6f, LOW_HALL_DEEP = 5.5f, LOW_HALL_HIGH = 7f;
+
+    /**
+     * What stands up solid where it is drawn, where it stands in cell (i, j): the laboratory's
+     * podium and the steps up to it, its stem; the cable way's hall on the top and its hall on the
+     * sand. Without them she would stand in the podium to her chest, and walk through all of them.
+     */
+    static void solids(City.Cell c, int i, int j) {
+        float x0 = i * City.CELL, z0 = j * City.CELL, x1 = x0 + City.CELL, z1 = z0 + City.CELL;
+        solid(c, x0, z0, x1, z1, MX - PODIUM, MZ - PODIUM, MX + PODIUM, MZ + PODIUM, TOP + PODIUM_HIGH);
+        for (int k = 1; k <= STAIRS; k++)
+            solid(c, x0, z0, x1, z1, MX - STAIR_HALF, MZ - PODIUM - k * STAIR_DEEP, MX + STAIR_HALF, MZ - PODIUM - (k - 1) * STAIR_DEEP,
+                    TOP + PODIUM_HIGH - k * STAIR_RISE);
+        solid(c, x0, z0, x1, z1, MX - STEM, MZ - STEM, MX + STEM, MZ + STEM, TOP + STEM_HIGH);
+        float tz = TOP_Z + 6f, lz = LOW_Z - 4f;
+        solid(c, x0, z0, x1, z1, CABLE_X - HALL_HALF, tz - HALL_HALF, CABLE_X + HALL_HALF, tz + HALL_HALF, TOP + TOP_HALL_HIGH);
+        solid(c, x0, z0, x1, z1, CABLE_X - HALL_HALF, lz - LOW_HALL_DEEP, CABLE_X + HALL_HALF, lz + LOW_HALL_DEEP, City.SAND + LOW_HALL_HIGH);
+    }
+
+    /** A solid block (ax, az)–(bx, bz) up to top, the part of it inside the cell (x0, z0)–(x1, z1). */
+    private static void solid(City.Cell c, float x0, float z0, float x1, float z1, float ax, float az, float bx, float bz, float top) {
+        float l = Math.max(x0, ax), r = Math.min(x1, bx), n = Math.max(z0, az), f = Math.min(z1, bz);
+        if (l < r && n < f) c.wall(l, n, r, f, top);
+    }
+
     // ---- drawn ----
     private static DrawList far, close;
 
@@ -282,7 +315,13 @@ final class Mountain {
     private static void laboratory(DrawList d) {
         int concrete = 0xC9C3B6, copper = 0xB8733A, verdigris = 0x5FA899, glass = 0x24484E, neon = 0x7FF6E8;
         float y0 = TOP;
-        d.box(MX, y0 + 1f, MZ, 13f, 1f, 13f, null, 0xA9A397, DrawList.STONE);
+        d.box(MX, y0 + PODIUM_HIGH * 0.5f, MZ, PODIUM, PODIUM_HIGH * 0.5f, PODIUM, null, 0xA9A397, DrawList.STONE);
+        // the steps up to it on the town's side, toward the road's end
+        for (int k = 1; k <= STAIRS; k++) {
+            float hy = (PODIUM_HIGH - k * STAIR_RISE) * 0.5f;
+            d.box(MX, y0 + hy, MZ - PODIUM - (k - 0.5f) * STAIR_DEEP, STAIR_HALF, hy, STAIR_DEEP * 0.5f, null,
+                    Street.mix(0xA9A397, 0xB9B2A4, k / (float) STAIRS), DrawList.STONE);
+        }
         float s0 = y0 + 2f, s1 = y0 + 26f;
         octagon(d, MX, (s0 + s1) * 0.5f, MZ, 5f, (s1 - s0) * 0.5f, concrete, DrawList.STONE);
         d.box(MX, (s0 + 6f + s1 - 2f) * 0.5f, MZ - 5.05f, 0.5f, (s1 - s0 - 8f) * 0.5f, 0.05f, null, 0xFFE9BE, DrawList.GLOW);

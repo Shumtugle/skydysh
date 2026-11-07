@@ -1,0 +1,35 @@
+# The top of the mountain: the laboratory's podium, its steps, its stem and the cable way's hall
+# stand solid. Before the steps, facing the door, she runs up them onto the podium and stops at
+# the stem (not in it); from the podium's side she stops at its edge (not in it to her chest).
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 6
+restart
+free
+at -480 908 0
+wait 1
+where
+shot t0
+down 137 520
+wait 3.5
+up 137 520
+wait 0.5
+where
+shot t1
+at -455 930 4.712
+wait 1
+down 137 520
+wait 3
+up 137 520
+wait 0.5
+where
+shot t2
+at -466 905 3.14
+wait 0.8
+down 137 520
+wait 2
+up 137 520
+wait 0.5
+where
+shot t3

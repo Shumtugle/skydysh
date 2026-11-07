@@ -84,6 +84,7 @@ release, each seen on the stand before the phone.
 - 1.0.4 The steering wheel twice as big.
 - 1.0.5 The wheel drawn turning the way the pickup turns.
 - 1.0.6 The wheel in thin lines, fainter.
+- 1.0.7 The compass and her coordinates; the game opens where she was; no second pickup at home; the mountain's top solid, steps to the podium.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.

@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.7
+
+- The compass: till the navigator is hers, a tile up on the right where it will be, a needle on
+  it, coral to the north as the eye looks. Touched, where she is in whole meters under it
+  (X across, Z along, H how high), to tell a place by; touched again, gone; kept. With the
+  navigator hers the compass goes, and the numbers stand under its map while it is open.
+- A game the system closed opens where she was: between jobs on foot or at the wheel, just there;
+  in a job, indoors, in the air or at the crane, at home on the sofa with the job to come (a job
+  is not taken up halfway). The first time, before home's door as ever.
+- No second pickup at home: got out of one close by a pickup standing at its own curb, that one is
+  taken in and hers stands for it.
+- The mountain's top solid where it is drawn: the laboratory's podium (she no longer stands in it
+  to her chest, nor walks through its side), its stem, the cable way's hall on the top and its
+  hall on the sand. Five low steps up to the podium on the town's side; the door counted near from
+  14 meters, so the pickup at the foot of the steps will do.
+
 ## 1.0.6
 
 - The steering wheel in thin lines: its rim, spokes, hub and mark half as thick, as on the

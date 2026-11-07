@@ -1291,6 +1291,13 @@ final class City implements Ground {
     }
 
     private Cell build(int i, int j) {
+        Cell c = buildCell(i, j);
+        // what the mountain and its cable way stand solid with, wherever it falls
+        Mountain.solids(c, i, j);
+        return c;
+    }
+
+    private Cell buildCell(int i, int j) {
         Cell c = new Cell();
         if (j == SHORE - 1) promenade(c, i * CELL, j * CELL);
         if (sea(j)) return c;

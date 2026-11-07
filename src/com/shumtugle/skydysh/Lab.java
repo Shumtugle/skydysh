@@ -13,7 +13,7 @@ final class Lab {
     // the steps: up to the laboratory's door, the fitting, the trial, done
     static final int GO = 0, FIT = 1, TRIAL = 2, DONE = 3;
     // how long the fitting takes; the trial, counted; how near the door, a place
-    static final float FIT_TIME = 3.2f, TRIAL_TIME = 300f, DOOR_NEAR = 9f, PLACE_NEAR = 13f;
+    static final float FIT_TIME = 3.2f, TRIAL_TIME = 300f, DOOR_NEAR = 14f, PLACE_NEAR = 13f;
     // the way counts only while she comes nearer along it, so much a second at least, and for so
     // long after she last did (a stop at a crossing does not stop it at once)
     static final float GAIN = 0.8f, HOLD = 1.2f;

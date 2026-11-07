@@ -256,6 +256,12 @@ a sorted one apart with moves that could each be made back, so it always has a w
 After the first, the containers are on home's list: straight into the cabin with no way to go,
 and back on the sofa when she comes down; or at the crane whenever she climbs it.
 
+Up on the right, till the navigator is hers, a compass: a needle on a dark tile, coral to the
+north. Touched, it shows where she is in whole meters (X across, Z along, H how high), so a place
+can be told by its numbers; with the navigator, the numbers stand under its map while it is open.
+A game the system closed opens where she was: between jobs on foot or at the wheel, just there;
+in a job (or indoors, in the air, at the crane), at home on the sofa with the job to come.
+
 The jobs come in turn: home's screen offers the next one, and a list of her own (the games played, the panel) to play again.
 Any job not yet won can be put by, from its first moment (but not in the air): a row under the
 pause offers it; put by, it brings no likes and waits on home's list, not done, to be
