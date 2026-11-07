@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5
+
+- The steering wheel drawn turning the way the pickup turns. It had always been drawn turning
+  the other way; on the big wheel the eye followed it, and a wheel turned right by its picture
+  sent the pickup left. The steering itself is as it was.
+
 ## 1.0.4
 
 - The steering wheel twice as big. It is drawn kept in from the frame's edges, the knob by the

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.0.4";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.0.5";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1764,7 +1764,9 @@ final class World {
             // the steering wheel by the thumb while it is down, turned as the pickup's is, in the
             // mission's colour, green while the throttle is on, coral while the brake is; a knob
             // where the thumb is; a faint wheel where it would go
-            float turn = driving.steer * WHEEL_TURNS;
+            // drawn turned the way the pickup turns: the thumb right, its top to the right (the badge
+            // turns the other way round for a positive angle, so the sign is taken off)
+            float turn = -driving.steer * WHEEL_TURNS;
             if (wheelFinger >= 0) {
                 float pull = pullAxis();
                 int tint = pull > 0f ? DrawList.TINT_GREEN : pull < 0f ? DrawList.TINT_CORAL : ringTint();
