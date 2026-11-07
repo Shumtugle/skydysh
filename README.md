@@ -173,7 +173,13 @@ where the next roof stands higher, down onto the lower ones, leaping, gliding, b
 to rise; taken, she goes down to the street with it by herself. If a brum gets there first,
 the mission is played again.
 
-A paid job is paid once, the first time it is done; done again, only its time counts. Over each
+Likes, not money. Every job brings likes: a story the first time it is done, a game (the hunt,
+the folder, the containers, the panel on its own) every time it is won. They pour up the right
+side of the screen as a stream of small hearts, as if many hands were tapping at once: a burst
+when a job is won and again over its report at home, a smaller one at a moment worth it (a plate
+struck, the road through the pass open), a few drifting up all the while the music plays in the
+hall. In the town between jobs a long flight off a roof, landed, brings likes too; nothing she
+knocks down does. Their sum stands at the stream's foot, and on home's screen. Over each
 briefing a sign of a question floats by the screen: touched, a still page of what lies behind the
 mission and what it asks; the same from under the pause while it is played.
 
@@ -199,7 +205,7 @@ way through as wide as the pickup is open across the whole heap (or the pickup h
 the road is open, and on to the village square, at the wheel or on foot.
 
 The fifth, the puppy at sea: a call from the beach east of home, past the store, where a crowd
-stands at the water's edge looking out at a puppy too tired to swim back. No pay, and no clock on
+stands at the water's edge looking out at a puppy too tired to swim back. No clock on
 it but the time it takes. Along the shore road in a duty pickup, down to the beach, out
 into the water, right up to it, and she takes it; back to the pickup and to the vets', a white
 house with a turquoise band and a paw over its door, three streets up and a block east of home,
@@ -211,9 +217,9 @@ gone down into it and sits sunk in the mud, the brum (slate grey) at its wheel. 
 the road out and to it; stopped by it a moment, nose or tail to it, and a rope goes on between
 them; then back, the brum's pickup following on the rope, to the brums' workshop at the town's
 last street by the road out, a dark brick house with two gates and a turquoise plate over them,
-and into the bay painted on the road before it. No pay, no clock but the time it takes.
+and into the bay painted on the road before it. No clock but the time it takes.
 
-The seventh, the lights in the hall, paid: the concert hall north of the old town, a portico of
+The seventh, the lights in the hall: the concert hall north of the old town, a portico of
 columns on broad steps, three tall doors. In by any of them, up the steps anywhere along the
 portico: a long hall under a high ceiling,
 rows of red seats full of people in three blocks with two aisles between, a stage with red curtains and a black grand piano, a pianist at
@@ -244,7 +250,7 @@ containers behind a fence and a gantry crane over it; up the ladder of the tower
 corner, and she is in the cabin, the eye over the field from far off on a long lens. Touch a
 stack and the crane takes its top container up; touch another and it lets it down there, on an
 empty bay or on its own colour, no more than four high. Done when every stack is four of one
-colour (paid the first time). At the foot of the frame: down out of the cabin, a move taken back,
+colour. At the foot of the frame: down out of the cabin, a move taken back,
 and once the field is done, a new one brought in, one colour more. Every field is dealt by taking
 a sorted one apart with moves that could each be made back, so it always has a way to order.
 After the first, the containers are on home's list: straight into the cabin with no way to go,
@@ -252,7 +258,7 @@ and back on the sofa when she comes down; or at the crane whenever she climbs it
 
 The jobs come in turn: home's screen offers the next one, and a list of her own (the games played, the panel) to play again.
 Any job not yet won can be put by, from its first moment (but not in the air): a row under the
-pause offers it; put by, it pays nothing and waits on home's list, not done, to be
+pause offers it; put by, it brings no likes and waits on home's list, not done, to be
 played when she likes, and the next job comes on. The duty pickups are in the streets only from
 the delivery on (it is the job that brings them).
 

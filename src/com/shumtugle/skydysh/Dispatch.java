@@ -240,17 +240,26 @@ final class Dispatch {
     }
 
     /**
-     * The kinds of paid mission already paid for, a bit each (1 << kind): a job is paid once, the
-     * first time it is done; done again, only its time counts. Kept by the world.
+     * The kinds of story already liked, a bit each (1 << kind): a story brings its likes once, the
+     * first time it is done; a game brings them every time it is won. Kept by the world.
      */
     static int paidKinds;
 
-    /** What a mission of round's kind pays now: its reward the first time, nothing after. */
+    /**
+     * The likes each kind of job brings, by kind (1 the hunt … 11 the navigator): the hunt, the
+     * folder, the delivery, the call out, the puppy, the tow, the hall's light, the archive, the
+     * skid, the containers, the navigator.
+     */
+    static final int[] LIKES = { 0, 20000, 200000, 50000, 60000, 70000, 30000, 40000, 50000, 50000, 10000, 80000 };
+    /** The panel on its own, put right from home's list: every time. */
+    static final int PANEL_LIKES = 5000;
+
+    /** The likes a job of round's kind brings now: a game's every time, a story's the first time only. */
     static int due(int round) {
         int kind = World.kindOf(round);
-        int reward = kind == 2 ? Folder.REWARD : kind == 3 ? Delivery.REWARD : kind == 4 ? Rescue.REWARD : kind == 7 ? Concert.REWARD
-                : kind == 10 ? Quay.REWARD : kind == 11 ? Lab.REWARD : 0;
-        return (paidKinds & (1 << kind)) != 0 ? 0 : reward;
+        if (kind < 1 || kind >= LIKES.length) return 0;
+        if (World.game(kind)) return LIKES[kind];
+        return (paidKinds & (1 << kind)) != 0 ? 0 : LIKES[kind];
     }
 
     /** The line of a briefing with the pay in it: the sum; paid before, the line left out. */
@@ -363,7 +372,7 @@ final class Dispatch {
     private static String[] fill(String[] lines, int reward, int money) {
         for (int k = 0; k < lines.length; k++)
             lines[k] = lines[k].contains("{reward}") && reward <= 0 ? null
-                    : lines[k].replace("{reward}", World.money(reward)).replace("{sum}", World.money(money));
+                    : lines[k].replace("{reward}", World.grouped(reward)).replace("{sum}", World.grouped(money));
         return kept(lines);
     }
 

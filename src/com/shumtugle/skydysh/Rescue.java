@@ -8,7 +8,6 @@ package com.shumtugle.skydysh;
  * square; there is no losing it, only a time.
  */
 final class Rescue implements City.Extra {
-    static final int REWARD = 60000;
     // the steps: a pickup to be found, the pass to be cleared, the village to be got to, done
     static final int PICKUP = 0, PASS = 1, VILLAGE = 2, DONE = 3;
 

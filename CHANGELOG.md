@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.3
+
+- Likes, not money. Every job brings likes: a story once, the first time it is done; a game (the
+  hunt, the folder, the containers, the panel on its own) every time it is won. The jobs that
+  paid nothing (the puppy, the tow, the archive, the skid) bring likes too.
+- The hearts: a stream of small pixel hearts up the right side of the screen, swaying, fading, as
+  if many hands were tapping at once. A burst when a job is won and again over its report at
+  home; smaller ones when a plate is struck and when the road through the pass opens; a few
+  drifting up all the while the music plays in the concert hall, likes with them.
+- In the town between jobs, a long flight off a roof (a leap, a glide), landed, brings likes, the
+  more the longer; nothing she knocks down does.
+- The sum of likes at the stream's foot: always between jobs, quieter; in a job, while likes
+  come in. The reports: likes brought and likes in all. Home's screen: likes in all.
+- A game kept before takes what it had won over as likes.
+
 ## 1.0.2
 
 - Any job not yet won can be put by from its first moment: the row under the pause no longer

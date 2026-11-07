@@ -923,6 +923,16 @@ public final class Stand implements World.Host {
             Rescue rs = world.rescue;
             System.out.println(rs == null ? String.format("%7.2fs  no call out", time)
                     : String.format("%7.2fs  call out: step %d, pass %s, clock %.1f", time, rs.step, rs.cleared() ? "clear" : "blocked", rs.clock));
+        } else if (c.equals("like")) {
+            // like N HEARTS: so many likes come in, so many hearts poured for them
+            world.like(Integer.parseInt(p[1]), Integer.parseInt(p[2]));
+            System.out.println(String.format("%7.2fs  liked %s: likes %d", time, p[1], world.likes));
+        } else if (c.equals("paid")) {
+            // paid N: as if the job just done had brought so many likes (for "dispatch done")
+            world.standPaid(Integer.parseInt(p[1]));
+        } else if (c.equals("likes")) {
+            // likes: how many in all, and whether hearts are in the air
+            System.out.println(String.format("%7.2fs  likes %d%s", time, world.likes, world.hearts.busy() ? ", hearts up" : ""));
         } else if (c.equals("free")) {
             // free: no mission now, the town hers till she goes home for the next
             world.standFree();

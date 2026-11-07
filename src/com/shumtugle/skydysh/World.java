@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.0.2";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.0.3";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -93,8 +93,12 @@ final class World {
     private float overFor;                   // how long since the last of the five was caught
     // kept between games, saved when a mission is done
     static final String SAVE_PANELS = "panels";
-    static final String SAVE_MISSION = "mission", SAVE_PLATES = "plates", SAVE_MONEY = "money", SAVE_CONTROLS = "foot";
-    int plates, money;
+    static final String SAVE_MISSION = "mission", SAVE_PLATES = "plates", SAVE_LIKES = "likes", SAVE_CONTROLS = "foot";
+    /** What a game kept before likes had won, taken over as likes once. */
+    static final String SAVE_MONEY = "money";
+    int plates, likes;
+    /** The hearts up the right side, and the likes they count. */
+    final Hearts hearts = new Hearts();
     static final float BACK_TO_ROOM = 3f;
     /** After the concert, the dark down: so long before she wakes at home. */
     static final float AFTER_DUSK = 0.5f;
@@ -138,7 +142,9 @@ final class World {
         Runner.classic = !TWO_THUMBS_OFFERED || host.loadInt(SAVE_CONTROLS) != 2;
         navShut = host.loadInt(SAVE_NAV) == 1;
         plates = host.loadInt(SAVE_PLATES);
-        money = host.loadInt(SAVE_MONEY);
+        likes = host.loadInt(SAVE_LIKES);
+        if (likes == 0) likes = host.loadInt(SAVE_MONEY);
+        hearts.start(likes);
         // every game begins at home: on the promenade across the shore road from its door, facing it
         runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - City.CURB - 1.2f, 0f);
         // the game begins with the runaways, straight from the dispatch, till that job is won once;
@@ -569,7 +575,7 @@ final class World {
     }
 
     static final String SAVE_PAID = "paid";
-    /** What the mission just done paid (0: nothing, it was paid before). */
+    /** The likes the mission just done brought (0: none, a story liked before, or lost). */
     private int paidNow;
 
     // ---- what lies behind a mission: a page over everything, from the briefing's sign or the pause ----
@@ -598,25 +604,46 @@ final class World {
         return hunt() ? mission.late : folder != null && folder.theirs;
     }
 
-    /** The report on the mission just done. */
+    /** The report on the mission just done, with the likes it brought under what was done. */
     private String[] report() {
+        return liked(reportLines(), paidNow);
+    }
+
+    /**
+     * A report with the likes it brought put in under the lines of what was done (after its head,
+     * its gap, and those lines): so many, and how many in all. Nothing brought, as it was.
+     */
+    private String[] liked(String[] lines, int got) {
+        if (got <= 0) return lines;
+        int at = 2;
+        while (at < lines.length && !lines[at].isEmpty()) at++;
+        String[] out = new String[lines.length + 2];
+        System.arraycopy(lines, 0, out, 0, at);
+        out[at] = Lang.lines("likes.got", 0, null)[0].replace("{likes}", grouped(got));
+        out[at + 1] = Lang.lines("likes.all", 0, null)[0].replace("{likes}", grouped(likes));
+        System.arraycopy(lines, at, out, at + 2, lines.length - at);
+        return out;
+    }
+
+    /** The report's own lines, before the likes. */
+    private String[] reportLines() {
         if (archive != null) return Dispatch.archived(mission.round, clock(archive.doneAt));
         if (mend != null) return Dispatch.mended(mission.round, clock(mend.doneAt));
-        if (port != null) return Dispatch.ported(mission.round, clock(port.doneAt), money, paidNow);
-        if (lab != null) return Dispatch.navigated(mission.round, clock(lab.doneAt), money, paidNow);
-        if (concert != null) return Dispatch.concerted(mission.round, clock(concert.doneAt), money, paidNow);
+        if (port != null) return Dispatch.ported(mission.round, clock(port.doneAt), likes, paidNow);
+        if (lab != null) return Dispatch.navigated(mission.round, clock(lab.doneAt), likes, paidNow);
+        if (concert != null) return Dispatch.concerted(mission.round, clock(concert.doneAt), likes, paidNow);
         if (tow != null) return Dispatch.towed(mission.round, clock(tow.doneAt));
-        if (puppy != null) return Dispatch.puppied(mission.round, clock(puppy.doneAt), money, paidNow);
-        if (rescue != null) return Dispatch.rescued(mission.round, clock(rescue.doneAt), money, paidNow);
-        if (delivery != null) return Dispatch.delivered(mission.round, clock(delivery.doneAt), money, paidNow);
+        if (puppy != null) return Dispatch.puppied(mission.round, clock(puppy.doneAt), likes, paidNow);
+        if (rescue != null) return Dispatch.rescued(mission.round, clock(rescue.doneAt), likes, paidNow);
+        if (delivery != null) return Dispatch.delivered(mission.round, clock(delivery.doneAt), likes, paidNow);
         if (folder == null && mission.late) return Dispatch.late(mission.round, mission.caught());
         if (folder == null) return Dispatch.report(mission.round, clock(mission.doneAt));
-        if (folder.hers) return Dispatch.paid(mission.round, clock(folder.doneAt), money, paidNow);
+        if (folder.hers) return Dispatch.paid(mission.round, clock(folder.doneAt), likes, paidNow);
         return Dispatch.lost(mission.round, clock(folder.doneAt));
     }
 
-    /** A sum of money with its thousands set apart: 100 000. */
-    static String money(int m) {
+    /** A count with its thousands set apart: 100 000. */
+    static String grouped(long m) {
         String s = String.valueOf(m), out = "";
         for (int k = s.length(); k > 0; k -= 3) out = s.substring(Math.max(0, k - 3), k) + (out.isEmpty() ? "" : " " + out);
         return out;
@@ -634,18 +661,24 @@ final class World {
     /** The mission done: the next one to play and what has been won, kept for the next game. */
     private void save() {
         boolean lost = failed();
-        // a job is paid once, the first time it is done
+        // a story brings its likes once, the first time it is done; a game, every time it is won
         paidNow = lost ? 0 : Dispatch.due(mission.round);
         if (paidNow > 0) {
-            money += paidNow;
+            like(paidNow, WIN_HEARTS);
             Dispatch.paidKinds |= 1 << kindOf(mission.round);
             host.saveInt(SAVE_PAID, Dispatch.paidKinds);
         }
+        waitingLikes = paidNow;
         if (hunt()) plates += mission.caught();
         // lost, the same mission is played again
         host.saveInt(SAVE_MISSION, lost ? mission.round : mission.round + 1);
         host.saveInt(SAVE_PLATES, plates);
-        host.saveInt(SAVE_MONEY, money);
+        saveLikes();
+    }
+
+    /** For the desktop stand: as if the job just done had brought so many likes (for its report). */
+    void standPaid(int n) {
+        paidNow = n;
     }
 
     /** The dispatcher's room now, with the briefing or (done) the report (the desktop stand). */
@@ -1262,6 +1295,8 @@ final class World {
     boolean paused;
 
     void update(float dt) {
+        hearts.update(dt, W, h);
+        if (likesDirty && (likesKeptAgo += dt) > LIKES_KEPT_EVERY) saveLikes();
         if (story != null) {
             // the town stands still while its page is read
             story.update(dt);
@@ -1280,7 +1315,9 @@ final class World {
                 letGo();
                 int was = host.loadInt(SAVE_PANEL_BEST), now = Math.max(1, Math.round(soloClock * 10f));
                 if (was <= 0 || now < was) host.saveInt(SAVE_PANEL_BEST, now);
-                sofaChoice(Dispatch.timed(Dispatch.panelDone(clockOf(soloClock)), was / 10f, soloClock));
+                like(Dispatch.PANEL_LIKES, WIN_HEARTS / 2);
+                saveLikes();
+                sofaChoice(liked(Dispatch.timed(Dispatch.panelDone(clockOf(soloClock)), was / 10f, soloClock), Dispatch.PANEL_LIKES));
             }
             return;
         }
@@ -1404,6 +1441,8 @@ final class World {
                 stayed = null;
             }
         }
+        listened(dt);
+        stunts(dt);
         // the concert hall dark till its panel is mended
         if (indoors != null && indoors.concert) indoors.dark = concert != null && !concert.lit();
         // home's own pickup at its curb, once the delivery is won
@@ -1528,6 +1567,7 @@ final class World {
             host.buzz(caught == Mission.FIVE ? 160 : 60);
         }
         if (struck != struckSeen) {
+            if (struck > struckSeen) like(STRUCK_LIKES * (struck - struckSeen), STRUCK_HEARTS);
             struckSeen = struck;
             host.buzz(30);
         }
@@ -2448,6 +2488,7 @@ final class World {
         if (!sofaAsked && seatedFor > SIT_FOR) {
             sofaAsked = true;
             sofaChoice(waiting);
+            if (waiting != null && waitingLikes > 0) hearts.pour(REPORT_HEARTS);
             if (waiting != null) {
                 // the way home has been told once in this game: from now on she knows it
                 host.saveInt(SAVE_TOLD, 1);
@@ -3144,7 +3185,7 @@ final class World {
         // kept: the mission to play next, what has been won
         host.saveInt(SAVE_MISSION, free ? mission.round + 1 : mission.round);
         host.saveInt(SAVE_PLATES, plates);
-        host.saveInt(SAVE_MONEY, money);
+        saveLikes();
         host.sound(Synth.WOOD, 0.5f, 0.7f);
         host.buzz(40);
     }
@@ -3177,6 +3218,76 @@ final class World {
     /** Whether a kind is behind her: won, or put by to be played when she likes. */
     boolean passed(int k) {
         return ((kindsWon | kindsSkipped) & (1 << k)) != 0;
+    }
+
+    // ---- likes: what a job brings, a moment worth it, music listened to, a long flight in the town ----
+    /** Hearts poured for a job won, and again over its report read at home. */
+    static final int WIN_HEARTS = 70, REPORT_HEARTS = 90;
+    /** A plate struck (or a rival's): so many likes, so many hearts. */
+    static final int STRUCK_LIKES = 1000, STRUCK_HEARTS = 14;
+    /** The road through the pass open. */
+    static final int OPEN_LIKES = 5000, OPEN_HEARTS = 40;
+    /** Music in the hall, listened to: likes a second, hearts a second drifting up. */
+    static final float LISTEN_LIKES = 40f, LISTEN_HEARTS = 3f;
+    /**
+     * In the town, on foot: a flight at least so long (a leap off a roof, a long glide) brings
+     * likes, more the longer, up to so many; hearts with them. Nothing for what she knocks down.
+     */
+    static final float STUNT_AIR = 1.8f, STUNT_LIKES = 150f;
+    static final int STUNT_MOST = 5000, STUNT_HEARTS_MOST = 30;
+    /** Likes come in a little at a time are kept at most so often, seconds. */
+    static final float LIKES_KEPT_EVERY = 5f;
+    /** What the job just won brought, for its report read at home. */
+    private int waitingLikes;
+    private boolean likesDirty;
+    private float likesKeptAgo, listenOwed, airFor;
+
+    /** Likes come in: so many more, and so many hearts poured up the side for them. */
+    void like(int n, int pour) {
+        if (n <= 0 && pour <= 0) return;
+        likes += Math.max(0, n);
+        hearts.add(Math.max(0, n), pour);
+        if (n > 0) likesDirty = true;
+    }
+
+    private void saveLikes() {
+        host.saveInt(SAVE_LIKES, likes);
+        likesDirty = false;
+        likesKeptAgo = 0f;
+    }
+
+    /** In the concert hall while the music plays: likes a little at a time, a few hearts drifting up. */
+    private void listened(float dt) {
+        boolean music = indoors != null && indoors.concert
+                && (concert != null && concert.playing() || stayed != null && stayed.playing());
+        if (!music) {
+            listenOwed = 0f;
+            return;
+        }
+        hearts.drift(LISTEN_HEARTS);
+        listenOwed += LISTEN_LIKES * dt;
+        int n = (int) listenOwed;
+        if (n > 0) {
+            listenOwed -= n;
+            like(n, 0);
+        }
+    }
+
+    /** In the town on foot, between jobs: a long flight landed (on ground, a roof or in the sea) brings likes. */
+    private void stunts(float dt) {
+        if (!free || driving != null || piloting() || craning || indoors != null) {
+            airFor = 0f;
+            return;
+        }
+        if (runner.state == Runner.AIR) {
+            airFor += dt;
+            return;
+        }
+        float t = airFor;
+        airFor = 0f;
+        if (t < STUNT_AIR) return;
+        int n = Math.min(STUNT_MOST, Math.round(STUNT_LIKES * t * t));
+        like(n, Math.min(STUNT_HEARTS_MOST, 4 + Math.round(4f * t)));
     }
 
     // ---- a job put by: any job not won, at any time but in the air; on home's list, not done ----
@@ -3245,8 +3356,8 @@ final class World {
      */
     /** Home's head with what has been won in all under its first line, once there is anything. */
     private String[] balanced(String[] h) {
-        if (money <= 0 || h.length == 0) return h;
-        String sum = Lang.lines("home.sum", 0, null)[0].replace("{sum}", money(money));
+        if (likes <= 0 || h.length == 0) return h;
+        String sum = Lang.lines("home.sum", 0, null)[0].replace("{sum}", grouped(likes));
         boolean gap = h.length > 1 && h[1].isEmpty();
         String[] out = new String[h.length + (gap ? 2 : 1)];
         int at = gap ? 2 : 1;
@@ -3485,9 +3596,9 @@ final class World {
         Folder fo = folder;
         String clock = clock(fo.over() ? fo.doneAt : fo.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        // what it pays: told big once done (not before: the job is the job)
+        // the likes it brings: told big once done (not before: the job is the job)
         int due = Dispatch.due(mission.round);
-        String sum = money(due);
+        String sum = grouped(due);
         // the rivals: a mark each, alight while it is about, and what it has still to go
         for (int k = 0; k < Folder.RIVALS; k++) {
             Chase g = fo.rivals[k];
@@ -3547,9 +3658,9 @@ final class World {
         Delivery dv = delivery;
         String clock = clock(dv.over() ? dv.doneAt : dv.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        // what it pays: told big once done (not before: the job is the job)
+        // the likes it brings: told big once done (not before: the job is the job)
         int due = Dispatch.due(mission.round);
-        String sum = money(due);
+        String sum = grouped(due);
         // the crates on the pickup she drives, in a row of little squares
         Pickup p = driving != null ? driving : dv.carrying;
         for (int k = 0; k < Pickup.CRATES; k++) {
@@ -3580,11 +3691,9 @@ final class World {
         placeMark(d, f, goal[0], goal[1], goal[2], pic, Marks.OPEN);
     }
 
-    /** Free: what has been won, and where home is (the next mission is taken there), quietly. */
+    /** Free: where home is (the next mission is taken there), quietly; the likes are at the hearts' foot. */
     private void freeFlat(DrawList d, Px f) {
-        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
-        String sum = money(money);
-        shadowed(f, sum, W - PixelFont.width(sum, 1) - 8, 14, 1, gold, ink);
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2;
         if (indoors != null) return;
         float gx = City.HOME_DOOR_X - runner.x, gz = City.HOME_DOOR_Z - runner.z;
         float far = (float) Math.sqrt(gx * gx + gz * gz);
@@ -3609,7 +3718,7 @@ final class World {
         String clock = clock(pu.over() ? pu.doneAt : pu.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
         int due = Dispatch.due(mission.round);
-        String sum = money(due);
+        String sum = grouped(due);
         if (pu.over()) {
             String big = "+" + sum;
             if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
@@ -3638,7 +3747,7 @@ final class World {
         String clock = clock(co.doneAt >= 0f ? co.doneAt : co.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
         int due = Dispatch.due(mission.round);
-        String sum = money(due);
+        String sum = grouped(due);
         if (co.step >= Concert.SEATED) {
             // the pay, big, a moment after she sits; then only the music
             String big = "+" + sum;
@@ -3809,7 +3918,10 @@ final class World {
     /** The call out a step on: the heap, and the mallet in hand at what lies in the pass. */
     private void rescueStep(float dt) {
         rescue.update(dt, duty, driving, runner, city, host);
-        if (rescue.openedAt >= 0f && rescue.openedAt == rescue.clock) letGo();
+        if (rescue.openedAt >= 0f && rescue.openedAt == rescue.clock) {
+            letGo();
+            like(OPEN_LIKES, OPEN_HEARTS);
+        }
         // a blow of the mallet on foot, at what lies in the pass
         boolean swings = driving == null && runner.throwing() >= 0f;
         if (swings && !swungSeen) rescue.strike(runner.x, runner.z, (float) Math.sin(runner.heading), (float) Math.cos(runner.heading));
@@ -3827,9 +3939,9 @@ final class World {
         Rescue rs = rescue;
         String clock = clock(rs.over() ? rs.doneAt : rs.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        // what it pays: told big once done (not before: the job is the job)
+        // the likes it brings: told big once done (not before: the job is the job)
         int due = Dispatch.due(mission.round);
-        String sum = money(due);
+        String sum = grouped(due);
         if (rs.over()) {
             String big = "+" + sum;
             if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
@@ -4010,6 +4122,7 @@ final class World {
         else chaseFlat(d, f);
         beatsFlat(f);
         speedFlat(f);
+        hearts.draw(f, W, h, free && dispatch == null);
         if (dispatch == null) buttons(d);
         if (dispatch == null && paused) pauseFlat(f);
         swapFlat(f);
@@ -4155,6 +4268,7 @@ final class World {
         beatsFlat(f);
         speedFlat(f);
         navFlat(f);
+        hearts.draw(f, W, h, free && dispatch == null);
         if (dispatch == null) {
             if (driving == null) signs(d);
             buttons(d);

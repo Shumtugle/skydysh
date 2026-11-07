@@ -1,0 +1,49 @@
+# Likes: a long glide off a roof between jobs, landed, brings likes; likes coming in pour hearts
+# up the right side, their sum at the stream's foot running up; the report of a job with its likes
+# under what was done, the hearts over it. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 3
+keep kinds 6
+keep likes 123456
+restart
+free
+roof
+wait 0.3
+likes
+down 137 600
+wait 2.0
+move 137 590
+move 137 570
+move 137 545
+up 137 545
+wait 0.8
+where
+swipe 137 600
+wait 0.4
+swipe 137 600
+wait 0.4
+swipe 137 600
+wait 0.4
+swipe 137 600
+wait 3
+where
+likes
+shot h0
+at -10 -8 1.19
+wait 4
+like 60000 70
+wait 0.4
+shot h1
+wait 0.8
+shot h2
+wait 1.5
+shot h3
+likes
+paid 50000
+dispatch done
+wait 3
+tap 137 300
+wait 0.6
+shot h4

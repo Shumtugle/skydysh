@@ -3,7 +3,7 @@ package com.shumtugle.skydysh;
 import java.util.Random;
 
 /**
- * A call out to the concert hall, north of the old town, and a paid one: the hall is full, the
+ * A call out to the concert hall, north of the old town: the hall is full, the
  * pianist at the grand piano on the stage, and the lights have not come on; one lamp on a wall
  * burns, on a line of its own, and the rest is dark. She goes in by the middle door, through the
  * dark to the door to the wings beside the stage, and there is the panel: its wiring come apart
@@ -17,7 +17,6 @@ import java.util.Random;
  * piece after piece, while she is in it.
  */
 final class Concert {
-    static final int REWARD = 40000;
     // the steps: to the hall, in it in the dark, the lights on, in her chair listening, the job done
     static final int GO = 0, INSIDE = 1, LIT = 2, SEATED = 3, DONE = 4;
     /** The panel's grid: so many pieces a side. */

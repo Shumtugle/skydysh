@@ -17,8 +17,6 @@ final class Lab {
     // the way counts only while she comes nearer along it, so much a second at least, and for so
     // long after she last did (a stop at a crossing does not stop it at once)
     static final float GAIN = 0.8f, HOLD = 1.2f;
-    /** What it pays, the first time. */
-    static final int REWARD = 80000;
 
     /** Whether mission n is the navigator: the eleventh kind. */
     static boolean its(int n) {

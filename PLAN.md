@@ -80,6 +80,7 @@ release, each seen on the stand before the phone.
 - 1.0 The first whole version; the icon her head, the mallet slung behind it.
 - 1.0.1 The icon's mallet bigger.
 - 1.0.2 Any job put by from its first moment.
+- 1.0.3 Likes, not money; the hearts streaming up the side; likes for long flights in the town and for music listened to.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -121,6 +122,7 @@ release, each seen on the stand before the phone.
 
 ## Next
 
+- Likes for finding places worth seeing in the town (fine yards, palaces: to be drawn first).
 - The panel skipped in the concert: the light comes on for her, the panel stays on the list
   unplayed (the whole job can be put by already, from its first moment since 1.0.2).
 The missions in order, each teaching a thing; then the town is hers.

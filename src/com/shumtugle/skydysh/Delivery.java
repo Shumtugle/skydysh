@@ -8,7 +8,6 @@ package com.shumtugle.skydysh;
  * and the way is to it. The clock runs until she is home.
  */
 final class Delivery {
-    static final int REWARD = 50000;
     // the steps: a pickup to be found, the factory, the store, home, done
     static final int PICKUP = 0, FACTORY = 1, STORE = 2, HOME = 3, DONE = 4;
     // how long the pickup must stand in a bay before the first crate, and between crates

@@ -37,8 +37,6 @@ final class Quay {
     static final float LIFTS = 24f, CROSSES = 32f, EASE = 14f;
     // the fewest colours, the most
     static final int FEWEST = 6, MOST = 9;
-    /** Paid once, the first field done. */
-    static final int REWARD = 10000;
     static final int[] COLORS = {0x2F5FB8, 0x8A3CC0, 0xE8B830, 0xDCD2B8, 0x4E9A34, 0x1FA3A0, 0xC23A30, 0xE07A26, 0xE0609A};
 
     // what a touch did
