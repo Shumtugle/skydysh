@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.93
+
+- The opening's end new: she no longer falls to pieces. After the name, an orange pedestal with
+  a golden button rises out of the road before her, the eye drawing back to take both in; over
+  the frame an old film's count down, three, two, one, see through (a pale disc, two rings, the
+  cross of lines, the sweeping hand, a dark numeral, flecks and a scratch, a flicker), a tick
+  each number; on nought she brings the mallet down on the button: a clang, the ground's boom, a
+  bell, a flash, and the white into the game.
+
 ## 0.92
 
 - A new job after the containers, the navigator: up the mountain to the laboratory's door, the

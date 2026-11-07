@@ -35,6 +35,8 @@ final class Mallet {
     // which parts are the handle, and which the head
     static final int HANDLE_FROM = 0, HEAD_FROM = 2, ALL = 7;
     static final float HEAD_MIDDLE = 0.41f, HANDLE_MIDDLE = 0.11f;
+    /** How far on from the head's middle its far end is, along the handle. */
+    static final float HEAD_END = 0.11f;
 
     /** The same, golden or not, only the parts from one to another (the handle, 0 to 2; the head, 2 to 7). */
     static void draw(DrawList d, float[] rot, float x, float y, float z, float size, float pivot, boolean golden,

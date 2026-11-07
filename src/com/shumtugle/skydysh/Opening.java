@@ -3,27 +3,30 @@ package com.shumtugle.skydysh;
 import java.util.Random;
 
 /**
- * What the game opens with, some eight and a half seconds; the one word in it is the game's name.
+ * What the game opens with, some ten seconds; the one word in it is the game's name.
  *
  * The eye comes in from far out over the sea, low over the beach and the promenade with its palms,
  * across the shore road to the square with its fountain, and turns along the shore to home. It
  * stops before her: a giant, two and a half times her own height, standing in the shore road
- * before home's door with a golden mallet in her right hand. Her eyes light, and a low blow of metal sounds. The town goes dark; one light is
- * left, on her, and the mallet glows of itself. She swings it back over her head, slowly, then
- * down at the eye, faster and faster, the eye stepping up to meet it; it strikes the glass of the
- * screen: thunder, the ground's boom, glass, a white flash, the frame shaking, and she falls to
- * pieces, every block of her flung off away from the blow, turning, knocking on the stones; the
- * mallet falls, its handle and its burning head apart. The eye draws back and down to see her
- * come down. (The cracks once drawn over the glass are kept in the code, unused.) The light
- * stays on the heap, and over the frame the name is typed as the dispatcher's screen types, in the
- * letters of its tube, a white cursor before them; a high chime. The frame goes white, and at its
- * whitest the game begins, in the same town, before home.
+ * before home's door with a golden mallet in her right hand. Her eyes light, and a low blow of
+ * metal sounds. The town goes dark; one light is left, on her, and the mallet glows of itself.
+ * Over the frame the name is typed as the dispatcher's screen types, in the letters of its tube,
+ * a white cursor before them; a high chime. Out of the road before her rises a pedestal, orange,
+ * a golden button on its top. Over the frame an old film's count down begins, three, two, one:
+ * a ring and a ring in it, the cross of its lines, a numeral, the hand sweeping round, the
+ * picture through it all, flecked and flickering. On one she swings the mallet back over her
+ * head; on nought she brings it down on the button: a clang, the boom of the ground, a flash. The
+ * frame goes white, and at its whitest the game begins, in the same town, before home.
  *
  * A touch at any moment skips to the white.
  */
 final class Opening {
-    static final float LENGTH = 8.75f, WHITE_AT = 8.5f;
-    static final float LAND = 4.6f, EYES = 4.6f, DARK = 5.1f, SWING = 5.7f, STRIKE = 6.15f, BLOW = 6.4f, NAME = 7.2f;
+    // when things happen: the eye lands before her, her eyes light, the dark; the name typed; the
+    // pedestal rising, risen; the count down from three, a second a number; the mallet back, down,
+    // on the button at nought; the white, the end
+    static final float LAND = 4.6f, EYES = 4.6f, DARK = 5.1f, NAME = 5.3f, RISE = 5.6f, RISEN = 6.5f;
+    static final float COUNT = 6.6f, HIT = COUNT + 3f, SWING = HIT - 0.9f, STRIKE = HIT - 0.28f;
+    static final float WHITE_AT = HIT + 0.4f, LENGTH = WHITE_AT + 0.25f;
     static final float SIZE = Runner.SIZE * 2.5f, MALLET = Toss.SCALE / Runner.SIZE * SIZE;
     static final float FLOOR = 0f;                    // the shore road
     // where she stands: in the shore road before home's door, facing the sea
@@ -43,23 +46,11 @@ final class Opening {
     private final int[] lane = new int[CARS], paint = new int[CARS];
     private final float[] start = new float[CARS];
 
-    // her blocks once she is broken, and the mallet's two pieces
-    private int bn;
-    private final float[] bp = new float[600], bv = new float[600], bt = new float[1800], bh = new float[600];
-    private final float[] axis = new float[600], spin = new float[200], rate = new float[200];
-    private final int[] bc = new int[200], bm = new int[200];
-    private final float[] piece = new float[6], pieceV = new float[6], pieceTurn = new float[18], pieceAxis = new float[6];
-    private final float[] pieceSpin = new float[2], pieceRate = new float[2];
-    private boolean broken;
-    private float lastKnock;
-
-    // the cracks in the glass: segments in frame pixels, x0 y0 x1 y1 and how bright
-    private float[] cracks;
-    private int crackN;
+    // the pedestal: how wide, its button (how wide, how high), how far it goes in when struck
+    static final float PED_HALF = 0.9f, BUTTON_R = 0.42f, BUTTON_HIGH = 0.22f;
+    private boolean struck;
     private float shake;
 
-    // the eye where the blow came, and where it draws back to
-    private final float[] blowEye = new float[3], blowAt = new float[3];
     private final float[] tmp = new float[3], hand = new float[3], elbow = new float[3], turn = new float[9];
     private final float[] at = new float[3];
 
@@ -104,24 +95,30 @@ final class Opening {
         Frida.eyeHeat = dark;
         cue(0, 0f, Synth.WIND, 0.55f, 1f);
         cue(1, EYES + 0.05f, Synth.CLANG, 0.9f, 0.45f);
-        cue(2, SWING, Synth.WHOOSH, 0.8f, 0.7f);
-        if (t >= BLOW && !broken && !skipped) blow();
-        cue(3, BLOW, Synth.THUNDER, 1f, 0.85f);
-        cue(4, BLOW, Synth.GROUND, 1f, 0.8f);
-        cue(5, BLOW, Synth.GLASS, 1f, 0.9f);
-        // under it all, a low blow felt more than heard
-        cue(7, BLOW + 0.02f, Synth.GROUND, 1f, 0.6f);
-        cue(8, BLOW + 0.04f, Synth.THUNDER, 0.8f, 0.55f);
         cue(6, NAME + TYPED, Synth.CHIME, 0.7f, 1.6f);
+        // the pedestal coming up out of the road: stone grinding
+        cue(2, RISE, Synth.GROUND, 0.7f, 1.3f);
+        // the count down: a tick a number, the old projector's
+        cue(9, COUNT, Synth.TOCK, 0.8f, 0.9f);
+        cue(10, COUNT + 1f, Synth.TOCK, 0.8f, 0.9f);
+        cue(11, COUNT + 2f, Synth.TOCK, 0.8f, 0.9f);
+        cue(3, SWING + 0.2f, Synth.WHOOSH, 0.8f, 0.7f);
+        // the mallet on the button: a clang, the ground's boom, a bell
+        if (t >= HIT && !struck && !skipped) {
+            struck = true;
+            shake = 0.8f;
+        }
+        cue(4, HIT, Synth.CLANG, 1f, 0.6f);
+        cue(5, HIT, Synth.GROUND, 1f, 0.8f);
+        cue(7, HIT + 0.02f, Synth.THUNDER, 0.7f, 0.7f);
+        cue(8, HIT + 0.05f, Synth.CHIME, 0.8f, 1.2f);
         // the name typed, a tick a letter
         int typed = typedNow();
         if (typed > ticks && t < WHITE_AT) {
             ticks = typed;
-            // each letter struck in, as the blocks came down: a knock of stone, the eye jolted
-            host.sound(Synth.STONE, 0.95f, 0.85f + 0.08f * (typed % 2));
-            shake = Math.max(shake, 0.32f);
+            // each letter struck in: a knock of stone
+            host.sound(Synth.STONE, 0.85f, 0.85f + 0.08f * (typed % 2));
         }
-        if (broken) fall(dt);
         shake = Math.max(0f, shake - dt * 3.2f);
         if (t >= LENGTH) done = true;
     }
@@ -156,10 +153,13 @@ final class Opening {
             float u = clamp((t - SWING) / (STRIKE - SWING));
             return 0.27f * u * u;
         }
-        // down, faster and faster
-        float u = clamp((t - STRIKE) / (BLOW - STRIKE));
-        return 0.27f + 0.13f * u * (0.6f + 0.4f * u);
+        // down, faster and faster, onto the button; there it stays
+        float u = clamp((t - STRIKE) / (HIT - STRIKE));
+        return 0.27f + (HIT_MT - 0.27f) * u * (0.6f + 0.4f * u);
     }
+
+    /** How far into her swing the head of the mallet comes down onto the button. */
+    static final float HIT_MT = 0.40f;
 
     /** The mallet in her fist: its turn into turn, the grip into hand. */
     private void grip(String motion, float mt) {
@@ -196,132 +196,42 @@ final class Opening {
         out[2] = hand[2] + turn[6] * s;
     }
 
-    // ---- the blow ----
+    // ---- the pedestal ----
 
-    private void blow() {
-        broken = true;
-        shake = 1f;
-        headAt("throw", 0.40f, blowAt);
-        // her blocks, flung from her middle and away from the blow
-        bn = Frida.capture(OX, FLOOR, OZ, 0f, SIZE, "throw", 0.40f, bp, bt, bh, bc, bm);
-        float cx = OX, cy = FLOOR + 0.95f * SIZE, cz = OZ;
-        for (int i = 0; i < bn; i++) {
-            float ox = bp[i * 3] - cx, oy = bp[i * 3 + 1] - cy, oz = bp[i * 3 + 2] - cz;
-            float ol = Math.max(0.1f, (float) Math.sqrt(ox * ox + oy * oy + oz * oz));
-            float ax = bp[i * 3] - blowAt[0], ay = bp[i * 3 + 1] - blowAt[1], az = bp[i * 3 + 2] - blowAt[2];
-            float al = Math.max(0.1f, (float) Math.sqrt(ax * ax + ay * ay + az * az));
-            float out = 2.5f + rnd.nextFloat() * 3f, away = 2f + rnd.nextFloat() * 3f;
-            bv[i * 3] = ox / ol * out + ax / al * away;
-            bv[i * 3 + 1] = oy / ol * out + ay / al * away + 2f + rnd.nextFloat() * 4f;
-            bv[i * 3 + 2] = oz / ol * out + az / al * away;
-            float rx = rnd.nextFloat() - 0.5f, ry = rnd.nextFloat() - 0.5f, rz = rnd.nextFloat() - 0.5f;
-            float rl = Math.max(1e-3f, (float) Math.sqrt(rx * rx + ry * ry + rz * rz));
-            axis[i * 3] = rx / rl;
-            axis[i * 3 + 1] = ry / rl;
-            axis[i * 3 + 2] = rz / rl;
-            spin[i] = 0f;
-            rate[i] = 3f + rnd.nextFloat() * 8f;
-        }
-        // the mallet: the handle and the burning head, each its own way
-        grip("throw", 0.40f, 1f);
-        for (int k = 0; k < 2; k++) {
-            float s = (k == 0 ? Mallet.HANDLE_MIDDLE : Mallet.HEAD_MIDDLE) * MALLET;
-            piece[k * 3] = hand[0] + turn[0] * s;
-            piece[k * 3 + 1] = hand[1] + turn[3] * s;
-            piece[k * 3 + 2] = hand[2] + turn[6] * s;
-            System.arraycopy(turn, 0, pieceTurn, k * 9, 9);
-            pieceV[k * 3] = (k == 0 ? -1.5f : 1.2f);
-            pieceV[k * 3 + 1] = k == 0 ? 3f : 1.5f;
-            pieceV[k * 3 + 2] = k == 0 ? 1.5f : -0.5f;
-            pieceAxis[k * 3] = k == 0 ? 0.3f : 1f;
-            pieceAxis[k * 3 + 1] = 0.2f;
-            pieceAxis[k * 3 + 2] = k == 0 ? 0.93f : 0.1f;
-            float l = (float) Math.sqrt(pieceAxis[k * 3] * pieceAxis[k * 3] + 0.04f + pieceAxis[k * 3 + 2] * pieceAxis[k * 3 + 2]);
-            for (int j = 0; j < 3; j++) pieceAxis[k * 3 + j] /= l;
-            pieceRate[k] = k == 0 ? 7f : 4f;
-        }
-        // no cracks over the glass: the flash, the frame shaking and her fall carry the blow
-        crackN = 0;
+    /** Where the button's top is: under the head of the mallet as it comes down (into out). */
+    private final float[] button = new float[3];
+    private boolean placed;
+
+    private void place() {
+        if (placed) return;
+        placed = true;
+        headAt("throw", HIT_MT, button);
+        // the head's far end on the button: on from the head's middle along the handle
+        float e = Mallet.HEAD_END * MALLET;
+        button[0] += turn[0] * e;
+        button[1] += turn[3] * e;
+        button[2] += turn[6] * e;
     }
 
-    /** Her blocks and the mallet's pieces falling, bouncing on the stones, knocking as they land. */
-    private void fall(float dt) {
-        for (int i = 0; i < bn; i++) {
-            float h = Math.min(bh[i * 3], Math.min(bh[i * 3 + 1], bh[i * 3 + 2]));
-            bv[i * 3 + 1] -= 22f * dt;
-            for (int k = 0; k < 3; k++) bp[i * 3 + k] += bv[i * 3 + k] * dt;
-            spin[i] += rate[i] * dt;
-            if (bp[i * 3 + 1] - h < FLOOR) {
-                bp[i * 3 + 1] = FLOOR + h;
-                float hit = -bv[i * 3 + 1];
-                if (hit > 0f) {
-                    bv[i * 3 + 1] = hit * 0.3f;
-                    if (hit > 3f) knock(bm[i] == DrawList.WOOD ? Synth.WOOD : Synth.STONE, hit);
-                }
-                bv[i * 3] *= 0.6f;
-                bv[i * 3 + 2] *= 0.6f;
-                rate[i] *= 0.5f;
-            }
-        }
-        for (int k = 0; k < 2; k++) {
-            pieceV[k * 3 + 1] -= 22f * dt;
-            for (int j = 0; j < 3; j++) piece[k * 3 + j] += pieceV[k * 3 + j] * dt;
-            pieceSpin[k] += pieceRate[k] * dt;
-            float h = (k == 0 ? 0.04f : 0.11f) * MALLET;
-            if (piece[k * 3 + 1] - h < FLOOR) {
-                piece[k * 3 + 1] = FLOOR + h;
-                float hit = -pieceV[k * 3 + 1];
-                if (hit > 0f) {
-                    pieceV[k * 3 + 1] = hit * 0.35f;
-                    if (hit > 2.5f) {
-                        if (k == 1) host.sound(Synth.CLANG, Math.min(1f, hit / 10f), 1.5f);
-                        else knock(Synth.WOOD, hit);
-                    }
-                }
-                pieceV[k * 3] *= 0.5f;
-                pieceV[k * 3 + 2] *= 0.5f;
-                pieceRate[k] *= 0.4f;
-            }
-        }
-    }
-
-    /** A block landing: a knock, not too many at once. */
-    private void knock(int id, float hit) {
-        if (t - lastKnock < 0.035f) return;
-        lastKnock = t;
-        host.sound(id, Math.min(0.8f, hit / 14f), 0.8f + rnd.nextFloat() * 0.4f);
-    }
-
-    /** Eight cracks out from (x, y) of the frame (y from the middle), each wandering a little and branching. */
-    private void cracksFrom(float x, float y0) {
-        cracks = new float[5 * 400];
-        crackN = 0;
-        float cy = y0;
-        for (int r = 0; r < 8; r++) {
-            float a = r * (float) Math.PI / 4f + (rnd.nextFloat() - 0.5f) * 0.5f;
-            crack(x, cy, a, 0.9f + rnd.nextFloat() * 0.5f, 1f, 2);
-        }
-    }
-
-    private void crack(float x, float y, float a, float reach, float bright, int depth) {
-        float len = 0f, most = reach * 520f;
-        while (len < most && crackN < 400) {
-            float step = 10f + rnd.nextFloat() * 18f;
-            a += (rnd.nextFloat() - 0.5f) * 0.45f;
-            float nx = x + (float) Math.cos(a) * step, ny = y + (float) Math.sin(a) * step;
-            int o = crackN++ * 5;
-            cracks[o] = x;
-            cracks[o + 1] = y;
-            cracks[o + 2] = nx;
-            cracks[o + 3] = ny;
-            cracks[o + 4] = bright;
-            x = nx;
-            y = ny;
-            len += step;
-            if (depth > 0 && rnd.nextFloat() < 0.18f)
-                crack(x, y, a + (rnd.nextBoolean() ? 1f : -1f) * (0.45f + rnd.nextFloat() * 0.45f),
-                        reach * (0.25f + rnd.nextFloat() * 0.25f), bright * 0.8f, depth - 1);
-        }
+    /**
+     * The pedestal, risen so far (0 under the road, 1 up): a plinth, the orange body, a gold band
+     * round its top, the gold button on it, pressed in once struck and lit a moment.
+     */
+    private void pedestal(DrawList d) {
+        place();
+        float up = ease((t - RISE) / (RISEN - RISE));
+        if (up <= 0f) return;
+        float top = button[1] - BUTTON_HIGH, sink = (1f - up) * (top - FLOOR + BUTTON_HIGH + 0.2f);
+        float x = button[0], z = button[2], h = top - FLOOR;
+        int orange = 0xE0702A, deep = 0xB4561E, gold = 0xD8A84A;
+        d.box(x, FLOOR + 0.18f - sink, z, PED_HALF + 0.18f, 0.18f, PED_HALF + 0.18f, null, deep, DrawList.PAINT);
+        d.box(x, FLOOR + h * 0.5f - sink, z, PED_HALF, h * 0.5f, PED_HALF, null, orange, DrawList.PAINT);
+        d.box(x, top - 0.12f - sink, z, PED_HALF + 0.06f, 0.12f, PED_HALF + 0.06f, null, gold, DrawList.GOLD);
+        d.box(x, top + 0.02f - sink, z, PED_HALF * 0.6f, 0.04f, PED_HALF * 0.6f, null, deep, DrawList.PAINT);
+        float press = struck ? 0.12f : 0f;
+        d.box(x, top + BUTTON_HIGH * 0.5f - press - sink, z, BUTTON_R, BUTTON_HIGH * 0.5f, BUTTON_R, null, gold, DrawList.GOLD);
+        if (struck && t - HIT < 0.35f)
+            d.box(x, top + BUTTON_HIGH - press - sink + 0.02f, z, BUTTON_R * 0.8f, 0.02f, BUTTON_R * 0.8f, null, 0xFFF0B0, DrawList.GLOW);
     }
 
     // ---- the eye ----
@@ -336,6 +246,8 @@ final class Opening {
             {8f, 11f, -1f, OX, 4f, OZ + 2f},
             {OX, 3.3f, OZ - 10.5f, OX, 4.7f, OZ}};
     private static final float[] KNOTS = {0f, 0.34f, 0.62f, 0.84f, 1f};
+    // where the eye draws back to as the pedestal rises, and what it looks at there
+    private static final float[] BACK_EYE = {OX + 1.6f, 4.4f, OZ - 15.5f}, BACK_LOOK = {OX - 0.6f, 2.3f, OZ - 2f};
 
     /** One of the six values of the flight, u (0 to 1) of the way along it, through its points. */
     private static float flight(int k, float u) {
@@ -354,24 +266,14 @@ final class Opening {
             eye[k] = flight(k, u);
             look[k] = flight(k + 3, u);
         }
-        float[] p3 = FLIGHT[FLIGHT.length - 1];
-        if (t >= STRIKE && t < BLOW) {
-            // a step toward her, up to where the head of the mallet will come
-            float v = clamp((t - STRIKE) / (BLOW - STRIKE));
-            v = v * v;
-            float[] end = {blowAim[0], blowAim[1] + 0.2f, blowAim[2] - 2.4f};
-            for (int k = 0; k < 3; k++) eye[k] += (end[k] - p3[k]) * v;
-            look[1] += (blowAim[1] - look[1]) * v;
-        }
-        if (t >= BLOW) {
-            // back and down, to see her come down
-            float v = ease((t - BLOW) / 0.9f);
-            float[] from = {blowAim[0], blowAim[1] + 0.2f, blowAim[2] - 2.4f};
-            float[] to = {OX, 3.6f, OZ - 15f};
-            for (int k = 0; k < 3; k++) eye[k] = from[k] + (to[k] - from[k]) * v;
-            look[0] = OX;
-            look[1] = 1.5f;
-            look[2] = OZ;
+        // as the pedestal rises, back and up a little, so she and it are both in the frame
+        float back = ease((t - RISE) / (RISEN - RISE + 0.4f));
+        if (back > 0f) {
+            float[] p3 = FLIGHT[FLIGHT.length - 1];
+            for (int k = 0; k < 3; k++) {
+                eye[k] = p3[k] + (BACK_EYE[k] - p3[k]) * back;
+                look[k] = p3[k + 3] + (BACK_LOOK[k] - p3[k + 3]) * back;
+            }
         }
         if (shake > 0f) {
             float s = shake * shake * 0.6f;
@@ -380,16 +282,9 @@ final class Opening {
         }
     }
 
-    private final float[] blowAim = new float[3];
-    private boolean aimed;
-
     // ---- drawing ----
 
     void draw(DrawList d, Px f, int h) {
-        if (!aimed) {
-            headAt("throw", 0.40f, blowAim);
-            aimed = true;
-        }
         float[] e = new float[3], l = new float[3];
         eye(e, l);
         float dx = l[0] - e[0], dy = l[1] - e[1], dz = l[2] - e[2];
@@ -406,12 +301,11 @@ final class Opening {
         // the dark, and the one light left: on her, then up on the name
         float dark = clamp((t - DARK) / 0.35f);
         if (dark > 0f) {
-            // the light on her, closing in; on the heap, a little wider, once she is down
-            float n = ease((t - NAME) / 0.6f);
+            // the light on her, closing in, and on the pedestal before her
             d.spot[0] = OX;
-            d.spot[1] = 3f - 1.5f * n;
-            d.spot[2] = OZ;
-            d.spot[3] = (24f - 15f * ease((t - DARK) / 0.5f)) * (1f - n) + 10f * n;
+            d.spot[1] = 3f;
+            d.spot[2] = OZ - 1.5f;
+            d.spot[3] = 24f - 13f * ease((t - DARK) / 0.5f);
             d.spot[4] = dark;
         }
         if (dark < 0.995f) {
@@ -423,21 +317,18 @@ final class Opening {
             // only the road under her
             d.box(OX, FLOOR - 0.25f, OZ, 17f, 0.25f, 17f, null, 0x5E4844, DrawList.ASPHALT);
         }
-        if (!broken) {
-            String m = motion();
-            float mt = motionTime();
-            Frida.draw(d, OX, FLOOR, OZ, 0f, SIZE, m, mt);
-            grip(m, mt);
-            Mallet.draw(d, turn, hand[0], hand[1], hand[2], MALLET, 0f, true, 0, Mallet.ALL);
-            // the mallet's head lights what is near it
-            headAt(m, mt, tmp);
-            d.fire[0] = tmp[0];
-            d.fire[1] = tmp[1];
-            d.fire[2] = tmp[2];
-            d.fire[3] = 0.9f;
-        } else {
-            rubble(d);
-        }
+        String m = motion();
+        float mt = motionTime();
+        Frida.draw(d, OX, FLOOR, OZ, 0f, SIZE, m, mt);
+        grip(m, mt);
+        Mallet.draw(d, turn, hand[0], hand[1], hand[2], MALLET, 0f, true, 0, Mallet.ALL);
+        // the mallet's head lights what is near it
+        headAt(m, mt, tmp);
+        d.fire[0] = tmp[0];
+        d.fire[1] = tmp[1];
+        d.fire[2] = tmp[2];
+        d.fire[3] = 0.9f;
+        pedestal(d);
         flat(d, f, h);
     }
 
@@ -466,25 +357,6 @@ final class Opening {
             }
             people.figure(d, i, x, City.WALK_TOP, z, yaw, t * sp * 3.2f + i);
         }
-    }
-
-    private void rubble(DrawList d) {
-        float[] r = new float[9];
-        for (int i = 0; i < bn; i++) {
-            Chase.spun(axis, i * 3, spin[i], bt, i * 9, r);
-            d.box(bp[i * 3], bp[i * 3 + 1], bp[i * 3 + 2], bh[i * 3], bh[i * 3 + 1], bh[i * 3 + 2], r, bc[i], bm[i]);
-        }
-        for (int k = 0; k < 2; k++) {
-            Chase.spun(pieceAxis, k * 3, pieceSpin[k], pieceTurn, k * 9, r);
-            float pivot = k == 0 ? Mallet.HANDLE_MIDDLE : Mallet.HEAD_MIDDLE;
-            Mallet.draw(d, r, piece[k * 3], piece[k * 3 + 1], piece[k * 3 + 2], MALLET, pivot, true,
-                    k == 0 ? 0 : Mallet.HEAD_FROM, k == 0 ? Mallet.HEAD_FROM : Mallet.ALL);
-        }
-        // the burning head still lights the stones round it
-        d.fire[0] = piece[3];
-        d.fire[1] = piece[4];
-        d.fire[2] = piece[5];
-        d.fire[3] = 0.9f;
     }
 
     private static TubeFont font;
@@ -531,27 +403,96 @@ final class Opening {
         d.tube[3] = y0 + font.rows * s + 4;
     }
 
-    /** Over the frame: the cracks in the glass, the flash of the blow, the white at the end. */
+    /** Over the frame: the name, the count down, the flash of the blow, the white at the end. */
     private void flat(DrawList d, Px f, int h) {
         if (t >= NAME) name(d, f, h);
-        if (crackN > 0) {
-            float fade = 1f - clamp((t - BLOW - 0.4f) / 1.1f);
-            if (fade > 0f) {
-                // the cracks stay on the glass where the blow struck it
-                // (the head of the mallet comes straight at the eye: the middle of the glass)
-                float ox = 0f, oy = h * 0.46f;
-                for (int i = 0; i < crackN; i++) {
-                    int o = i * 5;
-                    int a = Math.round(255f * fade * cracks[o + 4]);
-                    line(f, cracks[o] + ox, cracks[o + 1] + oy + 1f, cracks[o + 2] + ox, cracks[o + 3] + oy + 1f, (a / 3) << 24);
-                    line(f, cracks[o] + ox, cracks[o + 1] + oy, cracks[o + 2] + ox, cracks[o + 3] + oy, (a << 24) | 0xFFFFFF);
-                }
-            }
-        }
+        if (t >= COUNT && t < HIT) leader(f, h);
         float white = 0f;
-        if (t >= BLOW) white = Math.max(white, 1f - (t - BLOW) / 0.15f);
+        if (t >= HIT) white = Math.max(white, 1f - (t - HIT) / 0.15f) * 0.85f;
         if (t >= WHITE_AT) white = Math.max(white, clamp((t - WHITE_AT) / (LENGTH - WHITE_AT)));
         if (white > 0f) wash(f, white);
+    }
+
+    // the count down's circle: where (across, down as parts of the frame), its rings' radii (frame pixels)
+    static final float LEADER_Y = 0.6f, RING = 92f, RING_IN = 80f;
+
+    /**
+     * The count down of an old film over the frame, see-through: a pale disc, the part the hand has
+     * swept round from the top a shade darker, two white rings, the cross of the frame's lines, the
+     * hand, the numeral dark in the middle; flecks and a scratch, new each flicker; the whole
+     * flickering a little.
+     */
+    private void leader(Px f, int h) {
+        float since = t - COUNT;
+        int n = 3 - (int) since;
+        float sweep = since - (int) since;
+        int flick = (int) (t * 18f);
+        Random r = new Random(0x1EADL + flick);
+        float bright = 0.85f + 0.15f * r.nextFloat();
+        float cx = World.W * 0.5f, cy = h * LEADER_Y, a0 = (float) (sweep * Math.PI * 2.0);
+        int r0 = (int) RING + 3;
+        for (int y = (int) (cy - r0); y <= (int) (cy + r0); y++)
+            for (int x = (int) (cx - r0); x <= (int) (cx + r0); x++) {
+                float dx = x + 0.5f - cx, dy = y + 0.5f - cy, rr = (float) Math.sqrt(dx * dx + dy * dy);
+                if (rr > RING + 1.5f) continue;
+                // the angle from the top, round the way a clock's hand goes
+                float a = (float) Math.atan2(dx, -dy);
+                if (a < 0f) a += (float) (Math.PI * 2.0);
+                boolean swept = a < a0;
+                int c = swept ? 0x8E8A82 : 0xD9D5CC;
+                float al = (swept ? 0.62f : 0.52f) * bright;
+                if (Math.abs(rr - RING) < 1.4f || Math.abs(rr - RING_IN) < 1.2f) {
+                    c = 0xF4F2EC;
+                    al = 0.8f * bright;
+                }
+                blend(f, x, y, c, al);
+            }
+        // the cross of lines through it, out to the frame's edges
+        for (int x = 0; x < World.W; x++) blend(f, x, (int) cy, 0x2A2826, 0.45f * bright);
+        for (int y = (int) (cy - RING - 40f); y < (int) (cy + RING + 40f); y++) blend(f, (int) cx, y, 0x2A2826, 0.45f * bright);
+        // the hand
+        for (float k = 0f; k < RING; k += 0.5f)
+            blend(f, Math.round(cx + (float) Math.sin(a0) * k), Math.round(cy - (float) Math.cos(a0) * k), 0x2A2826, 0.7f * bright);
+        // the numeral, big, dark
+        String s = String.valueOf(n);
+        int scale = 14, w = PixelFont.width(s, scale);
+        int nx = Math.round(cx - w * 0.5f), ny = Math.round(cy - 7 * scale * 0.5f);
+        Px num = new Px(w + 2, 7 * scale + 2, new int[(w + 2) * (7 * scale + 2)]);
+        PixelFont.draw(num, s, 1, 1, scale, 0xFF000000);
+        // a pale edge round it, then the numeral itself
+        for (int y = -1; y <= num.h; y++)
+            for (int x = -1; x <= num.w; x++) {
+                if (num.get(x, y) != 0) continue;
+                if (num.get(x - 1, y) != 0 || num.get(x + 1, y) != 0 || num.get(x, y - 1) != 0 || num.get(x, y + 1) != 0)
+                    blend(f, nx + x - 1, ny + y - 1, 0xF4F2EC, 0.7f * bright);
+            }
+        for (int y = 0; y < num.h; y++)
+            for (int x = 0; x < num.w; x++)
+                if (num.a[y * num.w + x] != 0) blend(f, nx + x - 1, ny + y - 1, 0x1E1C19, 0.92f * bright);
+        // flecks and a scratch, the film's age
+        for (int k = 0; k < 7; k++) {
+            int fx = r.nextInt(World.W), fy = (int) (cy - RING - 60f + r.nextFloat() * (RING * 2f + 120f));
+            int c = r.nextBoolean() ? 0xF4F2EC : 0x1E1C1A;
+            blend(f, fx, fy, c, 0.6f);
+            if (r.nextInt(3) == 0) blend(f, fx + 1, fy, c, 0.5f);
+        }
+        if (r.nextInt(3) > 0) {
+            int sx = r.nextInt(World.W);
+            for (int y = 0; y < h; y += 1) if (r.nextInt(5) > 0) blend(f, sx, y, 0xF4F2EC, 0.22f);
+        }
+    }
+
+    /** A pixel of the frame laid over with a colour, so much of it (what is under shows through). */
+    private static void blend(Px f, int x, int y, int rgb, float a) {
+        if (x < 0 || y < 0 || x >= f.w || y >= f.h || a <= 0f) return;
+        int o = y * f.w + x, old = f.a[o], oa = old >>> 24;
+        int na = Math.round(255f * Math.min(1f, a));
+        if (oa == 0) {
+            f.a[o] = (na << 24) | (rgb & 0xFFFFFF);
+            return;
+        }
+        int mixed = Px.mix(old, rgb | 0xFF000000, a);
+        f.a[o] = (Math.max(oa, na) << 24) | (mixed & 0xFFFFFF);
     }
 
     /** The whole frame washed white, so far. */
@@ -570,12 +511,4 @@ final class Opening {
                     b = (int) ((old & 0xFF) * (1f - w) + 255f * w);
             f.a[i] = (Math.max(oa, a) << 24) | (r << 16) | (g << 8) | b;
         }
-    }
-
-    /** A line a pixel wide. */
-    private static void line(Px f, float x0, float y0, float x1, float y1, int c) {
-        float dx = x1 - x0, dy = y1 - y0;
-        int n = (int) Math.max(Math.abs(dx), Math.abs(dy)) + 1;
-        for (int i = 0; i <= n; i++) f.set(Math.round(x0 + dx * i / n), Math.round(y0 + dy * i / n), c);
-    }
-}
+    }}
