@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.4
+
+- The steering wheel twice as big. It is drawn kept in from the frame's edges, the knob by the
+  thumb; what it turns from is still where the thumb came down, so the steering is as it was.
+  Seen through while held, the pickup under it showing; the way out drawn over it.
+
 ## 1.0.3
 
 - Likes, not money. Every job brings likes: a story once, the first time it is done; a game (the

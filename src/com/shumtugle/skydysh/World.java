@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.0.3";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.0.4";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1761,22 +1761,23 @@ final class World {
             return;
         }
         if (driving != null) {
-            d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
-            // the steering wheel under the thumb while it is down, turned as the pickup's is, in the
+            // the steering wheel by the thumb while it is down, turned as the pickup's is, in the
             // mission's colour, green while the throttle is on, coral while the brake is; a knob
             // where the thumb is; a faint wheel where it would go
             float turn = driving.steer * WHEEL_TURNS;
             if (wheelFinger >= 0) {
                 float pull = pullAxis();
                 int tint = pull > 0f ? DrawList.TINT_GREEN : pull < 0f ? DrawList.TINT_CORAL : ringTint();
-                d.badge(carCX, carCY, WHEEL_HALF, Badges.STEER, 0.85f, pull != 0f ? 0.6f : 0.1f, tint, turn);
+                d.badge(wheelDrawX(carCX), wheelDrawY(carCY), WHEEL_HALF, Badges.STEER, WHEEL_SEEN, pull != 0f ? 0.6f : 0.1f, tint, turn);
                 float ox = carTX - carCX, oy = carTY - carCY, m = (float) Math.sqrt(ox * ox + oy * oy);
                 if (m > CAR_R) {
                     ox *= CAR_R / m;
                     oy *= CAR_R / m;
                 }
                 d.badge(carCX + ox, carCY + oy, KNOB * 0.7f, Badges.KNOB, 0.8f, 0f);
-            } else d.badge(WHEEL_REST_X, h - WHEEL_REST_UP, WHEEL_HALF, Badges.STEER, 0.35f, 0f, ringTint(), turn);
+            } else d.badge(wheelDrawX(WHEEL_REST_X), wheelDrawY(h - WHEEL_REST_UP), WHEEL_HALF, Badges.STEER, 0.35f, 0f, ringTint(), turn);
+            // the way out over the wheel, which is big enough to reach it
+            d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
         }
         if (footButtons() && !Runner.classic) {
             for (int b = 0; b < 3; b++) {
@@ -2122,8 +2123,23 @@ final class World {
         return a < CAR_PULL_DEAD ? 0f : Math.signum(v) * (a - CAR_PULL_DEAD) / (1f - CAR_PULL_DEAD);
     }
 
-    // the steering wheel drawn under the finger: half its size, frame pixels; turned so far at full lock (radians)
-    static final float WHEEL_HALF = 66f, WHEEL_TURNS = 2.2f;            // the ring at the wheel, its radius: wider than her stick on foot
+    // the steering wheel drawn by the finger: half its size, frame pixels; turned so far at full lock (radians)
+    static final float WHEEL_HALF = 132f, WHEEL_TURNS = 2.2f;           // the ring at the wheel, its radius: wider than her stick on foot
+    /** The thumb's middle (what the wheel turns from) kept so far in from the frame's edges, room for its reach. */
+    static final float STEER_MARGIN = 56f;
+    /** How strongly the wheel shows while the thumb is on it: the pickup under it seen through. */
+    static final float WHEEL_SEEN = 0.6f;
+
+    /** Where the wheel is drawn, across: by the thumb's middle, kept in from the sides so most of it shows. */
+    private float wheelDrawX(float x) {
+        float m = WHEEL_HALF * 0.85f;
+        return Math.max(Math.min(m, W * 0.5f), Math.min(Math.max(W - m, W * 0.5f), x));
+    }
+
+    /** Where the wheel is drawn, down: by the thumb's middle, kept up from the bottom so most of it shows. */
+    private float wheelDrawY(float y) {
+        return Math.max(h * 0.3f, Math.min(h - WHEEL_HALF * 0.85f, y));
+    }
     static final float SETTLE_RATE = 3.5f;     // how fast it settles along the street, the wheel let be
     final Felled felled = new Felled();
     private boolean swungSeen;
@@ -2183,7 +2199,7 @@ final class World {
         if (type == DOWN) {
             if (wheelFinger >= 0) return;
             wheelFinger = id;
-            float m = WHEEL_HALF * 0.85f;
+            float m = STEER_MARGIN;
             carCX = Math.max(m, Math.min(W - m, x));
             carCY = Math.max(h * 0.3f, Math.min(h - m, y));
             carTX = x;
