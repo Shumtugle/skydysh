@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.92
+
+- A new job after the containers, the navigator: up the mountain to the laboratory's door, the
+  navigator fitted there, then five minutes along its line, place after place; the board runs
+  only while she drives nearer the place along the line. It pays once; the navigator stays hers.
+- Before it is fitted there is no navigator (till now it was there from the start, to try).
+- Four other testers round the town's streets, dots on the map, pickups in the street.
+- The navigator's way down and up the mountain's road.
+- Marks for the laboratory and for a place on the map.
+- Stand scenes: navtrial; navon and labtime for the stand.
+
 ## 0.91
 
 - The mountain, north-west past the town's last street: a cone, grass, rock, snow high up, flat

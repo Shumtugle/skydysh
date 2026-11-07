@@ -319,6 +319,22 @@ public final class Stand implements World.Host {
             // copterat X Y Z RADIANS: the helicopter she flies put there in the air, still
             world.standCopterAt(f(p[1]), f(p[2]), f(p[3]), f(p[4]));
             step();
+        } else if (c.equals("navon")) {
+            // navon: the navigator out, as if it had been fitted
+            world.standNav = true;
+            step();
+        } else if (c.equals("labtime")) {
+            // labtime SECONDS: the navigator's trial counted so far; the place now told
+            if (world.lab != null) {
+                world.lab.counted = f(p[1]);
+                System.out.println(String.format("%7.2fs  trial %d, %.0fs counted, place %d", time, world.lab.step, world.lab.counted, world.lab.place));
+                float[] t = new float[3];
+                for (int k = 0; k < Lab.testers(); k++) {
+                    Lab.tester(k, world.time, t);
+                    System.out.println(String.format("           tester %d at %.1f %.1f heading %.2f", k, t[0], t[1], t[2]));
+                }
+            }
+            step();
         } else if (c.equals("eye")) {
             // eye X Y Z YAW PITCH: the eye put there for the shots that follow; eye off: hers again
             world.standEye = p[1].equals("off") ? null : new float[]{f(p[1]), f(p[2]), f(p[3]), f(p[4]), f(p[5])};

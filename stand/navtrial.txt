@@ -1,0 +1,32 @@
+# The navigator's trial: at the wheel at the laboratory's door, the navigator going in, what is
+# said; the trial begun, the way down the mountain on the map, the first place; at the wheel on
+# the road out toward the quarry, the time running green; the quarry reached, the next place, the
+# other testers on the map and in the street; the time nearly up, a little more, and through.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 11
+close
+drivein -480 914 0
+wait 1.8
+shot t0
+wait 2.2
+shot t1
+drivein 10 700 0
+pedal 3 0 0 0 tx
+shot t2
+drivein -70 866 -1.57
+wait 0.6
+shot t3
+drivein 72 180 0
+pedal 2 0 0 0 ty
+shot t4
+labtime 298.5
+eye 189 6 28 0 -0.08
+wait 0.2
+shot t5
+eye off
+drivein 8 760 3.14
+pedal 3 0 0 0 tz
+wait 3
+shot t6

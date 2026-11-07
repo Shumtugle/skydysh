@@ -92,7 +92,19 @@ The folder is handed over: at the doorway she stands, the eye off to the side on
 them, the clerk's word low on the frame; the clerk holds it out, and it goes from her hands into
 hers. Then the way to the lift.
 
-Up on the right, the navigator: a small map turned the way the eye looks, the streets drawn
+The navigator (the eleventh job, a story, after the containers): the laboratory on the mountain
+is trying out navigators for pickups. She drives up to its tower's door; there the navigator is
+fitted and comes on, what is said shown low on the frame; from then on it is hers. Then the
+trial: five minutes at the wheel along its line, place after place (the quarry, the vet clinic,
+the concert hall, the old town, the archive, the town hall, the workshop, the factory, and round
+again), each told at the top as the last is reached. The board in the corner shows the time
+still to go: it runs, green, only while she drives nearer the place along the line, and a moment
+after; stopped or off the line, it waits, pale. Four other brums try theirs out at the same
+time, each in a pickup round a loop of the town's streets: orange dots on the map, slate grey
+at their wheels in the street. The navigator finds the way down the mountain's road and up it.
+Before it is fitted, there is no navigator.
+
+Up on the right, the navigator (once fitted): a small map turned the way the eye looks, the streets drawn
 from the town itself (the sea, the beach, the blocks, the fields and the road out), she a blue
 dot with a white point her way, and to the mission's mark a line along the streets by the
 shortest way through the crossings, and on along the road out. Off it, a new way is found from

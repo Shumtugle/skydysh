@@ -8,7 +8,7 @@ package com.shumtugle.skydysh;
  */
 final class Marks {
     static final int HOUSE = 0, PAW = 1, FACTORY = 2, WAREHOUSE = 3, TRUCK = 4, PASS = 5, VILLAGE = 6, CLINIC = 7, QUARRY = 8, WORKSHOP = 9, CONCERT = 10, PANEL = 11, CHAIR = 12,
-            TOWNHALL = 13, DESK = 14, LIFT = 15, COPTER = 16, ARCHIVE = 17, CRANE = 18;
+            TOWNHALL = 13, DESK = 14, LIFT = 15, COPTER = 16, ARCHIVE = 17, CRANE = 18, LAB = 19, PIN = 20;
     static final int OPEN = 0xFF46D27E, SHUT = 0xFFF0583C;
     /** The pictures' squares: each this many frame pixels. */
     static final int SCALE = 1;
@@ -283,6 +283,34 @@ final class Marks {
             ".#.........#.",
             "##.........##",
             "##.........##"},
+        { // the laboratory: a dome, the ring lit in a band, the stem, its foot
+            "....#####....",
+            "...#######...",
+            "..#########..",
+            ".###########.",
+            ".###########.",
+            ".#.#.#.#.#.#.",
+            ".###########.",
+            "....#####....",
+            "....##.##....",
+            "....#####....",
+            "....##.##....",
+            "..#########..",
+            "..#########.."},
+        { // a pin on a map: a ring on a point
+            "....#####....",
+            "...#######...",
+            "..###...###..",
+            "..##.....##..",
+            "..##.....##..",
+            "..###...###..",
+            "...#######...",
+            "....#####....",
+            ".....###.....",
+            ".....###.....",
+            "......#......",
+            "......#......",
+            "............."},
     };
 
     /** A picture centred at (cx, cy) over the frame, in a colour (OPEN or SHUT), so much of it showing (0 to 1). */

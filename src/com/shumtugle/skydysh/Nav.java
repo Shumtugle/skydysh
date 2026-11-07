@@ -28,7 +28,7 @@ final class Nav {
     static final float FLASH = 1.2f;
 
     static final int SNOW = 0xE6C9D2DA, ROCK = 0xE63A3B33, SAND = 0xE6403E37, SEA = 0xE6203B5E, BLOCK = 0xE61A2234, FIELD = 0xE61C2B28, STREET = 0xE6586283, EDGE = 0xF00B0F1A;
-    static final int LINE = 0xFF4FD3F2, LINE_FLASH = 0xFFF4F8FF, ME = 0xFF3F72E6, ME_RIM = 0xFFF4F8FF, PLACE = Marks.OPEN;
+    static final int OTHER = 0xFFF2A03A, LINE = 0xFF4FD3F2, LINE_FLASH = 0xFFF4F8FF, ME = 0xFF3F72E6, ME_RIM = 0xFFF4F8FF, PLACE = Marks.OPEN;
     static final int BAND = 0xF0214E53, TEXT = 0xFFF4E8D2, INK = 0xFF0B1418;
 
     private float goalX, goalZ, again, flash, scale = SCALE;
@@ -178,8 +178,43 @@ final class Nav {
         return (float) Math.hypot(nodeX(b) - nodeX(a), nodeZ(b) - nodeZ(a));
     }
 
-    /** The way from (x, z) to the place, found anew: along the streets by the shortest way. */
+    // the mountain's road, down from where she (or the place) is: so many points
+    private final float[] hill = new float[2 * 1200];
+
+    /**
+     * The way from (x, z) to the place, found anew: along the streets by the shortest way; from up
+     * on the mountain, first down its road to the town's last street, and to a place up on it, up
+     * its road from there.
+     */
     private void find(float x, float z) {
+        boolean fromHill = Mountain.onHill(x, z), toHill = Mountain.onHill(goalX, goalZ);
+        wayN = 0;
+        put(x, z);
+        if (fromHill && toHill) {
+            put(goalX, goalZ);
+            wentN = 0;
+            return;
+        }
+        float sx = x, sz = z, gx = goalX, gz = goalZ;
+        if (fromHill) {
+            int n = Mountain.down(x, z, hill);
+            for (int k = 0; k < n; k++) put(hill[k * 2], hill[k * 2 + 1]);
+            sx = hill[n * 2 - 2];
+            sz = hill[n * 2 - 1];
+        }
+        int up = 0;
+        if (toHill) {
+            up = Mountain.down(goalX, goalZ, hill);
+            gx = hill[up * 2 - 2];
+            gz = hill[up * 2 - 1];
+        }
+        town(sx, sz, gx, gz, fromHill);
+        for (int k = up - 1; k >= 0; k--) put(hill[k * 2], hill[k * 2 + 1]);
+        if (toHill || fromHill) put(goalX, goalZ);
+    }
+
+    /** The streets' part of the way, from (x, z) to (gx, gz), onto the way so far; (x, z) itself put if not already. */
+    private void town(float x, float z, float goalX, float goalZ, boolean already) {
         int i0 = (int) Math.floor(Math.min(x, goalX) / City.CELL) - MARGIN;
         int i1 = (int) Math.ceil(Math.max(x, goalX) / City.CELL) + MARGIN;
         if (i1 - i0 + 1 > COLUMNS) {
@@ -247,8 +282,7 @@ final class Nav {
         went = list;
         wentNow = t;
         wentN = n;
-        wayN = 0;
-        put(x, z);
+        if (!already) put(x, z);
         if (se >= 0) {
             int a = edgeA(se), b = edgeB(se);
             put(nodeX(a) + (nodeX(b) - nodeX(a)) * st, nodeZ(a) + (nodeZ(b) - nodeZ(a)) * st);
@@ -334,7 +368,7 @@ final class Nav {
      * The map at (x0, y0), turned so the eye's way is up: she at (x, z), the eye along yaw, going
      * so fast (the faster, the farther it shows); her own way, for the mark of her.
      */
-    void draw(Px f, int x0, int y0, float x, float z, float yaw, float heading, float speed, float dt) {
+    void draw(Px f, int x0, int y0, float x, float z, float yaw, float heading, float speed, float dt, float[] dots, int dotN) {
         float want = SCALE + SCALE_SPEED * Math.abs(speed);
         scale += (want - scale) * Math.min(1f, dt * 1.5f);
         float c = (float) Math.cos(yaw), s = (float) Math.sin(yaw);
@@ -356,6 +390,14 @@ final class Nav {
             float ux = cx + (ax * c - az * s) / scale, uy = cy - (ax * s + az * c) / scale;
             float vx = cx + (bx * c - bz * s) / scale, vy = cy - (bx * s + bz * c) / scale;
             thick(f, x0, y0, ux, uy, vx, vy, 1.6f, line);
+        }
+        // others on their ways: small dots, where they are on the map
+        for (int k = 0; k < dotN; k++) {
+            float ox = dots[k * 2] - x, oz = dots[k * 2 + 1] - z;
+            float ux = cx + (ox * c - oz * s) / scale, uy = cy - (ox * s + oz * c) / scale;
+            if (ux < 2f || uy < 2f || ux > SIDE - 2f || uy > SIDE - 2f) continue;
+            disc(f, x0, y0, ux, uy, 2.4f, EDGE);
+            disc(f, x0, y0, ux, uy, 1.7f, OTHER);
         }
         // the place: a dot, kept at the edge when it is off the map
         if (aimed) {

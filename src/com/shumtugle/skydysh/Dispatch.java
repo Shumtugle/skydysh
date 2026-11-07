@@ -249,7 +249,7 @@ final class Dispatch {
     static int due(int round) {
         int kind = World.kindOf(round);
         int reward = kind == 2 ? Folder.REWARD : kind == 3 ? Delivery.REWARD : kind == 4 ? Rescue.REWARD : kind == 7 ? Concert.REWARD
-                : kind == 10 ? Quay.REWARD : 0;
+                : kind == 10 ? Quay.REWARD : kind == 11 ? Lab.REWARD : 0;
         return (paidKinds & (1 << kind)) != 0 ? 0 : reward;
     }
 
@@ -283,6 +283,7 @@ final class Dispatch {
         if (Archive.its(round)) return Lang.lines("brief.archive", round, null);
         if (Mend.its(round)) return Lang.lines("brief.mend", round, null);
         if (Port.its(round)) return priced(Lang.lines("brief.port", round, null), round);
+        if (Lab.its(round)) return priced(Lang.lines("brief.lab", round, null), round);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
@@ -321,6 +322,11 @@ final class Dispatch {
     /** The folders brought to the archive: the time. */
     static String[] archived(int round, String time) {
         return Lang.lines("report.archive", round, time);
+    }
+
+    /** The navigator's trial through: the pay, what has been won in all, the time. */
+    static String[] navigated(int round, String time, int money, int got) {
+        return fill(Lang.lines("report.lab", round, time), got, money);
     }
 
     /** The field in the port put in order: the pay, what has been won in all, the time. */

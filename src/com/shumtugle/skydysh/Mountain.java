@@ -83,6 +83,52 @@ final class Mountain {
         return Float.isNaN(g) ? cone(x, z) : g;
     }
 
+    /** Whether (x, z) is up on the mountain's side of the town's last street: its road's foot, its slope, its top. */
+    static boolean onHill(float x, float z) {
+        return z > City.EDGE_J * City.CELL + City.CURB && near(x, z);
+    }
+
+    /**
+     * The way down from (x, z) on the mountain to the town's last street, as points into out (x, z
+     * each), from the top's end of the road (or the nearest bit of road) down round to its foot and
+     * the street; how many. Read backward, the way up.
+     */
+    static int down(float x, float z, float[] out) {
+        float dx = x - MX, dz = z - MZ, r = (float) Math.sqrt(dx * dx + dz * dz);
+        int n = 0;
+        if (!(Math.abs(dx) < HALF + 2f && z < footZ() + HALF)) {
+            float t;
+            if (r <= PLATEAU + 2f) t = A0 + SPAN;
+            else {
+                // the nearest round of the road to her
+                float two = 2f * (float) Math.PI, a = (float) Math.atan2(dx, dz);
+                while (a < A0) a += two;
+                while (a >= A0 + two) a -= two;
+                t = a;
+                float best = Math.abs(r - roadR(a));
+                for (float u = a + two; u <= A0 + SPAN; u += two)
+                    if (Math.abs(r - roadR(u)) < best) {
+                        best = Math.abs(r - roadR(u));
+                        t = u;
+                    }
+            }
+            while (t > A0 && n * 2 + 2 < out.length - 4) {
+                float rr = roadR(t);
+                out[n * 2] = MX + rr * (float) Math.sin(t);
+                out[n * 2 + 1] = MZ + rr * (float) Math.cos(t);
+                n++;
+                t -= 12f / rr;
+            }
+        }
+        out[n * 2] = MX;
+        out[n * 2 + 1] = footZ();
+        n++;
+        out[n * 2] = MX;
+        out[n * 2 + 1] = City.EDGE_J * City.CELL;
+        n++;
+        return n;
+    }
+
     // ---- the rails: posts along both edges of the road, each a footing nothing passes ----
     private static float[] posts;
     private static int postN;

@@ -3,6 +3,7 @@
 screen 1096 2560
 wait 0.4
 mission 3
+navon
 drivein 66.2 14 0
 wait 0.5
 shot n0
