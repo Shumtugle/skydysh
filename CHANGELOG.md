@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.6
+
+- The steering wheel in thin lines: its rim, spokes, hub and mark half as thick, as on the
+  smaller wheel before. Fainter: held, less than half strong; at rest, a quarter.
+
 ## 1.0.5
 
 - The steering wheel drawn turning the way the pickup turns. It had always been drawn turning

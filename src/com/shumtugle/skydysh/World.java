@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.0.5";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.0.6";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1777,7 +1777,7 @@ final class World {
                     oy *= CAR_R / m;
                 }
                 d.badge(carCX + ox, carCY + oy, KNOB * 0.7f, Badges.KNOB, 0.8f, 0f);
-            } else d.badge(wheelDrawX(WHEEL_REST_X), wheelDrawY(h - WHEEL_REST_UP), WHEEL_HALF, Badges.STEER, 0.35f, 0f, ringTint(), turn);
+            } else d.badge(wheelDrawX(WHEEL_REST_X), wheelDrawY(h - WHEEL_REST_UP), WHEEL_HALF, Badges.STEER, WHEEL_RESTING, 0f, ringTint(), turn);
             // the way out over the wheel, which is big enough to reach it
             d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
         }
@@ -2129,8 +2129,10 @@ final class World {
     static final float WHEEL_HALF = 132f, WHEEL_TURNS = 2.2f;           // the ring at the wheel, its radius: wider than her stick on foot
     /** The thumb's middle (what the wheel turns from) kept so far in from the frame's edges, room for its reach. */
     static final float STEER_MARGIN = 56f;
+    /** How strongly the wheel shows at rest, the thumb off it. */
+    static final float WHEEL_RESTING = 0.25f;
     /** How strongly the wheel shows while the thumb is on it: the pickup under it seen through. */
-    static final float WHEEL_SEEN = 0.6f;
+    static final float WHEEL_SEEN = 0.45f;
 
     /** Where the wheel is drawn, across: by the thumb's middle, kept in from the sides so most of it shows. */
     private float wheelDrawX(float x) {

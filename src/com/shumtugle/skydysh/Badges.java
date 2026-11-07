@@ -114,22 +114,23 @@ final class Badges {
         float r = (float) Math.sqrt(u * u + v * v);
         float t = r > 1e-4f ? ((u - v) / r * 0.7071f + 1f) * 0.5f : 0.5f;
         int rim = mix(TURQUOISE, PINK, t * 1.15f - 0.08f);
-        float ring = Math.abs(r - 0.74f) - 0.11f;
-        float spokes = min(seg(u, v, 0f, 0f, -0.7f, 0.04f, 0.075f), seg(u, v, 0f, 0f, 0.7f, 0.04f, 0.075f), seg(u, v, 0f, 0f, 0f, -0.7f, 0.085f));
-        float shape = min(ring, spokes, circle(u, v, 0f, 0f, 0.2f));
+        // thin lines: the wheel is drawn big, so its rim and spokes are half what a sign's would be
+        float ring = Math.abs(r - 0.8f) - 0.055f;
+        float spokes = min(seg(u, v, 0f, 0f, -0.78f, 0.02f, 0.038f), seg(u, v, 0f, 0f, 0.78f, 0.02f, 0.038f), seg(u, v, 0f, 0f, 0f, -0.78f, 0.042f));
+        float shape = min(ring, spokes, circle(u, v, 0f, 0f, 0.11f));
         // the glow round it
-        if (shape > -0.02f) over(rim, 0.5f * (float) Math.exp(-Math.max(0f, shape) / 0.06f));
+        if (shape > -0.01f) over(rim, 0.45f * (float) Math.exp(-Math.max(0f, shape) / 0.035f));
         float inside = cover(shape, px);
         if (inside > 0f) {
             over(mix(GLASS_TOP, GLASS_LOW, (0.8f - v) / 1.6f), 0.72f * inside);
-            over(rim, 0.45f * inside * (float) Math.exp(-Math.max(0f, -shape) / 0.05f));
+            over(rim, 0.45f * inside * (float) Math.exp(-Math.max(0f, -shape) / 0.025f));
             // a sheen along the top of the rim
             if (v > 0.3f && ring < 0f) over(0xFFFFFF, 0.12f * inside * (v - 0.3f));
         }
         // the lit edge
-        over(mix(rim, 0xFFFFFF, 0.3f), cover(Math.abs(shape) - 0.022f, px));
+        over(mix(rim, 0xFFFFFF, 0.3f), cover(Math.abs(shape) - 0.012f, px));
         // the mark at the top
-        over(WHITE, cover(rbox(u, v, 0f, 0.74f, 0.06f, 0.12f, 0.03f), px));
+        over(WHITE, cover(rbox(u, v, 0f, 0.8f, 0.035f, 0.07f, 0.015f), px));
         int a = Math.round(Math.min(1f, ca) * 255f);
         return a << 24 | Math.round(Math.min(1f, cr) * 255f) << 16 | Math.round(Math.min(1f, cg) * 255f) << 8
                 | Math.round(Math.min(1f, cb) * 255f);
