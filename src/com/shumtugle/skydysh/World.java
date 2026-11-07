@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.0.7";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.0.8";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1167,14 +1167,15 @@ final class World {
     static final String SAVE_COORDS = "coords";
     private boolean coordsShown;
 
-    /** Whether the compass is out: the navigator not hers yet, on the street, the eye not elsewhere. */
+    /** Whether the compass is out: the navigator not hers yet, on the street, the eye not elsewhere, not paused. */
     private boolean compassShows() {
-        return !navGiven() && indoors == null && dispatch == null && !craning && story == null && opening == null && solo == null;
+        return !navGiven() && indoors == null && dispatch == null && !craning && !piloting() && !paused && story == null && opening == null
+                && solo == null;
     }
 
     /** Whether (x, y) is on the compass. */
     private boolean onCompass(float x, float y) {
-        return compassShows() && x > W - 8 - NAV_TILE - 6 && y > NAV_Y - 6 && y < NAV_Y + NAV_TILE + 6;
+        return compassShows() && onButton(x, y, compassX(), pauseY());
     }
 
     /** Where she is (or what she drives), in whole meters: across, along, how high. */
@@ -1184,22 +1185,27 @@ final class World {
         return "X " + Math.round(x) + "  Z " + Math.round(z) + "  H " + Math.round(y);
     }
 
-    /** The compass: the navigator's folded tile, a needle on it, coral to the north, as the eye looks. */
+    /** Under the compass, touched: where she is, in numbers, its right edge under the button's. */
     private void compassFlat(Px f) {
-        int x0 = W - 8 - NAV_TILE;
-        for (int py = 0; py < NAV_TILE; py++)
-            for (int px = 0; px < NAV_TILE; px++) {
-                int dx = Math.max(0, Math.max(4 - px, px - (NAV_TILE - 5))), dy = Math.max(0, Math.max(4 - py, py - (NAV_TILE - 5)));
-                if (dx * dx + dy * dy <= 16) f.set(x0 + px, NAV_Y + py, Nav.BLOCK);
-            }
-        // north on the screen: the world's +z as the eye turns it
-        float ex = -(float) Math.sin(runner.eyeYaw), ey = -(float) Math.cos(runner.eyeYaw);
-        float c = NAV_TILE * 0.5f;
-        Nav.point(f, x0, NAV_Y, c - ex * 1.5f, c - ey * 1.5f, -ex, -ey, 5f, Nav.TEXT);
-        Nav.point(f, x0, NAV_Y, c + ex * 1.5f, c + ey * 1.5f, ex, ey, 6f, 0xFFFF6F61);
         if (!coordsShown) return;
         String at = coords();
-        shadowed(f, at, W - 8 - PixelFont.width(at, 1), NAV_Y + NAV_TILE + 5, 1, Nav.TEXT, Nav.INK);
+        shadowed(f, at, compassX() + PAUSE_HALF - PixelFont.width(at, 1), pauseY() + PAUSE_HALF + 8, 1, Nav.TEXT, Nav.INK);
+    }
+
+    /** The compass, a button as the pause is, across from it on the right. */
+    int compassX() {
+        return W - pauseX();
+    }
+
+    /** The compass on the frame: a blank pane as the pause's, the needle over it turned to the north as the eye looks. */
+    private void compassButton(DrawList d) {
+        if (!compassShows()) return;
+        d.badge(compassX(), pauseY(), PAUSE_HALF, Badges.BLANK, 0.75f, coordsShown ? 0.25f : 0f);
+        // the eye's turn, to within half round either way: the needle turned back by it points north
+        float yaw = runner.eyeYaw % (2f * (float) Math.PI);
+        if (yaw > Math.PI) yaw -= 2f * (float) Math.PI;
+        if (yaw < -Math.PI) yaw += 2f * (float) Math.PI;
+        d.badge(compassX(), pauseY(), PAUSE_HALF, Badges.NEEDLE, 0.95f, 0f, DrawList.TINT_NONE, yaw == 0f ? 1e-4f : yaw);
     }
 
     /** At the wheel, up on the left under the pause, out from under the thumb: how fast, in kilometers an hour. */
@@ -1808,6 +1814,7 @@ final class World {
             return;
         }
         d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PAUSE, 0.75f, 0f);
+        compassButton(d);
         if (piloting()) {
             sticks(d);
             return;

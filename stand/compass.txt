@@ -1,0 +1,24 @@
+# The compass: a button as the pause is, across from it on the right; the needle coral to the
+# north as the eye looks: facing north up, facing east to the left, facing south down; touched,
+# where she is in numbers under it. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 4
+keep kinds 14
+keep where 0
+keep coords 0
+restart
+free
+at 100 60 0
+wait 0.6
+shot n0
+at 100 60 1.5708
+wait 0.6
+shot n1
+at 100 60 3.1416
+wait 0.6
+shot n2
+tap 250 68
+wait 0.3
+shot n3

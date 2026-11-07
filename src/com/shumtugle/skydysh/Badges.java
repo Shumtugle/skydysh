@@ -21,7 +21,9 @@ final class Badges {
     static final int STEER = 24;
     // once more: an arrow round nearly a whole turn, back to where it began
     static final int AGAIN = 25;
-    static final int COUNT = 26, CELLS = 6, SIZE = 160;
+    // the compass's needle, on its own (no pane: it turns over a blank one), coral to the north
+    static final int NEEDLE = 26;
+    static final int COUNT = 27, CELLS = 6, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -77,6 +79,7 @@ final class Badges {
     private static int pixel(int k, float u, float v, float px) {
         cr = cg = cb = ca = 0f;
         if (k == STEER) return steer(u, v, px);
+        if (k == NEEDLE) return needle(u, v, px);
         float r = (float) Math.sqrt(u * u + v * v);
         // the rim's colour round it: turquoise at the top left, pink at the bottom right
         float t = r > 1e-4f ? ((u - v) / r * 0.7071f + 1f) * 0.5f : 0.5f;
@@ -110,6 +113,19 @@ final class Badges {
      * glass with the lit edge and the glow the buttons have; a white mark at the top of the rim, so
      * that it is seen to turn.
      */
+    /** The needle: a slim diamond up and down, its north half coral, its south half white, a pin in its middle; a glow round it. */
+    private static int needle(float u, float v, float px) {
+        float north = poly(u, v, 0f, 0.6f, -0.15f, 0f, 0.15f, 0f), south = poly(u, v, 0f, -0.6f, 0.15f, 0f, -0.15f, 0f);
+        float shape = Math.min(north, south);
+        if (shape > -0.02f) over(v > 0f ? 0xFF6F61 : WHITE, 0.4f * (float) Math.exp(-Math.max(0f, shape) / 0.05f));
+        over(0xFF6F61, cover(north, px));
+        over(WHITE, cover(south, px));
+        over(GLASS_TOP, cover(circle(u, v, 0f, 0f, 0.07f), px));
+        int a = Math.round(Math.min(1f, ca) * 255f);
+        return a << 24 | Math.round(Math.min(1f, cr) * 255f) << 16 | Math.round(Math.min(1f, cg) * 255f) << 8
+                | Math.round(Math.min(1f, cb) * 255f);
+    }
+
     private static int steer(float u, float v, float px) {
         float r = (float) Math.sqrt(u * u + v * v);
         float t = r > 1e-4f ? ((u - v) / r * 0.7071f + 1f) * 0.5f : 0.5f;

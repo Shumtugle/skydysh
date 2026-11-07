@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.8
+
+- The compass a button of the same glass as the pause and the way out: a round pane, its rim
+  turquoise to pink, across from the pause on the right and as big; the needle over it turns,
+  coral to the north, the pane stays. Its numbers under it; lit a little while they show.
+
 ## 1.0.7
 
 - The compass: till the navigator is hers, a tile up on the right where it will be, a needle on
