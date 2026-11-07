@@ -350,6 +350,34 @@ public final class Stand implements World.Host {
             r.put(x, world.city.ground(x, z, 100f, 0f), z, p.length > 3 ? f(p[3]) : r.heading);
             r.recenter();
             step();
+        } else if (c.equals("topass")) {
+            // topass [METERS]: at the wheel on the road out, so far short of where the eye takes the pickup over at the pass
+            float back = p.length > 1 ? f(p[1]) : 10f;
+            float z = City.PASS_Z - Rockfall.THROW - Rockfall.STOP_BACK - Rockfall.FROM - back;
+            float h = (float) Math.atan2(City.routeX(z + 1f) - City.routeX(z - 1f), 2f);
+            world.standDrive(City.routeX(z), z, h);
+            step();
+            System.out.println(String.format("%7.2fs  at the wheel at %.1f %.1f, the heap at %.1f %.1f", time, City.routeX(z), z, City.routeX(City.PASS_Z), City.PASS_Z));
+        } else if (c.equals("tapagain")) {
+            // tapagain: a tap on the button for another heap, where it floats now
+            System.out.println(String.format("%7.2fs  tap at %.0f %.0f", time, world.againX, world.againY));
+            world.touch(World.DOWN, 0, world.againX, world.againY);
+            world.touch(World.UP, 0, world.againX, world.againY);
+            step();
+        } else if (c.equals("tapon")) {
+            // tapon: a tap on the button that takes her on (the pickup's, or on foot)
+            world.touch(World.DOWN, 0, world.liftButtonX(), world.liftButtonY());
+            world.touch(World.UP, 0, world.liftButtonX(), world.liftButtonY());
+            step();
+        } else if (c.equals("fall")) {
+            // fall: the heap's game, told
+            Rockfall rf = world.rescue == null ? null : world.rescue.fall;
+            if (rf == null) System.out.println(String.format("%7.2fs  no heap", time));
+            else System.out.println(String.format("%7.2fs  heap: phase %d, heap %d, moved %.2f%s, throws %d, mallet %d, her at %.1f %.1f held %s", time,
+                    rf.phase, rf.figure, rf.moved(), rf.down ? " broken" : "", rf.throwsHere, rf.hs, world.runner.x, world.runner.z, world.runner.held));
+            if (rf != null && rf.pickup() != null)
+                System.out.println(String.format("           pickup at %.1f %.1f heading %.2f; eye %.1f %.1f %.1f yaw %.2f pitch %.2f", rf.pickup().x, rf.pickup().z, rf.pickup().heading,
+                        rf.eye[0], rf.eye[1], rf.eye[2], rf.eye[3], rf.eye[4]));
         } else if (c.equals("drivein")) {
             // drivein X Z RADIANS: her at the wheel at (x, z), facing so (the pickup she drives, or a duty pickup put there)
             world.standDrive(f(p[1]), f(p[2]), f(p[3]));
@@ -893,9 +921,6 @@ public final class Stand implements World.Host {
             Rescue rs = world.rescue;
             System.out.println(rs == null ? String.format("%7.2fs  no call out", time)
                     : String.format("%7.2fs  call out: step %d, pass %s, clock %.1f", time, rs.step, rs.cleared() ? "clear" : "blocked", rs.clock));
-            if (rs != null)
-                for (int k = 0; k < Rescue.MOST; k++)
-                    System.out.println(String.format("           piece %d at %.1f %.1f (the road's middle there %.1f)", k, rs.x[k], rs.z[k], City.routeX(rs.z[k])));
         } else if (c.equals("free")) {
             // free: no mission now, the town hers till she goes home for the next
             world.standFree();

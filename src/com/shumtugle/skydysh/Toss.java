@@ -21,6 +21,8 @@ final class Toss {
 
     int state = HELD;
     int thrown;
+    /** Lent out: something else throws it (it is still drawn swung while she throws); away, out of her hand and drawn by that. */
+    boolean lent, away;
     /** Blows struck at arm's length, so far. */
     int struck;
 
@@ -76,6 +78,7 @@ final class Toss {
     /** A frame of it: tap, a tap was heard; hunt, a brum run down is thrown at without one. */
     void update(float dt, Runner r, Chase[] brums, City city, boolean tap, boolean hunt) {
         clock += dt;
+        if (lent) return;
         if (state == HELD) {
             if (r.inAir() || r.hidden || r.room != null || r.held || r.climbing() || r.riding) return;
             Chase run = hunt && !tap ? reached(r, brums) : null;
@@ -192,6 +195,7 @@ final class Toss {
     void draw(DrawList d, Runner r) {
         // at the wheel, the mallet is left on the seat beside her, out of sight
         if (state == HELD && r.riding) return;
+        if (away) return;
         // swimming, it is slung at her hip under the water, out of sight
         if (state == HELD && r.swimming()) return;
         if (state == HELD && r.climbing()) {
@@ -200,7 +204,7 @@ final class Toss {
         }
         float hx, hy, hz;
         boolean inHand = state == HELD || state == WINDUP;
-        if (inHand && state == WINDUP) {
+        if (inHand && (state == WINDUP || lent && r.throwing() >= 0f)) {
             // swung: the handle runs on from her forearm
             grip(r);
             hx = hand[0] - elbow[0];

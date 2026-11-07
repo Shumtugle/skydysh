@@ -19,7 +19,9 @@ final class Badges {
     static final int ONE_FINGER = 20, TWO_THUMBS = 21, GAS = 22, BRAKE = 23;
     // the wheel at the wheel: a steering wheel of the same glass, no pane round it, a mark at its top
     static final int STEER = 24;
-    static final int COUNT = 25, CELLS = 5, SIZE = 160;
+    // once more: an arrow round nearly a whole turn, back to where it began
+    static final int AGAIN = 25;
+    static final int COUNT = 26, CELLS = 6, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -279,6 +281,15 @@ final class Badges {
                 float shaft = box(x, y, 0.2f, 0f, 0.42f, 0.11f);
                 float head = poly(x, y, 0.5f, 0.36f, 0.94f, 0f, 0.5f, -0.36f);
                 return min(frame, shaft, head);
+            }
+            case AGAIN: {
+                // a ring open at the top right, its end an arrowhead pointing on round
+                float rr = 0.56f, d = Math.abs((float) Math.sqrt(x * x + y * y) - rr) - 0.11f;
+                float a = (float) Math.atan2(y, x);
+                if (a > 0.35f && a < 1.25f) d = 1e9f;
+                float hx = rr * (float) Math.cos(0.35f), hy = rr * (float) Math.sin(0.35f);
+                float head = poly(x, y, hx - 0.3f, hy - 0.02f, hx + 0.3f, hy - 0.02f, hx, hy + 0.36f);
+                return Math.min(d, head);
             }
             default: {
                 // a ladder: two rails, four rungs

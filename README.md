@@ -182,13 +182,23 @@ shore road, and is wanted at the store, east along it. A duty pickup to the fact
 stood in the bay painted before it while the crates go on; to the store's, while they come off;
 then home.
 
-The fourth, the call out: the road to the village over the hills is blocked in the pass, rocks
-and fallen trunks across it. The town ends inland, ten streets up from the shore: past its last
+The fourth, the call out: the road to the village over the hills is blocked in the pass, the
+slope coming down onto it. The town ends inland, ten streets up from the shore: past its last
 street a low wall, fields with trees about them, and one road out, north up the street by home's
 west side, winding as it goes; a ridge of green hills across the whole country, the pass cut
 through it for the road; beyond, a village of little houses under red tiles round a square with a
-well. A duty pickup up the road (it keeps along the road's bends by itself), through the pass
-(what lies across it is shoved off, or knocked aside on foot with the mallet), to the square.
+well. A duty pickup up the road (it keeps along the road's bends by itself). Short of the pass
+the eye leaves her: from high and far off it comes down on the pickup, which stops short; she
+gets out, and down the slopes on either side come logs, stumps, stones and lumps of clay, piled
+across the road like a pyramid, row on row, each piece on the two under it, no footing but the
+road. From a line twenty-eight meters off she throws the mallet at it: a finger down puts a ring
+on the heap and the eye closes in, the finger drags the ring, lifted she throws; the mallet flies
+on its arc and comes back to her hand. Broken (most of its weight knocked off where it lay, or
+nothing left standing over its lowest row), a button floats over it: another figure down the
+slopes, as many as she likes, the clock standing; or back to the pickup, which shoves through
+what lies on the road, and on to the square. Each figure comes from a generator: five to seven
+rows, each a kind or a mix of them at one height, logs end on or across two, stumps, stones,
+clay.
 
 The fifth, the puppy at sea: a call from the beach east of home, past the store, where a crowd
 stands at the water's edge looking out at a puppy too tired to swim back. No pay, and no clock on

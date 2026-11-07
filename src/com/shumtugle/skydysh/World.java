@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.95";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.96";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -824,6 +824,10 @@ final class World {
             craneTouch(type, id, x, y);
             return;
         }
+        if (rescue != null && rescue.fall.holds()) {
+            fallTouch(type, id, x, y);
+            return;
+        }
         if (driving != null) {
             leadFinger = -1;
             carTouch(type, id, x, y);
@@ -1097,7 +1101,7 @@ final class World {
 
     /** At the wheel, up on the left under the pause, out from under the thumb: how fast, in kilometers an hour. */
     private void speedFlat(Px f) {
-        if (driving == null || dispatch != null) return;
+        if (driving == null || dispatch != null || rescue != null && rescue.fall.holds()) return;
         String v = String.valueOf(Math.round(Math.abs(driving.speed) * 3.6f));
         int ink = 0xFF232A4A, y = Math.round(pauseY() + PAUSE_HALF + 12f);
         shadowed(f, v, 12, y, 3, driving.speed > Pickup.VMAX * 0.8f ? 0xFFFFD45A : 0xFFF4E8D2, ink);
@@ -1474,12 +1478,13 @@ final class World {
             if (puppy.held() && !had) host.sound(Synth.SPLASH, 0.5f, 1.6f);
         } else if (rescue != null) {
             rescue.update(dt, duty, driving, runner, city, host);
-            // a blow of the mallet on foot, at what blocks the pass
-            boolean swings = driving == null && runner.throwing() >= 0f;
+            fallStep();
+            // a blow of the mallet on foot, at what lies in the pass
+            boolean swings = driving == null && runner.throwing() >= 0f && !rescue.fall.holds();
             if (swings && !swungSeen) rescue.strike(runner.x, runner.z, (float) Math.sin(runner.heading), (float) Math.cos(runner.heading));
             swungSeen = swings;
-            if (rescue.hit != rescueHits) {
-                rescueHits = rescue.hit;
+            if (rescue.hit() != rescueHits) {
+                rescueHits = rescue.hit();
                 host.sound(Synth.STONE, 0.6f, 0.8f);
                 host.buzz(40);
             }
@@ -1494,6 +1499,12 @@ final class World {
         } else {
             mission.update(dt, runner, city, cars);
             chase = mission.target(chase);
+        }
+        if (rescue == null || !rescue.fall.holds()) {
+            // the heap's game over or gone (the mission left): the mallet and her feet her own again
+            toss.lent = toss.away = false;
+            if (fallHeld) runner.held = false;
+            fallHeld = false;
         }
         toss.update(dt, runner, brums(), city, runner.tapped(), hunt());
         frighten();
@@ -1699,6 +1710,10 @@ final class World {
             return;
         }
         d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PAUSE, 0.75f, 0f);
+        if (rescue != null && rescue.fall.holds()) {
+            fallButtons(d);
+            return;
+        }
         if (piloting()) {
             sticks(d);
             return;
@@ -1953,6 +1968,14 @@ final class World {
      */
     private void drive(float dt) {
         Pickup p = driving;
+        if (rescue != null && rescue.fall.drives()) {
+            // brought in to the pass under the eye: no hand of hers on the wheel
+            rescue.fall.carry(p, dt);
+            wheelIn = brakeIn = 0f;
+            p.seat(seatAt);
+            runner.ride(dt, city, p.x, p.y, p.z, p.heading, p.speed, seatAt[0], seatAt[1], seatAt[2], 0f);
+            return;
+        }
         boolean held = wheelFinger >= 0;
         float wheel = held ? wheelAxis() : 0f, pull = held ? pullAxis() : 0f;
         brakeIn = Math.max(0f, -pull);
@@ -3635,9 +3658,14 @@ final class World {
 
     /** Words said, low on the frame, each line over a dark band. */
     private void caption(Px f, String key) {
+        caption(f, key, 0.66f);
+    }
+
+    /** The same, so far down the frame. */
+    private void caption(Px f, String key, float down) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2;
         String[] say = Lang.lines(key, mission.round, null);
-        int y = (int) (h * 0.66f);
+        int y = (int) (h * down);
         for (int k = 0; k < say.length; k++) {
             int wd = PixelFont.width(say[k], 1);
             for (int py = y - 3; py < y + 10; py++)
@@ -3700,10 +3728,158 @@ final class World {
         placeMark(d, f, goal[0], goal[1], goal[2], tw.mark(driving), Marks.OPEN);
     }
 
+    // ---- the heap in the pass, and the game of it (see Rockfall) ----
+
+    /** She is the heap's while it holds her: out of the pickup, to the line, held there; the eye its own. */
+    private void fallStep() {
+        Rockfall rf = rescue.fall;
+        int got = rescue.fell;
+        if (got == Rockfall.GET_OUT) {
+            if (driving != null) getOut();
+            errand = NO_ERRAND;
+            runner.held = false;
+            runner.lead(rf.standX, rf.tz, rf.facing());
+            letGo();
+        } else if (got == Rockfall.READY) {
+            // at the line, facing the heap, held there: the finger is the mallet's
+            runner.stopLead();
+            if (Math.abs(runner.x - rf.standX) > 0.7f || Math.abs(runner.z - rf.tz) > 0.7f)
+                runner.put(rf.standX, city.ground(rf.standX, rf.tz), rf.tz, rf.facing());
+            runner.heading = rf.facing();
+            runner.held = true;
+            fallHeld = true;
+        } else if (got == Rockfall.BROKE) {
+            host.sound(Synth.CHIME, 0.55f, 1.2f);
+            host.sound(Synth.CHIME, 0.4f, 1.6f);
+            host.buzz(80);
+        }
+        if (!rf.holds()) return;
+        toss.lent = true;
+        toss.away = rf.away();
+        runner.eyeAt(rf.eye);
+    }
+
+    private boolean fallHeld;
+    private int fallFinger = -1;
+    private float fallLastX, fallLastY;
+    /** Where the button for another heap floats on the frame now (off it: none). */
+    float againX = -99f, againY = -99f;
+
+    /** At the line: a finger anywhere puts the ring on the heap and moves it; lifted, she throws. The buttons, once it is broken. */
+    private void fallTouch(int type, int id, float x, float y) {
+        Rockfall rf = rescue.fall;
+        if (type == DOWN && paused) {
+            if (!pauseRow(x, y)) paused = false;
+            return;
+        }
+        if (type == DOWN && onButton(x, y, pauseX(), pauseY())) {
+            paused = true;
+            rf.aiming = false;
+            fallFinger = -1;
+            return;
+        }
+        if (!rf.playing()) {
+            fallFinger = -1;
+            return;
+        }
+        if (type == DOWN) {
+            if (rf.down && Math.abs(x - againX) < BUTTON + 8 && Math.abs(y - againY) < BUTTON + 8) {
+                rf.again();
+                rf.aiming = false;
+                fallFinger = -1;
+                host.buzz(20);
+                return;
+            }
+            if (rf.down && onLiftButton(x, y)) {
+                fallLeave();
+                return;
+            }
+            if (fallFinger >= 0) return;
+            fallFinger = id;
+            fallLastX = x;
+            fallLastY = y;
+            rf.aimDown();
+            return;
+        }
+        if (id != fallFinger) return;
+        if (type == MOVE) {
+            rf.aimBy(x - fallLastX, y - fallLastY);
+            fallLastX = x;
+            fallLastY = y;
+        } else if (type == UP) {
+            fallFinger = -1;
+            rf.aimUp(runner);
+        }
+    }
+
+    /** On from the heap: her feet her own, and off to the pickup's door (it takes her in as ever). */
+    private void fallLeave() {
+        Rockfall rf = rescue.fall;
+        rf.leave();
+        fallFinger = -1;
+        runner.held = false;
+        fallHeld = false;
+        toss.lent = toss.away = false;
+        runner.recenter();
+        letGo();
+        Pickup p = rf.pickup();
+        if (p != null && !rf.onFoot) {
+            p.door(0.9f, fallDoor);
+            runner.lead(fallDoor[0], fallDoor[1], p.heading);
+            doorArmed = true;
+        }
+        host.buzz(20);
+    }
+
+    private final float[] fallDoor = new float[2], fallTop = new float[3];
+
+    /** At the line: once the heap is broken, another down the slopes (floating over it), or on. */
+    private void fallButtons(DrawList d) {
+        Rockfall rf = rescue.fall;
+        if (!rf.playing() || !rf.down) return;
+        float glow = 0.25f + 0.25f * (float) Math.sin(time * 3f);
+        if (againX > -50f) d.badge(againX, againY, BUTTON + 4, Badges.AGAIN, 0.95f, glow);
+        d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, rf.onFoot || rf.pickup() == null ? Badges.EXIT : Badges.ENTER, 0.95f, 0f);
+    }
+
+    /** Over the frame, the heap's game: bars while the eye is the story's; the ring; how many, what next. */
+    private void fallFlat(DrawList d, Px f) {
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
+        Rockfall rf = rescue.fall;
+        againX = againY = -99f;
+        if (!rf.playing()) {
+            if (rf.figure > 1) return;
+            // the eye the story's: dark bands over and under, as in a picture house
+            int band = Math.round(h * 0.09f);
+            f.rect(0, 0, W, band, 0xFF000000);
+            f.rect(0, h - band, W, h, 0xFF000000);
+            return;
+        }
+        String clock = clock(rescue.clock);
+        shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        String w = Lang.lines(rf.down ? "fall.down" : "fall.word", mission.round, null)[0];
+        wordAtTop(f, w, rf.down ? gold : green, ink);
+        String tally = Lang.lines("fall.tally", rf.figure, String.valueOf(rf.throwsHere))[0];
+        shadowed(f, tally, (W - PixelFont.width(tally, 1)) / 2, 38, 1, cream, ink);
+        rf.flat(f, runner);
+        if (rf.down) {
+            rf.top(fallTop);
+            if (d.project(fallTop[0], fallTop[1] + 0.25f * (float) Math.sin(time * 2.2f), fallTop[2], at)) {
+                againX = Math.max(BUTTON + 6, Math.min(W - BUTTON - 6, at[0]));
+                againY = Math.max(70f, Math.min(h * 0.6f, at[1]));
+            }
+            caption(f, rf.onFoot || rf.pickup() == null ? "fall.walk" : "fall.more", 0.56f);
+        } else if (rf.throwsAll == 0 && !rf.aiming) caption(f, "fall.hint", 0.56f);
+    }
+
     /** Over the frame, a call out: the clock and the pay, how far off where the way goes is, and what it is. */
     private void rescueFlat(DrawList d, Px f) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
         Rescue rs = rescue;
+        if (rs.fall.holds()) {
+            fallFlat(d, f);
+            return;
+        }
         String clock = clock(rs.over() ? rs.doneAt : rs.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
         // what it pays: told big once done (not before: the job is the job)
@@ -3957,6 +4133,8 @@ final class World {
         }
         // at the crane, a long lens from far off: the field nearly as drawn on a plan, the stacks' sides showing
         float focal = craning && dispatch == null ? W * CRANE_LENS : W * 1.6f;
+        // at the heap, closing in on it while she aims and throws
+        if (rescue != null && rescue.fall.holds()) focal *= rescue.fall.lens();
         // far enough for the mountain over the town
         d.camera(eyeX, eyeY, eyeZ, eyeYaw, eyePitch, dispatch != null ? dispatch.focal(W * 1.6f, W) : focal, 0.05f, 1600f);
         fliers.strokes(d);
@@ -3966,7 +4144,10 @@ final class World {
         if (lab != null) lab.draw(d, time, eyeX, eyeZ);
         cars.draw(d, eyeX, eyeZ, ex, ez);
         felled.draw(d, eyeX, eyeZ, ex, ez);
-        if (rescue != null) rescue.draw(d, eyeX, eyeZ, ex, ez);
+        if (rescue != null) {
+            rescue.draw(d, r, eyeX, eyeZ);
+            rescue.fall.frame(d);
+        }
         if (tow != null) tow.draw(d, time);
         shore.draw(d, city, eyeX, eyeZ, time);
         if (archive != null) archive.draw(d, r);
@@ -4023,7 +4204,7 @@ final class World {
         speedFlat(f);
         navFlat(f);
         if (dispatch == null) {
-            if (driving == null) signs(d);
+            if (driving == null && (rescue == null || !rescue.fall.holds())) signs(d);
             buttons(d);
             if (paused && TWO_THUMBS_OFFERED) toggleFlat(f);
             if (paused) pauseFlat(f);

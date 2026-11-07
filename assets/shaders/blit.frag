@@ -94,8 +94,8 @@ void main() {
             if (abs(d.x) >= 1.0 || abs(d.y) >= 1.0) continue;
         }
         float k = uBadgeOf[i].x;
-        vec2 cell = vec2(mod(k, 5.0), floor(k / 5.0));
-        vec4 t = texture(uBadges, (cell + d * 0.5 + 0.5) * 0.2);
+        vec2 cell = vec2(mod(k, 6.0), floor(k / 6.0));
+        vec4 t = texture(uBadges, (cell + d * 0.5 + 0.5) / 6.0);
         float tint = floor(uBadgeOf[i].y * 0.5);
         float lit = uBadgeOf[i].y - 2.0 * tint;
         if (tint > 0.5) {

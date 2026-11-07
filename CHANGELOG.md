@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.96
+
+- The pass a game: short of it the eye leaves her, comes down from high over the pickup as it
+  runs up the road and stops it short; she gets out, and the slopes come down across the road
+  into a heap built like a pyramid, logs (round, end on or across two), stumps, stones and clay.
+  From a line twenty-eight meters off she throws the mallet at it under a ring the finger puts on
+  it and drags, the eye closing in; the mallet flies on an arc, knocks what it hits about (each
+  piece a body of its own that falls and tumbles) and comes back to her hand. Broken, a button
+  floats over it: another figure down the slopes, from a generator, as many as she likes, the
+  clock standing; or back to the pickup and on. The trunks and rocks of before are gone.
 ## 0.95
 
 - The opening no longer waits for its count down: she moves on at her own pace (the pedestal

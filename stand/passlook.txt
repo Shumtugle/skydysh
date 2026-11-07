@@ -1,0 +1,11 @@
+# The pass from above and from the line: what stands in the cut.
+screen 1096 2560
+wait 0.4
+mission 4
+close
+at -15 880 0
+wait 0.3
+eye -14.9 120 900 0 -1.5
+shot up
+eye -14.3 5.2 887 0 0
+shot line
