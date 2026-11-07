@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.99";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.99.1";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -3743,6 +3743,8 @@ final class World {
 
     /** For the desktop stand: an eye of its own (x, y, z, yaw, pitch) for the street; null, hers. */
     float[] standEye;
+    /** For the desktop stand: her alone for the icon, an eye (x, y, z, yaw, pitch, focal) and how far into her throw; or none. */
+    float[] standPortrait;
 
     /** Words said, low on the frame, each line over a dark band. */
     private void caption(Px f, String key) {
@@ -4046,6 +4048,13 @@ final class World {
     void draw(DrawList d) {
         d.begin(W, h);
         d.time = time;
+        if (standPortrait != null) {
+            // the desktop stand: her alone, for the icon
+            java.util.Arrays.fill(d.flat, 0);
+            d.hudRows = 0;
+            new Opening(host, city).portrait(d, standPortrait[6], standPortrait);
+            return;
+        }
         if (opening != null) {
             java.util.Arrays.fill(d.flat, 0);
             if (flatPx == null || flatPx.a != d.flat) flatPx = new Px(d.w, d.h, d.flat);

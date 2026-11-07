@@ -335,6 +335,13 @@ public final class Stand implements World.Host {
                 }
             }
             step();
+        } else if (c.equals("portrait")) {
+            // portrait X Y Z YAW PITCH FOCAL T: her alone for the icon, so far into her throw; portrait off: the game again
+            // with T below zero: at rest, the mallet over her shoulder, its head so far off the shoulder (DX DY DZ), so far past it (MORE)
+            float[] q = new float[11];
+            for (int i = 1; i < p.length && i <= 11; i++) q[i - 1] = f(p[i]);
+            world.standPortrait = p[1].equals("off") ? null : q;
+            step();
         } else if (c.equals("eye")) {
             // eye X Y Z YAW PITCH: the eye put there for the shots that follow; eye off: hers again
             world.standEye = p[1].equals("off") ? null : new float[]{f(p[1]), f(p[2]), f(p[3]), f(p[4]), f(p[5])};

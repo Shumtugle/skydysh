@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.99.1
+
+- The icon is our own: she herself, drawn by the game, at rest under the evening sky, the mallet
+  on her right shoulder, its head behind it. The desktop stand can draw her so (portrait), from
+  any eye, at rest or so far into her throw.
+
 ## 0.99
 
 - The pass is no game any more: no eye taking her over, no line, no figures, no key, no throws or

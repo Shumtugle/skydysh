@@ -76,6 +76,7 @@ release, each seen on the stand before the phone.
 - 0.97 A job put by; the heap on home's list; the pass between high cliffs; no duty pickups before the delivery.
 - 0.98 The heap's figures, a key to each, three throws and stars, blows felt and pieces split; the icon her head and the mallet.
 - 0.99 The heap a heap again, no game on it: cleared by blows, by her weight, by the pickup, till a way through is open; the village's people; the icon her with the mallet on her shoulder.
+- 0.99.1 The icon drawn by the game itself.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.

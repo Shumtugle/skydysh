@@ -193,6 +193,51 @@ final class Opening {
         turn[6] = hz; turn[7] = uz; turn[8] = bz;
     }
 
+    /**
+     * For the icon (the desktop stand): her alone on a plain floor under the evening sky, so far
+     * into her throw (the mallet going back over her shoulder), seen from eye (x, y, z, yaw,
+     * pitch, focal as a share of the width).
+     */
+    void portrait(DrawList d, float mt, float[] eye) {
+        d.time = 0f;
+        Daylight.light(d, 1f);
+        d.fogStart = 60f;
+        d.fogScale = 400f;
+        double el = Math.toRadians(38), tu = Math.toRadians(-155);
+        d.sun((float) (Math.cos(el) * Math.sin(tu)), (float) Math.sin(el), (float) (Math.cos(el) * Math.cos(tu)),
+                0f, 6f, 10f, 130f, 80f, 200f);
+        d.camera(eye[0], eye[1], eye[2], eye[3], eye[4], World.W * eye[5], 0.1f, 500f);
+        if (eye[10] <= 0f) {
+            Frida.draw(d, OX, FLOOR, OZ, 0f, SIZE, "throw", mt);
+            grip("throw", mt, 1f);
+            Mallet.draw(d, turn, hand[0], hand[1], hand[2], MALLET, 0f);
+            return;
+        }
+        // at rest, the mallet over her right shoulder: the hand at the handle's foot, its head
+        // behind the shoulder, the handle along the arm
+        String m = mt < 0f ? "idle" : "throw";
+        float t = Math.max(0f, mt);
+        Frida.draw(d, OX, FLOOR, OZ, 0f, SIZE, m, t);
+        Frida.place("hand_r", OX, FLOOR, OZ, 0f, SIZE, m, t, hand);
+        Frida.place("upperarm_r", OX, FLOOR, OZ, 0f, SIZE, m, t, elbow);
+        float sx = elbow[0] + eye[7], sy = elbow[1] + eye[8], sz = elbow[2] + eye[9];
+        float hx = sx - hand[0], hy = sy - hand[1], hz = sz - hand[2];
+        float l = Math.max(1e-3f, (float) Math.sqrt(hx * hx + hy * hy + hz * hz));
+        hx /= l;
+        hy /= l;
+        hz /= l;
+        float bx = -hz, bz = hx, bl = Math.max(1e-3f, (float) Math.sqrt(bx * bx + bz * bz));
+        bx /= bl;
+        bz /= bl;
+        float ux = -bz * hy, uy = bz * hx - bx * hz, uz = bx * hy;
+        turn[0] = hx; turn[1] = ux; turn[2] = bx;
+        turn[3] = hy; turn[4] = uy; turn[5] = 0f;
+        turn[6] = hz; turn[7] = uz; turn[8] = bz;
+        // as big as it takes for the head to come past the shoulder
+        float scale = (l + eye[10]) / Mallet.HEAD_MIDDLE;
+        Mallet.draw(d, turn, hand[0], hand[1], hand[2], scale, 0f);
+    }
+
     /** Where the mallet's head is, with her at a motion and time. */
     private void headAt(String motion, float mt, float[] out) {
         grip(motion, mt, motion.equals("throw") ? 1f : 0f);

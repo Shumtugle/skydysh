@@ -106,7 +106,7 @@ The heap's physics (Physics, Body) and the icon (res/mipmap-*)
 
 The physics of the heap in the pass comes from the game this one branched off, another of the
 author's own projects, released by him under the MIT licence; it is used here by him, under the
-terms of this game. The picture on the icon is the author's own.
+terms of this game. The icon is the game's own: her, drawn by the game itself (stand/icon.txt).
 
 
 Everything else in this project stays under the terms in LICENSE.
