@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.94
+
+- The count down small, up in the corner by the name, in the name's gold and cream: a dark disc,
+  gold rings and hand, the swept part lit; no grey film and dust over the whole frame.
+- The pedestal a speaker's stand: as tall as one is to the speaker (between her hips and her
+  chest), wider at the top, a gold band, a plaque on its front; the golden button bigger, on a
+  gold collar. The mallet comes down onto it at that height.
+
 ## 0.93
 
 - The opening's end new: she no longer falls to pieces. After the name, an orange pedestal with

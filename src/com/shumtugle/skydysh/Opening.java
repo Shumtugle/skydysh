@@ -12,10 +12,11 @@ import java.util.Random;
  * metal sounds. The town goes dark; one light is left, on her, and the mallet glows of itself.
  * Over the frame the name is typed as the dispatcher's screen types, in the letters of its tube,
  * a white cursor before them; a high chime. Out of the road before her rises a pedestal, orange,
- * a golden button on its top. Over the frame an old film's count down begins, three, two, one:
- * a ring and a ring in it, the cross of its lines, a numeral, the hand sweeping round, the
- * picture through it all, flecked and flickering. On one she swings the mallet back over her
- * head; on nought she brings it down on the button: a clang, the boom of the ground, a flash. The
+ * a speaker's stand, as tall as a speaker's is to the speaker, a golden button on its top. Up in
+ * the frame's corner by the name, small, an old film's count down: three, two, one, a ring and a
+ * ring in it in the name's gold, the cross of its lines, the hand sweeping round, the numeral in
+ * the name's cream. On one she swings the mallet back over her head; on nought she brings it down
+ * on the button: a clang, the boom of the ground, a flash. The
  * frame goes white, and at its whitest the game begins, in the same town, before home.
  *
  * A touch at any moment skips to the white.
@@ -46,8 +47,11 @@ final class Opening {
     private final int[] lane = new int[CARS], paint = new int[CARS];
     private final float[] start = new float[CARS];
 
-    // the pedestal: how wide, its button (how wide, how high), how far it goes in when struck
-    static final float PED_HALF = 0.9f, BUTTON_R = 0.42f, BUTTON_HIGH = 0.22f;
+    // the pedestal: half its width across and its depth, its top a little wider; its button (how
+    // wide, how high), the gold collar round it; how high it stands, as a part of the way from her
+    // hips to her chest (a speaker's stand to the speaker)
+    static final float PED_HALF = 0.85f, PED_DEEP = 0.6f, PED_LIP = 0.14f, BUTTON_R = 0.5f, BUTTON_HIGH = 0.3f, COLLAR = 0.66f;
+    static final float PED_TALL = 0.55f;
     private boolean struck;
     private float shake;
 
@@ -147,6 +151,7 @@ final class Opening {
     }
 
     private float motionTime() {
+        place();
         if (t < SWING) return t;
         if (t < STRIKE) {
             // back over her head, slowly, gathering
@@ -155,11 +160,11 @@ final class Opening {
         }
         // down, faster and faster, onto the button; there it stays
         float u = clamp((t - STRIKE) / (HIT - STRIKE));
-        return 0.27f + (HIT_MT - 0.27f) * u * (0.6f + 0.4f * u);
+        return 0.27f + (hitMt - 0.27f) * u * (0.6f + 0.4f * u);
     }
 
-    /** How far into her swing the head of the mallet comes down onto the button. */
-    static final float HIT_MT = 0.40f;
+    /** How far into her swing the head of the mallet comes down onto the button (found once). */
+    private float hitMt = 0.40f;
 
     /** The mallet in her fist: its turn into turn, the grip into hand. */
     private void grip(String motion, float mt) {
@@ -205,12 +210,21 @@ final class Opening {
     private void place() {
         if (placed) return;
         placed = true;
-        headAt("throw", HIT_MT, button);
-        // the head's far end on the button: on from the head's middle along the handle
+        // how high the stand's button is to be: between her hips and her chest
+        Frida.place("pelvis", OX, FLOOR, OZ, 0f, SIZE, "idle", 0f, tmp);
+        float hips = tmp[1];
+        Frida.place("spine_03", OX, FLOOR, OZ, 0f, SIZE, "idle", 0f, tmp);
+        float want = hips + (tmp[1] - hips) * PED_TALL + BUTTON_HIGH;
+        // the swing down, till the head's far end comes down to it
         float e = Mallet.HEAD_END * MALLET;
-        button[0] += turn[0] * e;
-        button[1] += turn[3] * e;
-        button[2] += turn[6] * e;
+        for (float mt = 0.27f; mt <= 0.45f; mt += 0.002f) {
+            headAt("throw", mt, button);
+            button[0] += turn[0] * e;
+            button[1] += turn[3] * e;
+            button[2] += turn[6] * e;
+            hitMt = mt;
+            if (button[1] <= want) break;
+        }
     }
 
     /**
@@ -221,17 +235,23 @@ final class Opening {
         place();
         float up = ease((t - RISE) / (RISEN - RISE));
         if (up <= 0f) return;
-        float top = button[1] - BUTTON_HIGH, sink = (1f - up) * (top - FLOOR + BUTTON_HIGH + 0.2f);
-        float x = button[0], z = button[2], h = top - FLOOR;
+        float top = button[1] - BUTTON_HIGH, h = top - FLOOR, sink = (1f - up) * (h + BUTTON_HIGH + 0.2f);
+        float x = button[0], z = button[2], y0 = FLOOR - sink;
         int orange = 0xE0702A, deep = 0xB4561E, gold = 0xD8A84A;
-        d.box(x, FLOOR + 0.18f - sink, z, PED_HALF + 0.18f, 0.18f, PED_HALF + 0.18f, null, deep, DrawList.PAINT);
-        d.box(x, FLOOR + h * 0.5f - sink, z, PED_HALF, h * 0.5f, PED_HALF, null, orange, DrawList.PAINT);
-        d.box(x, top - 0.12f - sink, z, PED_HALF + 0.06f, 0.12f, PED_HALF + 0.06f, null, gold, DrawList.GOLD);
-        d.box(x, top + 0.02f - sink, z, PED_HALF * 0.6f, 0.04f, PED_HALF * 0.6f, null, deep, DrawList.PAINT);
-        float press = struck ? 0.12f : 0f;
-        d.box(x, top + BUTTON_HIGH * 0.5f - press - sink, z, BUTTON_R, BUTTON_HIGH * 0.5f, BUTTON_R, null, gold, DrawList.GOLD);
+        // the foot, the body, a gold band under the top, the top a little wider, the plaque on its front
+        d.box(x, y0 + 0.12f, z, PED_HALF + 0.12f, 0.12f, PED_DEEP + 0.12f, null, deep, DrawList.PAINT);
+        d.box(x, y0 + h * 0.5f, z, PED_HALF, h * 0.5f, PED_DEEP, null, orange, DrawList.PAINT);
+        d.box(x, y0 + h - 0.22f, z, PED_HALF + 0.03f, 0.05f, PED_DEEP + 0.03f, null, gold, DrawList.GOLD);
+        d.box(x, y0 + h - 0.08f, z, PED_HALF + PED_LIP, 0.08f, PED_DEEP + PED_LIP, null, deep, DrawList.PAINT);
+        d.box(x, y0 + h * 0.6f, z - PED_DEEP - 0.02f, 0.3f, 0.3f, 0.02f, null, gold, DrawList.GOLD);
+        d.box(x, y0 + h * 0.6f, z - PED_DEEP - 0.035f, 0.18f, 0.18f, 0.02f, null, deep, DrawList.PAINT);
+        // the button: a collar of gold, the button on it, pressed in once struck and lit a moment
+        d.box(x, y0 + h + 0.03f, z, COLLAR, 0.03f, COLLAR, null, gold, DrawList.GOLD);
+        float press = struck ? 0.14f : 0f;
+        d.box(x, y0 + h + BUTTON_HIGH * 0.5f - press, z, BUTTON_R, BUTTON_HIGH * 0.5f, BUTTON_R, null, 0xF0C050, DrawList.GOLD);
+        d.box(x, y0 + h + BUTTON_HIGH - press, z, BUTTON_R * 0.7f, 0.04f, BUTTON_R * 0.7f, null, 0xF8D878, DrawList.GOLD);
         if (struck && t - HIT < 0.35f)
-            d.box(x, top + BUTTON_HIGH - press - sink + 0.02f, z, BUTTON_R * 0.8f, 0.02f, BUTTON_R * 0.8f, null, 0xFFF0B0, DrawList.GLOW);
+            d.box(x, y0 + h + BUTTON_HIGH - press + 0.05f, z, BUTTON_R * 0.75f, 0.02f, BUTTON_R * 0.75f, null, 0xFFF0B0, DrawList.GLOW);
     }
 
     // ---- the eye ----
@@ -413,73 +433,56 @@ final class Opening {
         if (white > 0f) wash(f, white);
     }
 
-    // the count down's circle: where (across, down as parts of the frame), its rings' radii (frame pixels)
-    static final float LEADER_Y = 0.6f, RING = 92f, RING_IN = 80f;
+    // the count down's circle: in the frame's upper corner, its rings' radii (frame pixels)
+    static final float LEADER_IN = 40f, LEADER_DOWN = 0.12f, RING = 27f, RING_IN = 22f;
 
     /**
-     * The count down of an old film over the frame, see-through: a pale disc, the part the hand has
-     * swept round from the top a shade darker, two white rings, the cross of the frame's lines, the
-     * hand, the numeral dark in the middle; flecks and a scratch, new each flicker; the whole
-     * flickering a little.
+     * The count down of an old film, small, up in the frame's corner by the name: a dark disc, see
+     * through, the part the hand has swept round from the top lit in the name's gold, two rings of
+     * gold, the cross of its lines, the hand, the numeral in the name's cream with a dark edge.
      */
     private void leader(Px f, int h) {
         float since = t - COUNT;
         int n = 3 - (int) since;
         float sweep = since - (int) since;
-        int flick = (int) (t * 18f);
-        Random r = new Random(0x1EADL + flick);
-        float bright = 0.85f + 0.15f * r.nextFloat();
-        float cx = World.W * 0.5f, cy = h * LEADER_Y, a0 = (float) (sweep * Math.PI * 2.0);
-        int r0 = (int) RING + 3;
+        float cx = World.W - LEADER_IN, cy = h * LEADER_DOWN, a0 = (float) (sweep * Math.PI * 2.0);
+        int gold = 0xF2C46A, cream = 0xF2E6C8, ink = 0x1A1622;
+        int r0 = (int) RING + 2;
         for (int y = (int) (cy - r0); y <= (int) (cy + r0); y++)
             for (int x = (int) (cx - r0); x <= (int) (cx + r0); x++) {
                 float dx = x + 0.5f - cx, dy = y + 0.5f - cy, rr = (float) Math.sqrt(dx * dx + dy * dy);
-                if (rr > RING + 1.5f) continue;
-                // the angle from the top, round the way a clock's hand goes
+                if (rr > RING + 1.2f) continue;
                 float a = (float) Math.atan2(dx, -dy);
                 if (a < 0f) a += (float) (Math.PI * 2.0);
-                boolean swept = a < a0;
-                int c = swept ? 0x8E8A82 : 0xD9D5CC;
-                float al = (swept ? 0.62f : 0.52f) * bright;
-                if (Math.abs(rr - RING) < 1.4f || Math.abs(rr - RING_IN) < 1.2f) {
-                    c = 0xF4F2EC;
-                    al = 0.8f * bright;
+                int c = a < a0 ? 0x6A4A22 : ink;
+                float al = a < a0 ? 0.75f : 0.6f;
+                if (Math.abs(rr - RING) < 1f || Math.abs(rr - RING_IN) < 0.8f) {
+                    c = gold;
+                    al = 0.95f;
+                } else if (Math.abs(dx) < 0.5f || Math.abs(dy) < 0.5f) {
+                    c = gold;
+                    al = 0.35f;
                 }
                 blend(f, x, y, c, al);
             }
-        // the cross of lines through it, out to the frame's edges
-        for (int x = 0; x < World.W; x++) blend(f, x, (int) cy, 0x2A2826, 0.45f * bright);
-        for (int y = (int) (cy - RING - 40f); y < (int) (cy + RING + 40f); y++) blend(f, (int) cx, y, 0x2A2826, 0.45f * bright);
         // the hand
-        for (float k = 0f; k < RING; k += 0.5f)
-            blend(f, Math.round(cx + (float) Math.sin(a0) * k), Math.round(cy - (float) Math.cos(a0) * k), 0x2A2826, 0.7f * bright);
-        // the numeral, big, dark
+        for (float k = 0f; k < RING_IN; k += 0.5f)
+            blend(f, Math.round(cx + (float) Math.sin(a0) * k), Math.round(cy - (float) Math.cos(a0) * k), gold, 0.9f);
+        // the numeral
         String s = String.valueOf(n);
-        int scale = 14, w = PixelFont.width(s, scale);
+        int scale = 4, w = PixelFont.width(s, scale);
         int nx = Math.round(cx - w * 0.5f), ny = Math.round(cy - 7 * scale * 0.5f);
         Px num = new Px(w + 2, 7 * scale + 2, new int[(w + 2) * (7 * scale + 2)]);
         PixelFont.draw(num, s, 1, 1, scale, 0xFF000000);
-        // a pale edge round it, then the numeral itself
         for (int y = -1; y <= num.h; y++)
             for (int x = -1; x <= num.w; x++) {
                 if (num.get(x, y) != 0) continue;
                 if (num.get(x - 1, y) != 0 || num.get(x + 1, y) != 0 || num.get(x, y - 1) != 0 || num.get(x, y + 1) != 0)
-                    blend(f, nx + x - 1, ny + y - 1, 0xF4F2EC, 0.7f * bright);
+                    blend(f, nx + x - 1, ny + y - 1, ink, 0.9f);
             }
         for (int y = 0; y < num.h; y++)
             for (int x = 0; x < num.w; x++)
-                if (num.a[y * num.w + x] != 0) blend(f, nx + x - 1, ny + y - 1, 0x1E1C19, 0.92f * bright);
-        // flecks and a scratch, the film's age
-        for (int k = 0; k < 7; k++) {
-            int fx = r.nextInt(World.W), fy = (int) (cy - RING - 60f + r.nextFloat() * (RING * 2f + 120f));
-            int c = r.nextBoolean() ? 0xF4F2EC : 0x1E1C1A;
-            blend(f, fx, fy, c, 0.6f);
-            if (r.nextInt(3) == 0) blend(f, fx + 1, fy, c, 0.5f);
-        }
-        if (r.nextInt(3) > 0) {
-            int sx = r.nextInt(World.W);
-            for (int y = 0; y < h; y += 1) if (r.nextInt(5) > 0) blend(f, sx, y, 0xF4F2EC, 0.22f);
-        }
+                if (num.a[y * num.w + x] != 0) blend(f, nx + x - 1, ny + y - 1, cream, 1f);
     }
 
     /** A pixel of the frame laid over with a colour, so much of it (what is under shows through). */
