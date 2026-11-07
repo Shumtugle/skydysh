@@ -188,21 +188,15 @@ street a low wall, fields with trees about them, and one road out, north up the 
 west side, winding as it goes; a ridge of green hills across the whole country, the pass cut
 through it for the road between two walls of rock in tiers, grass and firs on their ledges, the
 pale scar of a fall down one of them; beyond, a village of little houses under red tiles round a square with a
-well. A duty pickup up the road (it keeps along the road's bends by itself). Short of the pass
-the eye leaves her: from high and far off it comes down on the pickup, which stops short; she
-gets out, and down the slopes on either side come logs, posts, planks, stones, slabs and lumps
-of clay, built across the road into a figure: a gate with logs on its lintel, log towers laid
-like log houses, a wood pile between two posts, a shed weighed down with stones, a boulder on a
-table, slabs on end in rows, a pyramid; every fifth a fort. Each stands on one piece, its key,
-which glows a little: struck, the whole of it is loosened. From a line twenty-eight meters off
-she throws the mallet at it: a finger down puts a ring on it and the eye closes in, the finger
-drags the ring, lifted she throws; the mallet flies on its arc and comes back to her hand. A
-hard blow holds the world still a moment and shakes the eye; chips fly, dust puffs; a piece
-struck hard enough splits in two. Three throws to a figure: broken (most of its weight knocked
-off where it lay, or nothing left standing a third as high), stars, three at the first throw;
-missed, the same figure again (bottom left) or the next (the middle). The next figure from the
-middle of the foot, as many as she likes, the clock standing; or (the bottom right) back to the
-pickup, which shoves through what lies on the road, and on to the square.
+well, its people about it: walking to and fro, talking in twos, at the well, on the benches;
+one she comes up to stops and turns to look at her. A duty pickup up the road (it keeps along
+the road's bends by itself). In the pass the slope has come down across the road: a heap of
+logs, stumps, fallen posts, planks, stones, slabs, lumps of clay and a boulder or two, lying
+every which way. She clears it as she likes: blows of the mallet (what is within reach flies off
+to the road's side, a long piece splits under the blow), her own weight (she is stone: walking
+into it, what is not too heavy goes before her and aside), the pickup driven into it. Once a
+way through as wide as the pickup is open across the whole heap (or the pickup has got through)
+the road is open, and on to the village square, at the wheel or on foot.
 
 The fifth, the puppy at sea: a call from the beach east of home, past the store, where a crowd
 stands at the water's edge looking out at a puppy too tired to swim back. No pay, and no clock on
@@ -256,11 +250,7 @@ a sorted one apart with moves that could each be made back, so it always has a w
 After the first, the containers are on home's list: straight into the cabin with no way to go,
 and back on the sofa when she comes down; or at the crane whenever she climbs it.
 
-Once the call out is done, the heap is on home's list too: she is put on the road short of the
-line, on foot, the slopes coming down as she comes up; figure after figure with no clock, and
-home to the sofa when she likes.
-
-The jobs come in turn: home's screen offers the next one, and a list of her own (the games played, the panel, the heap) to play again.
+The jobs come in turn: home's screen offers the next one, and a list of her own (the games played, the panel) to play again.
 A job she is stuck on can be put by: once it is lost, or after a minute and a half at it, a row
 under the pause offers it; put by, it pays nothing and waits on home's list, not done, to be
 played when she likes, and the next job comes on. The duty pickups are in the streets only from

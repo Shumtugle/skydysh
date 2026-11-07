@@ -101,13 +101,12 @@ Puzzle Collection (MIT licence): pieces of a network turned a quarter at a time 
 source reaches every one of them. With thanks for the idea. No code of the collection is used:
 the rules, the generator and the drawing here are this game's own.
 
-The heap's physics and the icon (Physics, Body; res/mipmap-*)
-=============================================================
+The heap's physics (Physics, Body) and the icon (res/mipmap-*)
+==============================================================
 
-The physics of the heap in the pass, and the head on the icon (her face in a maid's cap,
-the mallet over her shoulder added here), come from the game this one branched off, another
-of the author's own projects, released by him under the MIT licence; they are used here by
-him, under the terms of this game.
+The physics of the heap in the pass comes from the game this one branched off, another of the
+author's own projects, released by him under the MIT licence; it is used here by him, under the
+terms of this game. The picture on the icon is the author's own.
 
 
 Everything else in this project stays under the terms in LICENSE.

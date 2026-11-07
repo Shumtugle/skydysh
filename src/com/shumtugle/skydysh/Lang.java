@@ -111,10 +111,11 @@ final class Lang {
         EN.put("story.1", "#Burning plates|=What happened|Every brum has a plate on the brow. It holds the stone together as one body and lets it move. The true plates are made by the town workshop: each has a number, and lasts longer than a house stands.||Forgeries are cast somewhere in cellars. They are cheaper, and at first they work as well. Then they overheat. A brum with a burning plate does not hear the street: it runs blind and cannot stop by itself.||Knocking the plate off is the one way to stop it without real harm. The stones are gathered and taken to the workshop, where the brum is put together again and given a true plate. Where the forgeries come from, the service does not know yet.||=The job|Five brums, five minutes. Catch each one and knock its plate off with the mallet: touch the screen while a runaway is ahead, and the mallet flies by itself. Run right up to one, and it flies without a touch.||Hold a finger: run. Aside: turn. Up: jump; down: slide.||A burning brum shows from afar: it glows. The top of the screen says how far the nearest one is.");
         EN.put("story.2", "#A folder on the roofs|=What happened|The town office sends its papers by helicopter: faster than through the traffic. Now and then, over the roofs, the wind tears a folder out of the net, and it is left lying somewhere among the chimneys.||The folders hold plain papers: contracts, estimates, plans. Without them the town stands still: a building does not start, a street does not open. So the office pays whoever brings a folder back first, by the old rule of the finder.||Everyone knows the rule. As soon as the helicopter circles over a place, the brum seekers come to it: they live on what they find. Not enemies, rivals. But the roofs are tight, and a mallet is an argument too.||=The job|Find the folder before the three seekers. The helicopter circles over the place, the green mark shows the way; at the top, how far the folder is.||Up a fire escape, then over the roofs. Finger up: jump; up again in the air: higher; hold it: glide.||The seekers are violet; at the top left, how far each has still to go. A seeker can be broken with the mallet: it is out, and its stones go to the workshop.");
         EN.put("story.3", "#Glass for the lamps|=What happened|The factory with the chimney, west of home, makes the glass for the street lamps. The warehouse to the east hands it out to the town's repair crews.||There are many lamps in the town, and they fall often. Some to the wind and the lorries. Some to the duty pickup that does not break.||The crates are heavy, and glass does not like to be hurried. So it goes by pickup, which stands at the gate while it is loaded.||=The job|Take a duty pickup: stand by it a moment, and you are in. Drive to the factory, stop in the yellow bay at its gate and wait for four crates. Then to the warehouse, into its bay, till they are off. Then home.||At the wheel: the steering wheel under the thumb. Aside it turns, up is the throttle, down the brake; hold it down standing still, and the pickup backs. Let go, and it rolls to a stop.");
-        EN.put("story.4", "#The pass|=What happened|Beyond the ridge there is a village. One road goes there: north up the street by home, out of town and through the pass. Bread and mail go along it, and the doctor's van.||After the rains the slope over the pass slides. Logs, stumps, stones and clay come down onto the road.||This is what Freedie was put together for: clearing what has fallen, lifting what no one else can. The pickup does not break, and the mallet moves a rock a winch would not.||=The job|Take a duty pickup and drive north, out of town. Past the town, the pickup keeps to the road's bends by itself.||At the pass the slope comes down before her eyes. Break the heap with the mallet: a finger down puts a ring on it, drag to aim, let go to throw. Three throws to a figure; each stands on one stone or post, and it glows a little. Then into the pickup and on to the village square. Or bring down another heap, and another: as long as she likes, the clock stands.");
+        EN.put("story.4", "#The pass|=What happened|Beyond the ridge there is a village. One road goes there: north up the street by home, out of town and through the pass. Bread and mail go along it, and the doctor's van.||After the rains the slope over the pass slides. Logs, stumps, stones and clay come down onto the road.||This is what Freedie was put together for: clearing what has fallen, lifting what no one else can. The pickup does not break, and the mallet moves a rock a winch would not.||=The job|Take a duty pickup and drive north, out of town. Past the town, the pickup keeps to the road's bends by itself.||The pass is blocked. Clear it as you like: the mallet (a tap is a blow; big pieces split), her own weight (walk into it: what is not too heavy goes before her), the pickup at speed. Once there is a way through as wide as the pickup, the road is open. Then on to the village square, at the wheel or on foot.");
         EN.put("story.back", "Touch to go back");
         EN.put("pause.story", "About the job");
         EN.put("pause.skip", "Put the job by");
+        EN.put("rescue.open", "The road is open.");
         EN.put("report.skip", "Dispatch \u2014 {kind}||The job is put by.|It waits on home's list,|not done.||Touch to go on");
         EN.put("list.undone", "{job} \u2014 not done");
         EN.put("best.first", "Best time.|");
@@ -137,25 +138,6 @@ final class Lang {
                 + "||Touch to go on");
         EN.put("goal.pass", "PASS");
         EN.put("goal.village", "VILLAGE");
-        EN.put("fall.word", "ROCKFALL");
-        EN.put("fall.down", "BROKEN");
-        EN.put("fall.tally", "FIGURE {n} \u2014 {time}");
-        EN.put("fall.hint", "Finger down: the ring on the heap.|Drag to aim, let go to throw.");
-        EN.put("fall.more", "Bottom middle: the next figure.|Right: back to the pickup, and on.");
-        EN.put("fall.walk", "Bottom middle: the next figure.|Right: on, on foot.");
-        EN.put("fall.home", "Bottom middle: the next figure.|Right: home.");
-        EN.put("fall.missed", "MISSED");
-        EN.put("fall.missed.more", "Three throws, and it stands.|Left: again; middle: skip it.");
-        EN.put("fall.missed.home", "Three throws, and it stands.|Left: again; middle: skip it;|right: home.");
-        EN.put("fall.plan.0", "PYRAMID");
-        EN.put("fall.plan.1", "GATE");
-        EN.put("fall.plan.2", "LOG TOWERS");
-        EN.put("fall.plan.3", "WOOD PILE");
-        EN.put("fall.plan.4", "SHED");
-        EN.put("fall.plan.5", "BOULDER");
-        EN.put("fall.plan.6", "SLABS");
-        EN.put("fall.plan.7", "FORT");
-        EN.put("kind.heap", "Rockfall");
     }
 
     private Lang() {

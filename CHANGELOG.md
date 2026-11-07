@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.99
+
+- The pass is no game any more: no eye taking her over, no line, no figures, no key, no throws or
+  stars. The heap simply lies across the road between the cliffs, as the slope left it: logs,
+  stumps, fallen posts, planks, stones, slabs, lumps of clay, a boulder or two, every which way,
+  some forty pieces in layers.
+- She clears it as she likes. A blow of the mallet knocks what is within reach off to the road's
+  side (the heavier, the slower), and the nearest long piece splits under it. Her own weight:
+  walking into it, what is not too heavy goes before her and aside, the boulders hardly at all.
+  The pickup driven into it shoves through. Chips and dust as before.
+- The road is open once a way as wide as the pickup runs clear across the whole heap (what lies
+  lower than the pickup goes over does not count), or once the pickup has got through: a chime,
+  "the road is open", and on to the village square, at the wheel or on foot.
+- The heap is off home's list.
+- The village has its people: some walk to and fro across the square and along the road in,
+  some stand talking in twos, one at the well, four on benches at the square's corners; one she
+  comes up to stops and turns to look at her, those standing or sitting turn their heads as she
+  passes.
+- The icon: the author's picture of her, the mallet on her shoulder, on the evening sky.
+
 ## 0.98
 
 - The heap in the pass is figures now, not one pyramid: a gate with logs piled on its lintel and

@@ -1,0 +1,61 @@
+# The call out's pass: the heap lying across the road between the cliffs, blocked; on foot she
+# walks into it (her weight shoves what is not too heavy) and strikes with the mallet till a way
+# through as wide as the pickup is open; then the village, its people about the square. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 4
+close
+at -15 905 0
+wait 1
+heap
+shot p0
+finger down 0 137 420
+wait 2.2
+finger up 0 137 420
+wait 0.5
+heap
+shot p1
+finger down 0 137 420
+finger up 0 137 420
+wait 0.8
+shot p2
+finger down 0 137 420
+finger up 0 137 420
+wait 0.8
+finger down 0 137 420
+wait 1.5
+finger up 0 137 420
+finger down 0 137 420
+finger up 0 137 420
+wait 0.8
+finger down 0 137 420
+finger up 0 137 420
+wait 0.8
+finger down 0 137 420
+wait 1.5
+finger up 0 137 420
+finger down 0 137 420
+finger up 0 137 420
+wait 0.8
+finger down 0 137 420
+finger up 0 137 420
+wait 1.5
+heap
+rescue
+shot p3
+mission 4
+close
+topass 45
+wait 0.5
+pedal 5 0 -40 1 pd
+heap
+rescue
+shot p4
+getout
+wait 0.3
+at 16 1128 0
+wait 2
+shot v0
+wait 4
+shot v1

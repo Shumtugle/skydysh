@@ -351,28 +351,13 @@ public final class Stand implements World.Host {
             r.recenter();
             step();
         } else if (c.equals("topass")) {
-            // topass [METERS]: at the wheel on the road out, so far short of where the eye takes the pickup over at the pass
-            float back = p.length > 1 ? f(p[1]) : 10f;
-            float z = City.PASS_Z - Rockfall.THROW - Rockfall.STOP_BACK - Rockfall.FROM - back;
+            // topass [METERS]: at the wheel on the road out, so far short of the heap in the pass
+            float back = p.length > 1 ? f(p[1]) : 40f;
+            float z = City.PASS_Z - back;
             float h = (float) Math.atan2(City.routeX(z + 1f) - City.routeX(z - 1f), 2f);
             world.standDrive(City.routeX(z), z, h);
             step();
             System.out.println(String.format("%7.2fs  at the wheel at %.1f %.1f, the heap at %.1f %.1f", time, City.routeX(z), z, City.routeX(City.PASS_Z), City.PASS_Z));
-        } else if (c.equals("tapagain")) {
-            // tapagain: a tap on the button for another heap, where it floats now
-            System.out.println(String.format("%7.2fs  tap at %.0f %.0f", time, world.nextX, world.nextY));
-            world.touch(World.DOWN, 0, world.nextX, world.nextY);
-            world.touch(World.UP, 0, world.nextX, world.nextY);
-            step();
-        } else if (c.equals("nextfig")) {
-            // nextfig: the next figure down the slopes at once, broken or not
-            if (world.rescue != null) world.rescue.fall.again();
-            step();
-        } else if (c.equals("tapretry")) {
-            // tapretry: a tap on the button for the same figure again, once it is missed
-            world.touch(World.DOWN, 0, world.againX, world.againY);
-            world.touch(World.UP, 0, world.againX, world.againY);
-            step();
         } else if (c.equals("tapon")) {
             // tapon: a tap on the button that takes her on (the pickup's, or on foot)
             world.touch(World.DOWN, 0, world.liftButtonX(), world.liftButtonY());
@@ -383,17 +368,11 @@ public final class Stand implements World.Host {
             System.out.println(String.format("%7.2fs  %s", time, world.standSkip()));
             step();
         } else if (c.equals("heap")) {
-            // heap: the heap in the pass on its own, as from home's list
-            world.standHeap();
-        } else if (c.equals("fall")) {
-            // fall: the heap's game, told
-            Rockfall rf = world.rescue == null ? null : world.rescue.fall;
-            if (rf == null) System.out.println(String.format("%7.2fs  no heap", time));
-            else System.out.println(String.format("%7.2fs  heap: phase %d, heap %d plan %d, pieces %d, moved %.2f%s%s, stars %d, throws %d, mallet %d, her at %.1f %.1f held %s", time,
-                    rf.phase, rf.figure, rf.plan, rf.count(), rf.moved(), rf.down ? " broken" : "", rf.missed ? " missed" : "", rf.stars, rf.throwsHere, rf.hs, world.runner.x, world.runner.z, world.runner.held));
-            if (rf != null && rf.pickup() != null)
-                System.out.println(String.format("           pickup at %.1f %.1f heading %.2f; eye %.1f %.1f %.1f yaw %.2f pitch %.2f", rf.pickup().x, rf.pickup().z, rf.pickup().heading,
-                        rf.eye[0], rf.eye[1], rf.eye[2], rf.eye[3], rf.eye[4]));
+            // heap: the heap in the pass, told: its pieces, whether the way through is open, the call out's step
+            Rescue rs = world.rescue;
+            if (rs == null) System.out.println(String.format("%7.2fs  no heap", time));
+            else System.out.println(String.format("%7.2fs  heap: %d pieces, %s (widest %.1f m, %d in the road), step %d, clock %.1f; her at %.1f %.1f", time,
+                    rs.fall.count(), rs.fall.open() ? "open" : "blocked", rs.fall.gap, rs.fall.standing, rs.step, rs.clock, world.runner.x, world.runner.z));
         } else if (c.equals("drivein")) {
             // drivein X Z RADIANS: her at the wheel at (x, z), facing so (the pickup she drives, or a duty pickup put there)
             world.standDrive(f(p[1]), f(p[2]), f(p[3]));
