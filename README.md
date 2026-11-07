@@ -257,6 +257,9 @@ a sorted one apart with moves that could each be made back, so it always has a w
 After the first, the containers are on home's list: straight into the cabin with no way to go,
 and back on the sofa when she comes down; or at the crane whenever she climbs it.
 
+Out to sea south of home a spit of sand winds from the water's edge to an island, tall and green
+in ledges, trees on them and a path up; off its north-east shore a pier with yachts moored to it.
+
 Up on the right, till the navigator is hers, a compass: a glass button as the pause is, across
 from it, a needle turning on it, coral to the north. Touched, it shows where she is in whole meters (X across, Z along, H how high), so a place
 can be told by its numbers; with the navigator, the numbers stand under its map while it is open.

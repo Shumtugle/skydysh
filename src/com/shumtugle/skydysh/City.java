@@ -97,7 +97,12 @@ final class City implements Ground {
 
     /** Whether (x, z) is over the water, past the beach. */
     static boolean overWater(float x, float z) {
-        return z < SHORE * CELL + WATERLINE;
+        return z < SHORE * CELL + WATERLINE && Island.height(x, z) < WATER;
+    }
+
+    /** Whether she may be at (x, z) as far as the sea goes: this side of the open sea, or about the spit and the island. */
+    static boolean reachable(float x, float z) {
+        return z >= SHORE * CELL + OPEN_SEA || Island.near(x, z, 40f);
     }
 
     /** Whether (x, z) is on the beach, under the quay. */
@@ -415,8 +420,9 @@ final class City implements Ground {
                 if (dist < CELL * 1.6f) d.append(c.detail);
                 if (dist < CELL * 1.2f) d.append(c.parked);
             }
-        // the mountain, seen from anywhere
+        // the mountain, seen from anywhere; the spit and the island out to sea
         Mountain.draw(d, x, z);
+        Island.draw(d);
         // the sea, one sheet out to the haze from the edge of the beach
         float edge = SHORE * CELL + WATERLINE;
         if (z - edge < (REACH + 2) * CELL) {
@@ -437,10 +443,10 @@ final class City implements Ground {
     /** How high the ground is here: the road, or the pavement a step up. */
     float ground(float x, float z) {
         if (z < SHORE * CELL - CURB) {
-            if (overWater(x, z)) {
-                // the sea's bed, shelving from the wet sand down
+            if (z < SHORE * CELL + WATERLINE) {
+                // the sea's bed, shelving from the wet sand down; the spit and the island over it
                 float out = Math.min(1f, (SHORE * CELL + WATERLINE - z) / SHELF);
-                return WET + (WATER - BED - WET) * out;
+                return Math.max(WET + (WATER - BED - WET) * out, Island.height(x, z));
             }
             if (!beach(x, z)) return WALK_TOP;
             return z > SHORE * CELL + WET_FROM ? SAND : WET;
@@ -1294,6 +1300,7 @@ final class City implements Ground {
         Cell c = buildCell(i, j);
         // what the mountain and its cable way stand solid with, wherever it falls
         Mountain.solids(c, i, j);
+        Island.solids(c, i, j);
         return c;
     }
 

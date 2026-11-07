@@ -453,6 +453,11 @@ final class Nav {
     /** What the map shows at (x, z): the sea, a street, a block in the town, the fields. */
     static int ground(float x, float z) {
         if (City.overWater(x, z)) return SEA;
+        if (z < City.SHORE * City.CELL + City.WATERLINE) {
+            // the spit and the island: sand at the water, green above
+            float h = Island.height(x, z);
+            return h < 0.5f ? SAND : FIELD;
+        }
         if (z < -City.CURB) return SAND;
         float top = City.EDGE_J * City.CELL;
         if (z > -City.ROAD && z < top + City.ROAD) {

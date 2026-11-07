@@ -1,0 +1,30 @@
+# The spit and the island: from the wet sand at the water's edge, the spit winding out to the
+# island, tall and green in ledges; along the spit; on the island's shore by the pier, the yachts
+# moored along it; from the top, back over the spit to the town; and from the air. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 4
+keep kinds 14
+keep where 0
+restart
+free
+at 24 -36 3.1416
+wait 1
+where
+shot i0
+at 30 -120 3.3
+wait 1
+where
+shot i1
+at 101 -319 1.1
+wait 1
+where
+shot i2
+at 146 -296 4.24
+wait 1
+where
+shot i3
+eye 160 90 -150 -2.2 -0.3
+wait 0.3
+shot i4

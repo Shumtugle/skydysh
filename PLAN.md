@@ -87,6 +87,7 @@ release, each seen on the stand before the phone.
 - 1.0.7 The compass and her coordinates; the game opens where she was; no second pickup at home; the mountain's top solid, steps to the podium.
 - 1.0.8 The compass a glass button as the others are.
 - 1.0.9 A ride on a car's roof, with likes.
+- 1.1.0 The spit and the island, the pier, the yachts.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -128,6 +129,7 @@ release, each seen on the stand before the phone.
 
 ## Next
 
+- The yachts: a boat to take out (the boat in the game's four ways to go).
 - Likes for finding places worth seeing in the town (fine yards, palaces: to be drawn first).
 - The panel skipped in the concert: the light comes on for her, the panel stays on the list
   unplayed (the whole job can be put by already, from its first moment since 1.0.2).

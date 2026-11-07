@@ -682,10 +682,14 @@ final class Runner {
             speed = Math.min(speed, WADE);
         }
         float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
+        float wasX = x, wasZ = z;
         x += fx * speed * dt;
         z += fz * speed * dt;
-        // the open sea has an end: no farther out than this
-        if (room == null) z = Math.max(z, City.SHORE * City.CELL + City.OPEN_SEA);
+        // the open sea has an end: no farther out than this, but about the spit and the island
+        if (room == null && !City.reachable(x, z)) {
+            x = wasX;
+            z = wasZ;
+        }
         float[] p = {x, z};
         boolean hit = g.push(p, RADIUS, y);
         if (room == null) {
@@ -914,6 +918,8 @@ final class Runner {
         float free = 0f;
         for (float t = EYE_STEP; ; t += EYE_STEP) {
             float tt = Math.min(t, back), qx = x - fx * tt, qz = z - fz * tt;
+            // a slope rising behind her (a cliff, a hill's side) as high as the eye: no farther back
+            if (!in && tt > EYE_STEP && ((City) g).ground(qx, qz) > y + high - EYE_OVER_GROUND) break;
             eyeTry[0] = qx;
             eyeTry[1] = qz;
             g.push(eyeTry, r, feet);
@@ -944,6 +950,8 @@ final class Runner {
     }
 
     private static final float EYE_STEP = 0.3f;
+    /** The eye keeps at least so far over the ground behind her, meters. */
+    static final float EYE_OVER_GROUND = 0.6f;
     // the eye with less room behind her than this rises so much higher at most (none at all)
     static final float NEAR_BACK = 2.4f, RISE = 4.5f;
     // how far below the middle of the frame she may be at most, radians

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0
+
+- The spit and the island. From the water's edge south of home a spit of sand winds out to sea,
+  dry along its crest, to an island tall and green: a ring of sand, then rock and a ledge of
+  grass three times over, a round green top, trees on every ledge, a path of trodden sand winding
+  up. Walkable all of it; the open sea's end gives way round them.
+- Off the island's north-east shore a pier on posts, bollards along it, four yachts moored to it,
+  white with a band of colour, teak decks, a cabin, a mast, the sail furled on the boom, rising
+  and falling on the swell. The pier and their decks solid, to leap onto.
+- On the minimap, the spit sand and the island green.
+- The eye behind her no longer goes into a slope rising at her back (a cliff, the mountain's
+  side): it comes in nearer.
+
 ## 1.0.9
 
 - A ride on a car's roof. The roofs of the cars in the streets are a floor now, to come down on
