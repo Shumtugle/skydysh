@@ -1,0 +1,33 @@
+# Any job put by from its first moment: on the sofa after the hunt, the folder picked, under the
+# pause at once the row to put it by; put by, the report; on the sofa again the next job is the
+# delivery, and the list holds the folder not done. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 1
+keep kinds 2
+restart
+free
+sofa
+wait 7
+shot s0
+pick 2
+wait 1.5
+shot s1
+close
+wait 1
+tap 24 67
+wait 0.5
+shot s2
+tap 137 436
+wait 1.5
+shot s3
+close
+wait 1.5
+shot s4
+sofa
+wait 7
+shot s5
+listsign
+wait 2
+shot s6

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+- Any job not yet won can be put by from its first moment: the row under the pause no longer
+  waits for a loss or a minute and a half at it. Not in the air, as before. Put by, it waits on
+  home's list, not done, and the next job comes on.
+
 ## 1.0.1
 
 - The icon: the mallet bigger behind her head, both its ends well out past it, so that it shows

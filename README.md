@@ -251,8 +251,8 @@ After the first, the containers are on home's list: straight into the cabin with
 and back on the sofa when she comes down; or at the crane whenever she climbs it.
 
 The jobs come in turn: home's screen offers the next one, and a list of her own (the games played, the panel) to play again.
-A job she is stuck on can be put by: once it is lost, or after a minute and a half at it, a row
-under the pause offers it; put by, it pays nothing and waits on home's list, not done, to be
+Any job not yet won can be put by, from its first moment (but not in the air): a row under the
+pause offers it; put by, it pays nothing and waits on home's list, not done, to be
 played when she likes, and the next job comes on. The duty pickups are in the streets only from
 the delivery on (it is the job that brings them).
 

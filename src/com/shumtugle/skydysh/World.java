@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.0.1";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.0.2";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -160,10 +160,6 @@ final class World {
         startZ = z;
         startHome = indoors != null && indoors.home;
         int n = mission.round + 1;
-        if (n != timedRound) {
-            timedRound = n;
-            missionTime = 0f;
-        }
         delivery = null;
         rescue = null;
         puppy = null;
@@ -437,9 +433,8 @@ final class World {
         return storyRowY() + 26f;
     }
 
-    /** For the desktop stand: the job now put by, if it may be (the time at it made long enough first). */
+    /** For the desktop stand: the job now put by, as from under the pause, if it may be. */
     String standSkip() {
-        missionTime = Math.max(missionTime, SKIP_AFTER + 1f);
         if (!canSkip()) return "not to be put by";
         skip();
         return "put by: kinds put by " + Integer.toBinaryString(kindsSkipped);
@@ -1349,7 +1344,6 @@ final class World {
                 }
                 dispatch = new Dispatch(host, said).then(Dispatch.again(mission.round)).story(kindOf(mission.round));
                 retryAfter = true;
-                lostRound = mission.round;
                 return;
             }
             // won: its time kept against the best; the report waits at home, on the sofa, and the
@@ -1439,7 +1433,6 @@ final class World {
         swimSeen = swims;
         beatsWere = runner.beatsLeft();
         int round = mission.round;
-        if (!free) missionTime += dt;
         if (free) {
             chase = nobody;
             // the job at the concert hall done once: its middle door is open to her, on foot
@@ -3186,23 +3179,16 @@ final class World {
         return ((kindsWon | kindsSkipped) & (1 << k)) != 0;
     }
 
-    // ---- a job put by: offered once it is lost, or after long at it; on home's list, not done ----
+    // ---- a job put by: any job not won, at any time but in the air; on home's list, not done ----
     static final String SAVE_SKIPPED = "skipped";
     /** The kinds put by, not done, a bit each (1 << kind); one won later is taken off. */
     private int kindsSkipped;
-    /** How long the mission now has been played (a try again goes on counting). */
-    private float missionTime;
-    /** The round last lost: its job may be put by from then on. */
-    private int lostRound = -1, timedRound = -1;
-    /** After so long at a job, it may be put by. */
-    static final float SKIP_AFTER = 90f;
 
-    /** Whether the job now may be put by: not won before, lost once or long at it; not in the air. */
+    /** Whether the job now may be put by: any not won before, from its first moment; not in the air. */
     boolean canSkip() {
         if (free || aboard() || piloting()) return false;
         int k = kindOf(mission.round);
-        if ((kindsWon & (1 << k)) != 0 || over()) return false;
-        return lostRound == mission.round || missionTime > SKIP_AFTER;
+        return (kindsWon & (1 << k)) == 0 && !over();
     }
 
     /** The job now put by: on home's list as not done, no pay; the town hers where she is. */
