@@ -1,5 +1,53 @@
 # Changelog
 
+## 0.98
+
+- The heap in the pass is figures now, not one pyramid: a gate with logs piled on its lintel and
+  low walls out to the cliffs; two or three log towers laid like log houses; a wood pile between
+  two posts; a shed on four posts weighed down with stones, a painted barrier before it; a
+  boulder on a table; slabs on end in rows, each row taller, a log across the last; the pyramid
+  of before; and every fifth a fort, a wood pile right across with two towers on it and a boulder
+  on a table between them. They come round in a shuffled order, the first a gate, each bigger
+  than before (up to some ninety pieces).
+- Each figure stands on one piece, its key, a post or a stone with a faint warm band of light
+  round it. Struck, the whole figure is loosened at once: the world holds still a moment, the
+  eye shakes, what it held is nudged off.
+- A blow is felt: a hard hit holds the world still for a few hundredths of a second and shakes
+  the eye; chips fly off what is struck and dust puffs where things land. Struck hard by the
+  mallet (or by another piece harder still) a piece splits in two along its length, the halves
+  flying apart; a struck piece topples as freely as a real block.
+- Three throws to a figure, the mallets left shown under its name. Broken, stars: three at the
+  first throw, two at the second, one at the last. The three spent and it standing: missed; the
+  same figure again from the bottom left corner, or the next from the middle.
+- The next figure from the middle at the foot of the frame; the way on (the pickup, on foot,
+  home) at the bottom right as before.
+- The icon: her head with the maid's cap and bow, the mallet over her shoulder, on the evening
+  sky of before.
+
+## 0.98
+
+- The heap in the pass is figures now, not one pyramid: a gate with logs piled on its lintel and
+  low walls out to the cliffs; two or three log towers laid like log houses; a wood pile between
+  two posts; a shed on four posts weighed down with stones, a painted barrier before it; a
+  boulder on a table; slabs on end in rows, each row taller, a log across the last; the pyramid
+  of before; and every fifth a fort, a wood pile right across with two towers on it and a boulder
+  on a table between them. They come round in a shuffled order, the first a gate, each bigger
+  than before (up to some ninety pieces).
+- Each figure stands on one piece, its key, a post or a stone with a faint warm band of light
+  round it. Struck, the whole figure is loosened at once: the world holds still a moment, the
+  eye shakes, what it held is nudged off.
+- A blow is felt: a hard hit holds the world still for a few hundredths of a second and shakes
+  the eye; chips fly off what is struck and dust puffs where things land. Struck hard by the
+  mallet (or by another piece harder still) a piece splits in two along its length, the halves
+  flying apart; a struck piece topples as freely as a real block.
+- Three throws to a figure, the mallets left shown under its name. Broken, stars: three at the
+  first throw, two at the second, one at the last. The three spent and it standing: missed; the
+  same figure again from the bottom left corner, or the next from the middle.
+- The next figure from the middle at the foot of the frame; the way on (the pickup, on foot,
+  home) at the bottom right as before.
+- The icon: her head with the maid's cap and bow, the mallet over her shoulder, on the evening
+  sky of before.
+
 ## 0.97
 
 - A job can be put by. Once it is lost, or after a minute and a half at it, a row under the

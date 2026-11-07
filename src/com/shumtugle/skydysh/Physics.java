@@ -45,6 +45,12 @@ final class Physics {
         bodies.clear();
     }
 
+    /** A body taken out (between steps): the rest numbered afresh. */
+    void remove(Body b) {
+        if (!bodies.remove(b)) return;
+        for (int i = 0; i < bodies.size(); i++) bodies.get(i).id = i;
+    }
+
     private float hNow = 1f / 600f;
     static final float SOFT_DEPTH = 0.04f;   // how deep a soft contact gives before it holds hard
 

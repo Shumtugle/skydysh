@@ -74,6 +74,8 @@ release, each seen on the stand before the phone.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
 - 0.96 The pass a game: the slopes come down into a pyramid, broken with the mallet, another and another.
 - 0.97 A job put by; the heap on home's list; the pass between high cliffs; no duty pickups before the delivery.
+- 0.98 The heap's figures, a key to each, three throws and stars, blows felt and pieces split; the icon her head and the mallet.
+- 0.98 The heap's figures, a key to each, three throws and stars, blows felt and pieces split; the icon her head and the mallet.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.

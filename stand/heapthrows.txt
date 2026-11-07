@@ -1,0 +1,56 @@
+# Three throws at a figure: the blow felt (the world held still, the eye shaken, chips and dust),
+# pieces split in two; broken, the stars and the next figure in the middle; missed, the same
+# again from the left corner. Then the wood pile and the fort, thrown at. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 5
+keep kinds 30
+restart
+close
+heap
+wait 6
+fall
+finger down 0 150 400
+finger move 0 120 420
+finger up 0 120 420
+wait 1.05
+shot b0
+wait 0.3
+shot b1
+wait 3
+fall
+shot b2
+finger down 0 150 400
+finger up 0 150 400
+wait 4
+fall
+finger down 0 150 400
+finger move 0 150 380
+finger up 0 150 380
+wait 6
+fall
+shot b3
+tapagain
+wait 5
+fall
+shot b4
+nextfig
+nextfig
+wait 5
+fall
+finger down 0 150 400
+finger up 0 150 400
+wait 1.1
+shot b5
+wait 3
+fall
+shot b6
+finger down 0 150 400
+finger up 0 150 400
+wait 4
+finger down 0 150 400
+finger up 0 150 400
+wait 6
+fall
+shot b7

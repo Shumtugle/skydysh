@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.97";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.98";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -3943,6 +3943,8 @@ final class World {
             runner.heading = rf.facing();
             runner.held = true;
             fallHeld = true;
+        } else if (got == Rockfall.MISSED) {
+            host.buzz(120);
         } else if (got == Rockfall.BROKE) {
             host.sound(Synth.CHIME, 0.55f, 1.2f);
             host.sound(Synth.CHIME, 0.4f, 1.6f);
@@ -3957,8 +3959,8 @@ final class World {
     private boolean fallHeld;
     private int fallFinger = -1;
     private float fallLastX, fallLastY;
-    /** Where the button for another heap floats on the frame now (off it: none). */
-    float againX = -99f, againY = -99f;
+    /** Where the buttons at the line are on the frame now (off it: none): the same figure again, the next one. */
+    float againX = -99f, againY = -99f, nextX = -99f, nextY = -99f;
 
     /** At the line: a finger anywhere puts the ring on the heap and moves it; lifted, she throws. The buttons, once it is broken. */
     private void fallTouch(int type, int id, float x, float y) {
@@ -3978,8 +3980,15 @@ final class World {
             return;
         }
         if (type == DOWN) {
-            if (rf.down && Math.abs(x - againX) < BUTTON + 8 && Math.abs(y - againY) < BUTTON + 8) {
+            if ((rf.down || rf.missed) && Math.abs(x - nextX) < BUTTON + 8 && Math.abs(y - nextY) < BUTTON + 8) {
                 rf.again();
+                rf.aiming = false;
+                fallFinger = -1;
+                host.buzz(20);
+                return;
+            }
+            if (rf.missed && Math.abs(x - againX) < BUTTON + 8 && Math.abs(y - againY) < BUTTON + 8) {
+                rf.retry();
                 rf.aiming = false;
                 fallFinger = -1;
                 host.buzz(20);
@@ -4035,17 +4044,19 @@ final class World {
     /** At the line: once the heap is broken, another down the slopes (floating over it), or on. */
     private void fallButtons(DrawList d) {
         Rockfall rf = rescue.fall;
-        if (!rf.playing() || !rf.down && !heapSolo) return;
+        if (!rf.playing()) return;
         float glow = 0.25f + 0.25f * (float) Math.sin(time * 3f);
-        if (rf.down && againX > -50f) d.badge(againX, againY, BUTTON + 4, Badges.AGAIN, 0.95f, glow);
-        d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, rf.onFoot || rf.pickup() == null ? Badges.EXIT : Badges.ENTER, 0.95f, 0f);
+        if (rf.missed && againX > -50f) d.badge(againX, againY, BUTTON + 4, Badges.AGAIN, 0.95f, glow);
+        if ((rf.down || rf.missed) && nextX > -50f) d.badge(nextX, nextY, BUTTON + 4, Badges.RIGHT, 0.95f, rf.down ? glow : 0f);
+        if (rf.down || heapSolo)
+            d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, rf.onFoot || rf.pickup() == null ? Badges.EXIT : Badges.ENTER, 0.95f, 0f);
     }
 
     /** Over the frame, the heap's game: bars while the eye is the story's; the ring; how many, what next. */
     private void fallFlat(DrawList d, Px f) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
         Rockfall rf = rescue.fall;
-        againX = againY = -99f;
+        againX = againY = nextX = nextY = -99f;
         if (!rf.playing()) {
             if (rf.figure > 1) return;
             // the eye the story's: dark bands over and under, as in a picture house
@@ -4058,17 +4069,58 @@ final class World {
             String clock = clock(rescue.clock);
             shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
         }
-        String w = Lang.lines(rf.down ? "fall.down" : "fall.word", mission.round, null)[0];
-        wordAtTop(f, w, rf.down ? gold : green, ink);
-        String tally = Lang.lines("fall.tally", rf.figure, String.valueOf(rf.throwsHere))[0];
+        int coral = 0xFFFF7A5C;
+        String w = Lang.lines(rf.down ? "fall.down" : rf.missed ? "fall.missed" : "fall.word", mission.round, null)[0];
+        wordAtTop(f, w, rf.down ? gold : rf.missed ? coral : green, ink);
+        String name = Lang.lines("fall.plan." + rf.plan, 0, null)[0];
+        String tally = Lang.lines("fall.tally", rf.figure, name)[0];
         shadowed(f, tally, (W - PixelFont.width(tally, 1)) / 2, 38, 1, cream, ink);
+        // under it: the stars once broken; till then the throws left, a mallet each
+        if (rf.down) for (int k = 0; k < Rockfall.THROWS; k++) star(f, W * 0.5f + (k - 1) * 22f, 62f, 8f, k < rf.stars ? gold : 0xFF4A4F66, ink);
+        else for (int k = 0; k < Rockfall.THROWS; k++) {
+            boolean left = k < Rockfall.THROWS - rf.throwsHere;
+            int c = left ? gold : 0xFF4A4F66, x = Math.round(W * 0.5f + (k - 1) * 18f), y = 58;
+            f.rect(x - 6, y - 4, x + 6, y + 3, ink);
+            f.rect(x - 5, y - 3, x + 5, y + 2, c);
+            f.rect(x - 1, y + 2, x + 2, y + 11, ink);
+            f.rect(x, y + 3, x + 1, y + 10, left ? 0xFFE09A5A : c);
+        }
         rf.flat(f, runner);
-        if (rf.down) {
-            // another heap: in the corner across from the way on, out of the aim's way
-            againX = W - liftButtonX();
-            againY = liftButtonY();
-            caption(f, heapSolo ? "fall.home" : rf.onFoot || rf.pickup() == null ? "fall.walk" : "fall.more", 0.56f);
-        } else if (rf.throwsAll == 0 && !rf.aiming) caption(f, "fall.hint", 0.56f);
+        if (rf.down || rf.missed) {
+            // the next figure in the middle at the foot; the same again in the left corner, once missed
+            nextX = W * 0.5f;
+            nextY = liftButtonY();
+            if (rf.missed) {
+                againX = W - liftButtonX();
+                againY = liftButtonY();
+            }
+            caption(f, rf.missed ? (heapSolo ? "fall.missed.home" : "fall.missed.more")
+                    : heapSolo ? "fall.home" : rf.onFoot || rf.pickup() == null ? "fall.walk" : "fall.more", 0.6f);
+        } else if (rf.throwsAll == 0 && !rf.aiming) caption(f, "fall.hint", 0.62f);
+    }
+
+    /** A five-pointed star at (x, y), so far to its points, filled, an edge of ink round it. */
+    private static void star(Px f, float x, float y, float r, int color, int ink) {
+        int n = Math.round(r + 2f);
+        for (int j = -n; j <= n; j++)
+            for (int i = -n; i <= n; i++) {
+                float px = i + 0.5f, py = j + 0.5f;
+                boolean in = inStar(px, py, r), edge = !in && inStar(px, py, r + 1.6f);
+                if (in) f.set(Math.round(x) + i, Math.round(y) + j, color);
+                else if (edge) f.set(Math.round(x) + i, Math.round(y) + j, ink);
+            }
+    }
+
+    private static boolean inStar(float x, float y, float r) {
+        // its ten corners, points and notches by turns, the first point straight up; a ray to the right crosses its edges
+        boolean in = false;
+        for (int k = 0; k < 10; k++) {
+            double a0 = k * Math.PI / 5, a1 = (k + 1) * Math.PI / 5;
+            double r0 = k % 2 == 0 ? r : r * 0.45, r1 = k % 2 == 0 ? r * 0.45 : r;
+            double x0 = Math.sin(a0) * r0, y0 = -Math.cos(a0) * r0, x1 = Math.sin(a1) * r1, y1 = -Math.cos(a1) * r1;
+            if ((y0 > y) != (y1 > y) && x < x0 + (y - y0) * (x1 - x0) / (y1 - y0)) in = !in;
+        }
+        return in;
     }
 
     /** Over the frame, a call out: the clock and the pay, how far off where the way goes is, and what it is. */

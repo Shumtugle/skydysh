@@ -1,0 +1,41 @@
+# The figures one after another, as the heap played on its own brings them: each as it stands
+# once down the slopes, between the cliffs; the fifth a fort. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 5
+keep kinds 30
+restart
+close
+heap
+wait 6
+fall
+shot g1
+nextfig
+wait 5
+fall
+shot g2
+nextfig
+wait 5
+fall
+shot g3
+nextfig
+wait 5
+fall
+shot g4
+nextfig
+wait 5
+fall
+shot g5
+nextfig
+wait 5
+fall
+shot g6
+nextfig
+wait 5
+fall
+shot g7
+nextfig
+wait 5
+fall
+shot g8
