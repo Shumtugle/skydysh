@@ -863,6 +863,8 @@ final class City implements Ground {
             }
         }
         if (j == RIDGE_J) ridge(c, rnd, x0, z0);
+        // past the ridge the walls of the pass go on along the road a way, so that it reads as a cut
+        if (j == RIDGE_J + 1) cliffs(c, x0, (RIDGE_J + 1) * CELL - 5f, (RIDGE_J + 1) * CELL + CLIFF_ON, 1);
         else if (j == EDGE_J + 7 || j == EDGE_J + 8) village(c, rnd, x0, z0, j);
         else fields(c, rnd, x0, z0, j);
         if (inQuarry(x0 + CELL * 0.5f, z0 + CELL * 0.5f, CELL * 0.5f)) quarry(c, x0, z0);
@@ -882,7 +884,7 @@ final class City implements Ground {
         for (int k = 0; k < trees; k++) {
             float tx = x0 + 4f + rnd.nextFloat() * (CELL - 8f), tz = z0 + 6f + rnd.nextFloat() * (CELL - 12f);
             float h = 6.5f + rnd.nextFloat() * 3.5f;
-            if (onRoute(tx, tz, 6f) || j == EDGE_J && tz < z0 + 10f || inQuarry(tx, tz, 3f) || Mountain.near(tx, tz)) continue;
+            if (onRoute(tx, tz, 6f) || j == RIDGE_J + 1 && tz < z0 + CLIFF_ON + 3f && Math.abs(tx - routeX(tz)) < CLIFF_REACH + 3f || j == EDGE_J && tz < z0 + 10f || inQuarry(tx, tz, 3f) || Mountain.near(tx, tz)) continue;
             tree(c, c.detail, rnd, tx, 0f, tz, h);
             c.wall(tx - 0.2f, tz - 0.2f, tx + 0.2f, tz + 0.2f);
         }
@@ -909,6 +911,8 @@ final class City implements Ground {
         for (float cx = x0 + 5f; cx < x0 + CELL; cx += 10f) {
             // where the mountain stands, the ridge goes into it
             if (Math.abs(cx - Mountain.MX) < Mountain.R - 20f) continue;
+            // about the pass the cliffs stand instead
+            if (Math.abs(cx - px) < CLIFF_REACH - 6f) continue;
             float hgt = 10f + (float) Math.abs(Math.sin(cx * 0.037f) * 7f + Math.sin(cx * 0.013f + 1f) * 5f);
             float dz = (float) Math.sin(cx * 0.05f) * 4f;
             int green = Street.mix(0x6E9447, 0x86A85A, (float) Math.abs(Math.sin(cx * 0.07f)));
@@ -940,6 +944,93 @@ final class City implements Ground {
                 else continue;
             }
             if (b - a > 0.2f) c.wall(a, mid + dz - depth, b, mid + dz + depth, hgt);
+        }
+        cliffs(c, x0, mid - depth, mid + depth, 0);
+    }
+
+    // the cliffs either side of the pass: how far out from the road they reach at the foot, how
+    // many slices along the road, how far each tier stands back from the one under it
+    static final float CLIFF_REACH = 44f, CLIFF_STEP = 0.6f;
+    /** How far from the road's middle the cliffs' foot stands: just past its gravel. */
+    static final float CLIFF_FOOT = ROUTE_HALF + 1.6f;
+    static final int CLIFF_SLICES = 9;
+    /** How far past the ridge's row the pass's walls go on. */
+    static final float CLIFF_ON = 42f;
+
+    /**
+     * The pass between two walls of rock: on each side of the road slices of cliff along it, each
+     * a pillar of tiers standing back a little as they go up, grass on the ledges, a fir here and
+     * there; the slices of unlike height and depth, so that the faces break into columns. On the
+     * east face the pale scar of the slope that came down. Only what falls in this cell is drawn.
+     */
+    private void cliffs(Cell c, float x0, float from, float to, int salt) {
+        DrawList d = c.boxes, small = c.detail;
+        float len = (to - from) / CLIFF_SLICES;
+        float x1 = x0 + CELL;
+        for (int e = -1; e <= 1; e += 2) {
+            for (int s = 0; s < CLIFF_SLICES; s++) {
+                Random rnd = new Random(0xC11FFL + s * 7919L + e * 104729L + salt * 31L);
+                float za = from + s * len, zb = za + len;
+                // the ends ragged: the first and last slices short of the ridge's edge
+                if (s == 0 && salt == 0) za += rnd.nextFloat() * 3f;
+                if (s == CLIFF_SLICES - 1) zb -= rnd.nextFloat() * 3f;
+                float rx = routeX((za + zb) * 0.5f);
+                float face = CLIFF_FOOT + rnd.nextFloat() * 1.1f + (s == 0 || s == CLIFF_SLICES - 1 ? 1.5f : 0f);
+                int tiers = 4 + rnd.nextInt(2);
+                float y = 0f, top = 0f;
+                for (int k = 0; k < tiers; k++) {
+                    float th = k == 0 ? 6f + rnd.nextFloat() * 3f : 7f + rnd.nextFloat() * 5f;
+                    float in = face + k * (CLIFF_STEP + rnd.nextFloat() * 0.9f);
+                    float out = CLIFF_REACH - k * 6f;
+                    // at the ends of the pass the tiers step back from the ridge's front too
+                    float ka = za + (s == 0 ? k * 1.8f : 0f), kb = zb - (s == CLIFF_SLICES - 1 ? k * 1.8f : 0f);
+                    float a = rx + e * in, b = rx + e * out;
+                    float lo = Math.max(Math.min(a, b), x0), hi = Math.min(Math.max(a, b), x1);
+                    int rock = Street.mix(0x928879, 0xB2A794, rnd.nextFloat());
+                    if (hi - lo > 0.2f) {
+                        d.box((lo + hi) * 0.5f, y + th * 0.5f, (ka + kb) * 0.5f, (hi - lo) * 0.5f, th * 0.5f, (kb - ka) * 0.5f, null,
+                                rock, DrawList.STONE);
+                        // a ledge of grass along the face, where the next tier stands back
+                        float lip = 0.9f + rnd.nextFloat() * 0.8f;
+                        float ga = rx + e * in, gb = rx + e * (in + lip + (k == tiers - 1 ? out - in : 0f));
+                        float glo = Math.max(Math.min(ga, gb), x0), ghi = Math.min(Math.max(ga, gb), x1);
+                        if (ghi - glo > 0.1f)
+                            d.box((glo + ghi) * 0.5f, y + th + 0.12f, (ka + kb) * 0.5f, (ghi - glo) * 0.5f, 0.14f, (kb - ka) * 0.5f - 0.1f, null,
+                                    Street.mix(0x7FA048, 0x9DB955, rnd.nextFloat()), DrawList.GRASS);
+                        // now and then a fir on the ledge
+                        float fx = rx + e * (in + lip * 0.5f), fz = ka + 1f + rnd.nextFloat() * (kb - ka - 2f);
+                        if (k > 0 && rnd.nextInt(3) == 0 && fx > x0 && fx < x1)
+                            fir(small, rnd, fx, y + th + 0.2f, fz, 2.6f + rnd.nextFloat() * 2.2f);
+                    }
+                    y += th;
+                    top = y;
+                }
+                float wa = Math.max(Math.min(rx + e * face, rx + e * CLIFF_REACH), x0), wb = Math.min(Math.max(rx + e * face, rx + e * CLIFF_REACH), x1);
+                if (wb - wa > 0.2f) c.wall(wa, za, wb, zb, top);
+                // the scar: where the slope came down, pale earth down the face to the road
+                if (salt == 0 && e > 0 && (s == 3 || s == 4)) {
+                    float sx = rx + face - 0.25f;
+                    if (sx > x0 && sx < x1)
+                        for (int k = 0; k < 4; k++) {
+                            float sy = 1f + k * 6f, sw = len * (0.48f - k * 0.08f);
+                            d.box(sx + k * 0.9f, sy + 3f, (za + zb) * 0.5f + (s == 3 ? 0.6f : -0.6f) * len * 0.3f, 0.3f, 3.2f, sw, null,
+                                    Street.mix(0xC9935A, 0xDDA86A, k * 0.25f), DrawList.GRAVEL);
+                        }
+                }
+            }
+        }
+    }
+
+    /** A fir: a short trunk, three cones of dark needles one over another, smaller as they go up. */
+    private static void fir(DrawList d, Random rnd, float x, float y, float z, float height) {
+        d.box(x, y + height * 0.12f, z, 0.14f, height * 0.12f, 0.14f, null, 0x5A4232, DrawList.TRUNK);
+        int g = Street.mix(0x2F5A33, 0x3E6E3C, rnd.nextFloat());
+        for (int k = 0; k < 3; k++) {
+            float r = height * (0.26f - k * 0.065f), hy = height * 0.16f;
+            float cy = y + height * (0.36f + k * 0.22f);
+            float a = rnd.nextFloat() * 1.5f;
+            float ca = (float) Math.cos(a), sa = (float) Math.sin(a);
+            d.box(x, cy, z, r, hy, r, new float[]{ca, 0f, sa, 0f, 1f, 0f, -sa, 0f, ca}, Street.scale(g, 1f + k * 0.06f), DrawList.LEAVES);
         }
     }
 

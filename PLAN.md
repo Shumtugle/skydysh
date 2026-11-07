@@ -73,6 +73,7 @@ release, each seen on the stand before the phone.
 - 0.56 The town ends inland; the country, the ridge and its pass, the village; the call out.
 - 0.57 Districts: the old town west of home (lanes, the market, the clock tower); the park with the water tower.
 - 0.96 The pass a game: the slopes come down into a pyramid, broken with the mallet, another and another.
+- 0.97 A job put by; the heap on home's list; the pass between high cliffs; no duty pickups before the delivery.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -114,10 +115,9 @@ release, each seen on the stand before the phone.
 
 ## Next
 
-- A way past a story that will not go: offered after it is lost, or after long at one place (the
-  panel), not at the start; the story skipped goes into home's list, not done, to be played when
-  she likes; no pay for it. The panel skipped in the concert: the light comes on for her, the
-  panel stays on the list unplayed.
+- The panel skipped in the concert: the light comes on for her, the panel stays on the list
+  unplayed (the whole job can be put by already, 0.97).
+- The heap on its own away from the game, a little game of its own.
 The missions in order, each teaching a thing; then the town is hers.
 
 1. The hunt: in the streets only (the lifts shut), learning to run them.

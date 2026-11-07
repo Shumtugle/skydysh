@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.96";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.97";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -59,6 +59,8 @@ final class World {
     private boolean craning, craneSolo;
     /** The containers from home's list: the crane once the walls have drawn back. */
     private boolean yardNext;
+    /** The heap in the pass taken from home's list: to be begun once the walls draw back; begun, played on its own. */
+    private boolean heapNext, heapSolo;
     /** The town's helicopter left where the archive job left it, leaning on its broken skid; mended, hers. */
     private Copter parked;
     /** She flies it herself, on no job (it is hers). */
@@ -124,8 +126,9 @@ final class World {
         if (next > 1) mission.round = next - 1;
         // the kinds won; a game kept before they were counted: those of the missions it had played
         kindsWon = host.loadInt(SAVE_KINDS);
+        kindsSkipped = host.loadInt(SAVE_SKIPPED);
         told = host.loadInt(SAVE_TOLD) != 0;
-        if (kindsWon == 0)
+        if (kindsWon == 0 && kindsSkipped == 0)
             for (int n = 1; n < next; n++) kindsWon |= 1 << kindOf(n);
         Dispatch.paidKinds = host.loadInt(SAVE_PAID);
         loadCopter();
@@ -142,7 +145,7 @@ final class World {
         runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - City.CURB - 1.2f, 0f);
         // the game begins with the runaways, straight from the dispatch, till that job is won once;
         // after it the town is hers, and the jobs are at home
-        if ((kindsWon & (1 << 1)) == 0) {
+        if (!passed(1)) {
             mission.round = 0;
             begin(runner.x, runner.z);
         } else standFree();
@@ -159,8 +162,13 @@ final class World {
         startZ = z;
         startHome = indoors != null && indoors.home;
         int n = mission.round + 1;
+        if (n != timedRound) {
+            timedRound = n;
+            missionTime = 0f;
+        }
         delivery = null;
         rescue = null;
+        heapSolo = false;
         puppy = null;
         tow = null;
         archive = null;
@@ -428,6 +436,18 @@ final class World {
         return resultsRowY() + 26f;
     }
 
+    float skipRowY() {
+        return storyRowY() + 26f;
+    }
+
+    /** For the desktop stand: the job now put by, if it may be (the time at it made long enough first). */
+    String standSkip() {
+        missionTime = Math.max(missionTime, SKIP_AFTER + 1f);
+        if (!canSkip()) return "not to be put by";
+        skip();
+        return "put by: kinds put by " + Integer.toBinaryString(kindsSkipped);
+    }
+
     /** A touch under the pause on one of its rows: the language turned to the next, or the best times shown. */
     private boolean pauseRow(float x, float y) {
         if (Math.abs(x - W * 0.5f) > 90f) return false;
@@ -447,6 +467,10 @@ final class World {
             openStory(kindOf(mission.round));
             return true;
         }
+        if (canSkip() && Math.abs(y - skipRowY()) < 11f) {
+            skip();
+            return true;
+        }
         return false;
     }
 
@@ -461,6 +485,9 @@ final class World {
         if (free) return;
         String st = Lang.lines("pause.story", 0, null)[0];
         shadowed(f, st, Math.round(W * 0.5f - PixelFont.width(st, 1) * 0.5f), Math.round(storyRowY() - 4f), 1, cream, ink);
+        if (!canSkip()) return;
+        String sk = Lang.lines("pause.skip", 0, null)[0];
+        shadowed(f, sk, Math.round(W * 0.5f - PixelFont.width(sk, 1) * 0.5f), Math.round(skipRowY() - 4f), 1, 0xFFFFB48A, ink);
     }
 
     /** The best times kept, mission by mission, the latest last (as many as the screen holds). */
@@ -797,6 +824,9 @@ final class World {
                 } else if (c == Dispatch.YARD) {
                     // the containers, no way to go: at the crane once the walls have drawn back
                     yardNext = true;
+                } else if (c == Dispatch.HEAP) {
+                    // the heap, no way to go: at the line in the pass once the walls have drawn back
+                    heapNext = true;
                 } else if (c > 0 && c < Dispatch.REST) {
                     chooseMission(c);
                     dispatch.then(briefing()).story(kindOf(mission.round));
@@ -1301,6 +1331,9 @@ final class World {
                 } else if (yardNext) {
                     yardNext = false;
                     startCrane(true);
+                } else if (heapNext) {
+                    heapNext = false;
+                    startHeap();
                 } else if (resultsOpen) resultsOpen = false;
                 else if (standAfter) {
                     standAfter = false;
@@ -1329,6 +1362,7 @@ final class World {
                 }
                 dispatch = new Dispatch(host, said).then(Dispatch.again(mission.round)).story(kindOf(mission.round));
                 retryAfter = true;
+                lostRound = mission.round;
                 return;
             }
             // won: its time kept against the best; the report waits at home, on the sofa, and the
@@ -1336,6 +1370,8 @@ final class World {
             said = Dispatch.timed(said, record(mission.round, doneTime()), doneTime());
             kindsWon |= 1 << kindOf(mission.round);
             host.saveInt(SAVE_KINDS, kindsWon);
+            kindsSkipped &= ~(1 << kindOf(mission.round));
+            host.saveInt(SAVE_SKIPPED, kindsSkipped);
             lost = false;
             free = true;
             folder = null;
@@ -1389,7 +1425,7 @@ final class World {
         // the concert hall dark till its panel is mended
         if (indoors != null && indoors.concert) indoors.dark = concert != null && !concert.lit();
         // home's own pickup at its curb, once the delivery is won
-        city.homePickup = (kindsWon & (1 << 3)) != 0;
+        city.homePickup = passed(3);
         if (dutyOut()) duty.update(runner.x, runner.z, city, driving);
         else duty.all.clear();
         if (driving != null) drive(dt);
@@ -1415,8 +1451,10 @@ final class World {
         swimSeen = swims;
         beatsWere = runner.beatsLeft();
         int round = mission.round;
+        if (!free) missionTime += dt;
         if (free) {
             chase = nobody;
+            if (heapSolo && rescue != null) rescueStep(dt);
             // the job at the concert hall done once: its middle door is open to her, on foot
             if ((kindsWon & (1 << 7)) != 0 && indoors == null && swapT < 0f && driving == null && concertDoor(dt)) {
                 host.sound(Synth.DOOR, 0.45f, 0.9f);
@@ -1477,17 +1515,7 @@ final class World {
             puppy.update(dt, driving, runner, host);
             if (puppy.held() && !had) host.sound(Synth.SPLASH, 0.5f, 1.6f);
         } else if (rescue != null) {
-            rescue.update(dt, duty, driving, runner, city, host);
-            fallStep();
-            // a blow of the mallet on foot, at what lies in the pass
-            boolean swings = driving == null && runner.throwing() >= 0f && !rescue.fall.holds();
-            if (swings && !swungSeen) rescue.strike(runner.x, runner.z, (float) Math.sin(runner.heading), (float) Math.cos(runner.heading));
-            swungSeen = swings;
-            if (rescue.hit() != rescueHits) {
-                rescueHits = rescue.hit();
-                host.sound(Synth.STONE, 0.6f, 0.8f);
-                host.buzz(40);
-            }
+            rescueStep(dt);
         } else if (delivery != null) {
             delivery.update(dt, duty, driving, runner, host);
         } else if (folder != null) {
@@ -1877,9 +1905,13 @@ final class World {
     private final Shore shore = new Shore();
     private final float[] seatAt = new float[3];
 
-    /** Whether the duty pickups are out: in every mission but a hunt, which is run on foot. */
+    /**
+     * Whether the duty pickups are out: not in a hunt, which is run on foot; and not in the streets
+     * at all till the delivery, the job that brings them (the folder before it is run on foot too).
+     */
     boolean dutyOut() {
-        return !hunt();
+        if (hunt()) return false;
+        return passed(3) || !free && folder == null;
     }
 
     private Pickup pickupAt(float x, float z) {
@@ -3168,8 +3200,87 @@ final class World {
 
     /** The next job to come: the first kind, in order, not yet done (0: none left). */
     int nextKind() {
-        for (int k = 1; k <= KINDS; k++) if ((kindsWon & (1 << k)) == 0) return k;
+        for (int k = 1; k <= KINDS; k++) if (open(k)) return k;
         return 0;
+    }
+
+    /** Whether a kind is still to be played in its turn: neither won nor put by; the landing gear only after the archive. */
+    private boolean open(int k) {
+        if (passed(k)) return false;
+        return k != 9 || (kindsWon & (1 << 8)) != 0;
+    }
+
+    /** Whether a kind is behind her: won, or put by to be played when she likes. */
+    boolean passed(int k) {
+        return ((kindsWon | kindsSkipped) & (1 << k)) != 0;
+    }
+
+    // ---- a job put by: offered once it is lost, or after long at it; on home's list, not done ----
+    static final String SAVE_SKIPPED = "skipped";
+    /** The kinds put by, not done, a bit each (1 << kind); one won later is taken off. */
+    private int kindsSkipped;
+    /** How long the mission now has been played (a try again goes on counting). */
+    private float missionTime;
+    /** The round last lost: its job may be put by from then on. */
+    private int lostRound = -1, timedRound = -1;
+    /** After so long at a job, it may be put by. */
+    static final float SKIP_AFTER = 90f;
+
+    /** Whether the job now may be put by: not won before, lost once or long at it; not in the air. */
+    boolean canSkip() {
+        if (free || heapSolo || aboard() || piloting()) return false;
+        int k = kindOf(mission.round);
+        if ((kindsWon & (1 << k)) != 0 || over()) return false;
+        return lostRound == mission.round || missionTime > SKIP_AFTER;
+    }
+
+    /** The job now put by: on home's list as not done, no pay; the town hers where she is. */
+    private void skip() {
+        int k = kindOf(mission.round);
+        paused = false;
+        if (craning) {
+            craning = false;
+            craneSolo = false;
+            quay.putBack();
+            runner.getOut(Quay.TOWER_X - 1.2f, City.WALK_TOP, Quay.TOWER_Z - 4.2f, (float) Math.PI);
+        }
+        if (solo != null) solo = null;
+        if (indoors != null && !indoors.home) {
+            swapTo = TO_STREET;
+            swap();
+            swapT = -1f;
+        }
+        kindsSkipped |= 1 << k;
+        host.saveInt(SAVE_SKIPPED, kindsSkipped);
+        host.saveInt(SAVE_MISSION, mission.round + 1);
+        String[] said = Lang.lines("report.skip", mission.round, null);
+        lost = false;
+        free = true;
+        folder = null;
+        delivery = null;
+        rescue = null;
+        puppy = null;
+        crowd = null;
+        tow = null;
+        if (archive != null && archive.copter != null && parked == null) parked = archive.copter;
+        archive = null;
+        mend = null;
+        port = null;
+        lab = null;
+        if (concert != null) concert.stop();
+        concert = null;
+        city.extra = null;
+        chase = nobody;
+        errand = NO_ERRAND;
+        runner.stopLead();
+        runner.held = false;
+        toss.lent = toss.away = false;
+        fallHeld = false;
+        overFor = 0f;
+        retryAfter = false;
+        letGo();
+        dispatch = new Dispatch(host, said);
+        host.buzz(30);
     }
 
     /**
@@ -3225,13 +3336,26 @@ final class World {
             l.add(Lang.lines("kind." + next, 0, null)[0]);
             p.add(next);
         }
+        // the stories put by, not done: to be played when she likes
+        for (int k = KINDS; k >= 1; k--) {
+            if (game(k) || (kindsSkipped & (1 << k)) == 0 || k == 9 && (kindsWon & (1 << 8)) == 0) continue;
+            l.add(Lang.lines("list.undone", 0, null)[0].replace("{job}", Lang.lines("kind." + k, 0, null)[0]));
+            p.add(k);
+        }
         if ((kindsWon & (1 << 7)) != 0) {
             l.add(Lang.lines("kind.panel", 0, null)[0]);
             p.add(Dispatch.SOLO);
         }
+        // the heap in the pass on its own, once the call out is done
+        if ((kindsWon & (1 << 4)) != 0) {
+            l.add(Lang.lines("kind.heap", 0, null)[0]);
+            p.add(Dispatch.HEAP);
+        }
         for (int k = KINDS; k >= 1; k--) {
-            if (!game(k) || (kindsWon & (1 << k)) == 0 && k != next) continue;
-            l.add(Lang.lines("kind." + k, 0, null)[0]);
+            boolean by = (kindsSkipped & (1 << k)) != 0;
+            if (!game(k) || (kindsWon & (1 << k)) == 0 && k != next && !by) continue;
+            l.add(by ? Lang.lines("list.undone", 0, null)[0].replace("{job}", Lang.lines("kind." + k, 0, null)[0])
+                    : Lang.lines("kind." + k, 0, null)[0]);
             // the containers once done: at the crane from here, no way to go
             p.add(k == 10 && (kindsWon & (1 << 10)) != 0 ? Dispatch.YARD : k);
         }
@@ -3730,6 +3854,77 @@ final class World {
 
     // ---- the heap in the pass, and the game of it (see Rockfall) ----
 
+    /** The call out a step on: the heap, and the mallet in hand at what lies in the pass. */
+    private void rescueStep(float dt) {
+        rescue.update(dt, duty, driving, runner, city, host);
+        fallStep();
+        // a blow of the mallet on foot, at what lies in the pass
+        boolean swings = driving == null && runner.throwing() >= 0f && !rescue.fall.holds();
+        if (swings && !swungSeen) rescue.strike(runner.x, runner.z, (float) Math.sin(runner.heading), (float) Math.cos(runner.heading));
+        swungSeen = swings;
+        if (rescue.hit() != rescueHits) {
+            rescueHits = rescue.hit();
+            host.sound(Synth.STONE, 0.6f, 0.8f);
+            host.buzz(40);
+        }
+    }
+
+    /**
+     * The heap on its own, from home's list: she is put on the road short of the line, on foot,
+     * and the slopes come down as she comes up; heap after heap, no clock; the way on is home.
+     */
+    private void startHeap() {
+        if (driving != null) getOut();
+        if (indoors != null) {
+            if (indoors.seated) indoors.seated = false;
+            leave();
+            swapT = -1f;
+        }
+        errand = NO_ERRAND;
+        runner.stopLead();
+        rescue = new Rescue();
+        rescue.step = Rescue.PASS;
+        city.extra = rescue;
+        heapSolo = true;
+        Rockfall rf = rescue.fall;
+        float z = rf.tz - 5f;
+        runner.getOut(rf.standX, city.ground(rf.standX, z), z, 0f);
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        letGo();
+        host.buzz(20);
+    }
+
+    /** Off the heap played on its own: back on her sofa, the list before her. */
+    private void leaveHeap() {
+        rescue.fall.leave();
+        rescue = null;
+        city.extra = null;
+        heapSolo = false;
+        fallFinger = -1;
+        fallHeld = false;
+        toss.lent = toss.away = false;
+        runner.held = false;
+        runner.stopLead();
+        letGo();
+        indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+        indoors.enter(runner, false);
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        sitDown();
+        sofaChoice(null);
+    }
+
+    /** For the desktop stand: the heap on its own, as from home's list. */
+    void standHeap() {
+        startHeap();
+    }
+
+    /** Over the frame, the heap played on its own: its game once it has her. */
+    private void heapFlat(DrawList d, Px f) {
+        if (rescue != null && rescue.fall.holds()) fallFlat(d, f);
+    }
+
     /** She is the heap's while it holds her: out of the pickup, to the line, held there; the eye its own. */
     private void fallStep() {
         Rockfall rf = rescue.fall;
@@ -3790,7 +3985,7 @@ final class World {
                 host.buzz(20);
                 return;
             }
-            if (rf.down && onLiftButton(x, y)) {
+            if ((rf.down || heapSolo) && onLiftButton(x, y)) {
                 fallLeave();
                 return;
             }
@@ -3814,6 +4009,10 @@ final class World {
 
     /** On from the heap: her feet her own, and off to the pickup's door (it takes her in as ever). */
     private void fallLeave() {
+        if (heapSolo) {
+            leaveHeap();
+            return;
+        }
         Rockfall rf = rescue.fall;
         rf.leave();
         fallFinger = -1;
@@ -3831,14 +4030,14 @@ final class World {
         host.buzz(20);
     }
 
-    private final float[] fallDoor = new float[2], fallTop = new float[3];
+    private final float[] fallDoor = new float[2];
 
     /** At the line: once the heap is broken, another down the slopes (floating over it), or on. */
     private void fallButtons(DrawList d) {
         Rockfall rf = rescue.fall;
-        if (!rf.playing() || !rf.down) return;
+        if (!rf.playing() || !rf.down && !heapSolo) return;
         float glow = 0.25f + 0.25f * (float) Math.sin(time * 3f);
-        if (againX > -50f) d.badge(againX, againY, BUTTON + 4, Badges.AGAIN, 0.95f, glow);
+        if (rf.down && againX > -50f) d.badge(againX, againY, BUTTON + 4, Badges.AGAIN, 0.95f, glow);
         d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, rf.onFoot || rf.pickup() == null ? Badges.EXIT : Badges.ENTER, 0.95f, 0f);
     }
 
@@ -3855,20 +4054,20 @@ final class World {
             f.rect(0, h - band, W, h, 0xFF000000);
             return;
         }
-        String clock = clock(rescue.clock);
-        shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        if (!heapSolo) {
+            String clock = clock(rescue.clock);
+            shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        }
         String w = Lang.lines(rf.down ? "fall.down" : "fall.word", mission.round, null)[0];
         wordAtTop(f, w, rf.down ? gold : green, ink);
         String tally = Lang.lines("fall.tally", rf.figure, String.valueOf(rf.throwsHere))[0];
         shadowed(f, tally, (W - PixelFont.width(tally, 1)) / 2, 38, 1, cream, ink);
         rf.flat(f, runner);
         if (rf.down) {
-            rf.top(fallTop);
-            if (d.project(fallTop[0], fallTop[1] + 0.25f * (float) Math.sin(time * 2.2f), fallTop[2], at)) {
-                againX = Math.max(BUTTON + 6, Math.min(W - BUTTON - 6, at[0]));
-                againY = Math.max(70f, Math.min(h * 0.6f, at[1]));
-            }
-            caption(f, rf.onFoot || rf.pickup() == null ? "fall.walk" : "fall.more", 0.56f);
+            // another heap: in the corner across from the way on, out of the aim's way
+            againX = W - liftButtonX();
+            againY = liftButtonY();
+            caption(f, heapSolo ? "fall.home" : rf.onFoot || rf.pickup() == null ? "fall.walk" : "fall.more", 0.56f);
         } else if (rf.throwsAll == 0 && !rf.aiming) caption(f, "fall.hint", 0.56f);
     }
 
@@ -4049,6 +4248,7 @@ final class World {
             if (archive != null && archive.carrying()) archive.carried(d, r);
         }
         if (dispatch != null) dispatch.draw(d, f, h);
+        else if (heapSolo) heapFlat(d, f);
         else if (free) freeFlat(d, f);
         else if (concert != null) concertFlat(d, f);
         else if (archive != null) archiveFlat(d, f);
@@ -4188,6 +4388,7 @@ final class World {
         }
         if (dispatch != null) dispatch.draw(d, f, h);
         else if (craning) craneFlat(d, f);
+        else if (heapSolo) heapFlat(d, f);
         else if (free) freeFlat(d, f);
         else if (concert != null) concertFlat(d, f);
         else if (archive != null) archiveFlat(d, f);

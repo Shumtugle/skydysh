@@ -114,6 +114,9 @@ final class Lang {
         EN.put("story.4", "#The pass|=What happened|Beyond the ridge there is a village. One road goes there: north up the street by home, out of town and through the pass. Bread and mail go along it, and the doctor's van.||After the rains the slope over the pass slides. Logs, stumps, stones and clay come down onto the road.||This is what Freedie was put together for: clearing what has fallen, lifting what no one else can. The pickup does not break, and the mallet moves a rock a winch would not.||=The job|Take a duty pickup and drive north, out of town. Past the town, the pickup keeps to the road's bends by itself.||At the pass the slope comes down before her eyes. Break the heap with the mallet: a finger down puts a ring on it, drag to aim, let go to throw. Then into the pickup and on to the village square. Or bring down another heap, and another: as long as she likes, the clock stands.");
         EN.put("story.back", "Touch to go back");
         EN.put("pause.story", "About the job");
+        EN.put("pause.skip", "Put the job by");
+        EN.put("report.skip", "Dispatch \u2014 {kind}||The job is put by.|It waits on home's list,|not done.||Touch to go on");
+        EN.put("list.undone", "{job} \u2014 not done");
         EN.put("best.first", "Best time.|");
         EN.put("best.new", "New record. Was: {time}|");
         EN.put("best", "Best time: {time}|");
@@ -138,8 +141,10 @@ final class Lang {
         EN.put("fall.down", "BROKEN");
         EN.put("fall.tally", "FIGURE {n}   THROWS: {time}");
         EN.put("fall.hint", "Finger down: the ring on the heap.|Drag to aim, let go to throw.");
-        EN.put("fall.more", "Over the heap: a new figure down the slopes.|Below: back to the pickup, and on.");
-        EN.put("fall.walk", "Over the heap: a new figure down the slopes.|Below: on, on foot.");
+        EN.put("fall.more", "Bottom left: a new figure down the slopes.|Bottom right: back to the pickup, and on.");
+        EN.put("fall.walk", "Bottom left: a new figure down the slopes.|Bottom right: on, on foot.");
+        EN.put("fall.home", "Bottom left: a new figure down the slopes.|Bottom right: home.");
+        EN.put("kind.heap", "Rockfall");
     }
 
     private Lang() {

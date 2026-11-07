@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.97
+
+- A job can be put by. Once it is lost, or after a minute and a half at it, a row under the
+  pause offers it: put by, it pays nothing, the report says it waits on home's list, and the
+  next job comes on. On the list it stands as not done, to be played when she likes; won later,
+  it is paid as ever. The landing gear waits for the archive.
+- The heap in the pass on home's list once the call out is done: she is put on the road short of
+  the line, on foot, the slopes come down as she comes up; figure after figure, no clock; the
+  button at the bottom right takes her home to the sofa at any time.
+- The button for another figure in the bottom left corner, across from the way on; it no longer
+  floats over the heap in the way of the aim.
+- The pass between high walls of rock: on either side of the road cliffs of tiers forty and
+  more meters high, each standing back a little over the one under it, grass and firs on the
+  ledges, the faces broken into columns; the pale scar of a fall down the east face; the walls go
+  on past the ridge a way. The pieces of the heap come down from higher on them.
+- The duty pickups are in the streets only from the delivery on: none on the way home from the
+  folder.
+
 ## 0.96
 
 - The pass a game: short of it the eye leaves her, comes down from high over the pickup as it

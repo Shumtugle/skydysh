@@ -92,7 +92,7 @@ final class Rockfall implements Physics.Listener {
         world.clear();
         for (int e = -1; e <= 1; e += 2) {
             Body face = new Body(4f, 10f, 30f, Body.PLINTH, 0);
-            face.setPose(px + e * (City.PASS_HALF + 4f), 10f, pz, 1f, 0f, 0f, 0f);
+            face.setPose(px + e * (City.CLIFF_FOOT + 4f), 10f, pz, 1f, 0f, 0f, 0f);
             world.add(face);
         }
         world.add(car);
@@ -210,8 +210,8 @@ final class Rockfall implements Physics.Listener {
         // up the slope on its own side of the road, high: it comes down tumbling
         float side = x < px ? -1f : 1f;
         if (rnd.nextFloat() < 0.25f) side = -side;
-        p.sx = px + side * (City.PASS_HALF + 1.5f + rnd.nextFloat() * 5f);
-        p.sy = 8f + rnd.nextFloat() * 8f + row * 0.6f;
+        p.sx = px + side * (City.CLIFF_FOOT + 1f + rnd.nextFloat() * 3f);
+        p.sy = 10f + rnd.nextFloat() * 12f + row * 0.6f;
         p.sz = pz + (rnd.nextFloat() - 0.5f) * 12f;
         float ax = rnd.nextFloat() - 0.5f, ay = rnd.nextFloat() - 0.5f, az = rnd.nextFloat() - 0.5f, al = (float) Math.sqrt(ax * ax + ay * ay + az * az) + 1e-4f;
         p.ax = ax / al;

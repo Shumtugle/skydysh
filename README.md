@@ -186,7 +186,8 @@ The fourth, the call out: the road to the village over the hills is blocked in t
 slope coming down onto it. The town ends inland, ten streets up from the shore: past its last
 street a low wall, fields with trees about them, and one road out, north up the street by home's
 west side, winding as it goes; a ridge of green hills across the whole country, the pass cut
-through it for the road; beyond, a village of little houses under red tiles round a square with a
+through it for the road between two walls of rock in tiers, grass and firs on their ledges, the
+pale scar of a fall down one of them; beyond, a village of little houses under red tiles round a square with a
 well. A duty pickup up the road (it keeps along the road's bends by itself). Short of the pass
 the eye leaves her: from high and far off it comes down on the pickup, which stops short; she
 gets out, and down the slopes on either side come logs, stumps, stones and lumps of clay, piled
@@ -195,7 +196,8 @@ road. From a line twenty-eight meters off she throws the mallet at it: a finger 
 on the heap and the eye closes in, the finger drags the ring, lifted she throws; the mallet flies
 on its arc and comes back to her hand. Broken (most of its weight knocked off where it lay, or
 nothing left standing over its lowest row), a button floats over it: another figure down the
-slopes, as many as she likes, the clock standing; or back to the pickup, which shoves through
+slopes (its button in the bottom left corner), as many as she likes, the clock standing; or (the
+bottom right) back to the pickup, which shoves through
 what lies on the road, and on to the square. Each figure comes from a generator: five to seven
 rows, each a kind or a mix of them at one height, logs end on or across two, stumps, stones,
 clay.
@@ -252,7 +254,15 @@ a sorted one apart with moves that could each be made back, so it always has a w
 After the first, the containers are on home's list: straight into the cabin with no way to go,
 and back on the sofa when she comes down; or at the crane whenever she climbs it.
 
-The jobs come in turn: home's screen offers the next one, and a list of her own (the games played, the panel) to play again.
+Once the call out is done, the heap is on home's list too: she is put on the road short of the
+line, on foot, the slopes coming down as she comes up; figure after figure with no clock, and
+home to the sofa when she likes.
+
+The jobs come in turn: home's screen offers the next one, and a list of her own (the games played, the panel, the heap) to play again.
+A job she is stuck on can be put by: once it is lost, or after a minute and a half at it, a row
+under the pause offers it; put by, it pays nothing and waits on home's list, not done, to be
+played when she likes, and the next job comes on. The duty pickups are in the streets only from
+the delivery on (it is the job that brings them).
 
 What is to come is in `PLAN.md`.
 

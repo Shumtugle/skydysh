@@ -204,6 +204,8 @@ final class Dispatch {
     static final int SOLO = 98;
     /** A pick that takes the containers in the port, no way to go: the crane over the field. */
     static final int YARD = 97;
+    /** A pick that takes the heap in the pass, no way to go: at the line, the slopes coming down. */
+    static final int HEAP = 96;
 
     /** A pick that takes no mission: she stays as she is (on the sofa, free). */
     static final int REST = 99;

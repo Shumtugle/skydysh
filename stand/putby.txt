@@ -1,0 +1,26 @@
+# A job put by: the delivery begun, long at it; under the pause, the row to put it by; put by,
+# the report; at home the next job is the one after it, and on the list the delivery not done.
+# The streets with no duty pickups before the delivery. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 3
+keep kinds 6
+restart
+free
+at -10 -8 1.19
+wait 1
+shot k0
+mission 3
+close
+wait 2
+putby
+wait 1.5
+shot k1
+close
+sofa
+wait 7
+shot k2
+listsign
+wait 2
+shot k3

@@ -369,6 +369,13 @@ public final class Stand implements World.Host {
             world.touch(World.DOWN, 0, world.liftButtonX(), world.liftButtonY());
             world.touch(World.UP, 0, world.liftButtonX(), world.liftButtonY());
             step();
+        } else if (c.equals("putby")) {
+            // putby: the job now put by, as from under the pause
+            System.out.println(String.format("%7.2fs  %s", time, world.standSkip()));
+            step();
+        } else if (c.equals("heap")) {
+            // heap: the heap in the pass on its own, as from home's list
+            world.standHeap();
         } else if (c.equals("fall")) {
             // fall: the heap's game, told
             Rockfall rf = world.rescue == null ? null : world.rescue.fall;
