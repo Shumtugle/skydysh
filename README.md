@@ -15,9 +15,10 @@ and walk; she is one, and so are the ones she hunts.
 It opens, at every start, with a flight in from the sea over the beach and the square to home,
 where she stands in the shore road with a golden mallet; the town goes dark but for her, the
 name is typed in the letters of the dispatcher's tube, and an orange stand with a golden button
-rises out of the road before her, as tall as a speaker's stand is to the speaker. Up in the
-corner by the name, small, in its gold and cream, an old film's count down, three, two, one; on
-nought she brings the mallet down on the button, a flash, the white; a touch skips it. The game
+rises out of the road before her, as tall as a speaker's stand is to the speaker, and at once she
+brings the mallet down on the button, a flash, the white; over the last three seconds before the
+blow, small, up in the corner, in the name's gold and cream, an old film's count down, three,
+two, one, that nothing waits for; a touch skips it. The game
 begins with the first job, the runaways, straight from the dispatcher's room, which is her head:
 walls of her own brick round the street seen through her eyes, what is to be done typed over it;
 a touch, her mallet knocks a key, the walls draw back and the street goes on. That one done, she

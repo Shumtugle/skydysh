@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.95
+
+- The opening no longer waits for its count down: she moves on at her own pace (the pedestal
+  rising, the swing at once, the blow), and the count down is laid over the last three seconds
+  before the blow. The opening some seven and a half seconds again.
+
 ## 0.94
 
 - The count down small, up in the corner by the name, in the name's gold and cream: a dark disc,

@@ -3,7 +3,7 @@ package com.shumtugle.skydysh;
 import java.util.Random;
 
 /**
- * What the game opens with, some ten seconds; the one word in it is the game's name.
+ * What the game opens with, some seven and a half seconds; the one word in it is the game's name.
  *
  * The eye comes in from far out over the sea, low over the beach and the promenade with its palms,
  * across the shore road to the square with its fountain, and turns along the shore to home. It
@@ -12,21 +12,22 @@ import java.util.Random;
  * metal sounds. The town goes dark; one light is left, on her, and the mallet glows of itself.
  * Over the frame the name is typed as the dispatcher's screen types, in the letters of its tube,
  * a white cursor before them; a high chime. Out of the road before her rises a pedestal, orange,
- * a speaker's stand, as tall as a speaker's is to the speaker, a golden button on its top. Up in
- * the frame's corner by the name, small, an old film's count down: three, two, one, a ring and a
- * ring in it in the name's gold, the cross of its lines, the hand sweeping round, the numeral in
- * the name's cream. On one she swings the mallet back over her head; on nought she brings it down
- * on the button: a clang, the boom of the ground, a flash. The
- * frame goes white, and at its whitest the game begins, in the same town, before home.
+ * a speaker's stand, as tall as a speaker's is to the speaker, a golden button on its top, and at
+ * once she swings the mallet back over her head and brings it down on the button: a clang, the
+ * boom of the ground, a flash. The frame goes white, and at its whitest the game begins, in the
+ * same town, before home. Over the last three seconds before the blow, up in the frame's corner,
+ * small, an old film's count down: three, two, one, a ring and a ring in it in the name's gold,
+ * the cross of its lines, the hand sweeping round, the numeral in the name's cream; nothing waits
+ * for it.
  *
  * A touch at any moment skips to the white.
  */
 final class Opening {
     // when things happen: the eye lands before her, her eyes light, the dark; the name typed; the
-    // pedestal rising, risen; the count down from three, a second a number; the mallet back, down,
-    // on the button at nought; the white, the end
-    static final float LAND = 4.6f, EYES = 4.6f, DARK = 5.1f, NAME = 5.3f, RISE = 5.6f, RISEN = 6.5f;
-    static final float COUNT = 6.6f, HIT = COUNT + 3f, SWING = HIT - 0.9f, STRIKE = HIT - 0.28f;
+    // pedestal rising, risen; the mallet back, down, on the button; the white, the end. Nothing
+    // waits for the count down: it is laid over the last three seconds before the blow
+    static final float LAND = 4.6f, EYES = 4.6f, DARK = 5.1f, NAME = 5.3f, RISE = 5.2f, RISEN = 6f;
+    static final float SWING = 6.1f, STRIKE = 6.72f, HIT = 7f, COUNT = HIT - 3f;
     static final float WHITE_AT = HIT + 0.4f, LENGTH = WHITE_AT + 0.25f;
     static final float SIZE = Runner.SIZE * 2.5f, MALLET = Toss.SCALE / Runner.SIZE * SIZE;
     static final float FLOOR = 0f;                    // the shore road
@@ -287,7 +288,7 @@ final class Opening {
             look[k] = flight(k + 3, u);
         }
         // as the pedestal rises, back and up a little, so she and it are both in the frame
-        float back = ease((t - RISE) / (RISEN - RISE + 0.4f));
+        float back = ease((t - RISE) / (RISEN - RISE));
         if (back > 0f) {
             float[] p3 = FLIGHT[FLIGHT.length - 1];
             for (int k = 0; k < 3; k++) {
