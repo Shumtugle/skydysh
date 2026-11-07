@@ -1,5 +1,5 @@
-# The icon: her alone at rest under the evening sky, the mallet on her right shoulder, the
-# handle along her arm, its head behind the shoulder. Shot square, for the launcher's layers.
+# A portrait: her alone at rest under the evening sky, the mallet on her right shoulder, the
+# handle along her arm, its head behind the shoulder. Shot square.
 screen 1024 1024
 wait 0.3
 close

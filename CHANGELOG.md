@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0
+
+- The first whole version.
+- The icon: her head in the maid's cap and bow, nothing under it; the mallet slung across behind
+  it, its head up past one side, the handle's end out past the other; the evening sky behind.
+
 ## 0.99.1
 
 - The icon is our own: she herself, drawn by the game, at rest under the evening sky, the mallet
