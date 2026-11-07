@@ -69,6 +69,19 @@ phone's own, Russian or English, kept as chosen) and the results: the best time 
 played, on the screen in her head. The eye behind her keeps out of
 the leaves: when a tree's crown or a palm's comes between, it drops under it, or comes in nearer.
 
+North-west of the town, past its last street, the mountain: a cone as even as a volcano's, grass
+low, rock higher, snow toward the top, ragged at its edge; cut off flat at the top, and on the flat
+the laboratory's tower: a podium, a stem of pale concrete with a lit slit up its front and its
+door at the foot, a ring of dark glass lit in a band with its name in turquoise on the front, a
+dome of copper gone green in bands, a mast with a red light and a dish turned to the sky. Over
+the town it shows from anywhere a street looks that way: the haze lies low, and what stands high
+shows through it. A road winds up it from the town's last street, twice round, as the rings go
+round a snail's shell, laid flat across on the slope, a stone wall under its outer edge, a rail
+along it that holds whatever runs into it, a kerb of rock along the inner. From the flat a cable
+way goes straight down over the town: a station by the tower, a pylon in the first block from
+the sea, a station on the sand; two red cabins on it, one going down as the other comes up,
+each waiting a little at the ends. On the navigator, the mountain and its road.
+
 The town hall's great door in the middle of its front, between the balcony's columns (three and
 three, the way to it wide), two leaves of dark wood with lit glass, a lit fan over them, a
 lantern either side; no lamp post on the pavement before it. In its hall, the secretariat on the

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "0.90";    // shown on screen; keep in step with versionName
+    static final String VERSION = "0.91";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -3606,6 +3606,9 @@ final class World {
     static final float HAND_EYE_IN = 2.2f, HAND_EYE_SIDE = -2.2f, HAND_EYE_UP = 2.4f;
     private final float[] handEye = new float[5], handTo = new float[3];
 
+    /** For the desktop stand: an eye of its own (x, y, z, yaw, pitch) for the street; null, hers. */
+    float[] standEye;
+
     /** Over the frame, the tow: the clock in the corner; where the way goes now, in a word and a mark. */
     private void towFlat(DrawList d, Px f) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E;
@@ -3864,12 +3867,22 @@ final class World {
             eyeYaw = eyeNow[3];
             eyePitch = eyeNow[4];
         }
+        // the desktop stand's own eye, put where a shot wants it
+        if (standEye != null) {
+            eyeX = standEye[0];
+            eyeY = standEye[1];
+            eyeZ = standEye[2];
+            eyeYaw = standEye[3];
+            eyePitch = standEye[4];
+        }
         // at the crane, a long lens from far off: the field nearly as drawn on a plan, the stacks' sides showing
         float focal = craning && dispatch == null ? W * CRANE_LENS : W * 1.6f;
-        d.camera(eyeX, eyeY, eyeZ, eyeYaw, eyePitch, dispatch != null ? dispatch.focal(W * 1.6f, W) : focal, 0.03f, 500f);
+        // far enough for the mountain over the town
+        d.camera(eyeX, eyeY, eyeZ, eyeYaw, eyePitch, dispatch != null ? dispatch.focal(W * 1.6f, W) : focal, 0.05f, 1600f);
         fliers.strokes(d);
         float ex = (float) Math.sin(eyeYaw), ez = (float) Math.cos(eyeYaw);
         city.draw(d, eyeX, eyeZ, ex, ez);
+        Mountain.cabins(d, time);
         cars.draw(d, eyeX, eyeZ, ex, ez);
         felled.draw(d, eyeX, eyeZ, ex, ez);
         if (rescue != null) rescue.draw(d, eyeX, eyeZ, ex, ez);

@@ -1,0 +1,29 @@
+# The mountain and the laboratory: from the shore road, up a street, the mountain over the town;
+# at the town's last street, the road up's foot; at the wheel on the road up, its far side; on
+# the top, the tower, from the air; from the top, the cable way down over the town; the station on the sand.
+screen 1096 2560
+wait 0.4
+free
+at -448 3 0
+wait 1
+shot l0
+at -480 643 0
+wait 1
+shot l1
+drivein -480 1144.5 1.571
+wait 1
+shot l2
+getout
+eye -440 168 815 -0.33 0.08
+wait 0.5
+shot l3
+eye -330 60 560 -0.38 0.14
+wait 0.5
+shot l6
+eye off
+at -488 903 3.4
+wait 1
+shot l4
+at -452 -10 -2.55
+wait 1
+shot l5

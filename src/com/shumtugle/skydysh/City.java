@@ -292,7 +292,7 @@ final class City implements Ground {
     }
 
     /** One cell, as built: its boxes, and what cannot be walked through, as boxes on the ground. */
-    private static final class Cell {
+    static final class Cell {
         final DrawList boxes = new DrawList();
         // the small things (palms, lamp posts, chimneys): drawn only near
         final DrawList detail = new DrawList();
@@ -415,6 +415,8 @@ final class City implements Ground {
                 if (dist < CELL * 1.6f) d.append(c.detail);
                 if (dist < CELL * 1.2f) d.append(c.parked);
             }
+        // the mountain, seen from anywhere
+        Mountain.draw(d, x, z);
         // the sea, one sheet out to the haze from the edge of the beach
         float edge = SHORE * CELL + WATERLINE;
         if (z - edge < (REACH + 2) * CELL) {
@@ -443,8 +445,9 @@ final class City implements Ground {
             if (!beach(x, z)) return WALK_TOP;
             return z > SHORE * CELL + WET_FROM ? SAND : WET;
         }
-        // past the town's last street, the country: grass, the road out, the village square, all level
-        if (z > EDGE_J * CELL + CURB) return 0f;
+        // past the town's last street, the country: grass, the road out, the village square, all
+        // level; but for the mountain and the road up it
+        if (z > EDGE_J * CELL + CURB) return Mountain.ground(x, z);
         float ox = x - Math.round(x / CELL) * CELL, oz = z - Math.round(z / CELL) * CELL;
         return Math.abs(ox) < CURB || Math.abs(oz) < CURB ? 0f : WALK_TOP;
     }
@@ -824,15 +827,19 @@ final class City implements Ground {
             d.box(x0 + half, (CURB_TOP - 0.25f) * 0.5f, cz, half, (CURB_TOP + 0.25f) * 0.5f, (CURB - ROAD) * 0.5f, null, 0xC9BFAE, DrawList.STONE);
             g0 = z0 + CURB;
             float wz = z0 + CURB + 1.2f;
-            for (int k = 0; k < 2; k++) {
-                // the wall, broken where the road out goes through
-                float a = k == 0 ? x0 + ROAD + 0.5f : routeX(wz) + ROUTE_HALF + 1.5f;
-                float b = k == 0 ? routeX(wz) - ROUTE_HALF - 1.5f : x0 + CELL - ROAD - 0.5f;
-                a = Math.max(a, x0 + 0.5f);
-                b = Math.min(b, x0 + CELL - 0.5f);
-                if (b - a < 0.5f) continue;
-                d.box((a + b) * 0.5f, 0.45f, wz, (b - a) * 0.5f, 0.45f, 0.3f, null, 0xCBB89A, DrawList.STONE);
-                c.wall(a, wz - 0.3f, b, wz + 0.3f, 0.9f);
+            // the wall, broken where the road out goes through, and where the road up the mountain does
+            float r0 = routeX(wz) - ROUTE_HALF - 1.5f, r1 = routeX(wz) + ROUTE_HALF + 1.5f;
+            float m0 = Mountain.MX - Mountain.HALF - 1.5f, m1 = Mountain.MX + Mountain.HALF + 1.5f;
+            float[] cut = r0 < m0 ? new float[]{r0, r1, m0, m1} : new float[]{m0, m1, r0, r1};
+            float a = x0 + ROAD + 0.5f;
+            for (int k = 0; k <= 2; k++) {
+                float b = k < 2 ? cut[k * 2] : x0 + CELL - ROAD - 0.5f;
+                float aa = Math.max(a, x0 + 0.5f), bb = Math.min(b, x0 + CELL - 0.5f);
+                if (bb - aa >= 0.5f) {
+                    d.box((aa + bb) * 0.5f, 0.45f, wz, (bb - aa) * 0.5f, 0.45f, 0.3f, null, 0xCBB89A, DrawList.STONE);
+                    c.wall(aa, wz - 0.3f, bb, wz + 0.3f, 0.9f);
+                }
+                if (k < 2) a = Math.max(a, cut[k * 2 + 1]);
             }
         }
         // the grass, a little under the road
@@ -859,6 +866,8 @@ final class City implements Ground {
         else if (j == EDGE_J + 7 || j == EDGE_J + 8) village(c, rnd, x0, z0, j);
         else fields(c, rnd, x0, z0, j);
         if (inQuarry(x0 + CELL * 0.5f, z0 + CELL * 0.5f, CELL * 0.5f)) quarry(c, x0, z0);
+        // the rails along the road up the mountain, where they stand in this cell
+        Mountain.walls(c, i, j);
     }
 
     /** A turn about the up axis, row by row (a fresh array: boxes keep their own). */
@@ -873,14 +882,14 @@ final class City implements Ground {
         for (int k = 0; k < trees; k++) {
             float tx = x0 + 4f + rnd.nextFloat() * (CELL - 8f), tz = z0 + 6f + rnd.nextFloat() * (CELL - 12f);
             float h = 6.5f + rnd.nextFloat() * 3.5f;
-            if (onRoute(tx, tz, 6f) || j == EDGE_J && tz < z0 + 10f || inQuarry(tx, tz, 3f)) continue;
+            if (onRoute(tx, tz, 6f) || j == EDGE_J && tz < z0 + 10f || inQuarry(tx, tz, 3f) || Mountain.near(tx, tz)) continue;
             tree(c, c.detail, rnd, tx, 0f, tz, h);
             c.wall(tx - 0.2f, tz - 0.2f, tx + 0.2f, tz + 0.2f);
         }
         if (rnd.nextInt(2) == 0) {
             float bx = x0 + 6f + rnd.nextFloat() * (CELL - 12f), bz = z0 + 8f + rnd.nextFloat() * (CELL - 16f);
             float r = 0.8f + rnd.nextFloat() * 1.2f;
-            if (!onRoute(bx, bz, 4f) && !(j == EDGE_J && bz < z0 + 10f) && !inQuarry(bx, bz, 3f)) {
+            if (!onRoute(bx, bz, 4f) && !(j == EDGE_J && bz < z0 + 10f) && !inQuarry(bx, bz, 3f) && !Mountain.near(bx, bz)) {
                 c.detail.box(bx, r * 0.55f, bz, r, r * 0.6f, r * 0.85f, yawFrame(rnd.nextFloat() * 3f), 0x9C968A, DrawList.STONE);
                 c.wall(bx - r * 0.8f, bz - r * 0.7f, bx + r * 0.8f, bz + r * 0.7f, r * 1.1f);
             }
@@ -898,6 +907,8 @@ final class City implements Ground {
         // mounds every ten meters, each wider than that, so that they run together into one ridge;
         // each a rock foot and grass stepping in to its top; where the road goes, cut back in steps
         for (float cx = x0 + 5f; cx < x0 + CELL; cx += 10f) {
+            // where the mountain stands, the ridge goes into it
+            if (Math.abs(cx - Mountain.MX) < Mountain.R - 20f) continue;
             float hgt = 10f + (float) Math.abs(Math.sin(cx * 0.037f) * 7f + Math.sin(cx * 0.013f + 1f) * 5f);
             float dz = (float) Math.sin(cx * 0.05f) * 4f;
             int green = Street.mix(0x6E9447, 0x86A85A, (float) Math.abs(Math.sin(cx * 0.07f)));

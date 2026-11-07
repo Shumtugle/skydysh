@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.91
+
+- The mountain, north-west past the town's last street: a cone, grass, rock, snow high up, flat
+  on top; the laboratory's tower on the flat (a stem, a lit ring of glass with its name on it, a
+  dome of copper and green, a mast and a dish).
+- The road up from the town's last street, twice round: flat across, a wall of stone under it, a
+  rail along it that holds, a kerb on the inner side; the ground rises with it, at the wheel and
+  on foot.
+- The cable way from the top straight down over the town to the sand: two stations, a pylon,
+  two red cabins going up and down.
+- The haze thinner high up, and the eye reaching farther: the mountain shows over the town.
+- The navigator's map shows the mountain and its road.
+- A stand scene, lab; the stand's own eye for a shot (eye).
+
 ## 0.90
 
 - The town hall's way in: a great door of dark wood with lit glass, a lit fan over it, lanterns

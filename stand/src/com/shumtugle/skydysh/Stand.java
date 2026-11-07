@@ -319,6 +319,10 @@ public final class Stand implements World.Host {
             // copterat X Y Z RADIANS: the helicopter she flies put there in the air, still
             world.standCopterAt(f(p[1]), f(p[2]), f(p[3]), f(p[4]));
             step();
+        } else if (c.equals("eye")) {
+            // eye X Y Z YAW PITCH: the eye put there for the shots that follow; eye off: hers again
+            world.standEye = p[1].equals("off") ? null : new float[]{f(p[1]), f(p[2]), f(p[3]), f(p[4]), f(p[5])};
+            step();
         } else if (c.equals("getout")) {
             // getout: out of the pickup, or of the helicopter set down
             world.standGetOut();

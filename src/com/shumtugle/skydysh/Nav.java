@@ -27,7 +27,7 @@ final class Nav {
     // how long the line flashes once it is found anew off the old one (seconds)
     static final float FLASH = 1.2f;
 
-    static final int SAND = 0xE6403E37, SEA = 0xE6203B5E, BLOCK = 0xE61A2234, FIELD = 0xE61C2B28, STREET = 0xE6586283, EDGE = 0xF00B0F1A;
+    static final int SNOW = 0xE6C9D2DA, ROCK = 0xE63A3B33, SAND = 0xE6403E37, SEA = 0xE6203B5E, BLOCK = 0xE61A2234, FIELD = 0xE61C2B28, STREET = 0xE6586283, EDGE = 0xF00B0F1A;
     static final int LINE = 0xFF4FD3F2, LINE_FLASH = 0xFFF4F8FF, ME = 0xFF3F72E6, ME_RIM = 0xFFF4F8FF, PLACE = Marks.OPEN;
     static final int BAND = 0xF0214E53, TEXT = 0xFFF4E8D2, INK = 0xFF0B1418;
 
@@ -420,6 +420,11 @@ final class Nav {
             if (Math.abs(gx) < City.ROAD * 0.75f && z > 0f && z < top) return STREET;
         }
         if (City.onRoute(x, z, -1f)) return STREET;
+        if (z > top + City.CURB && Mountain.near(x, z)) {
+            if (!Float.isNaN(Mountain.road(x, z))) return STREET;
+            float h = Mountain.cone(x, z);
+            if (h > 0f) return h > 100f ? SNOW : ROCK;
+        }
         return z < top + City.CURB ? BLOCK : FIELD;
     }
 

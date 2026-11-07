@@ -117,6 +117,8 @@ vec3 darken(vec3 c, vec3 world) {
 vec3 haze(vec3 c, vec3 world) {
     float dist = length(world - uEye);
     float h = 1.0 - exp(-max(dist - uFogStart, 0.0) / uFogScale);
+    // the haze lies low: what stands high over it (a mountain's top) shows through from far off
+    h *= 1.0 - 0.72 * smoothstep(25.0, 140.0, world.y);
     return mix(c, uFog, h);
 }
 
