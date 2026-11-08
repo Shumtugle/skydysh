@@ -105,6 +105,9 @@ final class Island {
             float x = p[0] + p[2] * s, z = p[1] + p[3] * s;
             square(c, x0, z0, x1, z1, x, z, PIER_HALF * 0.75f, DECK, DECK - 0.5f);
         }
+        // the lighthouse, solid to its roof: its plinth as wide as it is drawn, the tower over it
+        square(c, x0, z0, x1, z1, IX, IZ, PLINTH, LH_FOOT + PLINTH_HIGH, 0f);
+        square(c, x0, z0, x1, z1, IX, IZ, TOWER_LOW, LH_TOP, 0f);
         float[] at = new float[3];
         for (int k = 0; k < YACHTS; k++) {
             yachtAt(k, at);
@@ -135,6 +138,84 @@ final class Island {
         trees(far);
         path(far);
         pierDrawn(far);
+        lighthouse(far);
+    }
+
+    // ---- the lighthouse on the top: its foot (how far round the plinth, how high), its tower
+    // (round at the foot, at the top, how high over the plinth), the gallery, the lantern, the roof ----
+    static final float LH_FOOT = PH[PH.length - 1] - 0.8f, PLINTH = 4f, PLINTH_HIGH = 1.6f;
+    static final float TOWER_LOW = 3.2f, TOWER_TOP = 2.3f, TOWER_HIGH = 16f;
+    static final float GALLERY_R = 3.4f, LANTERN_R = 1.5f, LANTERN_HIGH = 2.2f;
+    static final float LH_TOP = LH_FOOT + PLINTH_HIGH + TOWER_HIGH + 0.3f + LANTERN_HIGH + 2.4f;
+
+    /** The way the door looks: toward the path's end on the top, square to the flat nearest it. */
+    private static float doorA() {
+        return Math.round(pathA(1f) / 0.7854f) * 0.7854f;
+    }
+
+    /**
+     * An eight-sided block at (x, y, z): so far from its middle to each flat, so high (half). Four
+     * bands across it an eighth of a turn apart, each as long as the block is across and as wide
+     * as a flat: together, the eight sides and nothing past them.
+     */
+    private static void octagon(DrawList d, float x, float y, float z, float flat, float halfHigh, int color, int mat) {
+        float side = flat * 0.4142f;
+        for (int k = 0; k < 4; k++)
+            d.box(x, y, z, side, halfHigh, flat, yaw(k * 0.7854f), color, mat);
+    }
+
+    /** The lighthouse: a stone plinth, a tower narrowing up, cream with two red bands, a gallery with its rail, the lantern lit, a red roof. */
+    private static void lighthouse(DrawList d) {
+        float x = IX, z = IZ, y0 = LH_FOOT;
+        int cream = 0xF0E2CC, red = 0xC24A3B, stone = 0x8E8A84, iron = 0x2B2E33;
+        octagon(d, x, y0 + PLINTH_HIGH * 0.5f, z, PLINTH, PLINTH_HIGH * 0.5f, stone, DrawList.STONE);
+        int rings = 14;
+        float ring = TOWER_HIGH / rings;
+        for (int k = 0; k < rings; k++) {
+            float t = (k + 0.5f) / rings, r = TOWER_LOW + (TOWER_TOP - TOWER_LOW) * t;
+            boolean band = k >= 4 && k <= 5 || k >= 9 && k <= 10;
+            octagon(d, x, y0 + PLINTH_HIGH + (k + 0.5f) * ring, z, r, ring * 0.5f + 0.01f, band ? red : cream, DrawList.PAINT);
+        }
+        float gy = y0 + PLINTH_HIGH + TOWER_HIGH;
+        // the gallery: its deck on corbels, a rail round it
+        octagon(d, x, gy + 0.15f, z, GALLERY_R, 0.15f, cream, DrawList.STONE);
+        for (int k = 0; k < 8; k++) {
+            float a = k * 0.7854f + 0.3927f, ca = (float) Math.cos(a), sa = (float) Math.sin(a);
+            d.box(x + sa * (TOWER_TOP + 0.35f), gy - 0.3f, z + ca * (TOWER_TOP + 0.35f), 0.22f, 0.3f, 0.35f, yaw(a), cream, DrawList.STONE);
+        }
+        for (int k = 0; k < 16; k++) {
+            float a = k * 0.3927f;
+            d.box(x + (float) Math.sin(a) * (GALLERY_R - 0.1f), gy + 0.75f, z + (float) Math.cos(a) * (GALLERY_R - 0.1f), 0.04f, 0.45f, 0.04f, null,
+                    iron, DrawList.RAIL);
+        }
+        // the rail's top, along each flat (the flats face every eighth of a turn from +z)
+        for (int k = 0; k < 8; k++) {
+            float a = k * 0.7854f, ap = GALLERY_R - 0.1f;
+            d.box(x + (float) Math.sin(a) * ap, gy + 1.2f, z + (float) Math.cos(a) * ap, ap * 0.4142f, 0.04f, 0.04f, yaw(a), iron, DrawList.RAIL);
+        }
+        // the lantern: glass all round, the lamp lit in it, posts between the panes
+        float ly = gy + 0.3f + LANTERN_HIGH * 0.5f;
+        octagon(d, x, ly, z, LANTERN_R, LANTERN_HIGH * 0.5f, 0x3A4A55, DrawList.GLASS);
+        d.box(x, ly - 0.1f, z, 0.55f, 0.6f, 0.55f, null, 0xFFD45A, DrawList.GLOW);
+        for (int k = 0; k < 8; k++) {
+            float a = k * 0.7854f + 0.3927f, pr = LANTERN_R + 0.02f;
+            d.box(x + (float) Math.sin(a) * pr, ly, z + (float) Math.cos(a) * pr, 0.05f, LANTERN_HIGH * 0.5f, 0.05f, null, 0x6A3A2E, DrawList.PAINT);
+        }
+        // the roof: red, narrowing up in steps, a ball and a spike on top
+        float ry = gy + 0.3f + LANTERN_HIGH;
+        for (int k = 0; k < 4; k++)
+            octagon(d, x, ry + 0.25f + k * 0.45f, z, 1.95f - k * 0.45f, 0.25f, red, DrawList.PAINT);
+        d.box(x, ry + 2.1f, z, 0.22f, 0.22f, 0.22f, yaw(0.7854f), red, DrawList.PAINT);
+        d.box(x, ry + 2.6f, z, 0.04f, 0.3f, 0.04f, null, iron, DrawList.RAIL);
+        // the door at the foot, toward the path's end, two small windows over it
+        float a = doorA(), sa = (float) Math.sin(a), ca = (float) Math.cos(a);
+        float[] t = yaw(a);
+        d.box(x + sa * PLINTH, y0 + 1.15f, z + ca * PLINTH, 0.62f, 1.15f, 0.06f, t, 0x6B4428, DrawList.material(DrawList.WOOD, 7));
+        d.box(x + sa * (PLINTH + 0.02f), y0 + 2.3f, z + ca * (PLINTH + 0.02f), 0.72f, 0.08f, 0.07f, t, cream, DrawList.STONE);
+        for (int k = 0; k < 2; k++) {
+            float wy = y0 + PLINTH_HIGH + 3.5f + k * 4.2f, r = TOWER_LOW + (TOWER_TOP - TOWER_LOW) * ((wy - y0 - PLINTH_HIGH) / TOWER_HIGH);
+            d.box(x + sa * r, wy, z + ca * r, 0.2f, 0.42f, 0.05f, t, 0x24323A, DrawList.GLASS);
+        }
     }
 
     /** The spit: a crest of dry sand on a wider bank of wet, laid in pieces along its winding. */
@@ -200,6 +281,8 @@ final class Island {
             float h = height(x, z), hx = height(x + 1f, z), hz = height(x, z + 1f);
             if (Math.abs(hx - h) > 0.6f || Math.abs(hz - h) > 0.6f || h < 1f) continue;
             if (onPath(x, z, 2.2f)) continue;
+            // none round the lighthouse
+            if ((x - IX) * (x - IX) + (z - IZ) * (z - IZ) < 10f * 10f) continue;
             Garden.tree(d, rnd, x, h, z, 5f + rnd.nextFloat() * 4f);
         }
     }
@@ -213,8 +296,9 @@ final class Island {
         return a0 + u * PATH_TURNS * 2f * (float) Math.PI;
     }
 
+    /** How far out the path is at u: from the shore in to the lighthouse's door. */
     private static float pathR(float u) {
-        return PR[3] * (1f - u) + 2f;
+        return PR[3] * (1f - u) + (PLINTH + 1.5f) * u;
     }
 
     /** Whether (x, z) is within so far of the path. */

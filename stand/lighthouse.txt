@@ -1,0 +1,22 @@
+# The lighthouse on the island's top: from its foot facing home, the eye behind her clear of it;
+# from the path's end, its door; from the spit, on the top of the island. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 4
+keep kinds 14
+keep where 0
+restart
+free
+at 10.3 -359.5 0.0589
+wait 1
+shot l0
+eye 21 88 -353 -2.3562 0.25
+wait 0.3
+shot l1
+at 24 -36 3.1416
+wait 1
+shot l2
+eye 40 70 -290 -2.75 0.12
+wait 0.3
+shot l3

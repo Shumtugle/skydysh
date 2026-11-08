@@ -88,6 +88,7 @@ release, each seen on the stand before the phone.
 - 1.0.8 The compass a glass button as the others are.
 - 1.0.9 A ride on a car's roof, with likes.
 - 1.1.0 The spit and the island, the pier, the yachts.
+- 1.1.1 The lighthouse; the secret balcony and the hall of things won.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.

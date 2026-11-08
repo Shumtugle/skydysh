@@ -1,0 +1,50 @@
+screen 1096 2560
+wait 0.4
+keep mission 4
+keep kinds 14
+keep where 0
+restart
+free
+at 10.3 -359.5 0.0589
+wait 0.8
+down 137 560
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where
+wait 1.5
+where

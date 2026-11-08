@@ -116,6 +116,17 @@ final class City implements Ground {
     static final float HOME_TOWER = 7f;
     /** Home's door, in the middle of its front, on the shore road; the way out from it is -z, to the sea. */
     static final float HOME_DOOR_X = HOME_I * CELL + CELL * 0.5f, HOME_DOOR_Z = HOME_J * CELL + FRONT;
+    /**
+     * The balcony on home's sea front, over the door on the fifth storey: no way up to it but
+     * through the air (a long glide, the island's top the place to leap from), and in at its door,
+     * warm light through the gap, the hall no one knows of. Its floor; half across; how deep.
+     */
+    static final float SECRET_Y = 3.3f * 5f + 0.3f, SECRET_HALF = 2.6f, SECRET_DEEP = 1.6f;
+
+    /** Whether (x, y, z) is on the secret balcony, near its door. */
+    static boolean atSecretDoor(float x, float y, float z) {
+        return Math.abs(x - HOME_DOOR_X) < SECRET_HALF - 0.3f && z > HOME_DOOR_Z - 0.9f && z < HOME_DOOR_Z && Math.abs(y - SECRET_Y) < 0.3f;
+    }
 
     /** Whether (x, z) is kept clear of lamps, parked cars and palms: the way from home's door straight out to the sea, the bays. */
     static boolean keptClear(float x, float z) {
@@ -2191,6 +2202,22 @@ final class City implements Ground {
         small.box(cx, by + 1.0f, fz - 1.35f, tw, 0.03f, 0.03f, null, 0x2B2A2C, DrawList.RAIL);
         for (float u = -tw; u <= tw + 0.01f; u += 0.5f)
             small.box(cx + u, by + 0.5f, fz - 1.35f, 0.02f, 0.5f, 0.02f, null, 0x2B2A2C, DrawList.RAIL);
+        // the balcony on the fifth storey: a deep slab on brackets, an iron rail, its door left ajar,
+        // gold light through the gap
+        float sy = SECRET_Y, sh = SECRET_HALF, sd = SECRET_DEEP;
+        d.box(cx, sy - 0.12f, fz - sd * 0.5f, sh, 0.12f, sd * 0.5f, null, plinth, DrawList.STONE);
+        for (int e = -1; e <= 1; e += 2)
+            d.box(cx + e * (sh - 0.4f), sy - 0.55f, fz - 0.45f, 0.14f, 0.32f, 0.45f, null, plinth, DrawList.STONE);
+        small.box(cx, sy + 1.0f, fz - sd + 0.04f, sh, 0.03f, 0.03f, null, 0x2B2A2C, DrawList.RAIL);
+        for (int e = -1; e <= 1; e += 2)
+            small.box(cx + e * (sh - 0.03f), sy + 1.0f, fz - sd * 0.5f, 0.03f, 0.03f, sd * 0.5f, null, 0x2B2A2C, DrawList.RAIL);
+        for (float u = -sh; u <= sh + 0.01f; u += 0.42f)
+            small.box(cx + u, sy + 0.5f, fz - sd + 0.04f, 0.02f, 0.5f, 0.02f, null, 0x2B2A2C, DrawList.RAIL);
+        d.box(cx, sy + 1.25f, fz - 0.03f, 0.95f, 1.25f, 0.04f, null, 0x24323A, DrawList.GLASS);
+        d.box(cx + 0.18f, sy + 1.2f, fz - 0.05f, 0.14f, 1.15f, 0.03f, null, 0xFFC95A, DrawList.GLOW);
+        d.box(cx - 0.42f, sy + 1.2f, fz - 0.22f, 0.5f, 1.15f, 0.04f, yawFrame(-0.6f), 0x2F8A86, DrawList.PAINT);
+        d.box(cx, sy + 2.62f, fz - 0.1f, 1.15f, 0.12f, 0.1f, null, plinth, DrawList.STONE);
+        c.wall(cx - sh, fz - sd, cx + sh, fz, sy, sy - 0.3f);
         // the door: a frame of stone, the coral awning over it, big pots either side
         liftDoor(d, cx, fz, true, -1);
         liftDoor(d, cx, z1, true, 1);

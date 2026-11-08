@@ -431,6 +431,8 @@ final class Indoors implements Ground {
     // ---- home: a room of her own behind the front door, the sofa against its back wall ----
     /** Whether this is home's room; how far in the sofa's seat is; whether she sits on it now. */
     boolean home;
+    /** The secret hall behind home's balcony door: out of it, back onto the balcony. */
+    boolean secret;
     float sofaV;
     boolean seated, sofaArmed = true;
     static final float SOFA_HALF = 1.45f, SOFA_SEAT = 0.55f, SOFA_NEAR = 1.5f;

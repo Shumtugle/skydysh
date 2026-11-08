@@ -643,6 +643,92 @@ final class Rooms {
         return in;
     }
 
+    /**
+     * The hall no one knows of, behind the door of home's balcony on the fifth storey: dark green
+     * walls railed in gold, a dark floor, a red runner to the end wall; on that wall, on a dark
+     * board under lamps, the golden mallet; along each side, shelves of golden things won (little
+     * gold figures on stands, cups), and over them gold discs in frames.
+     */
+    static Indoors secret(float doorX, float doorZ) {
+        Indoors in = new Indoors(doorX, doorZ, 0f, -1f, 5.4f, 11f, 1, 4f, 2);
+        in.backDoor = false;
+        in.hasLift = false;
+        in.secret = true;
+        in.high = 5f;
+        in.frameColor = 0xD9A93A;
+        in.frameMat = DrawList.GOLD;
+        int wall = 0x1F4A45, low = 0x163632, gold = 0xE2B54A, deep_ = 0xC8962E, dark = 0x1B1F22;
+        shell(in, 0x3A2A20, false, wall, low, DrawList.PAINT);
+        DrawList d = in.still();
+        float f = Indoors.FLOOR, w = Indoors.WALL, half = in.half, deep = in.deep;
+        // the floor, the runner up the middle, a gold rail round the walls at hand's height
+        in.box(d, 0f, f + 0.004f, deep * 0.5f, half, 0.004f, deep * 0.5f - w, 0x3B2416, DrawList.WOOD);
+        in.box(d, 0f, f + 0.01f, deep * 0.5f + 0.4f, 1.1f, 0.006f, deep * 0.5f - w - 0.6f, 0x8E1F2A, DrawList.GRAIN);
+        in.box(d, 0f, f + 0.011f, deep * 0.5f + 0.4f, 0.95f, 0.006f, deep * 0.5f - w - 0.75f, 0xA82A33, DrawList.GRAIN);
+        for (int e = -1; e <= 1; e += 2)
+            in.box(d, e * (half - 0.03f), f + 1.0f, deep * 0.5f, 0.03f, 0.04f, deep * 0.5f - w, gold, DrawList.GOLD);
+        in.box(d, 0f, f + 1.0f, deep - w - 0.03f, half, 0.04f, 0.03f, gold, DrawList.GOLD);
+        lamps(in, 3);
+        // the end wall: a dark board, the mallet on it, head across, handle down; lamps over it
+        float bv = deep - w - 0.05f, by = f + 2.8f;
+        in.box(d, 0f, by, bv, 1.9f, 1.5f, 0.05f, dark, DrawList.PAINT);
+        in.box(d, 0f, by, bv - 0.02f, 1.98f, 1.58f, 0.04f, deep_, DrawList.GOLD);
+        in.box(d, 0f, by, bv - 0.03f, 1.9f, 1.5f, 0.04f, dark, DrawList.PAINT);
+        float hv = bv - 0.4f;
+        in.box(d, 0f, by + 0.55f, hv, 0.95f, 0.42f, 0.36f, gold, DrawList.GOLD);
+        for (int e = -1; e <= 1; e += 2)
+            in.box(d, e * 0.62f, by + 0.55f, hv, 0.08f, 0.45f, 0.39f, deep_, DrawList.GOLD);
+        in.box(d, 0f, by - 0.55f, hv, 0.11f, 0.75f, 0.11f, gold, DrawList.GOLD);
+        in.box(d, 0f, by - 1.32f, hv, 0.14f, 0.06f, 0.14f, deep_, DrawList.GOLD);
+        for (int e = -1; e <= 1; e += 2) {
+            in.box(d, e * 1.5f, f + in.high - 0.2f, bv - 0.5f, 0.12f, 0.1f, 0.18f, dark, DrawList.PAINT);
+            in.box(d, e * 1.5f, f + in.high - 0.32f, bv - 0.5f, 0.09f, 0.03f, 0.13f, 0xFFF0C8, DrawList.GLOW);
+        }
+        // along each side: shelves of things won, gold discs in frames over them
+        for (int e = -1; e <= 1; e += 2) {
+            float su = e * (half - 0.32f);
+            for (int r = 0; r < 3; r++) {
+                float sy = f + 0.55f + r * 0.75f;
+                in.box(d, su, sy, deep * 0.5f, 0.3f, 0.025f, deep * 0.5f - w - 1.2f, 0x2A1A12, DrawList.WOOD);
+                for (int k = 0; k < 7; k++) {
+                    float sv = 1.7f + k * ((deep - 3.4f) / 6f);
+                    if ((k + r + (e > 0 ? 1 : 0)) % 2 == 0) figure(in, d, su, sy + 0.025f, sv, gold);
+                    else cup(in, d, su, sy + 0.025f, sv, gold, deep_);
+                }
+            }
+            in.solid(e > 0 ? half - 0.65f : -half, w, e > 0 ? half : -(half - 0.65f), deep - w, f + 2.4f);
+            for (int k = 0; k < 4; k++) {
+                float dv = 1.9f + k * ((deep - 3.8f) / 3f), dy = f + 3.35f, du = e * (half - 0.04f);
+                in.box(d, du, dy, dv, 0.03f, 0.48f, 0.48f, 0x2A1A12, DrawList.WOOD);
+                in.box(d, du - e * 0.02f, dy, dv, 0.02f, 0.42f, 0.42f, 0xEDE6D6, DrawList.PLAIN);
+                in.box(d, du - e * 0.04f, dy + 0.02f, dv, 0.012f, 0.32f, 0.32f, gold, DrawList.ROD);
+                in.box(d, du - e * 0.055f, dy + 0.02f, dv, 0.008f, 0.07f, 0.07f, 0x2B2A2C, DrawList.ROD);
+                in.box(d, du - e * 0.03f, dy - 0.36f, dv, 0.012f, 0.03f, 0.2f, deep_, DrawList.GOLD);
+            }
+        }
+        in.done();
+        return in;
+    }
+
+    /** A little gold figure on a black stand, won for something. */
+    private static void figure(Indoors in, DrawList d, float u, float y, float v, int gold) {
+        in.box(d, u, y + 0.06f, v, 0.07f, 0.06f, 0.07f, 0x1B1F22, DrawList.POLISHED);
+        in.box(d, u, y + 0.13f, v, 0.045f, 0.012f, 0.045f, gold, DrawList.GOLD);
+        in.box(d, u, y + 0.26f, v, 0.028f, 0.12f, 0.022f, gold, DrawList.GOLD);
+        in.box(d, u, y + 0.41f, v, 0.025f, 0.03f, 0.025f, gold, DrawList.GOLD);
+    }
+
+    /** A cup on a stand, its two handles. */
+    private static void cup(Indoors in, DrawList d, float u, float y, float v, int gold, int deep) {
+        in.box(d, u, y + 0.04f, v, 0.09f, 0.04f, 0.09f, 0x2A1A12, DrawList.WOOD);
+        in.box(d, u, y + 0.12f, v, 0.05f, 0.012f, 0.05f, deep, DrawList.GOLD);
+        in.box(d, u, y + 0.18f, v, 0.016f, 0.05f, 0.016f, gold, DrawList.GOLD);
+        in.box(d, u, y + 0.32f, v, 0.085f, 0.09f, 0.085f, gold, DrawList.GOLD);
+        in.box(d, u, y + 0.42f, v, 0.095f, 0.012f, 0.095f, deep, DrawList.GOLD);
+        in.box(d, u, y + 0.33f, v - 0.12f, 0.015f, 0.06f, 0.025f, gold, DrawList.GOLD);
+        in.box(d, u, y + 0.33f, v + 0.12f, 0.015f, 0.06f, 0.025f, gold, DrawList.GOLD);
+    }
+
     /** Floor, ceiling and walls, the glass doors' openings front and back and the lift's in one side. */
     private static void shell(Indoors in, int tile, boolean diagonal, int wall, int low, float lowMat) {
         DrawList d = in.still();

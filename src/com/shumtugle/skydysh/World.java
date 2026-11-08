@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.1.0";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.1.1";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1663,7 +1663,7 @@ final class World {
 
     // ---- doors: in from the street (or the yard), or down from a roof, a place indoors; out again ----
     static final float SWAP = 0.3f;          // the dark coming down at a door, and lifting again
-    static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5, TO_HOME = 6, TO_CONCERT = 7;
+    static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5, TO_HOME = 6, TO_CONCERT = 7, TO_SECRET = 8;
     /** The place indoors she is in; null out of doors. */
     Indoors indoors;
     private float swapT = -1f;
@@ -1705,6 +1705,12 @@ final class World {
         }
         if (r.inAir() || r.climbing() || r.throwing() >= 0f || (folder != null && folder.hers)) return;
         float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading);
+        // on home's balcony up on the fifth storey, at its door, going to it: into the hall no one knows of
+        if (driving == null && City.atSecretDoor(r.x, r.y, r.z) && fz > 0.3f) {
+            host.sound(Synth.DOOR, 0.45f, 0.8f);
+            go(TO_SECRET);
+            return;
+        }
         // in a hunt the lifts are shut (the streets are hers to learn); the ways in are open
         boolean near = city.liftNear(r.x, r.z, r.y, 3f, liftNow, houseNow, liftsOpen());
         if (!near) {
@@ -2496,6 +2502,16 @@ final class World {
                 indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
                 indoors.enter(r, false);
                 break;
+            case TO_SECRET:
+                indoors = Rooms.secret(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+                indoors.enter(r, false);
+                // found the first time: the stream goes wild
+                if (host.loadInt(SAVE_SECRET) == 0) {
+                    host.saveInt(SAVE_SECRET, 1);
+                    like(SECRET_LIKES, SECRET_HEARTS);
+                    saveLikes();
+                }
+                break;
             case TO_ROOF:
                 leave();
                 r.put(l[4], l[5], l[6], l[7]);
@@ -2508,6 +2524,13 @@ final class World {
                     r.put(City.concertDoorX(), City.WALK_TOP, City.CONCERT_J * City.CELL + City.FRONT - 1.2f, (float) Math.PI);
                     liftArmed = false;
                     host.sound(Synth.DOOR, 0.35f, 1.1f);
+                    break;
+                }
+                if (indoors != null && indoors.secret) {
+                    // out of the hall's door onto the balcony, facing the sea
+                    leave();
+                    r.put(City.HOME_DOOR_X, City.SECRET_Y, City.HOME_DOOR_Z - City.SECRET_DEEP + 0.6f, (float) Math.PI);
+                    host.sound(Synth.DOOR, 0.35f, 0.9f);
                     break;
                 }
                 if (indoors != null && indoors.home) {
@@ -3399,6 +3422,10 @@ final class World {
             like(n, 0);
         }
     }
+
+    // ---- the hall no one knows of: found the first time, likes as never ----
+    static final String SAVE_SECRET = "secret";
+    static final int SECRET_LIKES = 100000, SECRET_HEARTS = 160;
 
     // ---- likes: what a job brings, a moment worth it, music listened to, a long flight in the town ----
     /** Hearts poured for a job won, and again over its report read at home. */

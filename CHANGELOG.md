@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.1
+
+- The lighthouse on the island's top: a stone plinth, eight-sided, a tower narrowing up, cream
+  with two red bands, its door on the path's end, two small windows over it; a gallery on
+  corbels, an iron rail round it, the lantern lit, a red roof in steps, a ball and a spike.
+  Solid; the path ends at its door.
+- A secret. Run from the lighthouse's foot toward home and off the top, glide, beat the arms all
+  four times, and she comes down on a balcony over home's door on the fifth storey, its door
+  ajar, gold light through the gap; in at it, a hall no one knows of: dark green walls railed
+  in gold, a red runner to a golden mallet on the end wall under lamps, shelves of little gold
+  figures and cups, gold discs in frames. Found the first time, 100 000 likes and a fountain of
+  hearts. Out at its door, back onto the balcony.
+
 ## 1.1.0
 
 - The spit and the island. From the water's edge south of home a spit of sand winds out to sea,
