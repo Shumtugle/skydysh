@@ -171,6 +171,11 @@ final class Hearts {
         size[to] = size[from];
     }
 
+    /** A heart standing for likes, as big as asked (its cells so many pixels across), its top left at (x, y). */
+    static void mark(Px f, int x, int y, int scale, int color) {
+        heart(f, x, y, BIG, scale, color, 1f);
+    }
+
     /** One heart, its top left at (x0, y0), each cell scale pixels across, a dark edge under it and a light fleck. */
     private static void heart(Px f, int x0, int y0, String[] rows, int scale, int c, float a) {
         int edge = fade(Px.scale(c, 0.35f), a * 0.7f), fill = fade(c, a), fleck = fade(Px.mix(c, 0xFFFFFFFF, 0.6f), a);

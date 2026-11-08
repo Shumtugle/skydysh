@@ -781,7 +781,10 @@ final class Runner {
     private float floor(Ground g, Cars cars, float from, float step) {
         float ground = g.ground(x, z, from, step);
         if (room != null || cars == null) return ground;
-        float roof = cars.topAt(x, z);
+        // (no car here: nothing, not a floor at the street's level, which the sea's bed and the sand are under)
+        int c = cars.over(x, z);
+        if (c < 0) return ground;
+        float roof = cars.roofOf(c);
         return roof > ground && roof <= from + step ? roof : ground;
     }
 

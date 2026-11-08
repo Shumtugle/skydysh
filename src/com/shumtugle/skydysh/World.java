@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.1.1";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.1.2";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1176,6 +1176,14 @@ final class World {
     /** Whether (x, y) is on the compass. */
     private boolean onCompass(float x, float y) {
         return compassShows() && onButton(x, y, compassX(), pauseY());
+    }
+
+    /** The likes a job won brings, told big in the middle: "+N" in the hearts' pink, a heart after it. */
+    private void bigLikes(Px f, String big) {
+        int ink = 0xFF232A4A, pink = 0xFFFF7A9C, scale = 4, gap = 6, mark = 7 * 3;
+        int wide = PixelFont.width(big, scale) + gap + mark, x = (W - wide) / 2, y = h / 2 - 40;
+        shadowed(f, big, x, y, scale, pink, ink);
+        Hearts.mark(f, x + PixelFont.width(big, scale) + gap, y + 2, 3, 0xFFFF4F6E);
     }
 
     /** Where she is (or what she drives), in whole meters: across, along, how high. */
@@ -3819,7 +3827,7 @@ final class World {
         }
         if (fo.over() && fo.hers) {
             String big = "+" + sum;
-            if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
+            if (due > 0) bigLikes(f, big);
             return;
         }
         if (fo.theirs) {
@@ -3877,7 +3885,7 @@ final class World {
         }
         if (dv.over()) {
             String big = "+" + sum;
-            if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
+            if (due > 0) bigLikes(f, big);
             return;
         }
         if (!dv.goal(duty, driving, runner, goal)) return;
@@ -3928,7 +3936,7 @@ final class World {
         String sum = grouped(due);
         if (pu.over()) {
             String big = "+" + sum;
-            if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
+            if (due > 0) bigLikes(f, big);
             return;
         }
         if (!pu.goal(goal)) return;
@@ -3958,7 +3966,7 @@ final class World {
         if (co.step >= Concert.SEATED) {
             // the pay, big, a moment after she sits; then only the music
             String big = "+" + sum;
-            if (due > 0 && co.listened() < 3f) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
+            if (due > 0 && co.listened() < 3f) bigLikes(f, big);
             return;
         }
         boolean in = indoors != null && indoors.concert;
@@ -4151,7 +4159,7 @@ final class World {
         String sum = grouped(due);
         if (rs.over()) {
             String big = "+" + sum;
-            if (due > 0) shadowed(f, big, (W - PixelFont.width(big, 4)) / 2, h / 2 - 40, 4, gold, ink);
+            if (due > 0) bigLikes(f, big);
             return;
         }
         if (!rs.goal(duty, driving, runner, goal)) return;

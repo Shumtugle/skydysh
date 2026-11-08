@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.2
+
+- She swims again. Since 1.0.9 a car's roof was a floor to her, and where no car was the answer
+  was the street's level: over the sea's bed and the sand, under it, she walked on the water.
+  A roof is a floor now only where a car is.
+- The likes a job brings, told big when it is done, no longer in money's gold: "+N" in the hearts'
+  pink, a heart after it.
+
 ## 1.1.1
 
 - The lighthouse on the island's top: a stone plinth, eight-sided, a tower narrowing up, cream
