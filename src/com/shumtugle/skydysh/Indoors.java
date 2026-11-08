@@ -355,12 +355,12 @@ final class Indoors implements Ground {
     /** Whether the eye is held still across the hall, and if so where and how it looks: x, y, z, yaw, pitch. */
     boolean shot(float[] eye) {
         if (home && seated) {
-            // from near the door, a little to one side, down the room at her on the sofa
-            float eu = half * 0.45f, ev = WALL + 1.2f, ey = FLOOR + 2.6f, tv = sofaV, ty = FLOOR + 1.2f;
-            eye[0] = wx(eu, ev);
+            // from across the room, a little to one side, at her on the sofa
+            float ey = FLOOR + 2.6f, ty = FLOOR + 1.2f;
+            eye[0] = wx(sofaEyeU, sofaEyeV);
             eye[1] = ey;
-            eye[2] = wz(eu, ev);
-            float dx = wx(0f, tv) - eye[0], dz = wz(0f, tv) - eye[2];
+            eye[2] = wz(sofaEyeU, sofaEyeV);
+            float dx = wx(sofaU, sofaV) - eye[0], dz = wz(sofaU, sofaV) - eye[2];
             eye[3] = (float) Math.atan2(dx, dz);
             eye[4] = (float) Math.atan2(ty - ey, Math.sqrt(dx * dx + dz * dz));
             return true;
@@ -381,8 +381,9 @@ final class Indoors implements Ground {
     void goal(Runner r, float[] out) {
         float u = u(r.x, r.z), v = v(r.x, r.z), gu, gv;
         if (home) {
-            out[0] = wx(0f, sofaV - SOFA_NEAR + 0.3f);
-            out[1] = wz(0f, sofaV - SOFA_NEAR + 0.3f);
+            float n = SOFA_NEAR - 0.3f;
+            out[0] = wx(sofaU + sofaFaceU * n, sofaV + sofaFaceV * n);
+            out[1] = wz(sofaU + sofaFaceU * n, sofaV + sofaFaceV * n);
             return;
         }
         if (!hasLift) {
@@ -428,12 +429,14 @@ final class Indoors implements Ground {
     boolean dark;
     float lampU, lampV, lampY, lampReach;
 
-    // ---- home: a room of her own behind the front door, the sofa against its back wall ----
-    /** Whether this is home's room; how far in the sofa's seat is; whether she sits on it now. */
+    // ---- home: a room of her own behind the front door (and the back one, on the yard), the sofa against a wall ----
+    /** Whether this is home's room; where the sofa's seat is (across, in) and the way it faces; whether she sits on it now. */
     boolean home;
     /** The secret hall behind home's balcony door: out of it, back onto the balcony. */
     boolean secret;
-    float sofaV;
+    float sofaU, sofaV, sofaFaceU, sofaFaceV = -1f;
+    /** Where the eye stands while she sits (across, in). */
+    float sofaEyeU, sofaEyeV;
     boolean seated, sofaArmed = true;
     static final float SOFA_HALF = 1.45f, SOFA_SEAT = 0.55f, SOFA_NEAR = 1.5f;
 
@@ -446,26 +449,28 @@ final class Indoors implements Ground {
     /** Whether she has come up to the sofa, before it and near enough to sit. */
     boolean atSofa(Runner r) {
         if (!home) return false;
-        float u = u(r.x, r.z), v = v(r.x, r.z);
-        return Math.abs(u) < SOFA_HALF && v > sofaV - SOFA_NEAR - 0.6f;
+        float du = u(r.x, r.z) - sofaU, dv = v(r.x, r.z) - sofaV;
+        // along the sofa, and out from it into the room
+        float along = -du * sofaFaceV + dv * sofaFaceU, out = du * sofaFaceU + dv * sofaFaceV;
+        return Math.abs(along) < SOFA_HALF && out < SOFA_NEAR + 0.6f;
     }
 
     /** Where she sits, the seat's middle (x, y, z into out), facing the room. */
     void seat(float[] out) {
-        out[0] = wx(0f, sofaV);
+        out[0] = wx(sofaU, sofaV);
         out[1] = FLOOR + SOFA_SEAT;
-        out[2] = wz(0f, sofaV);
+        out[2] = wz(sofaU, sofaV);
     }
 
-    /** The way she faces sitting: out into the room, to the door. */
+    /** The way she faces sitting: out into the room. */
     float seatHeading() {
-        return heading(0f, -1f);
+        return heading(sofaFaceU, sofaFaceV);
     }
 
     /** Where she stands up to, a step before the sofa (x, z into out). */
     void beforeSofa(float[] out) {
-        out[0] = wx(0f, sofaV - SOFA_NEAR);
-        out[1] = wz(0f, sofaV - SOFA_NEAR);
+        out[0] = wx(sofaU + sofaFaceU * SOFA_NEAR, sofaV + sofaFaceV * SOFA_NEAR);
+        out[1] = wz(sofaU + sofaFaceU * SOFA_NEAR, sofaV + sofaFaceV * SOFA_NEAR);
     }
 
     /** The light indoors: lamps overhead, the light pooled under them, no haze. */

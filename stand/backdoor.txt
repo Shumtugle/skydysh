@@ -1,0 +1,37 @@
+# Home's back door. In the yard behind home, at the door with home's sign over it: she comes into
+# her own room at the back, the sofa against its side wall; up to it, she sits and the screen comes
+# on. Then again from the yard, through the room and out at the front onto the pavement facing the
+# sea, the eye clear of the awning over the door. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 14
+keep where 0
+restart
+free
+at 32 24.6 3.14159
+wait 0.6
+shot k0
+at 32 22.8 3.14159
+wait 5
+inroom -1.5 4.3
+face -1.5708
+wait 0.3
+shot k1
+down 137 400
+wait 0.8
+up 137 400
+wait 1.0
+where
+shot k2
+keep where 0
+restart
+free
+at 32 22.8 3.14159
+wait 5
+down 137 400
+wait 2.4
+up 137 400
+wait 2.5
+where
+shot k3

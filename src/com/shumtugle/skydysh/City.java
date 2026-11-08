@@ -2222,6 +2222,8 @@ final class City implements Ground {
         liftDoor(d, cx, fz, true, -1);
         liftDoor(d, cx, z1, true, 1);
         Street.awning(small, true, fz, -1, 3.4f, cx, 1.8f, coral, true);
+        // an overhang, as the balcony is: she walks under it, the eye behind her stops short of it
+        c.wall(cx - 1.8f, fz - 1.05f, cx + 1.8f, fz, 3.4f, 2.75f);
         Random deco = new Random(0x4D0EL);
         for (int e = -1; e <= 1; e += 2) {
             float px = cx + e * 2.6f, pz = fz - 0.55f;
@@ -2691,6 +2693,18 @@ final class City implements Ground {
         return true;
     }
 
+    /** Home's house as its cell keeps it (see Cell.house), into house. */
+    void homeHouse(float[] house) {
+        Cell c = cell(HOME_I, HOME_J);
+        for (int k = 0; k < c.houseN; k++) {
+            int o = k * Cell.HOUSE;
+            if (home(c.houses[o], c.houses[o + 1])) {
+                System.arraycopy(c.houses, o, house, 0, Cell.HOUSE);
+                return;
+            }
+        }
+    }
+
     /** The lift of the house at o: as liftAt() tells it. */
     static void lift(float[] h, int o, float[] out) {
         float cx = h[o], cz = h[o + 1], hx = h[o + 2], hz = h[o + 3], top = h[o + 4], nx = h[o + 5], nz = h[o + 6];
@@ -2739,7 +2753,7 @@ final class City implements Ground {
                     // the door at the back, on the yard, if it looks on one
                     float bx = c.houses[o] - nx * (half + 0.25f), bz = c.houses[o + 1] - nz * (half + 0.25f);
                     if (n < max - 1 && near(bx, bz, x, z, reach) && backClear(c.houses, o))
-                        n = mark(out, n, bx, WALK_TOP + 3.5f, bz, -nx, -nz, sign);
+                        n = mark(out, n, bx, WALK_TOP + 3.5f, bz, -nx, -nz, mine ? MARK_HOME : sign);
                     if (kind != LIFT) continue;
                     lift(c.houses, o, l);
                     float hx = l[8] + nx * 0.45f, hz = l[9] + nz * 0.45f;

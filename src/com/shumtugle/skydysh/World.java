@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.1.5";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.1.6";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1772,10 +1772,12 @@ final class World {
         liftWait = r.speed < 1.5f ? liftWait + dt : 0f;
         if (!(at && r.speed < LIFT_PAST || at && fx * wx + fz * wz > 0.7f || liftWait > LIFT_STAND)) return;
         liftWait = 0f;
-        // home's front door: into home's room
-        if (City.home(houseNow[0], houseNow[1]) && l[1] < houseNow[1]) {
+        // home's doors, the front one on the street and the back one on the yard: into home's room
+        if (City.home(houseNow[0], houseNow[1])) {
             liftArmed = false;
             if (driving != null) getOut();
+            System.arraycopy(l, 0, liftOf, 0, 11);
+            System.arraycopy(houseNow, 0, houseOf, 0, 8);
             host.sound(Synth.DOOR, 0.45f, 1f);
             go(TO_HOME);
             return;
@@ -2557,7 +2559,7 @@ final class World {
                 break;
             case TO_HOME:
                 indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
-                indoors.enter(r, false);
+                indoors.enter(r, l[10] > 0.5f);
                 break;
             case TO_SECRET:
                 indoors = Rooms.secret(City.HOME_DOOR_X, City.HOME_DOOR_Z);
@@ -2588,6 +2590,19 @@ final class World {
                     leave();
                     r.put(City.HOME_DOOR_X, City.SECRET_Y, City.HOME_DOOR_Z - City.SECRET_DEEP + 0.6f, (float) Math.PI);
                     host.sound(Synth.DOOR, 0.35f, 0.9f);
+                    break;
+                }
+                if (indoors != null && indoors.home && swapTo == TO_YARD) {
+                    // out of home's back door into the yard, facing away from it
+                    leave();
+                    city.homeHouse(houseOf);
+                    City.lift(houseOf, 0, doorAt);
+                    float nx = doorAt[2], nz = doorAt[3];
+                    float half = Math.abs(nx) * houseOf[2] + Math.abs(nz) * houseOf[3];
+                    float px = doorAt[0] - nx * (2f * half + 1.4f + OUT_STEP), pz = doorAt[1] - nz * (2f * half + 1.4f + OUT_STEP);
+                    r.put(px, city.ground(px, pz), pz, (float) Math.atan2(-nx, -nz));
+                    liftArmed = true;
+                    host.sound(Synth.DOOR, 0.35f, 1.1f);
                     break;
                 }
                 if (indoors != null && indoors.home) {
@@ -3706,7 +3721,7 @@ final class World {
     /** The screen let go by the sign of the way back: she gets up once the walls have drawn back. */
     private boolean standAfter;
 
-    /** Up from the sofa, a step before it, facing the door. */
+    /** Up from the sofa, a step before it, facing the room. */
     private void standUp() {
         Indoors in = indoors;
         if (in == null || !in.seated) return;

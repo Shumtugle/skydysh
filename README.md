@@ -141,7 +141,8 @@ stroke at the water's top (still, she settles slowly a little lower, never under
 as the open sea lets her; back in the shallows
 she stands up and wades out. Home is there, where the game begins: one large house with a tower and a lamp on
 top, the same in every town; its sign over the door takes her in, to a room of her own: a sofa
-against the back wall, lamps either side, the sea in a frame over it, books, plants. Come up to
+against a side wall, lamps either side, the sea in a frame over it, books, plants, and a glass
+door at the back onto the yard, under home's sign there too. Come up to
 the sofa and she sits; the game is kept, and the screen in her head asks which mission now (or
 the next one, or just a rest). A touch, and she gets up.
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.6
+
+- Home's back door. Coming in at it from the yard, she went into a stranger's hall and out at
+  the front by home's own door, and turned round there to find her room behind it. Now the house
+  is one house from both sides: the back door, under home's sign, opens into her room, and the
+  room has a glass door at the back onto the yard, a way through from the street to the yard. The
+  sofa moved to the side wall for it, the sea in its frame over it, the books across from it.
+- The awning over home's door an overhang the eye stops short of: out of the door, the eye no
+  longer sits in it, the frame half coral cloth.
+
 ## 1.1.5
 
 - A globe in the secret hall, in the middle of the floor on a gold stand: a glass sphere with the
