@@ -127,7 +127,7 @@ have a wider middle than aside, so turning the wheel does not touch the throttle
 or let go, it rolls on and slows, and the wheel comes back straight. Otherwise coloured for the
 mission (coral for a hunt, turquoise for the folder, amber for a delivery, cream when free). It
 turns only as it goes: a turn in the street is made in three. The wheel straight, a pickup a
-little off the street's way finds it; the rest is the driver's. The way out up on the right. How fast, up on the left under the pause, out from under the thumb.
+little off the street's way finds it; the rest is the driver's. The way out up on the right: with the wheel drawn over it, a touch waits for the pickup to stand; with the wheel clear of it, she leaps out on the go and the pickup rolls on. How fast, up on the left under the pause, out from under the thumb.
 
 She gets in where she comes up to a pickup, any side or end, the nose as well as the doors:
 walked against it, at once; stood by it, in a moment; its sign touched, she goes to the nearest of

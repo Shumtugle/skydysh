@@ -941,6 +941,12 @@ public final class Stand implements World.Host {
                 step();
                 System.out.println(String.format("%7.2fs  on the roof of car %d at %.1f %.1f, going %.1f", time, best, k.x[best], k.z[best], k.speed[best]));
             }
+        } else if (c.equals("wheel")) {
+            // wheel: at the wheel or not, how fast, where the pickup she drives (or last left) is
+            Pickup q = world.driving;
+            System.out.println(String.format("%7.2fs  %s", time, q != null
+                    ? String.format("at the wheel, %.1f m/s, at %.1f %.1f", q.speed, q.x, q.z)
+                    : String.format("on foot at %.1f %.1f", world.runner.x, world.runner.z)));
         } else if (c.equals("pickups")) {
             // pickups: the duty pickups out now, where each stands
             StringBuilder b = new StringBuilder();

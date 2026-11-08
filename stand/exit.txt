@@ -1,0 +1,49 @@
+# The way out at the wheel. The thumb high, the wheel clear of the way out: a touch, and she leaps
+# out on the go, the pickup rolling on without her, slowing, till it stops. The thumb low, the wheel
+# drawn over the way out: a touch on it waits, the button aglow, and she gets out once the pickup
+# stands (braked to a stop). In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 4
+keep kinds 14
+keep where 0
+restart
+free
+drivein 66.2 14 0
+down 137 210
+move 137 170
+wait 3
+wheel
+finger down 1 230 444
+finger up 1 230 444
+wait 0.1
+wheel
+shot e0
+up 137 170
+wait 1
+pickups
+shot e1
+wait 3
+pickups
+wheel
+up 137 170
+wait 4
+restart
+free
+drivein 66.2 14 0
+down 137 520
+move 137 470
+wait 3
+wheel
+finger down 1 230 444
+finger up 1 230 444
+wait 0.3
+wheel
+shot e2
+move 137 580
+wait 3
+wheel
+shot e3
+up 137 580
+wait 1

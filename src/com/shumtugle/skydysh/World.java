@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.1.2";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.1.3";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1520,6 +1520,20 @@ final class World {
         if (dutyOut()) duty.update(runner.x, runner.z, city, driving);
         else duty.all.clear();
         if (driving != null) drive(dt);
+        // the way out waiting: she gets out once the pickup stands
+        if (exitWaiting && (driving == null || Math.abs(driving.speed) <= STOPPED)) {
+            if (driving != null) getOut(false);
+            exitWaiting = false;
+        }
+        // a pickup she leapt out of rolls on, slowing, till it stands where it stops
+        if (rolling != null) {
+            if (rolling == driving) rolling = null;
+            else if (Math.abs(rolling.speed) < 0.05f) {
+                rolling.speed = 0f;
+                duty.settle(rolling);
+                rolling = null;
+            } else rolling.drive(dt, false, 0f, 0f, false, city, cars, walkers);
+        }
         else if (aboard()) ride(dt);
         else if (piloting()) fly(dt);
         else if (craning) crane(dt);
@@ -1778,6 +1792,24 @@ final class World {
     boolean liftOffer;
     private boolean liftPressed, buttonHeld;
 
+    // ---- the way out at the wheel: with the wheel drawn over it, a touch there may be the thumb
+    // after the wheel, so it only asks to get out, and waits for the pickup to stand (touched
+    // again, not); with the wheel clear of it, the player means it: out on the go, the pickup
+    // rolling on by itself ----
+    /** Slower than this, meters a second, the pickup stands. */
+    static final float STOPPED = 0.4f;
+    private boolean exitWaiting;
+    /** The pickup she leapt out of on the go, rolling on, or null. */
+    private Pickup rolling;
+
+    /** Whether the steering wheel, where it is drawn now (held or at rest), reaches over the way out. */
+    private boolean wheelOverExit() {
+        float cx = wheelFinger >= 0 ? wheelDrawX(carCX) : wheelDrawX(WHEEL_REST_X);
+        float cy = wheelFinger >= 0 ? wheelDrawY(carCY) : wheelDrawY(h - WHEEL_REST_UP);
+        float dx = liftButtonX() - cx, dy = liftButtonY() - cy, reach = WHEEL_HALF + BUTTON + 4;
+        return dx * dx + dy * dy < reach * reach;
+    }
+
     /** Where the button's middle is: low in the frame, to the right, under the thumb. */
     int liftButtonX() {
         return W - 44;
@@ -1859,8 +1891,9 @@ final class World {
                 }
                 d.badge(carCX + ox, carCY + oy, KNOB * 0.7f, Badges.KNOB, 0.8f, 0f);
             } else d.badge(wheelDrawX(WHEEL_REST_X), wheelDrawY(h - WHEEL_REST_UP), WHEEL_HALF, Badges.STEER, WHEEL_RESTING, 0f, ringTint(), turn);
-            // the way out over the wheel, which is big enough to reach it
-            d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f, 0f);
+            // the way out over the wheel, which is big enough to reach it; waiting for the pickup to stand, aglow
+            d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f,
+                    exitWaiting ? 0.55f + 0.4f * (float) Math.sin(time * 6f) : 0f);
         }
         if (footButtons() && !Runner.classic) {
             for (int b = 0; b < 3; b++) {
@@ -2063,13 +2096,20 @@ final class World {
 
     /** Out of the pickup, by its door, or the other one if that side is shut in; it stays where it is. */
     private void getOut() {
+        getOut(false);
+    }
+
+    /** Out of the pickup at its door; leapt out on the go (roll), it rolls on by itself till it stands. */
+    private void getOut(boolean roll) {
         Pickup p = driving;
         if (p == null) return;
         letGo();
+        exitWaiting = false;
         p.cap = -1f;
         driving = null;
         p.driven = false;
-        p.speed = 0f;
+        if (roll) rolling = p;
+        else p.speed = 0f;
         p.steer = 0f;
         float[] q = {0f, 0f};
         p.door(0.9f, q);
@@ -2081,7 +2121,7 @@ final class World {
             q[1] = p.z - s * (Pickup.HALF_WIDE + 0.9f) + c * Pickup.SEAT_Z;
         }
         runner.getOut(q[0], city.ground(q[0], q[1]), q[1], p.heading);
-        duty.settle(p);
+        if (!roll) duty.settle(p);
         doorArmed = false;
         runner.recenter();
         buttonHeld = true;
@@ -2277,7 +2317,21 @@ final class World {
             return;
         }
         if (type == DOWN && onLiftButton(x, y)) {
-            getOut();
+            boolean going = Math.abs(driving.speed) > STOPPED;
+            if (exitWaiting) {
+                // touched again while it waits: not after all
+                exitWaiting = false;
+                host.buzz(10);
+                return;
+            }
+            if (going && wheelOverExit()) {
+                // the wheel over the way out: a thumb there may be after the wheel; out once it stands
+                exitWaiting = true;
+                host.buzz(12);
+                return;
+            }
+            // the wheel clear of it: out now, on the go if it goes, the pickup rolling on
+            getOut(going);
             // one finger to play: this one is the lead now, so its lifting is the button's
             if (Runner.classic) leadFinger = id;
             return;

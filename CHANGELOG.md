@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.3
+
+- The way out at the wheel. With the steering wheel drawn over it, a touch there may be the thumb
+  after the wheel: it only asks to get out, the button aglow, and she gets out once the pickup
+  stands; touched again, not. With the wheel clear of it, the player means it: she leaps out on
+  the go, and the pickup rolls on without her, slowing, till it stops where it stops.
+- The icon: the mallet gone; Freedie's head alone, from the author's own picture, half the layer
+  high in its middle, whole in every launcher's mask and on the opening splash; the evening sky to
+  the edges behind it, a warm glow; a monochrome layer for themed icons.
+
 ## 1.1.2
 
 - She swims again. Since 1.0.9 a car's roof was a floor to her, and where no car was the answer
