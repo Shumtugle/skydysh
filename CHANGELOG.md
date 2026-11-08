@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.4
+
+- The seats in the concert hall the right way round: their backs on the side of the doors, the
+  stage before whoever sits there. They had their backs to the stage, and the hall sat facing
+  into them.
+
 ## 1.1.3
 
 - The way out at the wheel. With the steering wheel drawn over it, a touch there may be the thumb

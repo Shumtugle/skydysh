@@ -91,6 +91,7 @@ release, each seen on the stand before the phone.
 - 1.1.1 The lighthouse; the secret balcony and the hall of things won.
 - 1.1.2 She swims again; the big total in likes, not gold.
 - 1.1.3 The way out waits under the wheel, leaps clear of it, the pickup rolling on; the icon the head alone.
+- 1.1.4 The concert hall's seats the right way round.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.

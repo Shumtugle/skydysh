@@ -540,7 +540,8 @@ final class Rooms {
                 float u = Concert.seatU(k);
                 in.box(d, u, f + 0.22f, v, 0.38f, 0.22f, 0.36f, 0x3A2A24, DrawList.WOOD);
                 in.box(d, u, f + 0.47f, v, 0.36f, 0.05f, 0.34f, 0xA8323A, DrawList.GRAIN);
-                in.box(d, u, f + 0.75f, v + 0.33f, 0.36f, 0.32f, 0.05f, 0xA8323A, DrawList.GRAIN);
+                // the back on the side of the doors, the stage before whoever sits there
+                in.box(d, u, f + 0.75f, v - 0.33f, 0.36f, 0.32f, 0.05f, 0xA8323A, DrawList.GRAIN);
                 in.box(d, u + 0.42f, f + 0.6f, v, 0.04f, 0.03f, 0.3f, 0xC9A15A, DrawList.GOLD);
                 int b = Math.abs(u) < Concert.MID_HALF ? 1 : u > 0f ? 2 : 0;
                 lo[b] = Math.min(lo[b], u - 0.45f);
