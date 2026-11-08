@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.1.4";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.1.5";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -122,6 +122,7 @@ final class World {
         byte[] moves = host.asset("moves.bin");
         if (moves != null) Frida.use(Moves.read(moves));
         if (FolkPack.town == null) FolkPack.town = FolkPack.read(host.asset("folk.bin"));
+        if (Rooms.globe == null) Rooms.globe = host.asset("globe.bin");
         Lang.use(host, langCode());
         // where the last game left off: the mission to play next, and what has been won
         int next = host.loadInt(SAVE_MISSION);
@@ -1874,9 +1875,12 @@ final class World {
             return;
         }
         if (driving != null) {
+            // the way out first, half seen, so the wheel's lines lie over it; waiting for the pickup to stand, aglow
+            d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, exitWaiting ? 0.7f : 0.5f,
+                    exitWaiting ? 0.55f + 0.4f * (float) Math.sin(time * 6f) : 0f);
             // the steering wheel by the thumb while it is down, turned as the pickup's is, in the
-            // mission's colour, green while the throttle is on, coral while the brake is; a knob
-            // where the thumb is; a faint wheel where it would go
+            // mission's colour, green while the throttle is on, coral while the brake is; a faint
+            // wheel where it would go. No knob: the thumb covers it, and the wheel's turn says the same
             // drawn turned the way the pickup turns: the thumb right, its top to the right (the badge
             // turns the other way round for a positive angle, so the sign is taken off)
             float turn = -driving.steer * WHEEL_TURNS;
@@ -1884,16 +1888,7 @@ final class World {
                 float pull = pullAxis();
                 int tint = pull > 0f ? DrawList.TINT_GREEN : pull < 0f ? DrawList.TINT_CORAL : ringTint();
                 d.badge(wheelDrawX(carCX), wheelDrawY(carCY), WHEEL_HALF, Badges.STEER, WHEEL_SEEN, pull != 0f ? 0.6f : 0.1f, tint, turn);
-                float ox = carTX - carCX, oy = carTY - carCY, m = (float) Math.sqrt(ox * ox + oy * oy);
-                if (m > CAR_R) {
-                    ox *= CAR_R / m;
-                    oy *= CAR_R / m;
-                }
-                d.badge(carCX + ox, carCY + oy, KNOB * 0.7f, Badges.KNOB, 0.8f, 0f);
             } else d.badge(wheelDrawX(WHEEL_REST_X), wheelDrawY(h - WHEEL_REST_UP), WHEEL_HALF, Badges.STEER, WHEEL_RESTING, 0f, ringTint(), turn);
-            // the way out over the wheel, which is big enough to reach it; waiting for the pickup to stand, aglow
-            d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, 0.95f,
-                    exitWaiting ? 0.55f + 0.4f * (float) Math.sin(time * 6f) : 0f);
         }
         if (footButtons() && !Runner.classic) {
             for (int b = 0; b < 3; b++) {

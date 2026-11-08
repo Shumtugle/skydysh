@@ -1,0 +1,58 @@
+# The globe in the secret hall: in, back toward the door a few steps, then turned to it; once
+# straight, once from aside.
+screen 1096 2560
+wait 0.4
+lang ru
+keep mission 4
+keep kinds 14
+keep where 0
+keep secret 0
+keep likes 2000
+restart
+free
+at 10.3 -359.5 0.0589
+wait 0.8
+down 137 560
+wait 5
+up 137 560
+swipe 137 600
+down 137 560
+wait 3
+up 137 560
+swipe 137 600
+down 137 560
+wait 3
+up 137 560
+swipe 137 600
+down 137 560
+wait 3
+up 137 560
+swipe 137 600
+down 137 560
+wait 8
+where
+wait 6
+where
+wait 4
+where
+wait 2
+where
+wait 1
+where
+up 137 560
+wait 1.5
+where
+where2
+likes
+shot s3
+face 3.1416
+down 137 560
+wait 0.45
+up 137 560
+wait 1
+face 0
+wait 1.2
+shot g1
+face 0.5
+wait 1.2
+shot g2

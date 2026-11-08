@@ -290,6 +290,9 @@ What is to come is in `PLAN.md`.
   above), all in `assets/cars.png`, where each lies in `assets/cars.txt`. The skin is looked up
   by the way a face looks; where it is paint, the car's own paint is laid on in its place.
   The wheels are round, drawn as balls are. The skins are under the same license as the rest.
+- The globe in the secret hall is a picture of the author's laid on a sphere in small cells,
+  one byte for the side and then its cells' colours, in `assets/globe.bin`; under the same
+  license as the rest.
 - The phone draws that list with OpenGL ES 3: the sun's depth map; the sky and the boxes at a
   few pixels to a frame pixel, each material its own worked surface made in the shader, lit by a
   low sun and the sky with soft shadows; then a finishing pass (a soft bloom, the hour's grade,

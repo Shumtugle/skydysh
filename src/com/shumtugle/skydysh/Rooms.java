@@ -707,8 +707,50 @@ final class Rooms {
                 in.box(d, du - e * 0.03f, dy - 0.36f, dv, 0.012f, 0.03f, 0.2f, deep_, DrawList.GOLD);
             }
         }
+        globe(in, d, 0f, f, deep * 0.52f, 0.55f, gold, deep_);
         in.done();
         return in;
+    }
+
+    /** The globe's picture, when the game has it: one byte N, then N by N cells of red, green, blue, rows down. */
+    static byte[] globe;
+
+    /**
+     * A glass globe on a gold stand in the middle of the floor: its picture laid on the sphere's front
+     * as columns of little cells running through to the back; a gold ring round it. Nothing without the picture.
+     */
+    private static void globe(Indoors in, DrawList d, float u, float f, float v, float r, int gold, int deep) {
+        byte[] g = globe;
+        if (g == null || g.length < 1) return;
+        int n = g[0] & 0xFF;
+        if (n < 2 || g.length < 1 + n * n * 3) return;
+        float stand = 0.95f, cy = f + stand + 0.06f + r, cell = 2f * r / n;
+        in.box(d, u, f + 0.04f, v, 0.32f, 0.04f, 0.32f, 0x1B1F22, DrawList.POLISHED);
+        in.box(d, u, f + 0.1f, v, 0.24f, 0.02f, 0.24f, deep, DrawList.GOLD);
+        in.box(d, u, f + 0.5f, v, 0.06f, 0.4f, 0.06f, gold, DrawList.GOLD);
+        in.box(d, u, f + stand, v, 0.16f, 0.03f, 0.16f, gold, DrawList.GOLD);
+        in.box(d, u, f + stand + 0.05f, v, 0.1f, 0.03f, 0.1f, deep, DrawList.GOLD);
+        for (int j = 0; j < n; j++) {
+            float y = r - (j + 0.5f) * cell;
+            for (int i = 0; i < n; i++) {
+                float x = (i + 0.5f) * cell - r, q = r * r - x * x - y * y;
+                if (q <= 0f) continue;
+                int o = 1 + (j * n + i) * 3;
+                int c = ((g[o] & 0xFF) << 16) | ((g[o + 1] & 0xFF) << 8) | (g[o + 2] & 0xFF);
+                float z = (float) Math.sqrt(q);
+                in.box(d, u + x, cy + y, v, cell * 0.5f, cell * 0.5f, z, c, DrawList.GLOW);
+            }
+        }
+        // the ring, upright round the sphere as one sees it from the door
+        int k = 48;
+        float rr = r + 0.05f;
+        for (int e = 0; e < k; e++) {
+            double a = (e + 0.5) * 2 * Math.PI / k;
+            float ex = (float) Math.sin(a) * rr, ey = (float) Math.cos(a) * rr;
+            if (ey < -r * 0.9f) continue;
+            in.box(d, u + ex, cy + ey, v, 0.025f + Math.abs(ey) / rr * 0.02f, 0.025f + Math.abs(ex) / rr * 0.02f, 0.025f, gold, DrawList.GOLD);
+        }
+        in.solid(u - 0.4f, v - 0.4f, u + 0.4f, v + 0.4f, cy + r);
     }
 
     /** A little gold figure on a black stand, won for something. */

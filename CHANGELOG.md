@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.5
+
+- A globe in the secret hall, in the middle of the floor on a gold stand: a glass sphere with the
+  city by the sea inside it, as a fisheye sees it, from the author's own picture laid on the
+  sphere in little cells; a gold ring round it. The picture is an asset of its own
+  (`assets/globe.bin`); without it the hall has no globe.
+- The way out at the wheel drawn under the wheel, half seen: the wheel's lines over it. Aglow
+  and plainer while it waits for the pickup to stand.
+- No knob on the steering wheel. Left from the days the wheel was a bare field, it showed where
+  the thumb was; the thumb covers it, and the wheel's turn and its colour say the same.
+
 ## 1.1.4
 
 - The seats in the concert hall the right way round: their backs on the side of the doors, the
