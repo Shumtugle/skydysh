@@ -898,7 +898,7 @@ final class Runner {
             high = RIDE_HIGH + 1.5f * fast;
         }
         // on a chase, out of doors: up high over her
-        chase += ((in ? 0f : chaseWant) - chase) * Math.min(1f, dt * CHASE_RATE);
+        chase += ((in ? 0f : chaseWant) - chase) * Math.min(1f, dt * (in ? CHASE_DOWN_IN : CHASE_RATE));
         if (chase > 0.001f) {
             back += (CHASE_BACK - back) * chase;
             high += (CHASE_HIGH - high) * chase;
@@ -987,7 +987,7 @@ final class Runner {
     // the eye on a chase: far behind her and high, over the roofs, looking down along her way, so
     // that those after her are seen big below it, she on ahead of them, the way on beyond her; how
     // fast it goes up and comes down
-    static final float CHASE_BACK = 58f, CHASE_HIGH = 32f, CHASE_AHEAD = 8f, CHASE_RATE = 1.2f, CHASE_OVER = 14f;
+    static final float CHASE_BACK = 58f, CHASE_HIGH = 32f, CHASE_AHEAD = 8f, CHASE_RATE = 1.2f, CHASE_OVER = 14f, CHASE_DOWN_IN = 9f;
     /** Whether the eye should be up for a chase (1) or down where it always is (0), and how far it is up now. */
     float chaseWant, chase;
     // the eye on her swimming: so far back, so high over the water, looking so far on and so high there

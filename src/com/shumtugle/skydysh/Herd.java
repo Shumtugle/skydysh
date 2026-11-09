@@ -23,6 +23,10 @@ final class Herd {
     static final int KNOTS = 5, EACH = 3, ALL = KNOTS * EACH;
     // how near she is seen from; how near one comes before it goes off; how far behind it loses her
     static final float SEE = 18f, CATCH = 1.5f, LOSE = 150f;
+    // out on the island, one waiting for her sees her again from so far: few places to hide there
+    static final float SEE_ISLE = 45f;
+    // waiting where her way left the ground, one goes on to any later point of it on foot as near as this
+    static final float REJOIN = 25f;
     // how fast they come: near her, well slower than her run (she gets away if she keeps going,
     // and a turn at a crossing costs her little); well behind, faster (they come up); in between,
     // eased: so they hang about thirty meters behind her, and come up only if she stands
@@ -157,13 +161,14 @@ final class Herd {
                 // looking about where it stands
                 heading[k] += dt * 0.4f * (float) Math.sin(clock * 0.7f + k);
                 if (!out) continue;
-                float dx = hx - x[k], dz = hz - z[k];
-                if (dx * dx + dz * dz < SEE * SEE && Math.abs(hy - y[k]) < 8f) {
+                float dx = hx - x[k], dz = hz - z[k], see = step >= BOAT ? SEE_ISLE : SEE;
+                if (dx * dx + dz * dz < see * see && Math.abs(hy - y[k]) < 8f) {
                     int g = k / EACH;
                     if ((after & (1 << g)) != 0) {
-                        // one of a knot after her, that had lost her, sees her again
+                        // one of a knot after her, that had lost her, sees her again: on after
+                        // her along her way from where it is nearest it
                         state[k] = COMES;
-                        at[k] = Math.max(0L, trail - 1);
+                        at[k] = step >= BOAT ? nearestKept(x[k], z[k], city) : Math.max(0L, trail - 1);
                         since[k] = clock;
                     } else {
                         came(g);
@@ -179,7 +184,7 @@ final class Herd {
                     down[k] -= dt;
                     if (down[k] <= 0f) {
                         since[k] = clock;
-                        at[k] = nearestKept(x[k], z[k]);
+                        at[k] = nearestKept(x[k], z[k], city);
                     }
                     continue;
                 }
@@ -326,8 +331,10 @@ final class Herd {
                 int n = (int) (j % TRAIL);
                 if (tin[n] || !onFoot(tx[n], ty[n], tz[n], city)) continue;
                 float qx = tx[n] - x[k], qz = tz[n] - z[k];
-                found = qx * qx + qz * qz < 20f * 20f;
-                break;
+                if (qx * qx + qz * qz < REJOIN * REJOIN) {
+                    found = true;
+                    break;
+                }
             }
             if (!found) {
                 speed[k] = Math.max(0f, speed[k] - 20f * dt);
@@ -377,11 +384,12 @@ final class Herd {
     }
 
     /** The point of her way nearest (x, z), among the last kept: the newest of those as near. */
-    private long nearestKept(float px, float pz) {
+    private long nearestKept(float px, float pz, City city) {
         long first = Math.max(0L, trail - 600), best = Math.max(0L, trail - 1);
         float bd = Float.MAX_VALUE;
         for (long q = trail - 1; q >= first; q--) {
             int n = (int) (q % TRAIL);
+            if (tin[n] || !onFoot(tx[n], ty[n], tz[n], city)) continue;
             float dx = tx[n] - px, dz = tz[n] - pz, d = dx * dx + dz * dz;
             if (d < bd - 1f) {
                 bd = d;

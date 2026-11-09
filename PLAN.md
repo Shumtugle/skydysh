@@ -103,6 +103,7 @@ release, each seen on the stand before the phone.
 - 1.2.6 The brums only on foot (no ladders, roofs, lifts); stairs up the island, its top cleared.
 - 1.2.7 The chase from high up; the yachts with nobody stopping, the eye shaken; no fire on the wrecks.
 - 1.2.8 The job named Hotheads, its tale on the story page; the golden mallet carried from the workshop.
+- 1.2.9 The tunnel through the island, the two flights round to the top.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -144,9 +145,7 @@ release, each seen on the stand before the phone.
 
 ## Next
 
-- Hotheads, the rest: 1.2.9 the way up: a tunnel into the rock from the pier's foot,
-  rising gently through the island, out onto a ledge on its far side; from there stairs right and
-  left round the island up to the lighthouse (the straight stairs too steep). 1.3.0 the lighthouse
+- Hotheads, the rest: 1.3.0 the lighthouse
   a safe place: in at its door, up the tower; at the gallery the dispatcher says the secret study
   can be reached by a leap from here, and that in it a switch locks the island. A drawbridge in the
   spit, down till the end; the switch raises it; the brums left on the island; the report. The

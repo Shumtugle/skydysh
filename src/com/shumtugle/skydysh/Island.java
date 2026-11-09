@@ -159,8 +159,8 @@ final class Island {
         return line[k * 2 + 1];
     }
 
-    // ---- the way up, for the navigator: from the pier's foot up the stairs, across the top to
-    // the lighthouse's door; its points so far apart ----
+    // ---- the way up, for the navigator: from the pier's foot through the tunnel, up the
+    // right-hand flight, across the top to the lighthouse's door; its points so far apart ----
     static final float CLIMB_STEP = 6f;
     private static float[] climb;
     private static int climbN;
@@ -168,21 +168,31 @@ final class Island {
     private static void climb() {
         if (climb != null) return;
         float[] p = pier();
-        int steps = (int) Math.ceil((stairsFrom() - STAIRS_TO) / CLIMB_STEP);
-        climbN = 1 + steps + 1 + 1;
+        Tunnel t = tunnel();
+        float[] pts = flights()[0];
+        int every = Math.max(1, Math.round(CLIMB_STEP / TREAD)), fn = (pts.length / 2 - 1) / every + 1;
+        int tn = (int) Math.ceil((t.len + 5f) / CLIMB_STEP);
+        climbN = 1 + tn + 1 + fn + 1;
         climb = new float[climbN * 2];
-        climb[0] = p[0];
-        climb[1] = p[1];
-        float sa = (float) Math.sin(PIER_A), ca = (float) Math.cos(PIER_A), w = wob(PIER_A);
-        for (int k = 0; k <= steps; k++) {
-            float r = Math.max(STAIRS_TO, stairsFrom() - k * CLIMB_STEP) * w;
-            climb[(k + 1) * 2] = IX + sa * r;
-            climb[(k + 1) * 2 + 1] = IZ + ca * r;
+        int n = 0;
+        climb[n++] = p[0];
+        climb[n++] = p[1];
+        // through the tunnel, a point every so far, from just outside its mouth to just past the far one
+        float[] q = new float[2];
+        for (int k = 0; k <= tn; k++) {
+            t.at(Math.min(t.len + 3f, -2f + k * CLIMB_STEP), 0f, q);
+            climb[n++] = q[0];
+            climb[n++] = q[1];
+        }
+        for (int k = 0; k < fn; k++) {
+            int i = Math.min(pts.length / 2 - 1, k * every);
+            climb[n++] = pts[i * 2];
+            climb[n++] = pts[i * 2 + 1];
         }
         float[] at = new float[3];
         door(at);
-        climb[(climbN - 1) * 2] = at[0];
-        climb[(climbN - 1) * 2 + 1] = at[2];
+        climb[n++] = at[0];
+        climb[n] = at[2];
     }
 
     static int climbCount() {
@@ -325,6 +335,7 @@ final class Island {
         trees(far);
         path(far);
         stairs(far);
+        tunnelDrawn(far);
         pierDrawn(far);
         lighthouse(far);
     }
@@ -423,8 +434,29 @@ final class Island {
     }
 
     /** The island in facets, ring on ring of its profile, round in sectors: sand, rock, grass. */
+    // the slopes go round in so many pieces
+    static final int SECTORS = 64;
+
+    /** The heading of the middle of the slopes' piece s. */
+    static float sectorA(int s) {
+        return (s + 0.5f) * 2f * (float) Math.PI / SECTORS;
+    }
+
+    /** How far out the profile's ring k is (before the wobble). */
+    static float ring(int k) {
+        return PR[k];
+    }
+
+    private static Tunnel tunnel;
+
+    /** The tunnel through the island. */
+    static Tunnel tunnel() {
+        if (tunnel == null) tunnel = new Tunnel();
+        return tunnel;
+    }
+
     private static void slopes(DrawList d) {
-        int sectors = 64;
+        int sectors = SECTORS;
         for (int s = 0; s < sectors; s++) {
             float a = (s + 0.5f) * 2f * (float) Math.PI / sectors, w = wob(a);
             float sn = (float) Math.sin(a), cs = (float) Math.cos(a);
@@ -454,62 +486,129 @@ final class Island {
                     color = Street.mix(0x6E9447, 0x86A953, n);
                     mat = DrawList.GRASS;
                 }
+                // where the tunnel's mouths are, the rock's piece is left out: the portal stands there
+                if (s == Tunnel.SECTOR && k == Tunnel.IN_FACE || s == (Tunnel.SECTOR + sectors / 2) % sectors && k == Tunnel.OUT_FACE) continue;
                 d.box(cx, cy, cz, wide, thick, longHalf, turn, color, mat);
             }
         }
     }
 
-    // ---- the stairs: straight up from the pier's foot to the top, in from the sand (as far out
-    // as the profile is drawn before the wobble) to the top's edge; how wide, half; a tread how
-    // deep; how high a rail, its posts so far apart ----
-    static final float STAIRS_TO = PR[12] - 2f, STAIRS_HALF = 1.8f, TREAD = 0.8f, RAIL_HIGH = 1.1f, POST_EVERY = 4f;
+    // ---- the stairs: from the tunnel's far mouth, right and left, round and up to the top;
+    // how far out they start, how far in they end, how far round each goes; how wide, half; a
+    // tread how deep; how high a rail, its posts so far apart ----
+    static final float FLIGHT_FROM = 70f, FLIGHT_TO = 30f, FLIGHT_ROUND = 2.618f;
+    static final float STAIRS_HALF = 1.8f, TREAD = 0.8f, RAIL_HIGH = 1.1f, POST_EVERY = 4f;
+    private static float[][] flights;
 
-    private static float stairsFrom() {
-        return PR[4] + 1f;
+    /** The two flights' points (x, z, x, z ...), a tread apart: the first round to the right, the second to the left. */
+    static float[][] flights() {
+        if (flights != null) return flights;
+        flights = new float[2][];
+        float a0 = sectorA(Tunnel.SECTOR) + (float) Math.PI;
+        for (int f = 0; f < 2; f++) {
+            float e = f == 0 ? 1f : -1f;
+            // so many treads that each is about one long
+            float mid = (FLIGHT_FROM + FLIGHT_TO) * 0.5f, far = (float) Math.hypot(mid * FLIGHT_ROUND, FLIGHT_FROM - FLIGHT_TO);
+            int n = (int) Math.ceil(far / TREAD);
+            float[] pts = new float[(n + 1) * 2];
+            for (int k = 0; k <= n; k++) {
+                float u = k / (float) n, a = a0 + e * u * FLIGHT_ROUND, r = (FLIGHT_FROM + (FLIGHT_TO - FLIGHT_FROM) * u) * wob(a);
+                pts[k * 2] = IX + (float) Math.sin(a) * r;
+                pts[k * 2 + 1] = IZ + (float) Math.cos(a) * r;
+            }
+            flights[f] = pts;
+        }
+        return flights;
     }
 
-    /** Whether (x, z) is on the stairs, or within so far of them. */
+    /** Whether (x, z) is within so far of either of the tunnel's mouths. */
+    static boolean nearPortal(float x, float z, float within) {
+        Tunnel t = tunnel();
+        float s = t.along(x, z), c = Math.abs(t.across(x, z));
+        return c < Tunnel.HALF + within && (Math.abs(s) < within || Math.abs(s - t.len) < within);
+    }
+
+    /** Whether (x, z) is on one of the flights, or within so far of it. */
     static boolean onStairs(float x, float z, float within) {
-        float dx = x - IX, dz = z - IZ, sa = (float) Math.sin(PIER_A), ca = (float) Math.cos(PIER_A);
-        float along = dx * sa + dz * ca, across = dx * ca - dz * sa, w = wob(PIER_A);
-        return along > (STAIRS_TO - within) * w && along < (PR[3] + within) * w && Math.abs(across) < STAIRS_HALF + within;
+        float lim = (STAIRS_HALF + within) * (STAIRS_HALF + within);
+        for (float[] pts : flights())
+            for (int k = 0; k < pts.length; k += 2) {
+                float dx = pts[k] - x, dz = pts[k + 1] - z;
+                if (dx * dx + dz * dz < lim) return true;
+            }
+        return false;
     }
 
     /**
-     * The stairs: up the rock in stone steps, a tread at a time, each as high as the rock rises
-     * over it; across each ledge a strip of trodden gravel; wooden rails on posts both sides all
-     * the way, to be seen from the pier and from the top.
+     * The stairs: each flight up the rock in stone steps, a tread at a time, each as high as the
+     * rock rises over it; across each ledge a strip of trodden gravel; wooden rails on posts both
+     * sides all the way; at the top, gravel on to the lighthouse's door. From the far mouth to the
+     * flights' feet, gravel too.
      */
     private static void stairs(DrawList d) {
-        float sa = (float) Math.sin(PIER_A), ca = (float) Math.cos(PIER_A), w = wob(PIER_A);
-        float[] t = yaw(PIER_A);
-        // across, to the right going up
-        float ox = -ca, oz = sa;
-        float from = PR[3], to = STAIRS_TO;
-        for (float r = from; r > to; r -= TREAD) {
-            float r0 = r * w, r1 = Math.max(to, r - TREAD) * w, rm = (r0 + r1) * 0.5f;
-            float x0 = IX + sa * r0, z0 = IZ + ca * r0, x1 = IX + sa * r1, z1 = IZ + ca * r1;
-            float h0 = height(x0, z0), h1 = height(x1, z1), xm = IX + sa * rm, zm = IZ + ca * rm;
-            float rise = h1 - h0, half = (r0 - r1) * 0.5f;
-            if (rise > 0.2f) {
+        for (float[] pts : flights()) {
+            flight(d, pts);
+            float[] at = new float[3];
+            door(at);
+            int last = pts.length - 2;
+            gravel(d, pts[last], pts[last + 1], at[0], at[2], 12);
+        }
+        Tunnel t = tunnel();
+        float[] q = new float[2];
+        t.at(t.len, 0f, q);
+        float[] f0 = flights()[0];
+        gravel(d, q[0], q[1], f0[0], f0[1], 4);
+    }
+
+    /** A strip of gravel from (x0, z0) to (x1, z1), in so many pieces, each on the ground. */
+    private static void gravel(DrawList d, float x0, float z0, float x1, float z1, int pieces) {
+        float qx = x0, qz = z0, qy = height(x0, z0) + 0.06f;
+        for (int k = 1; k <= pieces; k++) {
+            float u = k / (float) pieces, x = x0 + (x1 - x0) * u, z = z0 + (z1 - z0) * u, y = height(x, z) + 0.06f;
+            float len = (float) Math.sqrt((x - qx) * (x - qx) + (y - qy) * (y - qy) + (z - qz) * (z - qz));
+            d.box((x + qx) * 0.5f, (y + qy) * 0.5f, (z + qz) * 0.5f, STAIRS_HALF, 0.06f, len * 0.5f + 0.1f, along(qx, qy, qz, x, y, z), 0xD9C08E,
+                    DrawList.GRAVEL);
+            qx = x;
+            qy = y;
+            qz = z;
+        }
+    }
+
+    /** One flight along its points: steps where the rock rises, gravel where it is level, rails both sides. */
+    private static void flight(DrawList d, float[] pts) {
+        int n = pts.length / 2;
+        for (int k = 0; k + 1 < n; k++) {
+            float x0 = pts[k * 2], z0 = pts[k * 2 + 1], x1 = pts[k * 2 + 2], z1 = pts[k * 2 + 3];
+            float h0 = height(x0, z0), h1 = height(x1, z1), xm = (x0 + x1) * 0.5f, zm = (z0 + z1) * 0.5f;
+            float run = (float) Math.sqrt((x1 - x0) * (x1 - x0) + (z1 - z0) * (z1 - z0)), half = run * 0.5f + 0.02f;
+            float[] t = yaw((float) Math.atan2(x1 - x0, z1 - z0));
+            float rise = h1 - h0;
+            if (Math.abs(rise) > 0.2f) {
                 // a stone step: its top a little over the rock's middle, down to the foot of the rise
-                float top = (h0 + h1) * 0.5f + rise * 0.25f + 0.05f, low = h0 - 0.3f;
+                float hi = Math.max(h0, h1), lo = Math.min(h0, h1);
+                float top = (h0 + h1) * 0.5f + Math.abs(rise) * 0.25f + 0.05f, low = lo - 0.3f;
                 d.box(xm, (top + low) * 0.5f, zm, STAIRS_HALF, (top - low) * 0.5f, half, t, 0xC9BFAE, DrawList.STONE);
-                d.box(xm - sa * (half - 0.06f), top + 0.01f, zm - ca * (half - 0.06f), STAIRS_HALF, 0.02f, 0.06f, t, 0xA89C88, DrawList.STONE);
+                float ex = rise > 0f ? -1f : 1f, sx = (x1 - x0) / run, sz = (z1 - z0) / run;
+                d.box(xm + ex * sx * (half - 0.06f), top + 0.01f, zm + ex * sz * (half - 0.06f), STAIRS_HALF, 0.02f, 0.06f, t, 0xA89C88, DrawList.STONE);
+                if (hi > top + 0.5f) d.box(xm, (hi + top) * 0.5f, zm, STAIRS_HALF, (hi - top) * 0.5f, half * 0.5f, t, 0xB8AC98, DrawList.STONE);
             } else {
                 float y = Math.max(h0, h1) + 0.06f;
                 d.box(xm, y, zm, STAIRS_HALF, 0.06f, half + 0.05f, t, 0xD9C08E, DrawList.GRAVEL);
             }
         }
         // the rails: posts both sides, a rail from post to post
+        int every = Math.max(1, Math.round(POST_EVERY / TREAD));
         for (int e = -1; e <= 1; e += 2) {
             float px = 0f, py = 0f, pz = 0f;
             boolean first = true;
-            for (float r = from; r >= to - 0.01f; r -= POST_EVERY) {
-                float rr = Math.max(to, r) * w, x = IX + sa * rr + ox * e * (STAIRS_HALF + 0.15f), z = IZ + ca * rr + oz * e * (STAIRS_HALF + 0.15f);
+            for (int k = 0; k < n; k += every) {
+                int k2 = Math.min(n - 1, k + 1), k1 = k2 == k ? k - 1 : k;
+                float dx = pts[k2 * 2] - pts[k1 * 2], dz = pts[k2 * 2 + 1] - pts[k1 * 2 + 1], dl = (float) Math.sqrt(dx * dx + dz * dz);
+                float ox = dz / dl, oz = -dx / dl;
+                float x = pts[k * 2] + ox * e * (STAIRS_HALF + 0.15f), z = pts[k * 2 + 1] + oz * e * (STAIRS_HALF + 0.15f);
                 float g = height(x, z), y = g + RAIL_HIGH;
                 d.box(x, g + RAIL_HIGH * 0.5f, z, 0.08f, RAIL_HIGH * 0.5f + 0.3f, 0.08f, null, 0x6B4A30, DrawList.WOOD);
-                if (!first) {
+                if (!first && Math.abs(y - py) < 6f) {
                     float len = (float) Math.sqrt((x - px) * (x - px) + (y - py) * (y - py) + (z - pz) * (z - pz));
                     d.box((x + px) * 0.5f, (y + py) * 0.5f, (z + pz) * 0.5f, 0.06f, 0.06f, len * 0.5f + 0.06f, along(px, py, pz, x, y, z), 0x8A5F3C,
                             DrawList.WOOD);
@@ -520,21 +619,78 @@ final class Island {
                 pz = z;
             }
         }
-        // across the top to the lighthouse's door: a strip of gravel, piece by piece on the ground
-        float[] at = new float[3];
-        door(at);
-        float sx = IX + sa * to * w, sz = IZ + ca * to * w;
-        int pieces = 12;
-        float qx = sx, qz = sz, qy = height(sx, sz) + 0.06f;
-        for (int k = 1; k <= pieces; k++) {
-            float u = k / (float) pieces, x = sx + (at[0] - sx) * u, z = sz + (at[2] - sz) * u, y = height(x, z) + 0.06f;
-            float len = (float) Math.sqrt((x - qx) * (x - qx) + (y - qy) * (y - qy) + (z - qz) * (z - qz));
-            d.box((x + qx) * 0.5f, (y + qy) * 0.5f, (z + qz) * 0.5f, STAIRS_HALF, 0.06f, len * 0.5f + 0.1f, along(qx, qy, qz, x, y, z), 0xD9C08E,
-                    DrawList.GRAVEL);
-            qx = x;
-            qy = y;
-            qz = z;
+    }
+
+    // ---- the tunnel drawn: its floor, walls and roof piece by piece, lamps on its roof and
+    // walls; a portal of dressed stone round each mouth, as wide as the rock's piece left out
+    // there and as high as the rock face, so far deep ----
+    static final float TUNNEL_PIECE = 3f, LAMP_EVERY = 12f, PORTAL_DEEP = 1.8f;
+
+    private static void tunnelDrawn(DrawList d) {
+        Tunnel t = tunnel();
+        float h = Tunnel.HIGH, w = Tunnel.HALF;
+        float[] p0 = new float[2], p1 = new float[2];
+        for (float s = -1f; s < t.len + 1f; s += TUNNEL_PIECE) {
+            float s1 = Math.min(t.len + 1f, s + TUNNEL_PIECE), f0 = t.floor(s), f1 = t.floor(s1);
+            t.at(s, 0f, p0);
+            t.at(s1, 0f, p1);
+            float[] fr = along(p0[0], f0, p0[1], p1[0], f1, p1[1]);
+            float len = (float) Math.sqrt((s1 - s) * (s1 - s) + (f1 - f0) * (f1 - f0)) * 0.5f + 0.05f;
+            float mx = (p0[0] + p1[0]) * 0.5f, mz = (p0[1] + p1[1]) * 0.5f, fm = (f0 + f1) * 0.5f;
+            d.box(mx, fm - 0.15f, mz, w + 0.4f, 0.15f, len, fr, 0x6E655C, DrawList.STONE);
+            d.box(mx, fm + h + 0.25f, mz, w + 0.4f, 0.25f, len, fr, 0x5A524B, DrawList.STONE);
+            for (int e = -1; e <= 1; e += 2) {
+                float wx = mx + t.vx * e * (w + 0.2f), wz = mz + t.vz * e * (w + 0.2f);
+                d.box(wx, fm + h * 0.5f, wz, 0.2f, h * 0.5f + 0.3f, len, fr, 0x8C7F70, DrawList.STONE);
+            }
         }
+        // the lamps: one in the roof, one on each wall between, warm
+        for (float s = LAMP_EVERY * 0.5f; s < t.len; s += LAMP_EVERY) {
+            float f = t.floor(s);
+            t.at(s, 0f, p0);
+            d.box(p0[0], f + h - 0.06f, p0[1], 0.5f, 0.06f, 0.5f, null, 0xFFE2A0, DrawList.GLOW);
+            for (int e = -1; e <= 1; e += 2) {
+                t.at(s + LAMP_EVERY * 0.5f, e * (w - 0.05f), p0);
+                d.box(p0[0], t.floor(s + LAMP_EVERY * 0.5f) + 2.6f, p0[1], 0.12f, 0.2f, 0.12f, null, 0xFFC870, DrawList.GLOW);
+            }
+        }
+        portal(d, t, 0f, -1f, IN_FACE_TOP());
+        portal(d, t, t.len, 1f, OUT_FACE_TOP());
+    }
+
+    private static float IN_FACE_TOP() {
+        return PH[Tunnel.IN_FACE] + 0.5f;
+    }
+
+    private static float OUT_FACE_TOP() {
+        return PH[Tunnel.OUT_FACE] + 0.5f;
+    }
+
+    /**
+     * A portal at so far in (s), facing out (out: -1 at the pier's mouth, 1 at the far one): dressed
+     * stone up to the top of the rock face, as wide as the rock's piece left out there, the mouth
+     * open at its foot, a lintel over it, a band of darker stone round it.
+     */
+    private static void portal(DrawList d, Tunnel t, float s, float out, float top) {
+        float f = t.floor(s), w = Tunnel.HALF, h = Tunnel.HIGH;
+        float r = (float) Math.hypot(t.ex + t.ux * s - IX, t.ez + t.uz * s - IZ);
+        float wide = (float) Math.PI * r / SECTORS * 1.15f;
+        float mid = s - out * (PORTAL_DEEP - 0.3f);
+        float[] fr = yaw((float) Math.atan2(t.ux, t.uz)), p = new float[2];
+        int stone = 0xB3A690, dark = 0x7C6F60;
+        // the sides of the mouth, from its edge out to the rock's on either side
+        for (int e = -1; e <= 1; e += 2) {
+            float c = e * (w + (wide - w) * 0.5f);
+            t.at(mid, c, p);
+            d.box(p[0], (top + f - 1f) * 0.5f, p[1], (wide - w) * 0.5f, (top - f + 1f) * 0.5f, PORTAL_DEEP, fr, stone, DrawList.STONE);
+            t.at(mid + out * (PORTAL_DEEP - 0.1f), e * (w + 0.3f), p);
+            d.box(p[0], f + h * 0.5f, p[1], 0.3f, h * 0.5f, 0.12f, fr, dark, DrawList.STONE);
+        }
+        // over the mouth, to the top
+        t.at(mid, 0f, p);
+        d.box(p[0], (top + f + h) * 0.5f, p[1], w + 0.02f, (top - f - h) * 0.5f, PORTAL_DEEP, fr, stone, DrawList.STONE);
+        t.at(mid + out * (PORTAL_DEEP - 0.1f), 0f, p);
+        d.box(p[0], f + h + 0.3f, p[1], w + 0.6f, 0.3f, 0.12f, fr, dark, DrawList.STONE);
     }
 
     /** Trees on the ledges, thick on them, none on the rock or the sand, the stairs or the top. */
@@ -546,7 +702,7 @@ final class Island {
             // on a ledge or the top: where the ground is nearly level
             float h = height(x, z), hx = height(x + 1f, z), hz = height(x, z + 1f);
             if (Math.abs(hx - h) > 0.6f || Math.abs(hz - h) > 0.6f || h < 1f) continue;
-            if (onPath(x, z, 2.2f) || onStairs(x, z, 3f)) continue;
+            if (onPath(x, z, 2.2f) || onStairs(x, z, 3f) || nearPortal(x, z, 10f)) continue;
             // none on the top (the last ledge and the round over it): a clear place round the
             // lighthouse, open to the town
             if (r < PR[11] + 2f) continue;

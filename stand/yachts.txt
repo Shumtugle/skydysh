@@ -1,9 +1,9 @@
 # Brums to the island, the yachts. All five knots after her at the promenade; along the navigator's
 # line to the pier, the screen sends her out to a yacht; out along it, one on the shore throws the
 # golden mallet over her, the yachts go up, those after her flung down on the sand; the screen
-# says up to the lighthouse; off the pier past them lying there, straight up the stairs, they after
-# her again. The wrecks; the stairs from the pier's foot and from the top; the clear top, the town
-# beyond. In Russian.
+# says up to the lighthouse; off the pier past them lying there, through the tunnel and up the
+# flight on the far side, they after her again. The wrecks; the tunnel's mouth by the pier, inside
+# it, its far mouth on the ledge, both flights from afar; the clear top, the town beyond. In Russian.
 screen 1096 2560
 wait 0.4
 lang ru
@@ -24,13 +24,19 @@ where
 eye 136 4 -327 -0.5 -0.12
 wait 0.1
 shot w0
-eye 116 4 -311 -2.04 0.32
+eye 110.2 7 -317.6 -2.013 -0.05
 wait 0.1
 shot s0
-eye 28 89 -355 -2.04 -0.42
+eye 70.4 11.5 -336.4 -2.013 0.05
 wait 0.1
 shot s1
-eye 10 84 -347 0 -0.1
+eye -66 44 -400.9 1.129 -0.15
 wait 0.1
 shot s2
+eye -104 90 -419 1.129 -0.45
+wait 0.1
+shot s3
+eye 10 84 -347 0 -0.1
+wait 0.1
+shot s4
 eye off

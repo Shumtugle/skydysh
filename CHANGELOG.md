@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.2.9
+
+- The way up the island: a tunnel instead of the straight stairs. In at a portal of dressed stone
+  in the rock by the pier's foot, straight through under the lighthouse, rising evenly (about one
+  in five), lamps along its roof and walls, out at a like portal onto the middle ledge on the far
+  side. In it she walks on its floor between its walls, the eye down in it with her (on a chase it
+  comes down quickly at the mouth); the brums follow her through it.
+- From the far mouth two flights of stone stairs, right and left, round the island and up to the
+  top, rails both sides; gravel on to the lighthouse's door. The navigator's line goes through the
+  tunnel and up the right-hand flight. The straight stairs are gone.
+- Out on the island a brum that has lost her sees her again from farther (45 meters, not 18), and
+  goes on after her from the point of her way on foot nearest it; waiting where her way left the
+  ground (into the water, say), it goes on to any later point of it on foot near it, not only the
+  first. Before, falling off the pier lost them for good.
+
 ## 1.2.8
 
 - The twelfth job is called Hotheads now (it was Brums to the island), and it has its tale: at

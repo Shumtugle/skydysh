@@ -152,11 +152,12 @@ At the pier the dispatcher sends her out along it to a yacht. A few steps out, n
 the one in the thick of the crowd after her stands, turns and throws a golden mallet; it flies
 over her head (the farther, the longer and higher) and comes down among the yachts: a ball of
 fire, planks flying, the eye shaken, and the blast flings the crowd back onto the sand and the
-slope. The yachts are left broken in two, sunk, burnt black. No way off by sea: up to the lighthouse, the navigator's line up
-the stairs from the pier's foot and across the top to its door. Those flung down lie a moment, then get up and come
+slope. The yachts are left broken in two, sunk, burnt black. No way off by sea: up to the lighthouse, the navigator's line
+through the tunnel, up the right-hand stairs and across the top to its door. Those flung down lie a moment, then get up and come
 after her again; one that comes up to her now goes off and it is tried again from the pier, they
 lying where the blast threw them. Out on the island, losing her, they wait where they are rather
-than go back to the town, and still count as hers.
+than go back to the town, and still count as hers; they see her again from farther there. Through
+the tunnel they follow her.
 
 Anywhere, they go only where one goes on foot: not through the water, not up a ladder or over the
 roofs, not through the air, not indoors (a step of the promenade, or a car's roof, they do take).
@@ -314,8 +315,10 @@ and back on the sofa when she comes down; or at the crane whenever she climbs it
 
 Out to sea south of home a spit of sand winds from the water's edge to an island, tall and green
 in ledges, trees on them and a path winding up to a lighthouse on the top; off its north-east
-shore a pier with yachts moored to it, and from the pier's foot stairs straight up the rock, ledge
-by ledge, rails both sides, to the top. The top is clear of trees: grass round the lighthouse,
+shore a pier with yachts moored to it. By the pier's foot a portal of dressed stone in the rock:
+a tunnel, lamps along its roof and walls, straight through under the lighthouse and rising evenly,
+out through a like portal onto the middle ledge on the far side; from there stone stairs go right
+and left, round the island and up, rails both sides, to the top. The top is clear of trees: grass round the lighthouse,
 open on all sides to the sea and the town. (And something for whoever leaps from the lighthouse toward home.)
 
 Up on the right, till the navigator is hers, a compass: a glass button as the pause is, across
