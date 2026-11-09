@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.3.1";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.3.2";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1529,6 +1529,7 @@ final class World {
         if (!shutRead) {
             shutRead = true;
             Island.shut = host.loadInt(SAVE_SHUT) == 1;
+            scars.load(host);
             Island.bridgeUp = Island.bridgeTo = Island.shut ? 1f : 0f;
             Island.bridgeStep(0f);
         }
@@ -4375,21 +4376,19 @@ final class World {
             host.sound(Synth.TOCK, 0.4f, 0.7f);
             herdSaid(Lang.lines("herd.lost", mission.round, null), hd.knots());
         } else if (got == Herd.BLAST) {
-            host.sound(Synth.THUNDER, 0.9f, 1.3f);
-            host.sound(Synth.CRASH, 0.8f, 0.8f);
-            host.buzz(240);
-            whiteOut = WHITE_OUT;
-            if (driving != null) getOut();
-            hd.again(city, herdAgain);
-            runner.put(herdAgain[0], herdAgain[1], herdAgain[2], herdAgain[3]);
-            runner.recenter();
-            runner.update(0f, city, cars, walkers);
-            herdUntil = 0f;
-            dispatch = new Dispatch(host, Lang.lines(hd.step >= Herd.LIGHT ? "herd.again" : "herd.blast", mission.round, null));
+            if (hd.step < Herd.LIGHT) scars.add(host, x, z);
+            herdBlast(hd.step >= Herd.LIGHT ? "herd.again" : "herd.blast");
             return;
         } else if (got == Herd.WON) {
             host.sound(Synth.CHIME, 0.6f, 1f);
             host.buzz(60);
+        }
+        // led off the navigator's line, those after her heat; too long off it, they go off
+        if (heat(dt, hd)) {
+            int m = hd.spots(herdSpots);
+            for (int q = 0; q < m; q++) scars.add(host, herdSpots[q * 2], herdSpots[q * 2 + 1]);
+            herdBlast("herd.hot");
+            return;
         }
         // near them, their ticking: quicker the nearer
         float near = hd.nearest(x, z);
@@ -4404,6 +4403,86 @@ final class World {
             walkers.alarm(hd.x[k], hd.z[k], 7f);
             pets.alarm(hd.x[k], hd.z[k], 8f);
         }
+    }
+
+    /** Gone off: the flash, the bang; out of the car; she put back where it is tried again from, the dispatcher saying so. */
+    private void herdBlast(String say) {
+        Herd hd = herd;
+        host.sound(Synth.THUNDER, 0.9f, 1.3f);
+        host.sound(Synth.CRASH, 0.8f, 0.8f);
+        host.buzz(240);
+        whiteOut = WHITE_OUT;
+        shake = 1f;
+        if (driving != null) getOut();
+        hd.again(city, herdAgain);
+        runner.put(herdAgain[0], herdAgain[1], herdAgain[2], herdAgain[3]);
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        herdUntil = 0f;
+        hot = 0f;
+        hotBest = -1f;
+        dispatch = new Dispatch(host, Lang.lines(say, mission.round, null));
+    }
+
+    // off the line: how much further the way may get than the least it was, and for how long, before they go off
+    static final float HOT_FAR = 80f, HOT_FOR = 10f;
+    // how long they have been heating (cooling as fast once back), the least the way was, to where
+    private float hot, hotBest = -1f, hotGoalX, hotGoalZ, hotSettle;
+    static final float HOT_SETTLE = 0.8f;
+    private final float[] herdSpots = new float[2 * Herd.KNOTS];
+    private final Scars scars = new Scars();
+
+    /** For the desktop stand: how hot those after her are, the way left, the least it was. */
+    String standHot() {
+        return String.format(java.util.Locale.ROOT, "hot %.1f left %.0f best %.0f", hot, nav.left, hotBest);
+    }
+
+    /** For the desktop stand: a blast's spot torn at (x, z). */
+    void standScar(float x, float z) {
+        scars.add(host, x, z);
+    }
+
+    /**
+     * Whether those after her have gone off for her leading them away from where the navigator
+     * says: through the town to the next knot or out to the pier, if the way there gets longer by
+     * so much than the least it has been, they heat; back toward it, they cool.
+     */
+    private boolean heat(float dt, Herd hd) {
+        boolean watch = (hd.step == Herd.GATHER || hd.step == Herd.ISLE) && hd.chasing() > 0 && navGiven() && nav.led() && !nav.air
+                && indoors == null && roadT < 0f && hd.goal(goal);
+        if (!watch) {
+            hot = 0f;
+            hotBest = -1f;
+            nav.warn = false;
+            return false;
+        }
+        if (hotBest < 0f || Math.abs(goal[0] - hotGoalX) > 1f || Math.abs(goal[2] - hotGoalZ) > 1f) {
+            hotGoalX = goal[0];
+            hotGoalZ = goal[2];
+            hot = 0f;
+            hotSettle = HOT_SETTLE;
+        }
+        // a new place: the navigator finds the way to it first
+        if (hotSettle > 0f) {
+            hotSettle -= dt;
+            hotBest = nav.left;
+            nav.warn = false;
+            return false;
+        }
+        hotBest = Math.min(hotBest, nav.left);
+        boolean off = nav.left > hotBest + HOT_FAR;
+        hot = off ? hot + dt : Math.max(0f, hot - dt);
+        nav.warn = hot > 0f;
+        return hot >= HOT_FOR;
+    }
+
+    private final float[] colliderView = new float[4];
+
+    /** Whether the set shows the night at LAB: the hotheads' briefing, before it has begun. */
+    private boolean prologue() {
+        if (herd == null || herd.clock > 0f || herd.over()) return false;
+        Collider.view(colliderView);
+        return true;
     }
 
     // the eye shaken by a blast: how far at most, how fast it dies away, how fast it shakes
@@ -4445,14 +4524,19 @@ final class World {
      * a moment ago; where the way goes now, in a word and a mark.
      */
     private void herdFlat(DrawList d, Px f) {
-        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E, hot = 0xFFFF8A3A;
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E, orange = 0xFFFF8A3A;
         Herd hd = herd;
         String c = clock(hd.over() ? hd.doneAt : hd.clock);
         shadowed(f, c, W - PixelFont.width(c, 2) - 8, 14, 2, cream, ink);
         // how many after her: on the left, under the pause, clear of the navigator
         String n = hd.coming() + "/" + Herd.ALL;
-        shadowed(f, n, 8, (int) (pauseY() + 22f), 2, hot, ink);
-        if (herdSay != null && time < herdUntil) caption(f, herdSay, 0.66f);
+        shadowed(f, n, 8, (int) (pauseY() + 22f), 2, orange, ink);
+        if (hot > 0f) {
+            String[] w = Lang.lines("herd.off", mission.round, null);
+            String left = String.valueOf((int) Math.ceil(HOT_FOR - hot));
+            for (int k = 0; k < w.length; k++) w[k] = w[k].replace("{s}", left);
+            caption(f, w, 0.66f);
+        } else if (herdSay != null && time < herdUntil) caption(f, herdSay, 0.66f);
         boolean aimed = hd.goal(goal);
         // in the secret hall, to the switch: its place on the wall
         if (hd.step == Herd.LEVER && indoors != null && indoors.secret) {
@@ -4842,10 +4926,15 @@ final class World {
         d.hudRows = 0;
         if (dispatch != null) {
             // the room in her head, or the eye on its way there
+            dispatch.sceneAt = prologue() ? colliderView : null;
             dispatch.eye(r, eyeNow);
             d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], dispatch.focal(W * 1.25f, W), 0.03f, 80f);
-        } else if (indoors.shot(eyeNow)) d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.25f, 0.03f, 80f);
+        }
+        // the set showing the night at LAB: the hall, nothing of home
+        boolean scene = dispatch != null && dispatch.inScene();
+        if (scene) Collider.draw(d, time, dispatch.sceneTime()); else if (indoors.shot(eyeNow)) d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.25f, 0.03f, 80f);
         else d.camera(r.eyeX, r.eyeY, r.eyeZ, r.eyeYaw, r.eyePitch, W * 1.2f, 0.03f, 80f);
+        if (!scene) {
         // the room, unless the eye has gone back into her head past its walls (she sits against one)
         if (dispatch == null || indoors.holds(eyeNow[0], eyeNow[2])) {
             indoors.draw(d);
@@ -4894,6 +4983,7 @@ final class World {
             }
         }
 
+        }
         if (dispatch != null) dispatch.draw(d, f, h);
         else if (free) freeFlat(d, f);
         else if (concert != null) concertFlat(d, f);
@@ -4971,6 +5061,7 @@ final class World {
         // the eye: behind her, or in the room in her head, or on its way between
         float eyeX = r.eyeX, eyeY = r.eyeY, eyeZ = r.eyeZ, eyeYaw = r.eyeYaw, eyePitch = r.eyePitch;
         if (dispatch != null) {
+            dispatch.sceneAt = prologue() ? colliderView : null;
             dispatch.eye(r, eyeNow);
             eyeX = eyeNow[0];
             eyeY = eyeNow[1];
@@ -5025,6 +5116,9 @@ final class World {
             d.box(driving.x, driving.y + 3.5f + big, driving.z, big, big, big, null, 0xFFF1B0, DrawList.GLOW);
         }
         Island.kept(d, time, eyeX, eyeZ);
+        scars.draw(d, city, eyeX, eyeZ);
+        // the set showing the night at LAB: its hall, deep in the mountain
+        if (dispatch != null && dispatch.inScene()) Collider.draw(d, time, dispatch.sceneTime());
         if (lab != null) lab.draw(d, time, eyeX, eyeZ);
         if (herd != null) herd.draw(d, time, eyeX, eyeZ);
         cars.draw(d, eyeX, eyeZ, ex, ez);

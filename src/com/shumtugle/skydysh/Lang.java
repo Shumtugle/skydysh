@@ -98,7 +98,7 @@ final class Lang {
         EN.put("nav.factory", "FACTORY");
         EN.put("story.11", "#Navigator|=What happened|Up on the mountain north-west of the town stands LAB Inc. They have made a navigator for pickups: a map in the corner of the screen, a line on it the way to go. Brums are already driving round the town trying it out.|=The job|Drive up to the laboratory. The pickup is by the house. From the town's last street, under the arch, the road goes round the mountain, twice round. At the top there is a car park: leave the pickup in a free space and go in at the tower's door. At the counter in the lobby they give you a box with the navigator in it. Take it to the pickup and unpack it: the navigator goes in by the wheel and comes on.||Then five minutes along the line. Place after place: the quarry, the vet clinic, the concert hall, the old town and on. The time on the board runs only while you drive along the line toward the place; stopped, or off the line, it waits.|=The navigator|The blue line is the way. Under the map, the next turn and how far. Off the line, it flashes and finds a new way. An arrow down: turn round. Orange dots: the other testers.||Touch the map to fold it to a square; touch again to open it.||After the trial the navigator is yours: on foot, in the pickup, in the helicopter.");
         EN.put("kind.12", "Hotheads");
-        EN.put("brief.herd", "Dispatch \u2014 {kind}||Morning. Five knots of brums|about the town, red hot.|Once they see you, they follow.|Once they catch you, they go off.||Gather all five|and lead them to the island.||Touch to begin");
+        EN.put("brief.herd", "Dispatch \u2014 {kind}||At night LAB Inc. tried its collider.|A black hole was born; its beam burnt|the firmware of the night shift of brums.||Morning. Fifteen brums in the town,|by threes. They follow the brum that works:|you. Once one touches you, it goes off.||Gather all five|and lead them to the island.||Touch to begin");
         EN.put("herd.first", "Dispatch \u2014 {kind}||The first knot is after you.|Keep going.||The next is where|the navigator's line leads.||Touch to go on");
         EN.put("herd.came", "One more knot. {knots} of 5 after you.");
         EN.put("herd.lost", "A knot fell behind and went back.|{knots} of 5 after you.");
@@ -107,6 +107,8 @@ final class Lang {
         EN.put("herd.pier", "PIER");
         EN.put("herd.yacht", "Dispatch \u2014 {kind}||All fifteen are on the island.||A yacht is at the pier.|Go aboard and leave by sea.||Touch to go on");
         EN.put("herd.wreck", "Dispatch \u2014 {kind}||The yachts are gone.|No way off by sea.||New plan: up to the lighthouse.||Touch to go on");
+        EN.put("herd.off", "Back to the line! The brums heat up: {s}");
+        EN.put("herd.hot", "Dispatch \u2014 {kind}||You led them off the navigator's line.|The brums overheated and went off.||Replay from the last knot.||Touch to go on");
         EN.put("herd.again", "Dispatch \u2014 {kind}||A brum caught you and went off.||Replay from the pier.||Touch to go on");
         EN.put("herd.boat", "YACHT");
         EN.put("herd.light", "LIGHTHOUSE");

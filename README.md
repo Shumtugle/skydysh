@@ -151,6 +151,21 @@ or one fell behind. Up on the left under the pause, how many are after her; on t
 dots. The navigator's line goes along the spit and round the island to the pier for any place out
 there.
 
+Led away from where the navigator says (through the town to the next knot or out to the pier,
+while any are after her), they heat: once the way there is 80 meters longer than the least it has
+been, the line on the map flashes red and low on the frame she is told to come back to it, the
+seconds counting down from ten; back toward the place, they cool as fast. Ten seconds off it, they
+all go off, and it is tried again from a little before the last knot came. Where brums went off
+in the town (one that came up to her, or a knot heated to its end), the ground is torn: a black
+crater, cracks out of it black and lit violet within, rubble round it, a crack that meets a house
+going on up its wall. They stay, kept between games, forty at most.
+
+The briefing: on the dispatcher's set, under her words, the night at LAB: the collider's hall
+under the mountain, the ring's magnets, the detector and over it the trap, the night shift of
+brums in a row on their chargers along the far wall. A flash in the trap, a black hole held there
+with its disc, its jet swinging along the row, the chargers' lamps going red; the brums light up
+hot, step off and walk out at the door.
+
 While any are after her, the eye is up high far behind her, over the roofs, looking down along
 her way: the crowd after her big below it, she on ahead, the way beyond her; indoors it comes down.
 

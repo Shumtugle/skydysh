@@ -1191,12 +1191,19 @@ public final class Stand implements World.Host {
             for (int k = 0; k < Herd.ALL; k++)
                 System.out.println(String.format("%7.2fs  brum %d: %.1f %.1f %.1f state %d down %.1f%s", time, k, hd.x[k], hd.y[k], hd.z[k], hd.state[k], hd.down[k],
                         k == hd.thrower ? " throws" : ""));
+        } else if (c.equals("scar")) {
+            // scar X Z: a blast's spot torn there
+            world.standScar(f(p[1]), f(p[2]));
+        } else if (c.equals("hot")) {
+            // hot: how hot those after her are, the way left, the least it was
+            System.out.println(String.format("%7.2fs  %s", time, world.standHot()));
         } else if (c.equals("herd")) {
-            // herd KNOTS: the first so many knots of the hot brums after her, a little behind her
+            // herd KNOTS [BACK]: the first so many knots of the hot brums after her, a little (or so far) behind her
             Herd hd = world.herd;
             int knots = Integer.parseInt(p[1]);
             Runner r = world.runner;
-            for (int g = 0; g < knots; g++) hd.standAfter(g, r.x - (float) Math.sin(r.heading) * 32f, r.y, r.z - (float) Math.cos(r.heading) * 32f, r.x, r.y, r.z);
+            float back = p.length > 2 ? f(p[2]) : 32f;
+            for (int g = 0; g < knots; g++) hd.standAfter(g, r.x - (float) Math.sin(r.heading) * back, r.y, r.z - (float) Math.cos(r.heading) * back, r.x, r.y, r.z);
             step();
         } else if (c.equals("walk")) {
             // walk SECONDS EVERY PREFIX: indoors, a finger that goes where the place says to (to the

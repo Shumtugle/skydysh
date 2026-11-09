@@ -1,0 +1,26 @@
+# Hotheads' briefing: on the dispatcher's set the night at LAB Inc. as it went: the collider's
+# hall, light round the ring faster, the flash, the black hole, its jet swept along the night
+# shift on their chargers, each glowing as it is crossed, then out at the door one after another.
+# In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+mission 12
+dispatch
+wait 1.6
+shot n0
+wait 1.6
+shot n1
+wait 1.4
+shot n2
+wait 1.4
+shot n3
+wait 1.6
+shot n4
+wait 2.4
+shot n5
+wait 2.4
+shot n6

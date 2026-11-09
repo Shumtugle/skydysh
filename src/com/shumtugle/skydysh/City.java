@@ -526,6 +526,26 @@ final class City implements Ground {
         return g;
     }
 
+    /**
+     * A wall standing over (x, z) for one whose feet are at feet: the box of a house or such, rising
+     * past her head from no higher than her knees; its sides and top into out (x0, z0, x1, z1, top).
+     */
+    boolean wallAt(float x, float z, float feet, float[] out) {
+        int ci = index(x), cj = index(z);
+        for (int j = cj - 1; j <= cj + 1; j++)
+            for (int i = ci - 1; i <= ci + 1; i++) {
+                Cell c = cell(i, j);
+                for (int k = 0; k < c.wallN; k++) {
+                    int o = k * Cell.WALL;
+                    if (c.walls[o + 4] < feet + HEADROOM || c.walls[o + 5] > feet + 0.5f) continue;
+                    if (x < c.walls[o] || x > c.walls[o + 2] || z < c.walls[o + 1] || z > c.walls[o + 3]) continue;
+                    for (int q = 0; q < 5; q++) out[q] = c.walls[o + q];
+                    return true;
+                }
+            }
+        return false;
+    }
+
     /** Out of doors the eye goes where it likes, pushed out of the houses (see push). */
     public void keepEye(float[] p) {
     }

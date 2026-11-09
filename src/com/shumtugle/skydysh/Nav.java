@@ -34,6 +34,10 @@ final class Nav {
     private float goalX, goalZ, again, flash, scale = SCALE;
     /** The way is through the air (a leap from on high) or indoors: straight to the place, over all. */
     boolean air;
+    /** Those led along it heat: she is off it; the line flashes red. */
+    boolean warn;
+    static final int WARN = 0xFFFF4A5A, WARN_DIM = 0xFF7A1C2A;
+    private float warnT;
     private boolean aimed, aimedNow;
     // the way: so many points, x and z, from where she is to the place
     private float[] way = new float[256];
@@ -65,6 +69,7 @@ final class Nav {
         aimed = aimedNow;
         aimedNow = false;
         flash = Math.max(0f, flash - dt);
+        warnT = warn ? warnT + dt : 0f;
         if (!aimed) {
             wayN = 0;
             wentN = 0;
@@ -502,6 +507,7 @@ final class Nav {
         }
         // the way
         int line = flash > 0f && ((int) (flash * 8f) & 1) == 0 ? LINE_FLASH : LINE;
+        if (warn) line = ((int) (warnT * 6f) & 1) == 0 ? WARN : WARN_DIM;
         for (int k = 1; k < wayN; k++) {
             float ax = way[k * 2 - 2] - x, az = way[k * 2 - 1] - z, bx = way[k * 2] - x, bz = way[k * 2 + 1] - z;
             float ux = cx + (ax * c - az * s) / scale, uy = cy - (ax * s + az * c) / scale;

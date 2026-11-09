@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.3.2
+
+- The night at LAB on the dispatcher's set, under the briefing's words: the collider's hall under
+  the mountain (the ring, the detector, the trap over it, the night shift of brums on their
+  chargers); a black hole born in the trap, its jet over the row, the brums gone hot walking out.
+  The hall is a place, to be gone back to.
+- Led off the navigator's line, those after her heat: 80 meters further from the place than the
+  least it was, the line flashes red and she is told to come back, ten seconds counting; back
+  toward it, they cool. Ten seconds off it, they go off: a try again from the last knot.
+- Where brums went off in the town, the ground torn: a black crater, cracks black and violet out
+  of it, rubble, up the walls of houses near. Kept between games.
+- A blast shakes the eye.
+
 ## 1.3.1
 
 - The mountain road at the wheel is shown, not driven: through the arch going up, or off the deck

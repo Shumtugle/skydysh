@@ -1,0 +1,63 @@
+# Hotheads: led off the navigator's line, the brums after her heat (the line flashing red, the
+# warning counting down); too long off it, they go off, and it is tried again. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+navon
+mission 12
+at 0 100 3.14159
+wait 0.3
+herd 1 105
+hot
+down 137 600
+move 137 580
+move 137 540
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+shot o0
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+shot o1
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+wait 1
+hot
+up 137 540
+wait 2.5
+shot o2

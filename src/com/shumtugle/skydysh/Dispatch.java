@@ -455,11 +455,30 @@ final class Dispatch {
      * Where the eye is, into eye (x, y, z, yaw, pitch): in the room before the screen, or on its way
      * between there and behind her, where the street is seen from.
      */
+    /**
+     * What the set shows instead of what is before her, once the room is round her: the room put
+     * there (x, y, z, the heading it faces); none, if null.
+     */
+    float[] sceneAt;
+    private boolean inScene;
+
+    /** Whether the set shows the scene now; and how long it has shown it, seconds. */
+    boolean inScene() {
+        return inScene;
+    }
+
+    float sceneTime() {
+        return t - CLOSE;
+    }
+
     void eye(Runner r, float[] eye) {
-        place(r);
         float k = 1f;
         if (t < CLOSE) k = ease(t / CLOSE);
         if (openAt >= 0f) k = 1f - ease((t - openAt) / OPEN);
+        // the scene only while the room is all round her: a cut, as a set changes its channel
+        inScene = sceneAt != null && k >= 0.999f;
+        if (inScene) placeAt(sceneAt);
+        else place(r);
         // the room's eye
         float ix = ox + sn * EYE_Z, iy = oy + EYE_Y, iz = oz + cs * EYE_Z;
         float ipitch = -0.04f;
@@ -489,6 +508,14 @@ final class Dispatch {
     /** Whether she is to be drawn: not while the eye is in her head. */
     boolean showsHer() {
         return size > 3.9f;
+    }
+
+    private void placeAt(float[] a) {
+        ox = a[0];
+        oy = a[1] + HEAD;
+        oz = a[2];
+        cs = (float) Math.cos(a[3]);
+        sn = (float) Math.sin(a[3]);
     }
 
     private void place(Runner r) {

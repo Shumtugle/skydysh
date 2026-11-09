@@ -142,6 +142,34 @@ final class Herd {
         return n;
     }
 
+    /** How many are on her heels now, coming. */
+    int chasing() {
+        int n = 0;
+        for (int k = 0; k < ALL; k++) if (state[k] == COMES) n++;
+        return n;
+    }
+
+    /** Where each knot coming after her is now, in the middle of its three, into out (x, z, ...); how many. */
+    int spots(float[] out) {
+        int n = 0;
+        for (int q = 0; q < KNOTS; q++) {
+            float sx = 0f, sz = 0f;
+            int m = 0;
+            for (int e = 0; e < EACH; e++) {
+                int k = q * EACH + e;
+                if (state[k] != COMES) continue;
+                sx += x[k];
+                sz += z[k];
+                m++;
+            }
+            if (m == 0) continue;
+            out[n * 2] = sx / m;
+            out[n * 2 + 1] = sz / m;
+            n++;
+        }
+        return n;
+    }
+
     /** How many knots are after her. */
     int knots() {
         return Integer.bitCount(after);

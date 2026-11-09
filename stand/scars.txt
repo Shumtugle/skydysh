@@ -1,0 +1,25 @@
+# Hotheads: where the brums went off, the ground torn, the cracks black and violet, up the walls
+# near. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+navon
+mission 12
+at 0 100 3.14159
+scar 5 100
+scar 64 140
+wait 0.3
+eye -12 4 92 1.1 -0.2
+wait 0.1
+shot c0
+eye 52 5 128 0.75 -0.3
+wait 0.1
+shot c1
+eye 0 30 100 1.5708 -1.2
+wait 0.1
+shot c2
+eye off
