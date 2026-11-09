@@ -801,6 +801,30 @@ final class Rooms {
         return in;
     }
 
+    // the switch in the secret hall, on the end wall right of the mallet's board: so far across,
+    // its middle so high; how far it travels down; so near it she throws it
+    static final float LEVER_U = 3.6f, LEVER_Y = 1.6f, LEVER_TRAVEL = 0.6f, LEVER_NEAR = 1.6f;
+
+    /** Whether one at (x, z) in the secret hall is at its switch. */
+    static boolean atLever(Indoors in, float x, float z) {
+        float u = in.u(x, z), v = in.v(x, z);
+        return Math.abs(u - LEVER_U) < 1.1f && v > in.deep - Indoors.WALL - LEVER_NEAR;
+    }
+
+    /**
+     * The switch: an iron plate on the wall, a slot down it, the handle red, so far down (0 up,
+     * 1 down); a lamp over it, amber, red once it is down: the island shut.
+     */
+    static void lever(DrawList d, Indoors in, float down) {
+        float f = Indoors.FLOOR, v = in.deep - Indoors.WALL - 0.03f, y = f + LEVER_Y;
+        in.box(d, LEVER_U, y, v, 0.36f, 0.6f, 0.03f, 0x2B2E33, DrawList.POLISHED);
+        in.box(d, LEVER_U, y, v - 0.035f, 0.05f, 0.42f, 0.01f, 0x0E0F11, DrawList.PAINT);
+        float hy = y + LEVER_TRAVEL * 0.5f - down * LEVER_TRAVEL;
+        in.box(d, LEVER_U, hy, v - 0.12f, 0.05f, 0.05f, 0.1f, 0x55585C, DrawList.POLISHED);
+        in.box(d, LEVER_U, hy, v - 0.25f, 0.26f, 0.06f, 0.06f, 0xC0392B, DrawList.PAINT);
+        in.box(d, LEVER_U, y + 0.8f, v - 0.03f, 0.08f, 0.08f, 0.03f, down >= 1f ? 0xFF3A2A : 0xFFB347, DrawList.GLOW);
+    }
+
     /** The globe's picture, when the game has it: one byte N, then N by N cells of red, green, blue, rows down. */
     static byte[] globe;
 

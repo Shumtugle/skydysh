@@ -1,0 +1,44 @@
+# Hotheads, to the end: as yachts, then on up through the tunnel and the flight to the lighthouse,
+# in at its door and up to the gallery (the dispatcher says what now), the leap and the glide to
+# the secret balcony, into the hall, to the switch and down with it: the island shut. The bridge
+# in the spit down before, from the shore by it. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+navon
+mission 12
+at 28 -9 3.14159
+wait 0.3
+herd 5
+wait 0.3
+navrun 39.5 5 p
+eye 20 6 -180 -2.17 -0.15
+wait 0.1
+shot b0
+eye off
+navrun 12 0.25 y
+navrun 60 2 c
+navrun 22.8 0.5 h
+where
+face -0.43
+down 548 1500
+wait 2.2
+up 548 1500
+wait 0.4
+where
+shot l0
+wait 2.5
+shot l1
+wait 6
+eye 20 6 -180 -2.17 -0.15
+wait 0.1
+shot b1
+eye 128 9 -296 -1.95 -0.22
+wait 0.1
+shot k0
+eye off
+where

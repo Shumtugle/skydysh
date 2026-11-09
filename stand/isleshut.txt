@@ -1,0 +1,21 @@
+# The island shut: the bridge in the spit up, the yachts wrecked, the brums left on its sand by
+# the pier; the lighthouse's door takes her up to its gallery, the town beyond.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 4094
+keep where 0
+keep isleShut 1
+restart
+free
+wait 6
+eye 20 6 -180 -2.17 -0.15
+wait 0.1
+shot b1
+eye 128 9 -296 -2.6 -0.18
+wait 0.1
+shot k0
+eye 136 4 -327 -0.5 -0.12
+wait 0.1
+shot w0
+eye off

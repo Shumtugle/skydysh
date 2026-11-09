@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.2.9";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.3.0";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1526,9 +1526,22 @@ final class World {
         whiteOut = Math.max(0f, whiteOut - dt);
         dawn = Math.max(0f, dawn - dt);
         shake = Math.max(0f, shake - dt * SHAKE_DIES);
-        if (herd == null) wrecked(false);
-        // on a chase the eye goes up high over her, those after her seen
-        runner.chaseWant = herd != null && !herd.over() && herd.coming() > 0 ? 1f : 0f;
+        if (!shutRead) {
+            shutRead = true;
+            Island.shut = host.loadInt(SAVE_SHUT) == 1;
+            Island.bridgeUp = Island.bridgeTo = Island.shut ? 1f : 0f;
+            Island.bridgeStep(0f);
+        }
+        if (herd == null) wrecked(Island.shut);
+        Island.bridgeTo = Island.shut ? 1f : 0f;
+        if (Island.bridgeStep(dt)) {
+            float gx = Island.spitX(Island.GAP_Z);
+            city.forget(gx - 20f, Island.GAP_Z - 20f, gx + 20f, Island.GAP_Z + 20f);
+        }
+        // on a chase the eye goes up high over her, those after her seen; once she is safe of them, not
+        runner.chaseWant = herd != null && !herd.over() && !herd.safe() && herd.coming() > 0 ? 1f : 0f;
+        // straight to the place: through the air from the lighthouse, and anywhere indoors
+        nav.air = herd != null && herd.step == Herd.LEAP || indoors != null;
         if (indoors == null) shore.update(dt, runner.x, runner.z);
         if (indoors == null) villagers.update(dt, driving != null ? driving.x : runner.x, driving != null ? driving.z : runner.z);
         if (stayed != null) {
@@ -1717,7 +1730,7 @@ final class World {
 
     // ---- doors: in from the street (or the yard), or down from a roof, a place indoors; out again ----
     static final float SWAP = 0.3f;          // the dark coming down at a door, and lifting again
-    static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5, TO_HOME = 6, TO_CONCERT = 7, TO_SECRET = 8, TO_LOBBY = 9;
+    static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5, TO_HOME = 6, TO_CONCERT = 7, TO_SECRET = 8, TO_LOBBY = 9, TO_TOWER = 10;
     /** The place indoors she is in; null out of doors. */
     Indoors indoors;
     private float swapT = -1f;
@@ -1763,6 +1776,12 @@ final class World {
         if (driving == null && City.atSecretDoor(r.x, r.y, r.z) && fz > 0.3f) {
             host.sound(Synth.DOOR, 0.45f, 0.8f);
             go(TO_SECRET);
+            return;
+        }
+        // on the island's top, at the lighthouse's door, going to it: in, and up to its gallery
+        if (driving == null && Island.atDoor(r.x, r.y, r.z, r.heading)) {
+            host.sound(Synth.DOOR, 0.45f, 0.95f);
+            go(TO_TOWER);
             return;
         }
         // up on the mountain, at the laboratory's door, going to it: into its lobby
@@ -2603,9 +2622,22 @@ final class World {
                 indoors = Rooms.lobby(Mountain.MX, Mountain.DOOR_Z);
                 indoors.enter(r, false);
                 break;
+            case TO_TOWER:
+                // up the lighthouse's stairs in the dark: out on its gallery, on the side to the town
+                r.put(Island.IX, Island.GALLERY_Y, Island.IZ + Island.TOWER_TOP + 0.65f, 0f);
+                r.recenter();
+                // safe up here: the eye down from on high at once, in the dark
+                r.chase = 0f;
+                host.sound(Synth.DOOR, 0.35f, 1.1f);
+                if (herd != null && herd.step == Herd.LIGHT) {
+                    herd.onTower();
+                    towerSay = true;
+                }
+                break;
             case TO_SECRET:
                 indoors = Rooms.secret(City.HOME_DOOR_X, City.HOME_DOOR_Z);
                 indoors.enter(r, false);
+                if (herd != null) herd.inHall();
                 // found the first time: the stream goes wild
                 if (host.loadInt(SAVE_SECRET) == 0) {
                     host.saveInt(SAVE_SECRET, 1);
@@ -4205,9 +4237,32 @@ final class World {
      */
     private void herdStep(float dt) {
         Herd hd = herd;
+        // up on the gallery, the swap over: the dispatcher says what now
+        if (towerSay && swapT < 0f) {
+            towerSay = false;
+            host.sound(Synth.CHIME, 0.6f, 1f);
+            dispatch = new Dispatch(host, Lang.lines("herd.tower", mission.round, null));
+            return;
+        }
+        // in the secret hall, at the switch: thrown, the bridge goes up; done
+        if (hd.step == Herd.LEVER && indoors != null && indoors.secret && leverAt < 0f && Rooms.atLever(indoors, runner.x, runner.z)) {
+            leverAt = 0f;
+            host.sound(Synth.CLANG, 0.6f, 0.7f);
+            host.buzz(80);
+        }
+        if (leverAt >= 0f && hd.step == Herd.LEVER) {
+            leverAt += dt;
+            if (leverAt >= LEVER_S) {
+                hd.thrown();
+                shutIsland();
+                host.sound(Synth.CHIME, 0.6f, 1f);
+                host.buzz(60);
+                return;
+            }
+        }
         float x = driving != null ? driving.x : runner.x, y = driving != null ? driving.y : runner.y, z = driving != null ? driving.z : runner.z;
         int got = hd.update(dt, x, y, z, indoors == null, city);
-        wrecked(hd.wrecked());
+        wrecked(hd.wrecked() || Island.shut);
         if (got == Herd.PIER) {
             host.sound(Synth.CHIME, 0.6f, 1f);
             host.buzz(60);
@@ -4248,7 +4303,7 @@ final class World {
             runner.recenter();
             runner.update(0f, city, cars, walkers);
             herdUntil = 0f;
-            dispatch = new Dispatch(host, Lang.lines(hd.step == Herd.LIGHT ? "herd.again" : "herd.blast", mission.round, null));
+            dispatch = new Dispatch(host, Lang.lines(hd.step >= Herd.LIGHT ? "herd.again" : "herd.blast", mission.round, null));
             return;
         } else if (got == Herd.WON) {
             host.sound(Synth.CHIME, 0.6f, 1f);
@@ -4274,6 +4329,19 @@ final class World {
     /** How hard the eye shakes now, 1 at a blast, dying to nothing. */
     private float shake;
     private final float[] yachtAim = new float[3];
+
+    // the switch in the secret hall: how long it takes to throw; since it was taken hold of (less than nothing: not yet)
+    static final float LEVER_S = 0.7f;
+    private float leverAt = -1f;
+    private boolean towerSay, shutRead;
+    static final String SAVE_SHUT = "isleShut";
+
+    /** The island shut: the bridge goes up, the yachts stay wrecked, the brums stay on it; kept. */
+    private void shutIsland() {
+        Island.shut = true;
+        host.saveInt(SAVE_SHUT, 1);
+        wrecked(true);
+    }
 
     /** The yachts wrecked or whole, as the job says; the pier's cells built again when that changes. */
     private void wrecked(boolean now) {
@@ -4303,7 +4371,16 @@ final class World {
         String n = hd.coming() + "/" + Herd.ALL;
         shadowed(f, n, 8, (int) (pauseY() + 22f), 2, hot, ink);
         if (herdSay != null && time < herdUntil) caption(f, herdSay, 0.66f);
-        if (!hd.goal(goal)) return;
+        boolean aimed = hd.goal(goal);
+        // in the secret hall, to the switch: its place on the wall
+        if (hd.step == Herd.LEVER && indoors != null && indoors.secret) {
+            float v = indoors.deep - Indoors.WALL - 0.8f;
+            goal[0] = indoors.wx(Rooms.LEVER_U, v);
+            goal[1] = Indoors.FLOOR + Rooms.LEVER_Y + 0.8f;
+            goal[2] = indoors.wz(Rooms.LEVER_U, v);
+            aimed = true;
+        }
+        if (!aimed) return;
         wordAtTop(f, Lang.lines(hd.goalWord(), mission.round, null)[0], green, ink);
         placeMark(d, f, goal[0], goal[1], goal[2], hd.mark(), Marks.OPEN);
     }
@@ -4708,6 +4785,8 @@ final class World {
                 }
             }
         }
+        // the switch in the secret hall: down once the island is shut, going down as she throws it
+        if (indoors.secret) Rooms.lever(d, indoors, Island.shut ? 1f : leverAt >= 0f ? Math.min(1f, leverAt / LEVER_S) : 0f);
         if (indoors.lobby && (dispatch == null || indoors.holds(eyeNow[0], eyeNow[2]))) {
             // the lobby's brums; the box in the counter's hands while it is for her, then on its
             // way from them to hers, up a little on the way
@@ -4844,6 +4923,8 @@ final class World {
         LabTop.deck(d, time, eyeX, eyeZ);
         labDrawn(d, r);
         Island.yachts(d, time);
+        Island.bridge(d);
+        Island.kept(d, time, eyeX, eyeZ);
         if (lab != null) lab.draw(d, time, eyeX, eyeZ);
         if (herd != null) herd.draw(d, time, eyeX, eyeZ);
         cars.draw(d, eyeX, eyeZ, ex, ez);

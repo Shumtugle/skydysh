@@ -159,6 +159,15 @@ lying where the blast threw them. Out on the island, losing her, they wait where
 than go back to the town, and still count as hers; they see her again from farther there. Through
 the tunnel they follow her.
 
+The lighthouse is a refuge: at its door she goes in and up its stairs in the dark, out onto its
+gallery, on the side to the town; they do not come in. There the dispatcher says what now: over
+the door of home in the town, the secret balcony; leap off the gallery and glide to it; behind it,
+in the hall, a switch that raises the bridge in the spit and shuts the island. The navigator's
+line goes straight to the balcony through the air; in the hall, a mark over the switch, on the end
+wall right of the mallet's board. Thrown, it goes down, its lamp turns red: the job is done. From
+then on the bridge stands up, the yachts lie wrecked, the brums stand about on the sand by the
+pier, ticking, waiting to be mended. The lighthouse's door takes her up to the gallery any time.
+
 Anywhere, they go only where one goes on foot: not through the water, not up a ladder or over the
 roofs, not through the air, not indoors (a step of the promenade, or a car's roof, they do take).
 Where her way leaves the ground they wait at its edge, and go on if it comes down again near by.
@@ -313,7 +322,9 @@ a sorted one apart with moves that could each be made back, so it always has a w
 After the first, the containers are on home's list: straight into the cabin with no way to go,
 and back on the sofa when she comes down; or at the crane whenever she climbs it.
 
-Out to sea south of home a spit of sand winds from the water's edge to an island, tall and green
+Out to sea south of home a spit of sand winds from the water's edge to an island (near the
+island it is cut by a channel, a drawbridge over it, hinged on the island's bank, down till the
+island is shut), tall and green
 in ledges, trees on them and a path winding up to a lighthouse on the top; off its north-east
 shore a pier with yachts moored to it. By the pier's foot a portal of dressed stone in the rock:
 a tunnel, lamps along its roof and walls, straight through under the lighthouse and rising evenly,

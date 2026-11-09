@@ -32,6 +32,8 @@ final class Nav {
     static final int BAND = 0xF0214E53, TEXT = 0xFFF4E8D2, INK = 0xFF0B1418;
 
     private float goalX, goalZ, again, flash, scale = SCALE;
+    /** The way is through the air (a leap from on high) or indoors: straight to the place, over all. */
+    boolean air;
     private boolean aimed, aimedNow;
     // the way: so many points, x and z, from where she is to the place
     private float[] way = new float[256];
@@ -187,6 +189,13 @@ final class Nav {
      * its road from there.
      */
     private void find(float x, float z) {
+        if (air) {
+            wayN = 0;
+            put(x, z);
+            put(goalX, goalZ);
+            wentN = 0;
+            return;
+        }
         boolean fromIsle = Island.off(x, z), toIsle = Island.off(goalX, goalZ);
         if (Island.top(goalX, goalZ)) {
             climb(x, z, fromIsle);

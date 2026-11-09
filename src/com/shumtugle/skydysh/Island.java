@@ -52,7 +52,7 @@ final class Island {
     /** How high the spit or the island is at (x, z), under the water or over it; NONE away from both. */
     static float height(float x, float z) {
         float h = NONE;
-        if (z < SPIT_FROM + 2f && z > SPIT_TO - 30f) {
+        if (z < SPIT_FROM + 2f && z > SPIT_TO - 30f && Math.abs(z - GAP_Z) > GAP_HALF) {
             float d = Math.abs(x - spitX(z));
             if (d < CREST_HALF) h = CREST;
             else if (d < CREST_HALF + SIDE) h = CREST + (City.WATER - 0.6f - CREST) * (d - CREST_HALF) / SIDE;
@@ -301,9 +301,22 @@ final class Island {
             float x = p[0] + p[2] * s, z = p[1] + p[3] * s;
             square(c, x0, z0, x1, z1, x, z, PIER_HALF * 0.75f, DECK, DECK - 0.5f);
         }
-        // the lighthouse, solid to its roof: its plinth as wide as it is drawn, the tower over it
+        // the lighthouse: its plinth as wide as it is drawn, the tower over it up to the gallery,
+        // the gallery's deck to stand on (as wide as its flats), the lantern and the roof over it
         square(c, x0, z0, x1, z1, IX, IZ, PLINTH, LH_FOOT + PLINTH_HIGH, 0f);
-        square(c, x0, z0, x1, z1, IX, IZ, TOWER_LOW, LH_TOP, 0f);
+        square(c, x0, z0, x1, z1, IX, IZ, TOWER_LOW, GALLERY_Y - 1f, 0f);
+        square(c, x0, z0, x1, z1, IX, IZ, GALLERY_R * 0.92f, GALLERY_Y, GALLERY_Y - 1f);
+        square(c, x0, z0, x1, z1, IX, IZ, LANTERN_R + 0.2f, LH_TOP, GALLERY_Y);
+        // the bridge's leaf, down: a deck across the channel; its banks either side
+        if (bridgeUp == 0f) {
+            float gx = spitX(GAP_Z);
+            for (float z = GAP_Z - GAP_HALF - 2f * ABUT; z < GAP_Z + GAP_HALF + 2f * ABUT; z += 2f)
+                square(c, x0, z0, x1, z1, gx, z + 1f, CREST_HALF, BRIDGE_DECK, PH[0]);
+        } else {
+            float gx = spitX(GAP_Z);
+            for (int e = -1; e <= 1; e += 2)
+                square(c, x0, z0, x1, z1, gx, GAP_Z + e * (GAP_HALF + ABUT), CREST_HALF, BRIDGE_DECK, PH[0]);
+        }
         float[] at = new float[3];
         if (wrecked) return;
         for (int k = 0; k < YACHTS; k++) {
@@ -345,9 +358,24 @@ final class Island {
     static final float LH_FOOT = PH[PH.length - 1] - 0.8f, PLINTH = 4f, PLINTH_HIGH = 1.6f;
     static final float TOWER_LOW = 3.2f, TOWER_TOP = 2.3f, TOWER_HIGH = 16f;
     static final float GALLERY_R = 3.4f, LANTERN_R = 1.5f, LANTERN_HIGH = 2.2f;
+    /** The gallery's deck, to stand on. */
+    static final float GALLERY_Y = LH_FOOT + PLINTH_HIGH + TOWER_HIGH + 0.3f;
     static final float LH_TOP = LH_FOOT + PLINTH_HIGH + TOWER_HIGH + 0.3f + LANTERN_HIGH + 2.4f;
 
     /** The way the door looks: toward the path's end on the top, square to the flat nearest it. */
+    /** Whether one at (x, y, z) heading h is at the lighthouse's door, going to it. */
+    static boolean atDoor(float x, float y, float z, float h) {
+        float[] at = new float[3];
+        door(at);
+        float dx = x - at[0], dz = z - at[2];
+        if (dx * dx + dz * dz > DOOR_NEAR * DOOR_NEAR || Math.abs(y - at[1]) > 1.5f) return false;
+        float ix = IX - x, iz = IZ - z, il = Math.max(1e-3f, (float) Math.sqrt(ix * ix + iz * iz));
+        return ((float) Math.sin(h) * ix + (float) Math.cos(h) * iz) / il > 0.3f;
+    }
+
+    // so near the lighthouse's door she goes in
+    static final float DOOR_NEAR = 2.2f;
+
     private static float doorA() {
         return Math.round(pathA(1f) / 0.7854f) * 0.7854f;
     }
@@ -421,8 +449,16 @@ final class Island {
     private static void spit(DrawList d) {
         float step = 4f;
         for (float z = SPIT_FROM + 1f; z > SPIT_TO - 26f; z -= step) {
-            float za = z, zb = z - step, xa = spitX(za), xb = spitX(zb);
-            float mx = (xa + xb) * 0.5f, mz = (za + zb) * 0.5f, len = (float) Math.sqrt((xb - xa) * (xb - xa) + step * step);
+            float za = Math.min(z, z > GAP_Z ? z : GAP_Z - GAP_HALF), zb = z - step, xa, xb;
+            // the channel cut through it for the bridge: the pieces stop at its banks
+            if (za > GAP_Z - GAP_HALF && zb < GAP_Z + GAP_HALF) {
+                if (za > GAP_Z + GAP_HALF) zb = GAP_Z + GAP_HALF;
+                else continue;
+            }
+            xa = spitX(za);
+            xb = spitX(zb);
+            float step0 = za - zb;
+            float mx = (xa + xb) * 0.5f, mz = (za + zb) * 0.5f, len = (float) Math.sqrt((xb - xa) * (xb - xa) + step0 * step0);
             float[] t = yaw((float) Math.atan2(xb - xa, zb - za));
             float low = PH[0];
             d.box(mx, (City.WATER - 0.6f + low) * 0.5f, mz, CREST_HALF + SIDE, (City.WATER - 0.6f - low) * 0.5f, len * 0.5f + 0.2f, t, 0xC9A97C,
@@ -431,9 +467,86 @@ final class Island {
                     0xDABF8E, DrawList.GRAIN);
             d.box(mx, CREST - 0.05f, mz, CREST_HALF, 0.05f, len * 0.5f + 0.2f, t, 0xE6CC9C, DrawList.GRAIN);
         }
+        // the channel's banks: walls of dressed stone, from the bed up to the crest, a step over it
+        float gx = spitX(GAP_Z);
+        for (int e = -1; e <= 1; e += 2) {
+            float bz = GAP_Z + e * (GAP_HALF + ABUT);
+            d.box(gx, (PH[0] + BRIDGE_DECK) * 0.5f, bz, CREST_HALF + SIDE, (BRIDGE_DECK - PH[0]) * 0.5f, ABUT, null, 0xA89C88, DrawList.STONE);
+            d.box(gx, BRIDGE_DECK + 0.02f, bz, CREST_HALF + 0.2f, 0.02f, ABUT, null, 0x8C7F70, DrawList.STONE);
+        }
+        // the bridge's frame on the island's bank: two posts and a beam over, where its leaf hangs
+        float hz = GAP_Z - GAP_HALF - ABUT;
+        for (int e = -1; e <= 1; e += 2)
+            d.box(gx + e * (CREST_HALF + 0.5f), BRIDGE_DECK + 3f, hz, 0.35f, 3f, 0.35f, null, 0x55585C, DrawList.POLISHED);
+        d.box(gx, BRIDGE_DECK + 6.1f, hz, CREST_HALF + 0.9f, 0.25f, 0.35f, null, 0x55585C, DrawList.POLISHED);
     }
 
-    /** The island in facets, ring on ring of its profile, round in sectors: sand, rock, grass. */
+    // ---- the bridge over the channel in the spit near the island: where the channel is along
+    // the spit (a share of the way from the beach), half as wide; the banks' stone, so deep; the
+    // deck's top, a step over the crest ----
+    static final float GAP_Z = SPIT_FROM - 0.72f * (SPIT_FROM - SPIT_TO), GAP_HALF = 5f, ABUT = 1f, BRIDGE_DECK = CREST + 0.3f;
+    // how far up the leaf is now (0 down, 1 up), and where it is going; how long it takes, seconds
+    static float bridgeUp, bridgeTo;
+    static final float RAISE_S = 5f;
+    // the leaf stands up so steeply at most, radians
+    static final float LEAF_UP = 1.35f;
+
+    /** Whether (x, z) is on the bridge's leaf (down) or its banks. */
+    static boolean onBridge(float x, float z) {
+        return Math.abs(z - GAP_Z) < GAP_HALF + 2f * ABUT && Math.abs(x - spitX(GAP_Z)) < CREST_HALF + 0.4f;
+    }
+
+    /** The bridge's leaf going up or down; true the moment it leaves the deck or comes down on it. */
+    static boolean bridgeStep(float dt) {
+        float was = bridgeUp;
+        if (bridgeUp < bridgeTo) bridgeUp = Math.min(bridgeTo, bridgeUp + dt / RAISE_S);
+        else if (bridgeUp > bridgeTo) bridgeUp = Math.max(bridgeTo, bridgeUp - dt / RAISE_S);
+        return (was == 0f) != (bridgeUp == 0f);
+    }
+
+    /**
+     * The bridge's leaf: planks between two steel stringers, rails along both sides, hinged at the
+     * island's bank; down, it lies across the channel; up, it stands tilted back over the bank.
+     */
+    static void bridge(DrawList d) {
+        float gx = spitX(GAP_Z), hz = GAP_Z - GAP_HALF - ABUT, len = 2f * (GAP_HALF + ABUT);
+        float a = bridgeUp * bridgeUp * (3f - 2f * bridgeUp) * LEAF_UP;
+        float tz = hz + (float) Math.cos(a) * len, ty = BRIDGE_DECK + (float) Math.sin(a) * len;
+        float[] t = along(gx, BRIDGE_DECK, hz, gx, ty, tz);
+        float mz = (hz + tz) * 0.5f, my = (BRIDGE_DECK + ty) * 0.5f;
+        // the planks, a little under the deck's top, the stringers under their edges
+        float ny = (float) Math.cos(a), nz = -(float) Math.sin(a);
+        d.box(gx, my - ny * 0.12f, mz - nz * 0.12f, CREST_HALF, 0.12f, len * 0.5f, t, 0x9A6B43, DrawList.material(DrawList.WOOD, 3));
+        for (int e = -1; e <= 1; e += 2) {
+            d.box(gx + e * (CREST_HALF - 0.1f), my - ny * 0.4f, mz - nz * 0.4f, 0.12f, 0.25f, len * 0.5f, t, 0x3C4148, DrawList.POLISHED);
+            d.box(gx + e * (CREST_HALF - 0.05f), my + ny * 0.9f, mz + nz * 0.9f, 0.05f, 0.05f, len * 0.5f, t, 0xC24A3B, DrawList.PAINT);
+            for (float s = -len * 0.5f + 0.5f; s < len * 0.5f; s += 2f) {
+                float py = my + ny * 0.45f + (float) Math.sin(a) * s, pz = mz + nz * 0.45f + (float) Math.cos(a) * s;
+                d.box(gx + e * (CREST_HALF - 0.05f), py, pz, 0.04f, 0.45f, 0.04f, t, 0x55585C, DrawList.RAIL);
+            }
+        }
+    }
+
+    /** The island shut: the bridge up for good, the yachts wrecked, the brums left on it. */
+    static boolean shut;
+
+    // the brums left on the island, standing about on its sand by the pier: so many, round from
+    // here, so far apart round, so far out
+    static final float KEPT_FROM = 0.75f, KEPT_STEP = 0.045f, KEPT_R = 104.5f;
+
+    /** The brums left on the island once it is shut: standing about on the sand by the pier, ticking, near the eye. */
+    static void kept(DrawList d, float time, float ex, float ez) {
+        if (!shut) return;
+        Frida.hot = true;
+        for (int k = 0; k < Herd.ALL; k++) {
+            float a = KEPT_FROM + k * KEPT_STEP, r = (KEPT_R + (k % 3) * 1.6f) * wob(a);
+            float x = IX + (float) Math.sin(a) * r, z = IZ + (float) Math.cos(a) * r;
+            if ((x - ex) * (x - ex) + (z - ez) * (z - ez) > 160f * 160f) continue;
+            Frida.draw(d, x, height(x, z), z, a + (float) Math.PI + 0.6f * (float) Math.sin(time * 0.3f + k), Chase.SIZE, "idle", time + k, false);
+        }
+        Frida.hot = false;
+    }
+
     // the slopes go round in so many pieces
     static final int SECTORS = 64;
 
@@ -455,6 +568,7 @@ final class Island {
         return tunnel;
     }
 
+    /** The island in facets, ring on ring of its profile, round in sectors: sand, rock, grass. */
     private static void slopes(DrawList d) {
         int sectors = SECTORS;
         for (int s = 0; s < sectors; s++) {

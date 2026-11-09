@@ -18,8 +18,9 @@ package com.shumtugle.skydysh;
  */
 final class Herd {
     // the steps: gathering the knots, leading them out to the island, done; out along the pier to
-    // a yacht, the yachts going up, up to the lighthouse
-    static final int GATHER = 0, ISLE = 1, DONE = 2, BOAT = 3, SCENE = 4, LIGHT = 5;
+    // a yacht, the yachts going up, up to the lighthouse; from its gallery across to the secret
+    // balcony; in the hall behind it, to the switch
+    static final int GATHER = 0, ISLE = 1, DONE = 2, BOAT = 3, SCENE = 4, LIGHT = 5, LEAP = 6, LEVER = 7;
     static final int KNOTS = 5, EACH = 3, ALL = KNOTS * EACH;
     // how near she is seen from; how near one comes before it goes off; how far behind it loses her
     static final float SEE = 18f, CATCH = 1.5f, LOSE = 150f;
@@ -379,7 +380,7 @@ final class Herd {
      */
     private static boolean onFoot(float x, float y, float z, City city) {
         if (y < City.WATER + 0.25f) return false;
-        float g = Island.onPier(x, z) ? Island.DECK : city.ground(x, z);
+        float g = Island.onPier(x, z) ? Island.DECK : Island.onBridge(x, z) ? Island.BRIDGE_DECK : city.ground(x, z);
         return y - g < 2.6f;
     }
 
@@ -546,7 +547,28 @@ final class Herd {
 
     /** Whether the yachts have gone up. */
     boolean wrecked() {
-        return step == LIGHT || step == SCENE && wreck.hit();
+        return step >= LIGHT || step == SCENE && wreck.hit();
+    }
+
+    /** Up in the lighthouse, on its gallery: from here across to the secret balcony. */
+    void onTower() {
+        if (step == LIGHT) step = LEAP;
+    }
+
+    /** In the secret hall: to the switch (from the gallery or got here some other way). */
+    void inHall() {
+        if (step == LIGHT || step == LEAP) step = LEVER;
+    }
+
+    /** The switch thrown: the bridge goes up, they are on the island for good. Done. */
+    void thrown() {
+        step = DONE;
+        doneAt = clock;
+    }
+
+    /** Whether she is safe of them now and the chase is over: up in the lighthouse and after. */
+    boolean safe() {
+        return step == LEAP || step == LEVER || step == DONE;
     }
 
 
@@ -598,7 +620,8 @@ final class Herd {
      * Where she is to be put, and the way she is to face, into out (x, y, z, heading).
      */
     void again(City city, float[] out) {
-        if (step == LIGHT) {
+        if (step >= LIGHT) {
+            step = LIGHT;
             // after the yachts: from the pier where she stood, those after her down where the blast threw them
             trail = 0;
             keep(herX, herY, herZ);
@@ -690,6 +713,13 @@ final class Herd {
             out[1] += 2f;
             return true;
         }
+        if (step == LEAP) {
+            out[0] = City.HOME_DOOR_X;
+            out[1] = City.SECRET_Y + 1f;
+            out[2] = City.HOME_DOOR_Z - 0.3f;
+            return true;
+        }
+        if (step == LEVER) return false;
         if (step == ISLE) {
             Island.pierFoot(foot);
             out[0] = foot[0];
@@ -711,7 +741,7 @@ final class Herd {
     }
 
     String goalWord() {
-        return step == BOAT || step == SCENE ? "herd.boat" : step == LIGHT ? "herd.light" : step == ISLE ? "herd.pier" : WORDS[next()];
+        return step == LEAP ? "herd.balcony" : step == LEVER ? "herd.lever" : step == BOAT || step == SCENE ? "herd.boat" : step == LIGHT ? "herd.light" : step == ISLE ? "herd.pier" : WORDS[next()];
     }
 
     int mark() {

@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.3.0
+
+- Hotheads to its end. The lighthouse is a refuge: at its door she goes in and up in the dark,
+  out onto its gallery facing the town (it can be stood on now); the brums do not come in. The
+  dispatcher: over the door of home, the secret balcony; leap off the gallery and glide; in the
+  hall behind it a switch that raises the bridge in the spit and shuts the island. The navigator's
+  line goes straight there through the air; in the hall a mark over the switch.
+- The switch in the secret hall, on the end wall right of the mallet's board: an iron plate, a red
+  handle, a lamp over it. Thrown, the job is done: the report says the bridge is up, the island
+  shut, fifteen brums waiting there to be mended.
+- A channel cut through the spit near the island, banks of dressed stone, a drawbridge over it
+  hinged on the island's bank, a frame over the hinge: down till the island is shut, then up for
+  good (it goes up over five seconds). The brums walk over it while it is down.
+- The island shut, it stays so: the yachts wrecked, fifteen brums standing about on the sand by
+  the pier, ticking.
+- The lighthouse's door takes her up to the gallery any time.
+- The navigator's line indoors goes straight to the place.
+
 ## 1.2.9
 
 - The way up the island: a tunnel instead of the straight stairs. In at a portal of dressed stone
