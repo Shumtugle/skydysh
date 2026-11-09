@@ -1,0 +1,58 @@
+# The laboratory on the mountain. The arch over the road's foot, the name lit on it; the name in
+# great white letters on the slope toward the town; the deck at the road's top end, the brums'
+# pickups in it, brums by them and by the door. The navigator's job: at the wheel on the deck, told
+# to leave it there and go in; in the lobby, its brums, the counter; the box handed over; carried
+# out; at the pickup the box set down in its bed and opened, the navigator up out of it and into the
+# cab by the wheel; the trial begun. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+at -480 600 0
+wait 0.3
+eye -463 5.5 637 -0.88 0.05
+wait 0.1
+shot a0
+eye -276 38 690 -0.95 0.02
+wait 0.1
+shot a1
+eye -500 155 870 0.4 -0.18
+wait 0.1
+shot a2
+eye off
+keep kinds 1022
+keep where 0
+restart
+free
+mission 11
+drivein -482 895.5 -1.5708
+wait 0.6
+shot d0
+getout
+wait 0.6
+at -480 908 0
+wait 0.5
+tap 137 420
+wait 0.5
+down 137 420
+wait 4.4
+up 137 420
+wait 1.4
+shot d2
+walk 3 0 w
+shot d3
+walk 1 0 w
+walk 7 0 w
+shot d4
+at -484.4 897.6 2.3
+wait 0.7
+shot u0
+wait 1.2
+shot u1
+wait 0.6
+shot u2
+wait 2.2
+shot u3

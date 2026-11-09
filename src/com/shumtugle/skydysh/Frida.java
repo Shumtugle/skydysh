@@ -305,6 +305,23 @@ final class Frida {
     /** Another: swimming, the head up (t in strokes). */
     static final String SWIM = "swim";
     static final String LOUNGE = "lounge";
+    /** Another: standing, a thing held in both hands before the chest (see Stroll.hold). */
+    static final String HOLD = "hold";
+
+    /**
+     * Where the hands are, standing at (x, y, z) turned by yaw, size times, holding a thing before
+     * her (see HOLD): into out (x, y, z).
+     */
+    static void hands(float x, float y, float z, float yaw, float size, float[] out) {
+        if (moves == null) return;
+        Stroll.hold(moves, pq, pp);
+        Stroll.held(out);
+        float cy = (float) Math.cos(yaw), sy = (float) Math.sin(yaw);
+        float px = out[0] * size, py = out[1] * size, pz = out[2] * size;
+        out[0] = x + cy * px + sy * pz;
+        out[1] = y + py;
+        out[2] = z - sy * px + cy * pz;
+    }
 
     /** The pose of a motion at a time, into pq and pp; false if there is no such motion. */
     private static boolean pose(String motion, float t) {
@@ -318,6 +335,10 @@ final class Frida {
         }
         if (motion.equals(SWIM)) {
             Stroll.swim(moves, t, pq, pp);
+            return true;
+        }
+        if (motion.equals(HOLD)) {
+            Stroll.hold(moves, pq, pp);
             return true;
         }
         if (motion.equals(LOUNGE)) {

@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.2
+
+- The laboratory on the mountain made a place to come to. An arch over the road's foot with its
+  name lit on it; its name again on the slope toward the town, in great white letters on the
+  grass; at the road's top end a deck of ten spaces, the brums' own pickups in six, brums by them,
+  one coming out of hers and going in at the door, another coming out and driving off.
+- The tower's door opens: a lobby behind it, a long white counter, the name lit over a wall of
+  glass with the town's streets on it, pillars, benches, a glass case with the navigator, brums
+  standing about, sitting, crossing it.
+- The navigator's job as a story told: leave the pickup on the deck, go in, at the counter be
+  handed a box, carry it out to the pickup, unpack it there: the navigator goes up out of the box
+  and into the cab by the wheel and comes on. Then the trial as before. The navigator stands by the
+  wheel of any pickup she drives from then on.
+- The road's top end no longer ends at the slope's edge: a pickup driven on past it rolled down
+  onto the snow and could not come back. It goes on into the deck; off the road, the deck or the
+  flat on top, the slope does not let a pickup onto it.
+
 ## 1.2.1
 
 - The mountain's road clear: up its first round, on the west side, the pickup stopped as at a

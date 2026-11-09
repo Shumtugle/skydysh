@@ -653,6 +653,92 @@ final class Rooms {
      * board under lamps, the golden mallet; along each side, shelves of golden things won (little
      * gold figures on stands, cups), and over them gold discs in frames.
      */
+    // the lobby: half across, deep, high; where its counter stands (along, half across); where
+    // she stands at it to be given the box
+    static final float LOBBY_HALF = 11f, LOBBY_DEEP = 22f, LOBBY_HIGH = 7f, COUNTER_V = 15f, COUNTER_HALF = 4.2f, AT_COUNTER = 1.3f;
+
+    /**
+     * The laboratory's lobby, behind its door at the stem's foot: a floor of pale stone, a
+     * turquoise runner from the door to the long white counter across the hall, a band of light
+     * along the counter's front; behind it, on the end wall, the name lit large and a wall of dark
+     * glass with the town's streets in light on it; round pillars, benches along the side walls, a
+     * glass case with the navigator in it, plants. Its people (brums at work, waiting, coming and
+     * going, the one at the counter) are drawn as it goes on (see LabTop).
+     */
+    static Indoors lobby(float doorX, float doorZ) {
+        Indoors in = new Indoors(doorX, doorZ, 0f, -1f, LOBBY_HALF, LOBBY_DEEP, 1, 4f, 1);
+        in.backDoor = false;
+        in.hasLift = false;
+        in.lobby = true;
+        in.high = LOBBY_HIGH;
+        in.frameColor = 0x7FB8B0;
+        in.frameMat = DrawList.POLISHED;
+        int stone = 0xDCD8CE, wall = 0xE9E6DE, low = 0x2F6E6A, teal = 0x2E9C9A, neon = 0x7FF6E8, white = 0xF4F2EC;
+        shell(in, stone, true, wall, low, DrawList.PAINT);
+        DrawList d = in.still();
+        float f = Indoors.FLOOR, w = Indoors.WALL, half = in.half, deep = in.deep, top = f + in.high;
+        // the runner from the door to the counter
+        in.box(d, 0f, f + 0.006f, (COUNTER_V - 1f) * 0.5f + 0.4f, 1.3f, 0.006f, (COUNTER_V - 1f) * 0.5f - 0.4f, teal, DrawList.GRAIN);
+        // round pillars, two rows
+        for (int e = -1; e <= 1; e += 2)
+            for (float v = 6f; v < 15f; v += 8f) {
+                in.box(d, e * 6.5f, f + in.high * 0.5f, v, 0.5f, in.high * 0.5f, 0.5f, white, DrawList.STONE);
+                in.box(d, e * 6.5f, f + in.high * 0.5f, v, 0.35f, in.high * 0.5f, 0.6f, white, DrawList.STONE);
+                in.box(d, e * 6.5f, f + in.high * 0.5f, v, 0.6f, in.high * 0.5f, 0.35f, white, DrawList.STONE);
+                in.solid(e * 6.5f - 0.6f, v - 0.6f, e * 6.5f + 0.6f, v + 0.6f, f + in.high);
+            }
+        // the counter across the hall: white, its top pale, a band of light down its front
+        float cv = COUNTER_V, ch = 1.1f;
+        in.box(d, 0f, f + ch * 0.5f, cv, COUNTER_HALF, ch * 0.5f, 0.45f, white, DrawList.PLAIN);
+        in.box(d, 0f, f + ch + 0.03f, cv, COUNTER_HALF + 0.1f, 0.03f, 0.55f, 0xC9C3B6, DrawList.POLISHED);
+        in.box(d, 0f, f + 0.55f, cv - 0.47f, COUNTER_HALF - 0.2f, 0.06f, 0.02f, neon, DrawList.GLOW);
+        in.solid(-COUNTER_HALF, cv - 0.5f, COUNTER_HALF, cv + 0.5f, f + ch + 0.1f);
+        // a screen on the counter, toward the clerk
+        in.box(d, 2.2f, f + ch + 0.3f, cv + 0.15f, 0.45f, 0.28f, 0.03f, 0x1D2730, DrawList.GLASS);
+        // the end wall: the name lit, large; under it a wall of dark glass, the town's streets lit on it
+        float ev = deep - w - 0.05f;
+        in.box(d, 0f, f + 2.6f, ev, 7f, 2.1f, 0.04f, 0x16232A, DrawList.GLASS);
+        for (int k = -6; k <= 6; k++) in.box(d, k * 1.05f, f + 2.6f, ev - 0.03f, 0.025f, 2f, 0.01f, 0x3F8FB0, DrawList.GLOW);
+        for (int k = -3; k <= 3; k++) in.box(d, 0f, f + 2.6f + k * 0.62f, ev - 0.03f, 6.9f, 0.025f, 0.01f, 0x3F8FB0, DrawList.GLOW);
+        in.box(d, -1.2f, f + 2.3f, ev - 0.04f, 3.2f, 0.05f, 0.01f, 0x4FD3F2, DrawList.GLOW);
+        in.box(d, 2f, f + 3.2f, ev - 0.04f, 0.05f, 0.95f, 0.01f, 0x4FD3F2, DrawList.GLOW);
+        String word = "LAB INC.";
+        float dot = 0.16f, across = word.length() * 6f * dot - dot;
+        for (int k = 0; k < word.length(); k++) {
+            int g = Mountain.glyph(word.charAt(k));
+            for (int row = 0; row < 7; row++)
+                for (int col = 0; col < 5; col++)
+                    if (Mountain.lit(g, row, col))
+                        in.box(d, across * 0.5f - (k * 6 + col) * dot - dot * 0.5f, top - 1.2f - row * dot, ev - 0.03f, dot * 0.42f, dot * 0.42f, 0.03f, neon, DrawList.GLOW);
+        }
+        // benches along the side walls
+        for (int e = -1; e <= 1; e += 2)
+            for (float v = 4f; v < 11f; v += 5f) {
+                float bu = e * (half - 0.6f);
+                in.box(d, bu, f + 0.45f, v, 0.4f, 0.06f, 1.6f, 0x7A5236, DrawList.WOOD);
+                in.box(d, bu, f + 0.2f, v, 0.32f, 0.2f, 1.4f, 0x4A4E54, DrawList.POLISHED);
+                in.solid(bu - 0.45f, v - 1.65f, bu + 0.45f, v + 1.65f, f + 0.5f);
+            }
+        // the glass case with the navigator in it, by the left of the counter
+        float gu = -8f, gv = 17f;
+        in.box(d, gu, f + 0.5f, gv, 0.7f, 0.5f, 0.7f, white, DrawList.PLAIN);
+        in.box(d, gu, f + 1.45f, gv, 0.66f, 0.45f, 0.66f, 0x9FD8E0, DrawList.GLASS);
+        in.box(d, gu, f + 1.2f, gv, 0.22f, 0.14f, 0.03f, 0x23282E, DrawList.PLAIN);
+        in.box(d, gu, f + 1.2f, gv - 0.035f, 0.18f, 0.11f, 0.01f, 0x4FD3F2, DrawList.GLOW);
+        in.solid(gu - 0.75f, gv - 0.75f, gu + 0.75f, gv + 0.75f, f + 2f);
+        // plants by the door and by the end wall
+        Random rnd = new Random(0x10BBL);
+        piece(in, rnd, PLANT, -1, 1.4f, low);
+        piece(in, rnd, PLANT, 1, 1.4f, low);
+        piece(in, rnd, PLANT, -1, deep - w - 0.8f, low);
+        piece(in, rnd, PLANT, 1, deep - w - 0.8f, low);
+        lamps(in, 4);
+        in.deskU = 0f;
+        in.deskV = cv - 0.5f - AT_COUNTER;
+        in.done();
+        return in;
+    }
+
     static Indoors secret(float doorX, float doorZ) {
         Indoors in = new Indoors(doorX, doorZ, 0f, -1f, 5.4f, 11f, 1, 4f, 2);
         in.backDoor = false;

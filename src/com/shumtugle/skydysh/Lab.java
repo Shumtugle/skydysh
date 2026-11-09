@@ -2,18 +2,26 @@ package com.shumtugle.skydysh;
 
 /**
  * The navigator: the laboratory up on the mountain fits pickups with a navigator it is trying out,
- * a map in the corner that shows the way. She drives up to its door; at it, the navigator is
- * fitted and comes on, and is hers from then on. Then the trial: five minutes at the wheel along
- * the navigator's line, place after place across the town and out of it, each told as the last is
- * reached; only the time spent going the line's way counts, nearer the place along it. Other brums
- * are trying theirs out round the town at the same time, each on a round of its own. A story:
- * played once.
+ * a map in the corner that shows the way. She drives up, leaves the pickup on the deck at the
+ * road's top end, goes in at the laboratory's door; at the counter in its lobby she is given a box
+ * with the navigator in it, carries it out to her pickup and unpacks it there: the navigator goes
+ * in by the wheel and comes on, and is hers from then on. Then the trial: five minutes at the
+ * wheel along the navigator's line, place after place across the town and out of it, each told as
+ * the last is reached; only the time spent going the line's way counts, nearer the place along it.
+ * Other brums are trying theirs out round the town at the same time, each on a round of its own.
+ * A story: played once.
  */
 final class Lab {
-    // the steps: up to the laboratory's door, the fitting, the trial, done
-    static final int GO = 0, FIT = 1, TRIAL = 2, DONE = 3;
-    // how long the fitting takes; the trial, counted; how near the door, a place
-    static final float FIT_TIME = 3.2f, TRIAL_TIME = 300f, DOOR_NEAR = 14f, PLACE_NEAR = 13f;
+    // the steps: up to the laboratory and in, to the counter, the box handed over, carried out to
+    // the pickup, unpacked there, the trial, done
+    static final int GO = 0, DESK = 1, HAND = 2, CARRY = 3, UNPACK = 4, TRIAL = 5, DONE = 6;
+    // the handing over: when the box leaves the hands that hold it out, when it is in hers, done
+    static final float GIVE_FROM = 0.7f, GIVE_TO = 1.9f, HAND_TIME = 2.6f, DESK_NEAR = 1.3f;
+    // the unpacking: the box set down by then, open by then, the navigator lifted out and in by
+    // the wheel by then (it comes on), done; how near the pickup she is to be
+    static final float SET_END = 0.8f, OPEN_END = 1.6f, IN_END = 3.2f, UNPACK_TIME = 4.2f, CAR_NEAR = 3.6f;
+    // the trial counted; how near a place
+    static final float TRIAL_TIME = 300f, PLACE_NEAR = 13f;
     // the way counts only while she comes nearer along it, so much a second at least, and for so
     // long after she last did (a stop at a crossing does not stop it at once)
     static final float GAIN = 0.8f, HOLD = 1.2f;
@@ -24,7 +32,7 @@ final class Lab {
     }
 
     int step = GO;
-    float clock, doneAt = -1f, fitT;
+    float clock, doneAt = -1f, handT, unpackT;
     /** When the trial began, by the clock. */
     float trialFrom = -1f;
     /** The trial's time counted so far. */
@@ -37,9 +45,9 @@ final class Lab {
         return step == DONE;
     }
 
-    /** Whether the navigator is hers by now (fitted). */
+    /** Whether the navigator is hers by now (in by the wheel). */
     boolean fitted() {
-        return step >= TRIAL || step == FIT && fitT > FIT_TIME * 0.5f;
+        return step >= TRIAL || step == UNPACK && unpackT >= IN_END;
     }
 
     /** Whether the time counts now. */
@@ -47,36 +55,79 @@ final class Lab {
         return step == TRIAL && held > 0f;
     }
 
-    // what happened in a step: nothing, the navigator came on, a place reached, done
-    static final int NONE = 0, ON = 1, REACHED = 2, WON = 3;
+    /** Whether the box is being handed over: she stands, the eye on the two of them. */
+    boolean handing() {
+        return step == HAND;
+    }
+
+    /** How far the box has gone from the counter's hands to hers, 0 to 1; -1 when it is none of theirs. */
+    float giving() {
+        if (step < HAND) return 0f;
+        if (step > HAND) return 1f;
+        return Math.max(0f, Math.min(1f, (handT - GIVE_FROM) / (GIVE_TO - GIVE_FROM)));
+    }
+
+    /** Whether she has the box in her hand, on foot. */
+    boolean carrying() {
+        return step == HAND && handT >= GIVE_TO || step == CARRY || step == UNPACK && unpackT < SET_END * 0.5f;
+    }
+
+    /** Whether she is unpacking it at the pickup: she stands, the eye on her and the pickup. */
+    boolean unpacking() {
+        return step == UNPACK;
+    }
+
+    // what happened in a step: nothing, the navigator came on, a place reached, done; the box
+    // begun to be handed over, in her hands; the unpacking begun
+    static final int NONE = 0, ON = 1, REACHED = 2, WON = 3, HANDING = 4, GIVEN = 5, OPENING = 6;
 
     /**
-     * A step on: where she is, at the wheel or not; how far she has still to go along the
-     * navigator's way (-1: no way). What it brought.
+     * A step on: where she is (or the pickup she drives), at the wheel or not; how far she has still
+     * to go along the navigator's way (-1: no way); the room she is in (null out of doors); where
+     * the pickup she is to carry the box to is. What it brought.
      */
-    int update(float dt, float x, float z, boolean wheel, float left) {
+    int update(float dt, float x, float z, boolean wheel, float left, Indoors in, float carX, float carZ) {
         if (step == DONE) return NONE;
         clock += dt;
         switch (step) {
-            case GO: {
-                float dx = x - doorX(), dz = z - doorZ();
-                if (dx * dx + dz * dz < DOOR_NEAR * DOOR_NEAR) {
-                    step = FIT;
-                    fitT = 0f;
+            case GO:
+                if (in != null && in.lobby) step = DESK;
+                return NONE;
+            case DESK: {
+                if (in == null || !in.lobby) return NONE;
+                float du = in.u(x, z) - in.deskU, dv = in.v(x, z) - in.deskV;
+                if (du * du + dv * dv < DESK_NEAR * DESK_NEAR) {
+                    step = HAND;
+                    handT = 0f;
+                    return HANDING;
                 }
                 return NONE;
             }
-            case FIT: {
-                float was = fitT;
-                fitT += dt;
-                if (was < FIT_TIME * 0.5f && fitT >= FIT_TIME * 0.5f) return ON;
-                if (fitT >= FIT_TIME) {
+            case HAND: {
+                float was = handT;
+                handT += dt;
+                if (handT >= HAND_TIME) step = CARRY;
+                return was < GIVE_TO && handT >= GIVE_TO ? GIVEN : NONE;
+            }
+            case CARRY: {
+                float dx = x - carX, dz = z - carZ;
+                if (in == null && !wheel && dx * dx + dz * dz < CAR_NEAR * CAR_NEAR) {
+                    step = UNPACK;
+                    unpackT = 0f;
+                    return OPENING;
+                }
+                return NONE;
+            }
+            case UNPACK: {
+                float was = unpackT;
+                unpackT += dt;
+                if (unpackT >= UNPACK_TIME) {
                     step = TRIAL;
                     trialFrom = clock;
                     place = 0;
                     best = Float.MAX_VALUE;
                 }
-                return NONE;
+                return was < IN_END && unpackT >= IN_END ? ON : NONE;
             }
             case TRIAL: {
                 float[] p = PLACES[place];
@@ -109,15 +160,6 @@ final class Lab {
         }
     }
 
-    /** The laboratory's door, where she is to come: just before it on the flat. */
-    static float doorX() {
-        return Mountain.MX;
-    }
-
-    static float doorZ() {
-        return Mountain.MZ - 9f;
-    }
-
     // the places of the trial, in turn, round again if the time is not up: where, what is there
     // (its word, as Lang keeps it), its mark
     static final float[][] PLACES = {
@@ -133,12 +175,37 @@ final class Lab {
     static final String[] WORDS = {"nav.quarry", "nav.clinic", "nav.concert", "nav.oldtown", "nav.archive", "nav.townhall", "nav.workshop", "nav.factory"};
     static final int[] MARKS = {Marks.QUARRY, Marks.CLINIC, Marks.CONCERT, Marks.PIN, Marks.ARCHIVE, Marks.TOWNHALL, Marks.WORKSHOP, Marks.FACTORY};
 
-    /** Where the way goes now, into out (x, y, z); false if nowhere (the fitting). */
-    boolean goal(float[] out) {
+    /**
+     * Where the way goes now, into out (x, y, z); false if nowhere (the handing over, the
+     * unpacking): up the mountain, at the wheel the deck's free space, on foot its door; in the
+     * lobby the counter (the room's own place for it: in); the pickup the box goes to; the places.
+     */
+    boolean goal(boolean wheel, Indoors in, float carX, float carZ, float[] out) {
         if (step == GO) {
-            out[0] = doorX();
+            int k = Mountain.freeSpace();
+            out[0] = wheel ? Mountain.spaceX(k) : Mountain.MX;
             out[1] = Mountain.TOP + 4f;
-            out[2] = doorZ();
+            out[2] = wheel ? Mountain.spaceZ(k) : Mountain.DOOR_Z - 1f;
+            return true;
+        }
+        if (step == DESK) {
+            if (in == null || !in.lobby) return false;
+            out[0] = in.wx(in.deskU, in.deskV + 1f);
+            out[1] = Indoors.FLOOR + 2.4f;
+            out[2] = in.wz(in.deskU, in.deskV + 1f);
+            return true;
+        }
+        if (step == CARRY) {
+            if (in != null && in.lobby) {
+                // out of the lobby first, by its door
+                out[0] = in.wx(0f, -1f);
+                out[1] = Indoors.FLOOR + 2.4f;
+                out[2] = in.wz(0f, -1f);
+                return true;
+            }
+            out[0] = carX;
+            out[1] = Mountain.TOP + 3f;
+            out[2] = carZ;
             return true;
         }
         if (step != TRIAL) return false;
@@ -149,12 +216,23 @@ final class Lab {
         return true;
     }
 
-    String goalWord() {
-        return step == GO ? "goal.lab" : step == TRIAL ? WORDS[place] : null;
+    String goalWord(boolean wheel) {
+        switch (step) {
+            case GO:
+                return wheel ? "lab.parking" : "goal.lab";
+            case DESK:
+                return "lab.counter";
+            case CARRY:
+                return "lab.car";
+            case TRIAL:
+                return WORDS[place];
+            default:
+                return null;
+        }
     }
 
     int mark() {
-        return step == GO ? Marks.LAB : MARKS[place];
+        return step == DESK ? Marks.DESK : step == CARRY ? Marks.TRUCK : step == TRIAL ? MARKS[place] : Marks.LAB;
     }
 
     // ---- the other brums trying theirs out: each round a loop of the town's streets ----

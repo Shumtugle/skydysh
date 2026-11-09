@@ -9,8 +9,12 @@ package com.shumtugle.skydysh;
  * tower, a pylon in the first block from the sea, a station on the sand; two cabins on it, one up
  * as the other goes down.
  *
- * All of it is worked out, not built of tiles: how high the ground is anywhere on it (the road, or
- * the slope), where the rails stand; the town asks it (see City.ground, City.country).
+ * At the road's foot an arch over it with the laboratory's name; on the slope facing the town the
+ * name again in great white letters standing on the grass; at the road's top end a parking deck of
+ * ten spaces, the brums' own pickups in some of them.
+ *
+ * All of it is worked out, not built of tiles: how high the ground is anywhere on it (the road, the
+ * deck, or the slope), where the rails stand; the town asks it (see City.ground, City.country).
  */
 final class Mountain {
     private Mountain() {
@@ -30,14 +34,81 @@ final class Mountain {
     static final float CLIMB = 0.3f;
 
     /**
-     * Whether the slope holds a pickup back going from (ox, oz) to (x, z): off the road, up the
-     * mountain past its very foot. Up the mountain the road is the only way; down it, it may roll.
+     * Whether the slope holds a pickup back going from (ox, oz) to (x, z): off what it may drive on
+     * (the road, the deck, the flat on top), up the mountain past its very foot. Up the mountain the
+     * road is the only way; nor does it leave the road, the deck or the flat for the slope; only one
+     * on the slope already (put there somehow) may roll down it, or along.
      */
     static boolean holds(float ox, float oz, float x, float z) {
-        if (!near(x, z) || !Float.isNaN(road(x, z))) return false;
+        if (!near(x, z) || drivable(x, z)) return false;
         float c = cone(x, z);
-        return c > CLIMB && c >= cone(ox, oz);
+        if (c <= CLIMB) return false;
+        if (drivable(ox, oz)) return true;
+        return c > cone(ox, oz) + 0.02f;
     }
+
+    /** Whether (x, z) is what a pickup drives on up here: the road, the deck, the flat on top. */
+    static boolean drivable(float x, float z) {
+        if (!Float.isNaN(road(x, z)) || deck(x, z)) return true;
+        float dx = x - MX, dz = z - MZ;
+        return dx * dx + dz * dz <= PLATEAU * PLATEAU;
+    }
+
+    // ---- the parking deck at the road's top end: straight on from it, westward, a flat of paving
+    // on a wall of stone; an aisle down its middle (the road's own width, the road coming into it),
+    // five spaces either side, the north ones nose to the flat, the south ones nose out ----
+    static final float DECK_X0 = MX - 26f, DECK_X1 = MX + 2f, DECK_Z0 = MZ - 46f, DECK_Z1 = MZ - 22f;
+    static final float SPACE_W = 3.2f, SPACE_D = 5.5f, AISLE_Z = MZ - 34.5f, SPACE_X0 = MX - 3.6f;
+    static final int SPACES = 10;
+    /** The spaces the brums' own pickups stand in; the rest are free. */
+    static final int[] TAKEN = {1, 2, 4, 6, 7, 9};
+
+    /** Whether (x, z) is on the deck. */
+    static boolean deck(float x, float z) {
+        return x > DECK_X0 && x < DECK_X1 && z > DECK_Z0 && z < DECK_Z1;
+    }
+
+    /** Space k's middle across (x), along (z), and the way a pickup in it faces. */
+    static float spaceX(int k) {
+        return SPACE_X0 - (k % 5) * SPACE_W;
+    }
+
+    static float spaceZ(int k) {
+        return k < 5 ? AISLE_Z + HALF + SPACE_D * 0.5f : AISLE_Z - HALF - SPACE_D * 0.5f;
+    }
+
+    static float spaceHeading(int k) {
+        return k < 5 ? 0f : (float) Math.PI;
+    }
+
+    /** Whether space k has a brum's pickup in it. */
+    static boolean taken(int k) {
+        for (int t : TAKEN) if (t == k) return true;
+        return false;
+    }
+
+    /** The first free space. */
+    static int freeSpace() {
+        for (int k = 0; k < SPACES; k++) if (!taken(k)) return k;
+        return 0;
+    }
+
+    // ---- the laboratory's door: on the stem's front, up the steps on the podium ----
+    static final float DOOR_Z = MZ - 5.08f;
+
+    /** Whether one on foot at (x, y, z) stands at the laboratory's door. */
+    static boolean atDoor(float x, float y, float z) {
+        return Math.abs(x - MX) < 1.6f && z > DOOR_Z - 1.6f && z < DOOR_Z + 0.2f && Math.abs(y - (TOP + PODIUM_HIGH)) < 1f;
+    }
+
+    // ---- the arch over the road's foot: two piers, the name on the span between them ----
+    static final float ARCH_Z = (City.EDGE_J * City.CELL + City.ROAD + MZ - (R + HALF)) * 0.5f;
+    static final float PIER_OFF = HALF + 1.6f, PIER_HALF = 0.8f, ARCH_HIGH = 9f, SPAN_HALF = 0.9f;
+
+    // ---- the name on the slope, toward the town: great white letters, each standing on the grass ----
+    // where (a heading off the middle, toward the town; so far out, between the road's two rounds);
+    // a dot of a letter, how big; how far apart the letters along the slope
+    static final float SIGN_A = 2.4f, SIGN_R = 222f, SIGN_DOT = 2.1f, SIGN_STEP = 13f;
 
     /** How high the road is so far round (a heading from A0 on). */
     static float rise(float t) {
@@ -94,7 +165,8 @@ final class Mountain {
     static float ground(float x, float z) {
         if (!near(x, z)) return 0f;
         float g = road(x, z);
-        return Float.isNaN(g) ? cone(x, z) : g;
+        if (!Float.isNaN(g)) return g;
+        return deck(x, z) ? TOP : cone(x, z);
     }
 
     /** Whether (x, z) is up on the mountain's side of the town's last street: its road's foot, its slope, its top. */
@@ -206,6 +278,14 @@ final class Mountain {
         float tz = TOP_Z + 6f, lz = LOW_Z - 4f;
         solid(c, x0, z0, x1, z1, CABLE_X - HALL_HALF, tz - HALL_HALF, CABLE_X + HALL_HALF, tz + HALL_HALF, TOP + TOP_HALL_HIGH);
         solid(c, x0, z0, x1, z1, CABLE_X - HALL_HALF, lz - LOW_HALL_DEEP, CABLE_X + HALL_HALF, lz + LOW_HALL_DEEP, City.SAND + LOW_HALL_HIGH);
+        // the brums' pickups in their spaces
+        for (int k : TAKEN) {
+            float px = spaceX(k), pz = spaceZ(k);
+            solid(c, x0, z0, x1, z1, px - Pickup.HALF_WIDE, pz - Pickup.HALF_LONG, px + Pickup.HALF_WIDE, pz + Pickup.HALF_LONG, TOP + Pickup.TOP);
+        }
+        // the arch's piers
+        for (int e = -1; e <= 1; e += 2)
+            solid(c, x0, z0, x1, z1, MX + e * PIER_OFF - PIER_HALF, ARCH_Z - PIER_HALF, MX + e * PIER_OFF + PIER_HALF, ARCH_Z + PIER_HALF, ARCH_HIGH + 1.2f);
     }
 
     /** A solid block (ax, az)–(bx, bz) up to top, the part of it inside the cell (x0, z0)–(x1, z1). */
@@ -264,6 +344,9 @@ final class Mountain {
         top(far);
         laboratory(far);
         cableWay(far);
+        deckDrawn(far);
+        sign(far);
+        arch(far);
         road(close);
     }
 
@@ -318,7 +401,111 @@ final class Mountain {
         {"#...#", "##..#", "#.#.#", "#..##", "#...#", "#...#", "#...#"},
         {".###.", "#...#", "#....", "#....", "#....", "#...#", ".###."},
         {".....", ".....", ".....", ".....", ".....", "..##.", "..##."},
+        {"####.", "#...#", "#...#", "####.", "#....", "#....", "#...."},
     };
+
+    /** The letter's place in LETTERS (a gap for any it has not). */
+    static int glyph(char ch) {
+        return ch == 'L' ? 0 : ch == 'A' ? 1 : ch == 'B' ? 2 : ch == 'I' ? 4 : ch == 'N' ? 5 : ch == 'C' ? 6 : ch == '.' ? 7 : ch == 'P' ? 8 : 3;
+    }
+
+    /** Whether dot (row, col) of letter g is lit. */
+    static boolean lit(int g, int row, int col) {
+        return LETTERS[g][row].charAt(col) == '#';
+    }
+
+    /**
+     * The deck: its wall of stone down to the slope, its paving, the white lines of its spaces, a
+     * low kerb round its edges; a blue sign with a white P by the road's end.
+     */
+    private static void deckDrawn(DrawList d) {
+        float cx = (DECK_X0 + DECK_X1) * 0.5f, cz = (DECK_Z0 + DECK_Z1) * 0.5f, hx = (DECK_X1 - DECK_X0) * 0.5f, hz = (DECK_Z1 - DECK_Z0) * 0.5f;
+        float foot = 18f;
+        d.box(cx, TOP - 0.2f - foot * 0.5f, cz, hx, foot * 0.5f, hz, null, 0x9A8F80, DrawList.STONE);
+        d.box(cx, TOP - 0.1f, cz, hx, 0.1f, hz, null, 0x6A5A55, DrawList.ASPHALT);
+        int white = 0xF2EEDF;
+        for (int row = 0; row < 2; row++) {
+            float z0 = row == 0 ? AISLE_Z + HALF : AISLE_Z - HALF - SPACE_D, z1 = z0 + SPACE_D;
+            for (int k = 0; k <= 5; k++) {
+                float x = SPACE_X0 + SPACE_W * 0.5f - k * SPACE_W;
+                d.box(x, TOP + 0.005f, (z0 + z1) * 0.5f, 0.07f, 0.01f, SPACE_D * 0.5f, null, white, DrawList.PAINT);
+            }
+        }
+        // the kerb along the edges but where the road comes in
+        int kerb = 0xC9C3B6;
+        d.box(cx, TOP + 0.12f, DECK_Z0 + 0.2f, hx, 0.12f, 0.2f, null, kerb, DrawList.STONE);
+        d.box(DECK_X0 + 0.2f, TOP + 0.12f, cz, 0.2f, 0.12f, hz, null, kerb, DrawList.STONE);
+        d.box((DECK_X0 + MX - 21f) * 0.5f, TOP + 0.12f, DECK_Z1 - 0.2f, (MX - 21f - DECK_X0) * 0.5f, 0.12f, 0.2f, null, kerb, DrawList.STONE);
+        // the sign: a post, a blue board, a white P on it facing the road coming up
+        float sx = MX + 1f, sz = AISLE_Z - HALF - 1.2f;
+        d.box(sx, TOP + 1.5f, sz, 0.08f, 1.5f, 0.08f, null, 0xA8AAA8, DrawList.POLISHED);
+        d.box(sx, TOP + 3.3f, sz, 0.06f, 0.6f, 0.6f, null, 0x2D5DA8, DrawList.PAINT);
+        int g = glyph('P');
+        float dot = 0.13f;
+        for (int row = 0; row < 7; row++)
+            for (int col = 0; col < 5; col++)
+                if (lit(g, row, col))
+                    d.box(sx + 0.07f, TOP + 3.3f + (3 - row) * dot, sz - (col - 2) * dot, 0.01f, dot * 0.45f, dot * 0.45f, null, white, DrawList.PLAIN);
+    }
+
+    /**
+     * The name on the slope: each letter its own frame of white panels, dot by dot, standing
+     * upright on the grass on two dark legs, turned out toward the town, along the slope round it.
+     */
+    private static void sign(DrawList d) {
+        String word = "LAB INC.";
+        int white = 0xF4F2EC, leg = 0x4A4540;
+        for (int k = 0; k < word.length(); k++) {
+            int g = glyph(word.charAt(k));
+            if (g == 3) continue;
+            float a = SIGN_A - (k - (word.length() - 1) * 0.5f) * SIGN_STEP / SIGN_R;
+            float s = (float) Math.sin(a), c = (float) Math.cos(a);
+            float lx = MX + SIGN_R * s, lz = MZ + SIGN_R * c, base = cone(lx, lz) + 0.6f;
+            // its own x along the slope round (toward the next letter), its z out from the mountain
+            float[] turn = frame(-c, 0f, s, 0f, 1f, 0f, s, 0f, c);
+            for (int row = 0; row < 7; row++)
+                for (int col = 0; col < 5; col++) {
+                    if (!lit(g, row, col)) continue;
+                    float ax = (col - 2) * SIGN_DOT, ay = base + (6 - row) * SIGN_DOT + SIGN_DOT * 0.5f;
+                    d.box(lx - c * ax, ay, lz + s * ax, SIGN_DOT * 0.5f, SIGN_DOT * 0.5f, 0.25f, turn, white, DrawList.PLAIN);
+                }
+            for (int e = -1; e <= 1; e += 2) {
+                float ax = e * 1.3f * SIGN_DOT, bx = lx - c * ax - s * 0.6f, bz = lz + s * ax - c * 0.6f;
+                d.box(bx, base + 2f, bz, 0.25f, 3.2f, 0.25f, turn, leg, DrawList.PLAIN);
+            }
+        }
+    }
+
+    /**
+     * The arch over the road's foot: two piers of pale concrete, copper caps, a span between them
+     * with the name lit on it in turquoise, on both faces.
+     */
+    private static void arch(DrawList d) {
+        int concrete = 0xC9C3B6, copper = 0xB8733A, neon = 0x7FF6E8;
+        for (int e = -1; e <= 1; e += 2) {
+            float x = MX + e * PIER_OFF;
+            d.box(x, ARCH_HIGH * 0.5f, ARCH_Z, PIER_HALF, ARCH_HIGH * 0.5f, PIER_HALF, null, concrete, DrawList.STONE);
+            d.box(x, ARCH_HIGH + 1.05f, ARCH_Z, PIER_HALF + 0.15f, 0.15f, PIER_HALF + 0.15f, null, copper, DrawList.GOLD);
+        }
+        float sy = ARCH_HIGH - 0.4f;
+        d.box(MX, sy, ARCH_Z, PIER_OFF + PIER_HALF, 1.4f, SPAN_HALF * 0.6f, null, 0x24484E, DrawList.GLASS);
+        d.box(MX, sy + 1.5f, ARCH_Z, PIER_OFF + PIER_HALF + 0.2f, 0.12f, SPAN_HALF * 0.7f, null, copper, DrawList.GOLD);
+        d.box(MX, sy - 1.5f, ARCH_Z, PIER_OFF + PIER_HALF + 0.1f, 0.1f, SPAN_HALF * 0.65f, null, copper, DrawList.GOLD);
+        String word = "LAB INC.";
+        float dot = 0.26f, across = word.length() * 6f * dot - dot;
+        for (int face = -1; face <= 1; face += 2)
+            for (int k = 0; k < word.length(); k++) {
+                int g = glyph(word.charAt(k));
+                for (int row = 0; row < 7; row++)
+                    for (int col = 0; col < 5; col++) {
+                        if (!lit(g, row, col)) continue;
+                        // read left to right from either side
+                        float ax = -across * 0.5f + (k * 6 + col) * dot + dot * 0.5f;
+                        d.box(MX - face * ax, sy + 0.8f - row * dot, ARCH_Z + face * (SPAN_HALF * 0.6f + 0.03f), dot * 0.42f, dot * 0.42f, 0.03f,
+                                null, neon, DrawList.GLOW);
+                    }
+            }
+    }
 
     /**
      * The laboratory: a podium, a stem of pale concrete with a lit slit up its front and its door
@@ -352,8 +539,7 @@ final class Mountain {
         String word = "LAB INC.";
         float dot = 0.42f, across = word.length() * 6f * dot - dot, lx = MX - across * 0.5f, ly = r1 - 1.4f, lz = MZ - 11.1f;
         for (int k = 0; k < word.length(); k++) {
-            char ch = word.charAt(k);
-            int g = ch == 'L' ? 0 : ch == 'A' ? 1 : ch == 'B' ? 2 : ch == 'I' ? 4 : ch == 'N' ? 5 : ch == 'C' ? 6 : ch == '.' ? 7 : 3;
+            int g = glyph(word.charAt(k));
             for (int row = 0; row < 7; row++)
                 for (int col = 0; col < 5; col++)
                     if (LETTERS[g][row].charAt(col) == '#')

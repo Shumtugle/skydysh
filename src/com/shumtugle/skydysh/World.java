@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.2.1";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.2.2";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -180,7 +180,8 @@ final class World {
         mend = null;
         port = null;
         lab = null;
-        herd = null;
+        labCar = null;
+        labSeen = -1;
         herd = null;
         flying = false;
         if (concert != null) concert.stop();
@@ -417,7 +418,7 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 3, 1, 1, 1, 1, 1};
+    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 3, 1, 1, 1, 2, 1};
     /** How many kinds of mission there are; they come in turn, round and round. */
     static final int KINDS = 12;
 
@@ -1710,7 +1711,7 @@ final class World {
 
     // ---- doors: in from the street (or the yard), or down from a roof, a place indoors; out again ----
     static final float SWAP = 0.3f;          // the dark coming down at a door, and lifting again
-    static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5, TO_HOME = 6, TO_CONCERT = 7, TO_SECRET = 8;
+    static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5, TO_HOME = 6, TO_CONCERT = 7, TO_SECRET = 8, TO_LOBBY = 9;
     /** The place indoors she is in; null out of doors. */
     Indoors indoors;
     private float swapT = -1f;
@@ -1756,6 +1757,12 @@ final class World {
         if (driving == null && City.atSecretDoor(r.x, r.y, r.z) && fz > 0.3f) {
             host.sound(Synth.DOOR, 0.45f, 0.8f);
             go(TO_SECRET);
+            return;
+        }
+        // up on the mountain, at the laboratory's door, going to it: into its lobby
+        if (driving == null && Mountain.atDoor(r.x, r.y, r.z) && fz > 0.3f) {
+            host.sound(Synth.DOOR, 0.45f, 1.05f);
+            go(TO_LOBBY);
             return;
         }
         // in a hunt the lifts are shut (the streets are hers to learn); the ways in are open
@@ -2080,7 +2087,8 @@ final class World {
     /** Standing by a pickup a moment, on any side of it, she gets in. */
     private void getIn(float dt) {
         Runner r = runner;
-        if (!dutyOut() || indoors != null || swapT >= 0f || r.inAir() || r.climbing()) {
+        // with the box in her hands, or unpacking it, she does not get in: it goes in first
+        if (!dutyOut() || indoors != null || swapT >= 0f || r.inAir() || r.climbing() || lab != null && (lab.carrying() || lab.unpacking())) {
             doorWait = 0f;
             return;
         }
@@ -2099,7 +2107,7 @@ final class World {
     }
 
     private void getIn(Pickup p) {
-        if (p == null || driving != null) return;
+        if (p == null || driving != null || lab != null && (lab.carrying() || lab.unpacking())) return;
         letGo();
         rail.reset();
         driving = p;
@@ -2585,6 +2593,10 @@ final class World {
                 indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
                 indoors.enter(r, l[10] > 0.5f);
                 break;
+            case TO_LOBBY:
+                indoors = Rooms.lobby(Mountain.MX, Mountain.DOOR_Z);
+                indoors.enter(r, false);
+                break;
             case TO_SECRET:
                 indoors = Rooms.secret(City.HOME_DOOR_X, City.HOME_DOOR_Z);
                 indoors.enter(r, false);
@@ -2607,6 +2619,13 @@ final class World {
                     r.put(City.concertDoorX(), City.WALK_TOP, City.CONCERT_J * City.CELL + City.FRONT - 1.2f, (float) Math.PI);
                     liftArmed = false;
                     host.sound(Synth.DOOR, 0.35f, 1.1f);
+                    break;
+                }
+                if (indoors != null && indoors.lobby) {
+                    // out of the laboratory's door onto the podium, facing the deck and the town
+                    leave();
+                    r.put(Mountain.MX, Mountain.TOP + Mountain.PODIUM_HIGH, Mountain.DOOR_Z - OUT_STEP - 0.8f, (float) Math.PI);
+                    host.sound(Synth.DOOR, 0.35f, 1.05f);
                     break;
                 }
                 if (indoors != null && indoors.secret) {
@@ -4253,10 +4272,38 @@ final class World {
 
     // ---- the navigator's trial ----
 
-    /** A step of the trial: up to the laboratory, the fitting, the places one after another. */
+    /** The pickup the box goes to, and the eye on the unpacking. */
+    Pickup labCar;
+    private final float[] labEye = new float[5];
+    private int labSeen = -1;
+    private float labUntil;
+    private String labSay;
+
+    /**
+     * A step of the job: up to the laboratory and in, the box handed over at the counter (the eye
+     * on the two of them), out to the pickup with it and unpacked there (the eye on her and the
+     * pickup), the navigator on, the places one after another.
+     */
     private void labStep(float dt) {
+        Lab lb = lab;
         float x = driving != null ? driving.x : runner.x, z = driving != null ? driving.z : runner.z;
-        int got = lab.update(dt, x, z, driving != null, nav.led() ? nav.left : -1f);
+        if (lb.step >= Lab.CARRY && labCar == null) labCar = labPickup();
+        float cx = labCar != null ? labCar.x : 0f, cz = labCar != null ? labCar.z : 0f;
+        boolean wasHanding = lb.handing(), wasUnpacking = lb.unpacking();
+        int got = lb.update(dt, x, z, driving != null, nav.led() ? nav.left : -1f, indoors, cx, cz);
+        if (lb.handing()) handOver(wasHanding);
+        else if (wasHanding) runner.held = false;
+        if (indoors != null && indoors.lobby) indoors.given = lb.step >= Lab.CARRY;
+        if (lb.unpacking()) unpackAt(wasUnpacking);
+        else if (wasUnpacking) {
+            runner.held = false;
+            runner.recenter();
+        }
+        if (lb.step != labSeen) {
+            labSeen = lb.step;
+            labSay = lb.step == Lab.CARRY ? "lab.carry" : lb.step == Lab.TRIAL ? "lab.fit" : null;
+            labUntil = time + 3.5f;
+        }
         if (got == Lab.ON) {
             // the navigator comes on, open
             navShut = false;
@@ -4268,13 +4315,137 @@ final class World {
         } else if (got == Lab.WON) {
             host.sound(Synth.CHIME, 0.6f, 1f);
             host.buzz(60);
+        } else if (got == Lab.HANDING) {
+            host.sound(Synth.CHIME, 0.25f, 1.8f);
+        } else if (got == Lab.GIVEN) {
+            host.sound(Synth.WOOD, 0.4f, 1.3f);
+            host.buzz(30);
+        } else if (got == Lab.OPENING) {
+            host.sound(Synth.TEAR, 0.45f, 1.1f);
         }
     }
 
+    /** The pickup for the box: the one nearest the deck, if she left one there or near; else one of the laboratory's, put in a free space. */
+    private Pickup labPickup() {
+        float ox = Mountain.MX - 10f, oz = Mountain.AISLE_Z;
+        Pickup best = null;
+        float bd = 90f * 90f;
+        for (Pickup p : duty.all) {
+            float dx = p.x - ox, dz = p.z - oz, dd = dx * dx + dz * dz;
+            if (dd < bd) {
+                bd = dd;
+                best = p;
+            }
+        }
+        if (best != null) return best;
+        int k = Mountain.freeSpace();
+        Pickup p = new Pickup(Mountain.spaceX(k), Mountain.spaceZ(k), Mountain.spaceHeading(k), 0x1AB5L);
+        p.y = Mountain.TOP;
+        duty.all.add(p);
+        return p;
+    }
+
+    // where she stands at the pickup to unpack (across from its middle, along it), where the box
+    // goes in its bed (across, along, how high over the pickup), where the eye is (across, up,
+    // along) and what it looks at (across, up, along); all in the pickup's own terms (x across,
+    // to its left less than nothing)
+    static final float UNPACK_U = -Pickup.HALF_WIDE - 0.75f, UNPACK_V = -0.7f, BED_U = -0.45f, BED_V = -1.3f, BED_Y = 1.0f;
+    static final float UNPACK_EYE_U = -5.2f, UNPACK_EYE_Y = 3.6f, UNPACK_EYE_V = -5.4f, UNPACK_LOOK_U = -0.3f, UNPACK_LOOK_Y = 1.1f, UNPACK_LOOK_V = -0.6f;
+
+    /** A point in the pickup's own terms (across, along) in the town's, into out (x, z). */
+    private static void onCar(Pickup p, float u, float v, float[] out) {
+        float c = (float) Math.cos(p.heading), s = (float) Math.sin(p.heading);
+        out[0] = p.x + c * u + s * v;
+        out[1] = p.z - s * u + c * v;
+    }
+
+    private final float[] carAt = new float[2];
+
+    /** Unpacking: she stands by the pickup's side facing it, the eye off to the side and before it. */
+    private void unpackAt(boolean already) {
+        Runner r = runner;
+        Pickup p = labCar;
+        if (p == null) return;
+        if (!already) {
+            errand = NO_ERRAND;
+            r.stopLead();
+            letGo();
+            onCar(p, UNPACK_U, UNPACK_V, carAt);
+            float c = (float) Math.cos(p.heading), s = (float) Math.sin(p.heading);
+            r.put(carAt[0], city.ground(carAt[0], carAt[1]), carAt[1], (float) Math.atan2(c, -s));
+        }
+        r.held = true;
+        r.speed = 0f;
+        onCar(p, UNPACK_EYE_U, UNPACK_EYE_V, carAt);
+        labEye[0] = carAt[0];
+        labEye[1] = p.y + UNPACK_EYE_Y;
+        labEye[2] = carAt[1];
+        onCar(p, UNPACK_LOOK_U, UNPACK_LOOK_V, carAt);
+        float tx = carAt[0] - labEye[0], tz = carAt[1] - labEye[2];
+        labEye[3] = (float) Math.atan2(tx, tz);
+        labEye[4] = (float) Math.atan2(p.y + UNPACK_LOOK_Y - labEye[1], Math.sqrt(tx * tx + tz * tz));
+        r.eyeAt(labEye);
+    }
+
+    private final float[] devAt = new float[3];
+
     /**
-     * Over the frame, the trial: before it the clock, the word and the mark for the laboratory;
-     * at its door what is said as the navigator goes in; in the trial, in the corner the time it
-     * has still to run (green while it runs, pale while it waits), and the place now.
+     * The box and the navigator out of doors: in her hand while she carries it; at the pickup set
+     * down in its bed, opened, the navigator lifted out and over into the cab by the wheel; the box
+     * left open in the bed. And in any pickup she drives (or the one it went into) once it is hers,
+     * the navigator by the wheel.
+     */
+    private void labDrawn(DrawList d, Runner r) {
+        Lab lb = lab;
+        Pickup p = labCar;
+        if (lb != null && p != null && lb.step >= Lab.UNPACK) {
+            float t = lb.step == Lab.UNPACK ? lb.unpackT : Lab.UNPACK_TIME;
+            onCar(p, BED_U, BED_V, carAt);
+            float bx = carAt[0], by = p.y + BED_Y + LabTop.BOX_Y, bz = carAt[1];
+            if (t < Lab.SET_END) {
+                // from her hand down into the bed
+                r.bone("hand_l", handTo);
+                float a = t / Lab.SET_END, e = a * a * (3f - 2f * a);
+                bx = handTo[0] + (bx - handTo[0]) * e;
+                bz = handTo[2] + (bz - handTo[2]) * e;
+                by = handTo[1] - LabTop.BOX_Y + (by - handTo[1] + LabTop.BOX_Y) * e + 0.25f * (float) Math.sin(Math.PI * a);
+            }
+            float open = Math.max(0f, Math.min(1f, (t - Lab.SET_END) / (Lab.OPEN_END - Lab.SET_END)));
+            LabTop.box(d, bx, by, bz, p.heading, open);
+            if (t >= Lab.OPEN_END && t < Lab.IN_END) {
+                // up out of the box and over the cab's side to the wheel
+                dash(p, devAt);
+                float a = (t - Lab.OPEN_END) / (Lab.IN_END - Lab.OPEN_END), e = a * a * (3f - 2f * a);
+                float x = bx + (devAt[0] - bx) * e, z = bz + (devAt[2] - bz) * e;
+                float y = by + 0.1f + (devAt[1] - by - 0.1f) * e + 0.9f * (float) Math.sin(Math.PI * Math.min(1f, a * 1.2f));
+                LabTop.device(d, x, y, z, p.heading + (float) Math.PI * (1f - e));
+            }
+        }
+        if (lb != null && lb.carrying() && lb.step != Lab.UNPACK) {
+            r.bone("hand_l", handTo);
+            LabTop.box(d, handTo[0], handTo[1] - LabTop.BOX_Y - 0.03f, handTo[2], r.heading, 0f);
+        }
+        boolean inCab = lb != null && (lb.step > Lab.UNPACK || lb.step == Lab.UNPACK && lb.unpackT >= Lab.IN_END);
+        Pickup q = driving != null ? driving : inCab ? labCar : null;
+        if (q != null && navGiven()) {
+            dash(q, devAt);
+            LabTop.device(d, devAt[0], devAt[1], devAt[2], q.heading);
+        }
+    }
+
+    /** Where the navigator sits by the wheel of pickup p: before the seat, a little toward the middle, up on the dash. */
+    private static void dash(Pickup p, float[] out) {
+        p.seat(out);
+        float c = (float) Math.cos(p.heading), s = (float) Math.sin(p.heading), fx = (float) Math.sin(p.heading), fz = (float) Math.cos(p.heading);
+        out[0] += fx * 0.72f + c * 0.3f;
+        out[1] += 0.42f;
+        out[2] += fz * 0.72f - s * 0.3f;
+    }
+
+    /**
+     * Over the frame, the job: the clock (in the trial, the time it has still to run, green while it
+     * runs, pale while it waits); what is said when a step begins, a moment; where the way goes now,
+     * in a word and a mark.
      */
     private void labFlat(DrawList d, Px f) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E, pale = 0xFFB8B0A0;
@@ -4286,9 +4457,14 @@ final class World {
             String c = clock(lb.clock);
             shadowed(f, c, W - PixelFont.width(c, 2) - 8, 14, 2, cream, ink);
         }
-        if (lb.step == Lab.FIT || lb.step == Lab.TRIAL && lb.clock - lb.trialFrom < 3f) caption(f, "lab.fit");
-        if (!lb.goal(goal)) return;
-        wordAtTop(f, Lang.lines(lb.goalWord(), mission.round, null)[0], green, ink);
+        // at the wheel on the deck: leave it and go in
+        if (lb.step == Lab.GO && driving != null && Mountain.deck(driving.x, driving.z)) caption(f, "lab.leave");
+        else if (labSay != null && time < labUntil) caption(f, labSay);
+        boolean wheel = driving != null;
+        float cx = labCar != null ? labCar.x : 0f, cz = labCar != null ? labCar.z : 0f;
+        if (!lb.goal(wheel, indoors, cx, cz, goal)) return;
+        String w = lb.goalWord(wheel);
+        if (w != null) wordAtTop(f, Lang.lines(w, mission.round, null)[0], green, ink);
         placeMark(d, f, goal[0], goal[1], goal[2], lb.mark(), Marks.OPEN);
     }
 
@@ -4493,11 +4669,31 @@ final class World {
                 }
             }
         }
+        if (indoors.lobby && (dispatch == null || indoors.holds(eyeNow[0], eyeNow[2]))) {
+            // the lobby's brums; the box in the counter's hands while it is for her, then on its
+            // way from them to hers, up a little on the way
+            boolean forHer = lab != null && lab.step <= Lab.HAND;
+            LabTop.lobby(d, indoors, time, forHer && lab.giving() < 1f, handsAt);
+            float face = LabTop.clerkYaw(indoors);
+            if (forHer && lab.giving() <= 0f) LabTop.box(d, handsAt[0], handsAt[1], handsAt[2], face, 0f);
+            else if (forHer && lab.giving() < 1f) {
+                float a = lab.giving(), e = a * a * (3f - 2f * a);
+                r.bone("hand_l", handTo);
+                float x = handsAt[0] + (handTo[0] - handsAt[0]) * e, z = handsAt[2] + (handTo[2] - handsAt[2]) * e;
+                float y = handsAt[1] + (handTo[1] - LabTop.BOX_Y - 0.03f - handsAt[1]) * e + 0.3f * (float) Math.sin(Math.PI * a);
+                LabTop.box(d, x, y, z, face + (r.heading - face) * e, 0f);
+            }
+        }
         if (!r.hidden && !inChair() && (dispatch == null || dispatch.showsHer())) {
             r.draw(d);
             toss.draw(d, r);
             if (archive != null && archive.carrying()) archive.carried(d, r);
+            if (lab != null && lab.carrying()) {
+                r.bone("hand_l", handTo);
+                LabTop.box(d, handTo[0], handTo[1] - LabTop.BOX_Y - 0.03f, handTo[2], r.heading, 0f);
+            }
         }
+
         if (dispatch != null) dispatch.draw(d, f, h);
         else if (free) freeFlat(d, f);
         else if (concert != null) concertFlat(d, f);
@@ -4598,6 +4794,8 @@ final class World {
         float ex = (float) Math.sin(eyeYaw), ez = (float) Math.cos(eyeYaw);
         city.draw(d, eyeX, eyeZ, ex, ez);
         Mountain.cabins(d, time);
+        LabTop.deck(d, time, eyeX, eyeZ);
+        labDrawn(d, r);
         Island.yachts(d, time);
         if (lab != null) lab.draw(d, time, eyeX, eyeZ);
         if (herd != null) herd.draw(d, time, eyeX, eyeZ);

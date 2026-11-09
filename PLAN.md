@@ -96,6 +96,7 @@ release, each seen on the stand before the phone.
 - 1.1.6 Home's back door into her own room, the room a way through to the yard; the eye clear of the awning.
 - 1.2.0 Brums to the island, the first part: five knots of hot brums gathered along the navigator's line and led to the pier; the line along the spit.
 - 1.2.1 The mountain's road clear of the ridge; up the mountain only by its road, at the wheel.
+- 1.2.2 The laboratory: the arch, the name on the slope, the deck with its pickups and brums, the lobby; the navigator handed over in a box and unpacked at the pickup.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -137,8 +138,8 @@ release, each seen on the stand before the phone.
 
 ## Next
 
-- Brums to the island, the rest: 1.2.2 at the pier the dispatcher sends her to a yacht, a brum
-  throws a golden mallet, the yachts go up; 1.2.3 up to the lighthouse, the flight to the secret
+- Brums to the island, the rest: 1.2.3 at the pier the dispatcher sends her to a yacht, a brum
+  throws a golden mallet, the yachts go up; 1.2.4 up to the lighthouse, the flight to the secret
   balcony, a lever in the hall that raises a drawbridge in the spit; the brums left on the island
   for good, the lever the bridge's from then on.
 - The yachts: a boat to take out (the boat in the game's four ways to go).

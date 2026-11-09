@@ -380,6 +380,12 @@ final class Indoors implements Ground {
     /** For a player that knows the way (the desktop stand): where to go now, x and z. */
     void goal(Runner r, float[] out) {
         float u = u(r.x, r.z), v = v(r.x, r.z), gu, gv;
+        if (lobby) {
+            // to the counter, where the box is given out; given, back out of the door
+            out[0] = wx(deskU, given ? -1f : deskV);
+            out[1] = wz(deskU, given ? -1f : deskV);
+            return;
+        }
         if (home) {
             float n = SOFA_NEAR - 0.3f;
             out[0] = wx(sofaU + sofaFaceU * n, sofaV + sofaFaceV * n);
@@ -434,6 +440,8 @@ final class Indoors implements Ground {
     boolean home;
     /** The secret hall behind home's balcony door: out of it, back onto the balcony. */
     boolean secret;
+    /** Whether this is the laboratory's lobby (see Rooms.lobby); whether she has been given what she came for there. */
+    boolean lobby, given;
     float sofaU, sofaV, sofaFaceU, sofaFaceV = -1f;
     /** Where the eye stands while she sits (across, in). */
     float sofaEyeU, sofaEyeV;

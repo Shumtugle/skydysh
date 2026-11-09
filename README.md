@@ -97,16 +97,30 @@ them, the clerk's word low on the frame; the clerk holds it out, and it goes fro
 hers. Then the way to the lift.
 
 The navigator (the eleventh job, a story, after the containers): the laboratory on the mountain
-is trying out navigators for pickups. She drives up to its tower's door; there the navigator is
-fitted and comes on, what is said shown low on the frame; from then on it is hers. Then the
-trial: five minutes at the wheel along its line, place after place (the quarry, the vet clinic,
+is trying out navigators for pickups. She drives up, under the arch at the road's foot, round the
+mountain twice, onto the deck at the road's top end (ten spaces, the brums' own pickups in six of
+them, brums by them, one coming out of hers and going in, another coming out and driving off);
+told low on the frame to leave the pickup there and go in, she goes up the steps to the tower's
+door. In its lobby (a long white counter, the name lit on the end wall over a wall of glass with
+the town's streets on it, pillars, benches, a glass case with the navigator in it, brums about it,
+on the benches, crossing it) the brum behind the counter holds out a box; come up to it, she is
+handed it, the eye on the two of them. She carries it out to her pickup (or to one of the
+laboratory's in a free space, if she left hers far off); by the pickup she sets it in the bed and
+opens it, and the navigator goes up out of it and over into the cab by the wheel, and comes on,
+the eye on her and the pickup; from then on it is hers, and stands by the wheel of any pickup she
+drives. Then the trial: five minutes at the wheel along its line, place after place (the quarry, the vet clinic,
 the concert hall, the old town, the archive, the town hall, the workshop, the factory, and round
 again), each told at the top as the last is reached. The board in the corner shows the time
 still to go: it runs, green, only while she drives nearer the place along the line, and a moment
 after; stopped or off the line, it waits, pale. Four other brums try theirs out at the same
 time, each in a pickup round a loop of the town's streets: orange dots on the map, slate grey
 at their wheels in the street. The navigator finds the way down the mountain's road and up it.
-Before it is fitted, there is no navigator.
+Before it is unpacked, there is no navigator. The lobby is open at any time; the box is given out
+only for the job.
+
+On the mountain, at the wheel, the road is the only way up: off it the slope holds the pickup back,
+and it does not leave the road, the deck or the flat on top for the slope. On the slope toward the
+town the laboratory's name stands in great white letters.
 
 Brums to the island (the twelfth job, a story, after the navigator), in the morning: five knots
 of hot brums, three in each, stand about the town on the corners of its crossings (the old town,
