@@ -188,6 +188,10 @@ final class Nav {
      */
     private void find(float x, float z) {
         boolean fromIsle = Island.off(x, z), toIsle = Island.off(goalX, goalZ);
+        if (Island.top(goalX, goalZ)) {
+            climb(x, z, fromIsle);
+            return;
+        }
         if (fromIsle || toIsle) {
             isle(x, z, fromIsle, toIsle);
             return;
@@ -227,6 +231,8 @@ final class Nav {
         wayN = 0;
         put(x, z);
         int from = fromIsle ? Island.lineNear(x, z) : 0, to = toIsle ? Island.lineNear(goalX, goalZ) : 0;
+        // a place out on the pier: by its foot, the way's end
+        if (toIsle && Island.onPier(goalX, goalZ)) to = Island.lineCount() - 1;
         if (fromIsle) {
             // the nearest point already passed on her way to the place: not gone back to
             int dir = toIsle && to > from ? 1 : -1, next = from + dir;
@@ -237,6 +243,12 @@ final class Nav {
         }
         if (fromIsle && toIsle) {
             int step = to >= from ? 1 : -1;
+            // at the way's last point and past it toward the place (out along the pier): not gone back to
+            if (from == to && (x - Island.lineX(to)) * (goalX - Island.lineX(to)) + (z - Island.lineZ(to)) * (goalZ - Island.lineZ(to)) > 0f) {
+                put(goalX, goalZ);
+                wentN = 0;
+                return;
+            }
             for (int k = from; k != to + step; k += step) put(Island.lineX(k), Island.lineZ(k));
             put(goalX, goalZ);
             wentN = 0;
@@ -258,6 +270,39 @@ final class Nav {
         // the root put by the streets' part, as its end
         for (int k = 1; k <= to; k++) put(Island.lineX(k), Island.lineZ(k));
         put(goalX, goalZ);
+    }
+
+    // how near the way up she must be for the way to start from where she is on it
+    static final float CLIMB_NEAR = 30f;
+    private final float[] climbFar = new float[1], foot = new float[2];
+
+    /**
+     * The way up to the lighthouse: from where she is on the island's path, on up it, never back
+     * to a point already passed; from anywhere else, to the pier's foot first (along the spit and
+     * round the island's sand, as to the pier), then in to the path and up it.
+     */
+    private void climb(float x, float z, boolean fromIsle) {
+        int c = Island.climbNear(x, z, climbFar);
+        if (fromIsle && climbFar[0] < CLIMB_NEAR) {
+            wayN = 0;
+            put(x, z);
+            if (c + 1 < Island.climbCount()) {
+                float ax = Island.climbX(c + 1) - Island.climbX(c), az = Island.climbZ(c + 1) - Island.climbZ(c);
+                if ((x - Island.climbX(c)) * ax + (z - Island.climbZ(c)) * az > 0f) c++;
+            }
+        } else {
+            float gx = goalX, gz = goalZ;
+            Island.pierFoot(foot);
+            goalX = foot[0];
+            goalZ = foot[1];
+            isle(x, z, fromIsle, true);
+            goalX = gx;
+            goalZ = gz;
+            c = 1;
+        }
+        for (int k = c; k < Island.climbCount(); k++) put(Island.climbX(k), Island.climbZ(k));
+        put(goalX, goalZ);
+        wentN = 0;
     }
 
     /** The streets' part of the way, from (x, z) to (gx, gz), onto the way so far; (x, z) itself put if not already. */

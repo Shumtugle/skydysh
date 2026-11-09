@@ -7,14 +7,19 @@ package com.shumtugle.skydysh;
  * where she turned. Any that comes up to her goes off: she is to keep going. Left too far behind
  * (in a pickup, say), they lose her and go back to their place. With all five knots after her,
  * the way goes out of the town: down to the beach, along the spit to the island, round its sand
- * to the pier. A story: played once.
+ * to the pier. There the dispatcher sends her out along it to a yacht; one of those after her,
+ * on the shore, throws a golden mallet over her head at the yachts, and they go up: burning, sunk,
+ * and those after her flung down on the sand. No way off by sea: up to the lighthouse, they after
+ * her again; one that comes up to her now goes off and it is tried again from the pier. A story:
+ * played once.
  *
  * The navigator shows the way to each knot in turn, the first not yet after her, along the
  * streets; a knot counts once it has seen her and comes after her, not when she is at its place.
  */
 final class Herd {
-    // the steps: gathering the knots, leading them out to the island, done
-    static final int GATHER = 0, ISLE = 1, DONE = 2;
+    // the steps: gathering the knots, leading them out to the island, done; out along the pier to
+    // a yacht, the yachts going up, up to the lighthouse
+    static final int GATHER = 0, ISLE = 1, DONE = 2, BOAT = 3, SCENE = 4, LIGHT = 5;
     static final int KNOTS = 5, EACH = 3, ALL = KNOTS * EACH;
     // how near she is seen from; how near one comes before it goes off; how far behind it loses her
     static final float SEE = 18f, CATCH = 1.5f, LOSE = 150f;
@@ -32,6 +37,12 @@ final class Herd {
     // once seen, so long they stand turning to her before they come: she may have run right
     // through them
     static final float WAKE = 1.6f;
+    // the yachts: so far out along the pier she is when it starts; when the one throwing begins to
+    // throw; how long after the blast it is watched; how fast, and how far up, those after her are
+    // flung by it (the nearer the harder); how long they lie once it is over
+    static final float BOAT_AT = 4f, THROW_AT = 0.7f, AFTER = 3.2f, KNOCK = 11f, KNOCK_NEAR = 45f, KNOCK_UP = 7.5f, STUN = 2.6f;
+    // the golden mallet a little bigger than hers, to be seen from afar
+    static final float GOLDEN = Toss.SCALE * 1.4f;
 
     /** Whether mission n is this: the twelfth kind. */
     static boolean its(int n) {
@@ -82,6 +93,20 @@ final class Herd {
     /** The knot that came after her last (-1: none yet). */
     int last = -1;
 
+    // the yachts: how long since it started, which one throws (-1: none), whether the mallet has left its hand
+    float sceneT;
+    int thrower = -1;
+    private boolean thrown;
+    final Wreck wreck = new Wreck();
+    // flung by the blast: how fast, whether still in the air; how long each lies yet
+    private final float[] vx = new float[ALL], vy = new float[ALL], vz = new float[ALL];
+    private final boolean[] airborne = new boolean[ALL];
+    final float[] down = new float[ALL];
+    // for a try again after the yachts: where she was, where each was, which were after her
+    private float herX, herY, herZ;
+    private final float[] keptX = new float[ALL], keptY = new float[ALL], keptZ = new float[ALL];
+    private final boolean[] keptOn = new boolean[ALL];
+
     Herd(City city) {
         for (int k = 0; k < ALL; k++) home(k, city);
     }
@@ -113,13 +138,14 @@ final class Herd {
     }
 
     // what a step brought: nothing, a knot came after her, one lost her, all after her, one went
-    // off by her, done
-    static final int NONE = 0, CAME = 1, LOST = 2, ALL_CAME = 3, BLAST = 4, WON = 5;
+    // off by her, done; at the pier, out along it (the yachts begin), the blast, the yachts over
+    static final int NONE = 0, CAME = 1, LOST = 2, ALL_CAME = 3, BLAST = 4, WON = 5, PIER = 6, ON = 7, BOOM = 8, WRECKED = 9;
 
     /** A step on: where she is, and whether she is out of doors. What it brought. */
     int update(float dt, float hx, float hy, float hz, boolean out, City city) {
         if (step == DONE) return NONE;
         clock += dt;
+        if (step == SCENE) return scene(dt, hx, hy, hz, city);
         keep(hx, hy, hz);
         int got = NONE;
         for (int k = 0; k < ALL; k++) {
@@ -141,6 +167,16 @@ final class Herd {
                     }
                 }
             } else if (state[k] == COMES) {
+                if (down[k] > 0f) {
+                    // flung down by the blast: lying a while, then up and after her from her way nearest
+                    speed[k] = 0f;
+                    down[k] -= dt;
+                    if (down[k] <= 0f) {
+                        since[k] = clock;
+                        at[k] = nearestKept(x[k], z[k]);
+                    }
+                    continue;
+                }
                 if (follow(k, dt, hx, hy, hz, out, city)) {
                     blastBy = k;
                     blastLag = lagNow;
@@ -149,8 +185,8 @@ final class Herd {
                 }
             }
         }
-        // one knot all lost: back at its place
-        for (int g = 0; g < KNOTS; g++) {
+        // one knot all lost: back at its place (out on the island, each waits where it lost her)
+        for (int g = 0; g < KNOTS && step < BOAT; g++) {
             if ((after & (1 << g)) == 0) continue;
             boolean any = false;
             for (int e = 0; e < EACH; e++) any |= state[g * EACH + e] == COMES;
@@ -161,11 +197,15 @@ final class Herd {
             }
         }
         apart(dt);
-        step = after == (1 << KNOTS) - 1 ? ISLE : GATHER;
+        if (step <= ISLE) step = after == (1 << KNOTS) - 1 ? ISLE : GATHER;
         if (step == ISLE && atPier(hx, hz)) {
-            step = DONE;
-            doneAt = clock;
-            return WON;
+            step = BOAT;
+            return PIER;
+        }
+        if (step == BOAT && Island.alongPier(hx, hz) > BOAT_AT && Math.abs(Island.acrossPier(hx, hz)) < Island.PIER_HALF + 0.5f
+                && hy > Island.DECK - 0.8f) {
+            begin(hx, hz, city);
+            return ON;
         }
         return got;
     }
@@ -242,8 +282,11 @@ final class Herd {
         if (lag > LOSE) {
             float ox = hx - x[k], oz = hz - z[k];
             if (ox * ox + oz * oz > 60f * 60f) {
-                // lost her: back at its place
-                home(k, city);
+                // lost her: back at its place; out on the island, waiting where it is till it sees her again
+                if (step >= BOAT) {
+                    state[k] = WAITS;
+                    speed[k] = 0f;
+                } else home(k, city);
                 return false;
             }
         }
@@ -255,6 +298,31 @@ final class Herd {
             heading[k] += turn * Math.min(1f, dt * 5f);
             speed[k] = 0f;
             return false;
+        }
+        // out on the island, where she went by water or through the air they do not go: they wait
+        // at its edge, or go on to where her way is on foot again if that is near
+        if (step >= BOAT && !onFoot(gx, gy, gz, city)) {
+            long j = at[k] + 1;
+            boolean found = false;
+            for (; j < trail; j++) {
+                int n = (int) (j % TRAIL);
+                if (!onFoot(tx[n], ty[n], tz[n], city)) continue;
+                float qx = tx[n] - x[k], qz = tz[n] - z[k];
+                found = qx * qx + qz * qz < 20f * 20f;
+                break;
+            }
+            if (!found) {
+                speed[k] = Math.max(0f, speed[k] - 20f * dt);
+                return false;
+            }
+            at[k] = j;
+            int n = (int) (j % TRAIL);
+            gx = tx[n];
+            gy = ty[n];
+            gz = tz[n];
+            dx = gx - x[k];
+            dz = gz - z[k];
+            d = (float) Math.sqrt(dx * dx + dz * dz);
         }
         // indoors she is out of reach: they wait at her door
         if (!out && at[k] >= trail - 1) {
@@ -277,6 +345,183 @@ final class Herd {
         stride[k] += dt * Math.max(0.3f, speed[k]) / (speed[k] > 6f ? 7f : 3.3f);
         float hx2 = hx - x[k], hz2 = hz - z[k];
         return out && hx2 * hx2 + hz2 * hz2 < CATCH * CATCH && Math.abs(hy - y[k]) < 2.5f;
+    }
+
+    /** Whether a point of her way (or she) is somewhere one can go on foot: not swimming, not up in the air. */
+    private static boolean onFoot(float x, float y, float z, City city) {
+        if (y < City.WATER + 0.25f) return false;
+        float g = Island.onPier(x, z) ? Island.DECK : city.ground(x, z);
+        return y - g < 2.6f;
+    }
+
+    /** The point of her way nearest (x, z), among the last kept: the newest of those as near. */
+    private long nearestKept(float px, float pz) {
+        long first = Math.max(0L, trail - 600), best = Math.max(0L, trail - 1);
+        float bd = Float.MAX_VALUE;
+        for (long q = trail - 1; q >= first; q--) {
+            int n = (int) (q % TRAIL);
+            float dx = tx[n] - px, dz = tz[n] - pz, d = dx * dx + dz * dz;
+            if (d < bd - 1f) {
+                bd = d;
+                best = q;
+            }
+        }
+        return best;
+    }
+
+    // ---- the yachts ----
+    private final float[] tmp = new float[3];
+
+    // staged: the crowd behind her along her way, the nearest so far back, each next so much farther, so far to either side at most
+    static final float CROWD_FROM = 13f, CROWD_STEP = 1.3f, CROWD_SIDE = 2.4f;
+
+    /**
+     * Out along the pier: those after her come up into a crowd on the shore behind her, along
+     * the way she came, as the eye goes over to them; the nearest of them on the shore to throw;
+     * all of them still.
+     */
+    private void begin(float hx, float hz, City city) {
+        step = SCENE;
+        sceneT = 0f;
+        thrown = false;
+        thrower = -1;
+        int n = 0;
+        for (int k = 0; k < ALL; k++) {
+            if (state[k] != COMES) continue;
+            float lag = CROWD_FROM + n * CROWD_STEP, side = CROWD_SIDE * (n % 2 == 0 ? 1f : -1f) * ((n * 7) % 5) / 4f;
+            long q = behind(lag);
+            int a = (int) (q % TRAIL), b = (int) (Math.min(q + 1, trail - 1) % TRAIL);
+            float ax = tx[b] - tx[a], az = tz[b] - tz[a], al = Math.max(1e-3f, (float) Math.sqrt(ax * ax + az * az));
+            x[k] = tx[a] + az / al * side;
+            z[k] = tz[a] - ax / al * side;
+            y[k] = Island.onPier(x[k], z[k]) ? Island.DECK : city.ground(x[k], z[k]);
+            heading[k] = (float) Math.atan2(hx - x[k], hz - z[k]);
+            at[k] = q;
+            n++;
+        }
+        // the nearest of them to her still on the shore, well back, for the mallet to fly far
+        float best = Float.MAX_VALUE, any = Float.MAX_VALUE;
+        int anyK = -1;
+        for (int k = 0; k < ALL; k++) {
+            speed[k] = 0f;
+            if (state[k] != COMES) continue;
+            float dx = x[k] - hx, dz = z[k] - hz, d = dx * dx + dz * dz;
+            if (d < any) {
+                any = d;
+                anyK = k;
+            }
+            if (d > 12f * 12f && !Island.onPier(x[k], z[k]) && d < best) {
+                best = d;
+                thrower = k;
+            }
+        }
+        if (thrower < 0) thrower = anyK;
+    }
+
+    /** The point of her way so far back along it, by what she ran. */
+    private long behind(float far) {
+        long first = Math.max(0L, trail - TRAIL + 1), back = Math.max(0L, trail - 1);
+        float run = 0f;
+        while (back > first && run < far) {
+            int a = (int) (back % TRAIL), b = (int) ((back - 1) % TRAIL);
+            run += (float) Math.sqrt((tx[a] - tx[b]) * (tx[a] - tx[b]) + (tz[a] - tz[b]) * (tz[a] - tz[b]));
+            back--;
+        }
+        return back;
+    }
+
+    /** Where the mallet is thrown at: among the yachts, over the pier (x, y, z), into out. */
+    static void target(float[] out) {
+        Island.onPier(Island.YACHTS_MIDDLE, 0f, out);
+        out[2] = out[1];
+        out[1] = Island.DECK + 0.8f;
+    }
+
+    private final float[] aim = new float[3];
+
+    /**
+     * The yachts: the one throwing turns to them, swings and lets go; the mallet flies; the
+     * blast flings the rest of them back from it, down where they land. Watched a while; then all
+     * of them lie a moment longer, and it is on: up to the lighthouse.
+     */
+    private int scene(float dt, float hx, float hy, float hz, City city) {
+        sceneT += dt;
+        target(aim);
+        int k0 = thrower;
+        if (k0 >= 0 && !airborne[k0] && down[k0] <= 0f) {
+            float want = (float) Math.atan2(aim[0] - x[k0], aim[2] - z[k0]), turn = want - heading[k0];
+            while (turn > Math.PI) turn -= 6.2832f;
+            while (turn < -Math.PI) turn += 6.2832f;
+            heading[k0] += turn * Math.min(1f, dt * 6f);
+            if (!thrown && sceneT >= THROW_AT + Toss.RELEASE) {
+                thrown = true;
+                Frida.place("hand_r", x[k0], y[k0], z[k0], heading[k0] + (float) Math.PI, Chase.SIZE, "throw", Toss.RELEASE, tmp);
+                if (tmp[1] < y[k0] + 0.5f) {
+                    tmp[0] = x[k0];
+                    tmp[1] = y[k0] + 2.4f;
+                    tmp[2] = z[k0];
+                }
+                wreck.thrown(tmp[0], tmp[1], tmp[2], aim[0], aim[1], aim[2]);
+            }
+        }
+        boolean boom = wreck.update(dt, city);
+        if (boom) fling(aim[0], aim[2]);
+        for (int k = 0; k < ALL; k++) {
+            if (!airborne[k]) continue;
+            vy[k] -= 20f * dt;
+            x[k] += vx[k] * dt;
+            y[k] += vy[k] * dt;
+            z[k] += vz[k] * dt;
+            heading[k] += dt * 3f;
+            float g = Island.onPier(x[k], z[k]) ? Island.DECK : Math.max(City.WATER - 1f, city.ground(x[k], z[k]));
+            if (vy[k] < 0f && y[k] <= g) {
+                y[k] = g;
+                airborne[k] = false;
+                down[k] = 99f;
+            }
+        }
+        if (wreck.hit() && wreck.since() >= AFTER) {
+            step = LIGHT;
+            trail = 0;
+            keep(hx, hy, hz);
+            herX = hx;
+            herY = hy;
+            herZ = hz;
+            for (int k = 0; k < ALL; k++) {
+                airborne[k] = false;
+                keptOn[k] = state[k] == COMES;
+                keptX[k] = x[k];
+                keptY[k] = y[k];
+                keptZ[k] = z[k];
+                if (state[k] == COMES) down[k] = STUN;
+            }
+            thrower = -1;
+            return WRECKED;
+        }
+        return boom ? BOOM : NONE;
+    }
+
+    /** The blast at (bx, bz): every one after her flung back from it, the nearer the harder, up and over. */
+    private void fling(float bx, float bz) {
+        for (int k = 0; k < ALL; k++) {
+            if (state[k] != COMES) continue;
+            float dx = x[k] - bx, dz = z[k] - bz, d = Math.max(1f, (float) Math.sqrt(dx * dx + dz * dz));
+            float push = KNOCK * Math.min(1.3f, KNOCK_NEAR / d);
+            vx[k] = dx / d * push;
+            vz[k] = dz / d * push;
+            vy[k] = KNOCK_UP * (0.8f + 0.4f * ((k * 37) % 10) / 10f);
+            airborne[k] = true;
+        }
+    }
+
+    /** Whether the yachts have gone up. */
+    boolean wrecked() {
+        return step == LIGHT || step == SCENE && wreck.hit();
+    }
+
+    /** Whether the yachts are going up now: the eye on them, her still. */
+    boolean watching() {
+        return step == SCENE;
     }
 
     /**
@@ -327,6 +572,27 @@ final class Herd {
      * Where she is to be put, and the way she is to face, into out (x, y, z, heading).
      */
     void again(City city, float[] out) {
+        if (step == LIGHT) {
+            // after the yachts: from the pier where she stood, those after her down where the blast threw them
+            trail = 0;
+            keep(herX, herY, herZ);
+            for (int k = 0; k < ALL; k++) {
+                if (!keptOn[k]) continue;
+                state[k] = COMES;
+                x[k] = keptX[k];
+                y[k] = keptY[k];
+                z[k] = keptZ[k];
+                speed[k] = 0f;
+                at[k] = 0;
+                down[k] = STUN;
+            }
+            Island.pierWay(tmp);
+            out[0] = herX;
+            out[1] = herY;
+            out[2] = herZ;
+            out[3] = (float) Math.atan2(-tmp[0], -tmp[1]);
+            return;
+        }
         int g = last;
         trail = 0;
         for (int k = 0; k < ALL; k++) home(k, city);
@@ -386,7 +652,18 @@ final class Herd {
 
     /** Where the way goes now, into out (x, y, z); false if nowhere. */
     boolean goal(float[] out) {
-        if (step == DONE) return false;
+        if (step == DONE || step == SCENE) return false;
+        if (step == BOAT) {
+            Island.onPier(Island.YACHTS_MIDDLE - 6f, 0f, out);
+            out[2] = out[1];
+            out[1] = Island.DECK + 1f;
+            return true;
+        }
+        if (step == LIGHT) {
+            Island.door(out);
+            out[1] += 2f;
+            return true;
+        }
         if (step == ISLE) {
             Island.pierFoot(foot);
             out[0] = foot[0];
@@ -408,11 +685,11 @@ final class Herd {
     }
 
     String goalWord() {
-        return step == ISLE ? "herd.pier" : WORDS[next()];
+        return step == BOAT ? "herd.boat" : step == LIGHT ? "herd.light" : step == ISLE ? "herd.pier" : WORDS[next()];
     }
 
     int mark() {
-        return step == ISLE ? Marks.PIN : MARKS[next()];
+        return step >= ISLE ? Marks.PIN : MARKS[next()];
     }
 
     /** Those after her, as dots for the navigator: so many put into out (x, z each). */
@@ -437,17 +714,55 @@ final class Herd {
         return best == Float.MAX_VALUE ? best : (float) Math.sqrt(best);
     }
 
-    /** Them near the eye: each as a brum burnt dark, its plate and eyes glowing; at their place, still. */
+    /**
+     * Them near the eye: each as a brum burnt dark, its plate and eyes glowing; at their place,
+     * still; flung through the air, lying where they came down; the one throwing, the golden
+     * mallet in its hand till it lets go. The mallet flying, the blast, the pieces.
+     */
     void draw(DrawList d, float time, float ex, float ez) {
         if (step == DONE) return;
+        wreck.draw(d);
         Frida.hot = true;
         for (int k = 0; k < ALL; k++) {
             float dx = x[k] - ex, dz = z[k] - ez;
             if (dx * dx + dz * dz > 120f * 120f) continue;
             String motion = speed[k] > 6f ? "sprint" : speed[k] > 2.4f ? "jog" : speed[k] > 0.4f ? "walk" : "idle";
             float t = speed[k] > 0.4f ? stride[k] * (speed[k] > 6f ? 0.6667f : speed[k] > 2.4f ? 0.9333f : 1.3333f) : time + k;
-            Frida.draw(d, x[k], y[k], z[k], heading[k] + (float) Math.PI, Chase.SIZE, motion, t, false);
+            if (airborne[k]) {
+                motion = "jump_air";
+                t = time;
+            } else if (down[k] > 0f) {
+                motion = "slide";
+                t = 0.35f;
+            } else if (k == thrower && step == SCENE) {
+                motion = sceneT < THROW_AT ? "idle" : "throw";
+                t = sceneT < THROW_AT ? time + k : Math.min(sceneT - THROW_AT, 0.75f);
+            }
+            float yaw = heading[k] + (float) Math.PI;
+            Frida.draw(d, x[k], y[k], z[k], yaw, Chase.SIZE, motion, t, false);
+            if (k == thrower && step == SCENE && !thrown) inHand(d, k, yaw, motion, t);
         }
         Frida.hot = false;
+    }
+
+    private final float[] hand = new float[3], elbow = new float[3], grip = new float[9];
+
+    /** The golden mallet in the hand of the one about to throw it, the handle on from its forearm. */
+    private void inHand(DrawList d, int k, float yaw, String motion, float t) {
+        Frida.place("hand_r", x[k], y[k], z[k], yaw, Chase.SIZE, motion, t, hand);
+        Frida.place("lowerarm_r", x[k], y[k], z[k], yaw, Chase.SIZE, motion, t, elbow);
+        float hx = hand[0] - elbow[0], hy = hand[1] - elbow[1], hz = hand[2] - elbow[2];
+        float l = Math.max(1e-3f, (float) Math.sqrt(hx * hx + hy * hy + hz * hz));
+        hx /= l;
+        hy /= l;
+        hz /= l;
+        float bx = -hz, bz = hx, bl = Math.max(1e-3f, (float) Math.sqrt(bx * bx + bz * bz));
+        bx /= bl;
+        bz /= bl;
+        float ux = -bz * hy, uy = bz * hx - bx * hz, uz = bx * hy;
+        grip[0] = hx; grip[1] = ux; grip[2] = bx;
+        grip[3] = hy; grip[4] = uy; grip[5] = 0f;
+        grip[6] = hz; grip[7] = uz; grip[8] = bz;
+        Mallet.draw(d, grip, hand[0], hand[1], hand[2], GOLDEN, 0f, true, 0, Mallet.ALL);
     }
 }

@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.5
+
+- Brums to the island, the second part. At the pier the job goes on: the dispatcher sends her out
+  along it to a yacht. A few steps out, the eye goes to the shore behind the crowd after her; the
+  nearest of them throws a golden mallet over her head at the yachts. A ball of fire, planks and
+  rails flung up and falling into the water, the crowd flung back onto the sand and the slope.
+- The yachts left wrecked while the job goes on: each broken in two, the stern sunk, the bow reared
+  up, burnt black, the mast snapped and down across the water, fire on the halves; nothing to stand on.
+- Then up to the lighthouse: the navigator's line from the pier's foot in to the island's path and
+  up it. Those flung down lie a moment and come after her again. Caught now, it is tried again from
+  the pier, they lying where the blast threw them.
+- On the island the brums do not follow her through the water or the air (they wait at the edge,
+  or go on where her way is on foot again nearby), and losing her they wait where they are instead
+  of going back to their corners in the town.
+- The navigator: out on the pier the line no longer turns her back to its foot.
+- New lines for the dispatcher (the yacht, the yachts gone, a replay from the pier), the words
+  YACHT and LIGHTHOUSE, the story page; the job's record key moves on (revision 2).
+- The job has no end yet: the lighthouse, the lever and the bridge come next.
+
 ## 1.2.4
 
 - The arch's name whole: "LAB INC." was wider than the span between the piers, and the piers are

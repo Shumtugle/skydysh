@@ -159,12 +159,114 @@ final class Island {
         return line[k * 2 + 1];
     }
 
+    // ---- the way up, for the navigator: from the pier's foot in to the path where it passes,
+    // then up the path to the lighthouse's door ----
+    private static float[] climb;
+    private static int climbN;
+
+    private static void climb() {
+        if (climb != null) return;
+        float[] p = pier();
+        float a0 = pathA(0f), u0 = Math.max(0f, (PIER_A - a0) / (PATH_TURNS * 2f * (float) Math.PI));
+        int k0 = (int) Math.ceil(u0 * PATH_PIECES);
+        climbN = 1 + PATH_PIECES - k0 + 1;
+        climb = new float[climbN * 2];
+        climb[0] = p[0];
+        climb[1] = p[1];
+        for (int k = k0, n = 1; k <= PATH_PIECES; k++, n++) {
+            float u = k / (float) PATH_PIECES, a = pathA(u), r = pathR(u) * wob(a);
+            climb[n * 2] = IX + (float) Math.sin(a) * r;
+            climb[n * 2 + 1] = IZ + (float) Math.cos(a) * r;
+        }
+    }
+
+    static int climbCount() {
+        climb();
+        return climbN;
+    }
+
+    static float climbX(int k) {
+        climb();
+        return climb[k * 2];
+    }
+
+    static float climbZ(int k) {
+        climb();
+        return climb[k * 2 + 1];
+    }
+
+    /** The number of the way up's point nearest (x, z), and how far it is, into far[0]. */
+    static int climbNear(float x, float z, float[] far) {
+        climb();
+        int best = 0;
+        float bd = Float.MAX_VALUE;
+        for (int k = 0; k < climbN; k++) {
+            float dx = climb[k * 2] - x, dz = climb[k * 2 + 1] - z, d = dx * dx + dz * dz;
+            if (d < bd) {
+                bd = d;
+                best = k;
+            }
+        }
+        far[0] = (float) Math.sqrt(bd);
+        return best;
+    }
+
+    /** Whether (x, z) is up on the top, by the lighthouse. */
+    static boolean top(float x, float z) {
+        return (x - IX) * (x - IX) + (z - IZ) * (z - IZ) < 16f * 16f;
+    }
+
+    /** Before the lighthouse's door, where the path ends (x, y, z), into out. */
+    static void door(float[] out) {
+        float a = pathA(1f), r = pathR(1f) * wob(a);
+        out[0] = IX + (float) Math.sin(a) * r;
+        out[2] = IZ + (float) Math.cos(a) * r;
+        out[1] = height(out[0], out[2]);
+    }
+
     /** The pier's foot on the shore, (x, z), into out. */
     static void pierFoot(float[] out) {
         float[] p = pier();
         out[0] = p[0];
         out[1] = p[1];
     }
+
+    /** How far out along the pier (x, z) is from its foot, and how far off its middle across. */
+    static float alongPier(float x, float z) {
+        float[] p = pier();
+        return (x - p[0]) * p[2] + (z - p[1]) * p[3];
+    }
+
+    static float acrossPier(float x, float z) {
+        float[] p = pier();
+        return (x - p[0]) * p[4] + (z - p[1]) * p[5];
+    }
+
+    /** Whether (x, z) is on the pier's deck. */
+    static boolean onPier(float x, float z) {
+        float a = alongPier(x, z);
+        return a > -0.5f && a < PIER_LONG + 0.5f && Math.abs(acrossPier(x, z)) < PIER_HALF + 0.2f;
+    }
+
+    /** A point out along the pier, so far from its foot and so far across (x, z), into out. */
+    static void onPier(float along, float across, float[] out) {
+        float[] p = pier();
+        out[0] = p[0] + p[2] * along + p[4] * across;
+        out[1] = p[1] + p[3] * along + p[5] * across;
+    }
+
+    /** The way out along the pier, (x, z), into out. */
+    static void pierWay(float[] out) {
+        float[] p = pier();
+        out[0] = p[2];
+        out[1] = p[3];
+    }
+
+    // the yachts' middle along the pier: between the first pair and the second
+    static final float YACHTS_MIDDLE = 12f + 1.2f * HULL_HALF + 2f;
+
+    /** Whether the yachts are wrecked: burnt out and sunk at the pier, no deck to stand on. */
+    static boolean wrecked;
 
     /** Where yacht k lies: its middle (x, z), its heading. */
     private static void yachtAt(int k, float[] out) {
@@ -188,6 +290,7 @@ final class Island {
         square(c, x0, z0, x1, z1, IX, IZ, PLINTH, LH_FOOT + PLINTH_HIGH, 0f);
         square(c, x0, z0, x1, z1, IX, IZ, TOWER_LOW, LH_TOP, 0f);
         float[] at = new float[3];
+        if (wrecked) return;
         for (int k = 0; k < YACHTS; k++) {
             yachtAt(k, at);
             float fx = (float) Math.sin(at[2]), fz = (float) Math.cos(at[2]);
@@ -431,8 +534,12 @@ final class Island {
 
     private static final float[] YACHT = new float[3];
 
-    /** The yachts at the pier, each rising and falling a little on the swell, as time goes. */
+    /** The yachts at the pier, each rising and falling a little on the swell, as time goes; or their wrecks. */
     static void yachts(DrawList d, float time) {
+        if (wrecked) {
+            wrecks(d, time);
+            return;
+        }
         for (int k = 0; k < YACHTS; k++) {
             yachtAt(k, YACHT);
             float x = YACHT[0], z = YACHT[1], h = YACHT[2], bob = 0.09f * (float) Math.sin(time * 1.1f + k * 1.7f);
@@ -454,6 +561,45 @@ final class Island {
             d.box(mx - fx * 1.8f, deck + 1.5f, mz - fz * 1.8f, 0.07f, 0.07f, 1.8f, t, 0xD9DCDF, DrawList.POLISHED);
             // the sail furled on the boom, under its cover
             d.box(mx - fx * 1.8f, deck + 1.7f, mz - fz * 1.8f, 0.16f, 0.14f, 1.7f, t, STRIPES[k], DrawList.MATTE);
+        }
+    }
+
+    /**
+     * The yachts gone up: each broken in two at its middle, the stern sunk to its rail, the bow
+     * reared out of the water; burnt black, the band gone dark; the mast snapped, its stump on the
+     * stern, the rest down across the water; burning still.
+     */
+    private static void wrecks(DrawList d, float time) {
+        int char0 = 0x4A4542, char1 = 0x2E2B2A, teak = 0x3A2A20;
+        for (int k = 0; k < YACHTS; k++) {
+            yachtAt(k, YACHT);
+            float x = YACHT[0], z = YACHT[1], h = YACHT[2], fx = (float) Math.sin(h), fz = (float) Math.cos(h);
+            float side = k % 2 == 0 ? 1f : -1f, ox = fz * side, oz = -fx * side;
+            float bob = 0.05f * (float) Math.sin(time * 0.9f + k * 1.7f), w = City.WATER + bob;
+            // the stern: from its end, a little under the water, down at the break
+            float sx = x - fx * HULL_HALF, sz = z - fz * HULL_HALF, bx = x + fx * 0.2f + ox * 0.3f, bz = z + fz * 0.2f + oz * 0.3f;
+            float[] t = along(sx, w + 0.25f, sz, bx, w - 0.9f, bz);
+            d.box((sx + bx) * 0.5f, w - 0.55f, (sz + bz) * 0.5f, BEAM, 0.75f, HULL_HALF * 0.5f, t, char0, DrawList.MATTE);
+            d.box((sx + bx) * 0.5f, w + 0.05f, (sz + bz) * 0.5f, BEAM - 0.2f, 0.05f, HULL_HALF * 0.5f - 0.2f, t, teak, DrawList.WOOD);
+            // the bow: reared up from the break, turned a little off
+            float ex = x + fx * (HULL_HALF + 0.6f) + ox * 0.9f, ez = z + fz * (HULL_HALF + 0.6f) + oz * 0.9f;
+            float[] u = along(bx + fx * 0.6f, w - 1.1f, bz + fz * 0.6f, ex, w + 1.6f, ez);
+            d.box((bx + ex) * 0.5f + fx * 0.3f, w + 0.15f, (bz + ez) * 0.5f + fz * 0.3f, BEAM * 0.9f, 0.65f, HULL_HALF * 0.5f, u, char1, DrawList.MATTE);
+            d.box((bx + ex) * 0.5f + fx * 0.3f, w - 0.15f, (bz + ez) * 0.5f + fz * 0.3f, BEAM * 0.92f, 0.07f, HULL_HALF * 0.5f + 0.02f, u, 0x241F1E, DrawList.MATTE);
+            // the mast: a stump on the stern, the rest fallen across the water, out from the pier
+            float mx = x - fx * 1.6f, mz = z - fz * 1.6f;
+            d.box(mx, w + 1.3f, mz, 0.09f, 1.4f, 0.09f, null, 0x55585C, DrawList.POLISHED);
+            float lx = mx + ox * 7.5f + fx * 2f, lz = mz + oz * 7.5f + fz * 2f;
+            d.box((mx + lx) * 0.5f, w + 0.9f, (mz + lz) * 0.5f, 0.08f, 0.08f, 4f, along(mx, w + 2.6f, mz, lx, w - 0.8f, lz), 0x55585C, DrawList.POLISHED);
+            // the fire on each half: tongues, thin and tall, flickering, gold inside orange
+            for (int f = 0; f < 3; f++) {
+                float fl = 0.5f + 0.5f * (float) Math.sin(time * (9f + f * 2.3f) + k * 2.1f + f);
+                float at = f == 0 ? -2.4f : f == 1 ? 1.6f : 3.2f, up = f == 0 ? 0.3f : 0.6f + (f - 1) * 0.7f;
+                float px = x + fx * at + ox * (f == 1 ? 0.3f : -0.2f), pz = z + fz * at + oz * (f == 1 ? 0.3f : -0.2f);
+                float tall = 0.45f + 0.35f * fl, wide = 0.22f + 0.06f * fl;
+                d.box(px, w + up + tall, pz, wide, tall, wide, null, 0xFF6A2A, DrawList.material(DrawList.FIRE, 225));
+                d.box(px, w + up + tall * 0.7f, pz, wide * 0.55f, tall * 0.7f, wide * 0.55f, null, 0xFFC860, DrawList.material(DrawList.FIRE, 250));
+            }
         }
     }
 

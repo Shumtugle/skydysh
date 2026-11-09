@@ -1,0 +1,26 @@
+# Brums to the island, the yachts. All five knots after her at the promenade; along the navigator's
+# line to the pier, the screen sends her out to a yacht; out along it, one on the shore throws the
+# golden mallet over her, the yachts go up, those after her flung down on the sand; the screen
+# says up to the lighthouse; off the pier past them lying there, round and up the path, they after
+# her again. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+navon
+mission 12
+at 28 -9 3.14159
+wait 0.3
+herd 5
+wait 0.3
+navrun 39.5 0 p
+navrun 12 0.25 y
+navrun 40 2 c
+where
+eye 136 4 -327 -0.5 -0.12
+wait 0.1
+shot w0
+eye off

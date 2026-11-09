@@ -1185,6 +1185,12 @@ public final class Stand implements World.Host {
             }
             if (bdown) world.touch(World.UP, bx, by);
             bdown = false;
+        } else if (c.equals("herdwhere")) {
+            // herdwhere: each of the hot brums, where it is, its state, how long it lies yet; the one throwing
+            Herd hd = world.herd;
+            for (int k = 0; k < Herd.ALL; k++)
+                System.out.println(String.format("%7.2fs  brum %d: %.1f %.1f %.1f state %d down %.1f%s", time, k, hd.x[k], hd.y[k], hd.z[k], hd.state[k], hd.down[k],
+                        k == hd.thrower ? " throws" : ""));
         } else if (c.equals("herd")) {
             // herd KNOTS: the first so many knots of the hot brums after her, a little behind her
             Herd hd = world.herd;

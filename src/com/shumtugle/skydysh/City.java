@@ -412,6 +412,12 @@ final class City implements Ground {
         return (int) Math.floor(v / CELL);
     }
 
+    /** The cells over (x0, z0)-(x1, z1) built again when next asked: what stands there has changed. */
+    void forget(float x0, float z0, float x1, float z1) {
+        for (int i = index(x0); i <= index(x1); i++)
+            for (int j = index(z0); j <= index(z1); j++) cells.remove(key(i, j));
+    }
+
     /**
      * The cells round (x, z) that the eye looking along (fx, fz) can see, into the list, their
      * small things only near; the ones long out of reach forgotten.

@@ -141,6 +141,16 @@ or one fell behind. Up on the left under the pause, how many are after her; on t
 dots. The navigator's line goes along the spit and round the island to the pier for any place out
 there.
 
+At the pier the dispatcher sends her out along it to a yacht. A few steps out, the eye goes over
+to the shore: those after her have come up in a crowd behind her, and the nearest of them throws a
+golden mallet over her head; it comes down among the yachts, they go up in a ball of fire, planks
+flying, and the blast flings the crowd back onto the sand and the slope. The yachts are left
+broken in two, sunk, burning. No way off by sea: up to the lighthouse, the navigator's line from
+the pier's foot in to the path and up it. Those flung down lie a moment, then get up and come
+after her again; one that comes up to her now goes off and it is tried again from the pier, they
+lying where the blast threw them. Out on the island they do not follow her through the water or
+through the air, and losing her they wait where they are rather than go back to the town.
+
 Up on the right, the navigator (once fitted): a small map turned the way the eye looks, the streets drawn
 from the town itself (the sea, the beach, the blocks, the fields and the road out), she a blue
 dot with a white point her way, and to the mission's mark a line along the streets by the
