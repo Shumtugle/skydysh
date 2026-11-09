@@ -105,6 +105,7 @@ release, each seen on the stand before the phone.
 - 1.2.8 The job named Hotheads, its tale on the story page; the golden mallet carried from the workshop.
 - 1.2.9 The tunnel through the island, the two flights round to the top.
 - 1.3.0 Hotheads to its end: the lighthouse a refuge, the leap, the switch in the hall, the bridge up, the island shut.
+- 1.3.1 The mountain road at the wheel shown as a scene, up and down.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -148,8 +149,6 @@ release, each seen on the stand before the phone.
 
 - The island opened again (after the job at LAB, the brums mended): the bridge down, new yachts,
   sailing from there.
-- The mountain road by car shown as a scene, up from the arch to the deck and back down, any
-  vehicle but the helicopter; on foot, run it.
 - Hotheads: a prologue in the morning on the dispatcher's set, the tale as the story page tells
   it: the collider at night, the black hole the size of a cherry, its violet jet through the night
   shift on their chargers, the firmware burnt out, down by the cable car into the town at dawn. The hall as it really is inside: she is to go there later.

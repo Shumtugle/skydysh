@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.1
+
+- The mountain road at the wheel is shown, not driven: through the arch going up, or off the deck
+  into the road's top end going down, the eye rises high over the mountain, the pickup goes round
+  on its own in some six seconds, a beacon of light over it, the way it went lit warm on the road;
+  the eye comes down behind it on the deck (or at the arch), and it is hers again, rolling on. No
+  wheel and no way out meanwhile. On foot the road is still run. So the navigator's job is the
+  town's streets, not twice round the mountain.
+
 ## 1.3.0
 
 - Hotheads to its end. The lighthouse is a refuge: at its door she goes in and up in the dark,

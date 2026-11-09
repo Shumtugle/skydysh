@@ -68,6 +68,84 @@ final class Mountain {
     /** The spaces the brums' own pickups stand in; the rest are free. */
     static final int[] TAKEN = {1, 2, 4, 6, 7, 9};
 
+    // ---- the road as a way, for the drive up and down shown as a scene: from the town's side of
+    // the arch to the road's foot, up round it, on into the deck's aisle to so far in; its points
+    // so far round apart on the turns ----
+    static final float WAY_FROM = 3f, WAY_IN = 16f, WAY_STEP = 0.025f;
+    private static float[] way, wayAlong;
+    private static int wayN;
+
+    private static void way() {
+        if (way != null) return;
+        int turns = (int) Math.ceil(SPAN / WAY_STEP);
+        wayN = 2 + turns + 1 + 1;
+        way = new float[wayN * 3];
+        wayAlong = new float[wayN];
+        int n = 0;
+        n = wayPut(n, MX, 0f, ARCH_Z - WAY_FROM);
+        n = wayPut(n, MX, 0f, footZ());
+        for (int k = 1; k <= turns; k++) {
+            float t = A0 + Math.min(SPAN, k * WAY_STEP), r = roadR(t);
+            n = wayPut(n, MX + (float) Math.sin(t) * r, rise(t), MZ + (float) Math.cos(t) * r);
+        }
+        n = wayPut(n, DECK_X1 - 4f, TOP, AISLE_Z);
+        wayPut(n, DECK_X1 - WAY_IN, TOP, AISLE_Z);
+        for (int k = 1; k < wayN; k++) {
+            float dx = way[k * 3] - way[k * 3 - 3], dy = way[k * 3 + 1] - way[k * 3 - 2], dz = way[k * 3 + 2] - way[k * 3 - 1];
+            wayAlong[k] = wayAlong[k - 1] + (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        }
+    }
+
+    private static int wayPut(int n, float x, float y, float z) {
+        way[n * 3] = x;
+        way[n * 3 + 1] = y;
+        way[n * 3 + 2] = z;
+        return n + 1;
+    }
+
+    /** How long the way up is, all of it. */
+    static float wayLength() {
+        way();
+        return wayAlong[wayN - 1];
+    }
+
+    /** Where on the way so far along it (s): x, y, z, the heading up it, into out. */
+    static void wayAt(float s, float[] out) {
+        way();
+        s = Math.max(0f, Math.min(wayAlong[wayN - 1], s));
+        int lo = 0, hi = wayN - 1;
+        while (hi - lo > 1) {
+            int mid = (lo + hi) >>> 1;
+            if (wayAlong[mid] <= s) lo = mid;
+            else hi = mid;
+        }
+        float seg = Math.max(1e-4f, wayAlong[hi] - wayAlong[lo]), u = (s - wayAlong[lo]) / seg;
+        float ax = way[lo * 3], ay = way[lo * 3 + 1], az = way[lo * 3 + 2], bx = way[hi * 3], by = way[hi * 3 + 1], bz = way[hi * 3 + 2];
+        out[0] = ax + (bx - ax) * u;
+        out[1] = ay + (by - ay) * u;
+        out[2] = az + (bz - az) * u;
+        out[3] = (float) Math.atan2(bx - ax, bz - az);
+    }
+
+    /**
+     * The way so far up it (from s0 to s1) as a strip of light laid on the road, the way the
+     * pickup went: warm, a little over the road.
+     */
+    static void wayLit(DrawList d, float s0, float s1) {
+        way();
+        float[] a = new float[4], b = new float[4];
+        float step = 4f;
+        for (float s = s0; s < s1; s += step) {
+            float e = Math.min(s1, s + step);
+            wayAt(s, a);
+            wayAt(e, b);
+            float len = (float) Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+            if (len < 0.05f) continue;
+            d.box((a[0] + b[0]) * 0.5f, (a[1] + b[1]) * 0.5f + 0.15f, (a[2] + b[2]) * 0.5f, 0.6f, 0.05f, len * 0.5f + 0.1f,
+                    along(a[0], a[1], a[2], b[0], b[1], b[2]), 0xFFD27A, DrawList.GLOW);
+        }
+    }
+
     /** Whether (x, z) is on the deck. */
     static boolean deck(float x, float z) {
         return x > DECK_X0 && x < DECK_X1 && z > DECK_Z0 && z < DECK_Z1;

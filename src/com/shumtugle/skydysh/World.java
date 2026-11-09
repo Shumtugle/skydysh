@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.3.0";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.3.1";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1560,7 +1560,9 @@ final class World {
         city.homePickup = passed(3);
         if (dutyOut()) duty.update(runner.x, runner.z, city, driving);
         else duty.all.clear();
-        if (driving != null) drive(dt);
+        if (driving != null && roadT < 0f) roadCue();
+        if (roadT >= 0f) roadStep(dt);
+        else if (driving != null) drive(dt);
         // the way out waiting: she gets out once the pickup stands
         if (exitWaiting && (driving == null || Math.abs(driving.speed) <= STOPPED)) {
             if (driving != null) getOut(false);
@@ -1932,7 +1934,8 @@ final class World {
             craneButtons(d);
             return;
         }
-        if (driving != null) {
+        // the drive up or down the mountain shown: no wheel, no way out, nothing to do but watch
+        if (driving != null && roadT < 0f) {
             // the way out first, half seen, so the wheel's lines lie over it; waiting for the pickup to stand, aglow
             d.badge(liftButtonX(), liftButtonY(), BUTTON + 4, Badges.EXIT, exitWaiting ? 0.7f : 0.5f,
                     exitWaiting ? 0.55f + 0.4f * (float) Math.sin(time * 6f) : 0f);
@@ -2261,6 +2264,85 @@ final class World {
         }
         p.seat(seatAt);
         runner.ride(dt, city, p.x, p.y, p.z, p.heading, p.speed, seatAt[0], seatAt[1], seatAt[2], p.steer);
+    }
+
+    // ---- the mountain road by car, shown as a scene: so long, seconds; the eye over it at its
+    // highest so high, so far behind; it starts and ends this high behind the pickup, so far back;
+    // the pickup rolls on out of it so fast ----
+    static final float ROAD_S = 6.5f, ROAD_EYE_HIGH = 180f, ROAD_EYE_BACK = 30f, ROAD_EYE_LOW = 6f, ROAD_EYE_NEAR = 12f, ROAD_ROLL = 8f;
+    /** The scene: seconds into it (less than nothing: none); up the mountain or down it. */
+    float roadT = -1f;
+    private boolean roadUp;
+    private float roadWasX, roadWasZ;
+    private final float[] roadAt = new float[4], roadEye = new float[5];
+
+    /**
+     * At the wheel: through the arch at the road's foot, going up it, or off the deck into the
+     * road's top end, going down it: the scene of the drive starts.
+     */
+    private void roadCue() {
+        Pickup p = driving;
+        float wx = roadWasX, wz = roadWasZ;
+        roadWasX = p.x;
+        roadWasZ = p.z;
+        float fx = (float) Math.sin(p.heading), fz = (float) Math.cos(p.heading);
+        if (Math.abs(p.x - Mountain.MX) < Mountain.HALF + 3f && wz < Mountain.ARCH_Z && p.z >= Mountain.ARCH_Z && fz > 0.3f && p.speed > 1f) {
+            roadUp = true;
+            roadT = 0f;
+        } else if (Math.abs(p.z - Mountain.AISLE_Z) < Mountain.HALF + 1.5f && wx < Mountain.DECK_X1 - 2f && p.x >= Mountain.DECK_X1 - 2f && fx > 0.3f
+                && p.speed > 1f && Math.abs(p.y - Mountain.TOP) < 3f) {
+            roadUp = false;
+            roadT = 0f;
+        }
+        if (roadT >= 0f) host.sound(Synth.CHIME, 0.25f, 0.7f);
+    }
+
+    /** The scene on: the pickup carried along the road, up or down, eased in and out; then on its own again. */
+    private void roadStep(float dt) {
+        Pickup p = driving;
+        if (p == null) {
+            roadT = -1f;
+            return;
+        }
+        roadT += dt;
+        float u = Math.min(1f, roadT / ROAD_S), e = u * u * (3f - 2f * u), len = Mountain.wayLength();
+        float sNow = roadUp ? e * len : (1f - e) * len;
+        Mountain.wayAt(sNow, roadAt);
+        p.x = roadAt[0];
+        p.y = roadAt[1];
+        p.z = roadAt[2];
+        p.heading = roadUp ? roadAt[3] : roadAt[3] + (float) Math.PI;
+        p.speed = ROAD_ROLL;
+        p.steer = 0f;
+        p.seat(seatAt);
+        runner.ride(dt, city, p.x, p.y, p.z, p.heading, p.speed, seatAt[0], seatAt[1], seatAt[2], 0f);
+        if (u >= 1f) {
+            roadT = -1f;
+            roadWasX = p.x;
+            roadWasZ = p.z;
+            runner.recenter();
+        }
+    }
+
+    /**
+     * The eye on the drive: behind the pickup at first, then up and up over the mountain, looking
+     * nearly straight down on it going round, the way it went lit; at the end down again behind
+     * it, where it comes out.
+     */
+    private void roadEye() {
+        Pickup p = driving;
+        float u = Math.min(1f, roadT / ROAD_S), w = (float) Math.pow(Math.sin(Math.PI * u), 0.6);
+        float high = ROAD_EYE_LOW + (ROAD_EYE_HIGH - ROAD_EYE_LOW) * w, back = ROAD_EYE_NEAR + (ROAD_EYE_BACK - ROAD_EYE_NEAR) * w;
+        // up high the eye looks north, the map's way; low, the pickup's
+        float d = 0f - p.heading;
+        while (d > Math.PI) d -= 2f * (float) Math.PI;
+        while (d < -Math.PI) d += 2f * (float) Math.PI;
+        float yaw = p.heading + d * w;
+        roadEye[0] = p.x - (float) Math.sin(yaw) * back;
+        roadEye[1] = p.y + high;
+        roadEye[2] = p.z - (float) Math.cos(yaw) * back;
+        roadEye[3] = yaw;
+        roadEye[4] = -(float) Math.atan2(high - 1.5f, back + 6f);
     }
 
     /** The ring at the wheel, coloured for what she is about: the hunt coral, the folder turquoise, a delivery amber, free cream. */
@@ -4896,6 +4978,15 @@ final class World {
             eyeYaw = eyeNow[3];
             eyePitch = eyeNow[4];
         }
+        // the drive up or down the mountain: the eye over it
+        if (roadT >= 0f && driving != null) {
+            roadEye();
+            eyeX = roadEye[0];
+            eyeY = roadEye[1];
+            eyeZ = roadEye[2];
+            eyeYaw = roadEye[3];
+            eyePitch = roadEye[4];
+        }
         // shaken by a blast
         if (shake > 0f) {
             float a = shake * shake * SHAKE_FAR;
@@ -4924,6 +5015,15 @@ final class World {
         labDrawn(d, r);
         Island.yachts(d, time);
         Island.bridge(d);
+        // the way the pickup went on the drive, lit
+        if (roadT >= 0f && driving != null) {
+            float ru = Math.min(1f, roadT / ROAD_S), re = ru * ru * (3f - 2f * ru), len = Mountain.wayLength();
+            if (roadUp) Mountain.wayLit(d, 0f, re * len);
+            else Mountain.wayLit(d, (1f - re) * len, len);
+            // over the pickup a beacon, to be seen from on high: the higher the eye, the bigger
+            float big = 0.6f + 2.4f * (float) Math.pow(Math.sin(Math.PI * ru), 0.6);
+            d.box(driving.x, driving.y + 3.5f + big, driving.z, big, big, big, null, 0xFFF1B0, DrawList.GLOW);
+        }
         Island.kept(d, time, eyeX, eyeZ);
         if (lab != null) lab.draw(d, time, eyeX, eyeZ);
         if (herd != null) herd.draw(d, time, eyeX, eyeZ);

@@ -124,6 +124,12 @@ level onto the deck; a white rail goes round the deck and round the top's edge, 
 road comes in and toward the tower. On the slope toward the
 town the laboratory's name stands in great white letters.
 
+At the wheel (any but the helicopter's) the drive up and down is shown, not driven: through the
+arch going up, or off the deck into the road's top end going down, the eye rises high over the
+mountain, the pickup goes round on its own, a beacon over it, the way it went lit warm on the road,
+and in some six seconds the eye comes down behind it on the deck, or at the arch; then it is hers
+again, rolling on. No wheel and no way out meanwhile. On foot the road is run.
+
 Hotheads (the twelfth job, a story, after the navigator; once called Brums to the island). At
 night up at LAB Inc. a trial of the collider gave birth to a black hole the size of a cherry; its
 jet burnt out the firmware of the night shift of brums on their chargers, leaving them a fallback
