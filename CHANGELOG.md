@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.7
+
+- A chase seen from high up: while any brums are after her the eye goes up far behind her and
+  over the roofs, looking down along her way, the crowd after her big at the bottom of the frame,
+  she on ahead of them, the way beyond; over a hill or a cliff behind her it goes higher still;
+  indoors, and once none are after her, it comes back down.
+- The brums hang nearer her as she runs (about forty meters, it was nearer seventy), so that the
+  crowd is seen.
+- The yachts go up with nobody stopping: no eye taken away, she keeps running, they keep coming;
+  the one in the thick of the crowd stands, turns and throws, the mallet flies from among them
+  over her (the farther, the longer and higher), and the blast shakes the eye. A try again starts
+  out on the pier, facing the shore.
+- No fire on the wrecks: the blocks of flame are gone, the hulls lie burnt black.
+- On the island's top the gravel to the lighthouse's door lies on the ground piece by piece; it
+  stood out level over the slope like a springboard.
+
 ## 1.2.6
 
 - The brums go only where one goes on foot, everywhere now, not only out on the island: not up a

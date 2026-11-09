@@ -101,6 +101,7 @@ release, each seen on the stand before the phone.
 - 1.2.4 The arch's name whole between its piers.
 - 1.2.5 Brums to the island, the second part: out along the pier, the golden mallet, the yachts gone up; up to the lighthouse, a replay from the pier.
 - 1.2.6 The brums only on foot (no ladders, roofs, lifts); stairs up the island, its top cleared.
+- 1.2.7 The chase from high up; the yachts with nobody stopping, the eye shaken; no fire on the wrecks.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -142,10 +143,13 @@ release, each seen on the stand before the phone.
 
 ## Next
 
-- Brums to the island, the rest: 1.2.7 a drawbridge in the spit (down till the end), the run
-  along the spit shown from above as a scene, she and the crowd after her. 1.2.8 at the lighthouse
-  the dispatcher shows where to leap and why; in the hall a switch on the wall raises the bridge;
-  the brums left on the island; the report. The yachts stay wrecked till the island is opened again.
+- Brums to the island, the rest: 1.2.8 the way up: a tunnel into the rock from the pier's foot,
+  rising gently through the island, out onto a ledge on its far side; from there stairs right and
+  left round the island up to the lighthouse (the straight stairs too steep). 1.2.9 the lighthouse
+  a safe place: in at its door, up the tower; at the gallery the dispatcher says the secret study
+  can be reached by a leap from here, and that in it a switch locks the island. A drawbridge in the
+  spit, down till the end; the switch raises it; the brums left on the island; the report. The
+  yachts stay wrecked till the island is opened again.
 - The mountain road by car shown as a scene, up from the arch to the deck and back down, any
   vehicle but the helicopter; on foot, run it.
 - Brums to the island: a prologue in the morning on the dispatcher's set, how it came about: in

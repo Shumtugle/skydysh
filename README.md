@@ -141,11 +141,14 @@ or one fell behind. Up on the left under the pause, how many are after her; on t
 dots. The navigator's line goes along the spit and round the island to the pier for any place out
 there.
 
-At the pier the dispatcher sends her out along it to a yacht. A few steps out, the eye goes over
-to the shore: those after her have come up in a crowd behind her, and the nearest of them throws a
-golden mallet over her head; it comes down among the yachts, they go up in a ball of fire, planks
-flying, and the blast flings the crowd back onto the sand and the slope. The yachts are left
-broken in two, sunk, burning. No way off by sea: up to the lighthouse, the navigator's line up
+While any are after her, the eye is up high far behind her, over the roofs, looking down along
+her way: the crowd after her big below it, she on ahead, the way beyond her; indoors it comes down.
+
+At the pier the dispatcher sends her out along it to a yacht. A few steps out, nobody stopping,
+the one in the thick of the crowd after her stands, turns and throws a golden mallet; it flies
+over her head (the farther, the longer and higher) and comes down among the yachts: a ball of
+fire, planks flying, the eye shaken, and the blast flings the crowd back onto the sand and the
+slope. The yachts are left broken in two, sunk, burnt black. No way off by sea: up to the lighthouse, the navigator's line up
 the stairs from the pier's foot and across the top to its door. Those flung down lie a moment, then get up and come
 after her again; one that comes up to her now goes off and it is tried again from the pier, they
 lying where the blast threw them. Out on the island, losing her, they wait where they are rather

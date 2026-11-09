@@ -520,13 +520,21 @@ final class Island {
                 pz = z;
             }
         }
-        // across the top to the lighthouse's door: a strip of gravel
+        // across the top to the lighthouse's door: a strip of gravel, piece by piece on the ground
         float[] at = new float[3];
         door(at);
-        float sx = IX + sa * to * w, sz = IZ + ca * to * w, sy = height(sx, sz) + 0.06f;
-        float len = (float) Math.sqrt((at[0] - sx) * (at[0] - sx) + (at[2] - sz) * (at[2] - sz));
-        d.box((sx + at[0]) * 0.5f, Math.max(sy, at[1] + 0.06f), (sz + at[2]) * 0.5f, STAIRS_HALF, 0.06f, len * 0.5f, yaw((float) Math.atan2(at[0] - sx, at[2] - sz)),
-                0xD9C08E, DrawList.GRAVEL);
+        float sx = IX + sa * to * w, sz = IZ + ca * to * w;
+        int pieces = 12;
+        float qx = sx, qz = sz, qy = height(sx, sz) + 0.06f;
+        for (int k = 1; k <= pieces; k++) {
+            float u = k / (float) pieces, x = sx + (at[0] - sx) * u, z = sz + (at[2] - sz) * u, y = height(x, z) + 0.06f;
+            float len = (float) Math.sqrt((x - qx) * (x - qx) + (y - qy) * (y - qy) + (z - qz) * (z - qz));
+            d.box((x + qx) * 0.5f, (y + qy) * 0.5f, (z + qz) * 0.5f, STAIRS_HALF, 0.06f, len * 0.5f + 0.1f, along(qx, qy, qz, x, y, z), 0xD9C08E,
+                    DrawList.GRAVEL);
+            qx = x;
+            qy = y;
+            qz = z;
+        }
     }
 
     /** Trees on the ledges, thick on them, none on the rock or the sand, the stairs or the top. */
@@ -644,7 +652,7 @@ final class Island {
     /**
      * The yachts gone up: each broken in two at its middle, the stern sunk to its rail, the bow
      * reared out of the water; burnt black, the band gone dark; the mast snapped, its stump on the
-     * stern, the rest down across the water; burning still.
+     * stern, the rest down across the water.
      */
     private static void wrecks(DrawList d, float time) {
         int char0 = 0x4A4542, char1 = 0x2E2B2A, teak = 0x3A2A20;
@@ -668,15 +676,6 @@ final class Island {
             d.box(mx, w + 1.3f, mz, 0.09f, 1.4f, 0.09f, null, 0x55585C, DrawList.POLISHED);
             float lx = mx + ox * 7.5f + fx * 2f, lz = mz + oz * 7.5f + fz * 2f;
             d.box((mx + lx) * 0.5f, w + 0.9f, (mz + lz) * 0.5f, 0.08f, 0.08f, 4f, along(mx, w + 2.6f, mz, lx, w - 0.8f, lz), 0x55585C, DrawList.POLISHED);
-            // the fire on each half: tongues, thin and tall, flickering, gold inside orange
-            for (int f = 0; f < 3; f++) {
-                float fl = 0.5f + 0.5f * (float) Math.sin(time * (9f + f * 2.3f) + k * 2.1f + f);
-                float at = f == 0 ? -2.4f : f == 1 ? 1.6f : 3.2f, up = f == 0 ? 0.3f : 0.6f + (f - 1) * 0.7f;
-                float px = x + fx * at + ox * (f == 1 ? 0.3f : -0.2f), pz = z + fz * at + oz * (f == 1 ? 0.3f : -0.2f);
-                float tall = 0.45f + 0.35f * fl, wide = 0.22f + 0.06f * fl;
-                d.box(px, w + up + tall, pz, wide, tall, wide, null, 0xFF6A2A, DrawList.material(DrawList.FIRE, 225));
-                d.box(px, w + up + tall * 0.7f, pz, wide * 0.55f, tall * 0.7f, wide * 0.55f, null, 0xFFC860, DrawList.material(DrawList.FIRE, 250));
-            }
         }
     }
 

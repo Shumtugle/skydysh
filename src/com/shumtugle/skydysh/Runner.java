@@ -897,10 +897,16 @@ final class Runner {
             back = RIDE_BACK + 5f * fast;
             high = RIDE_HIGH + 1.5f * fast;
         }
+        // on a chase, out of doors: up high over her
+        chase += ((in ? 0f : chaseWant) - chase) * Math.min(1f, dt * CHASE_RATE);
+        if (chase > 0.001f) {
+            back += (CHASE_BACK - back) * chase;
+            high += (CHASE_HIGH - high) * chase;
+        }
         // leaves between the eye and her (a tree's crown, a palm's): the eye comes down under them
         // if there is room under them, else in nearer her, so that she is never lost in them; it
-        // goes there quickly and comes back out slowly
-        if (g instanceof City && !up) {
+        // goes there quickly and comes back out slowly (up for a chase, it is over them all)
+        if (g instanceof City && !up && chase < 0.05f) {
             float hy = y + 1.4f, ex = x - fx * back, ey = y + high, ez = z - fz * back;
             float t = ((City) g).leavesOn(x, hy, z, ex, ey, ez, leafLow);
             float wantHigh = 1f, wantBack = 1f;
@@ -922,7 +928,8 @@ final class Runner {
         for (float t = EYE_STEP; ; t += EYE_STEP) {
             float tt = Math.min(t, back), qx = x - fx * tt, qz = z - fz * tt;
             // a slope rising behind her (a cliff, a hill's side) as high as the eye: no farther back
-            if (!in && tt > EYE_STEP && ((City) g).ground(qx, qz) > y + high - EYE_OVER_GROUND) break;
+            // (up for a chase it goes on back over the slope, and up over it, below)
+            if (!in && chase < 0.5f && tt > EYE_STEP && ((City) g).ground(qx, qz) > y + high - EYE_OVER_GROUND) break;
             eyeTry[0] = qx;
             eyeTry[1] = qz;
             g.push(eyeTry, r, feet);
@@ -940,10 +947,14 @@ final class Runner {
         // instead, as far as a ceiling lets it
         float short_ = Math.max(0f, Math.min(back, NEAR_BACK) - free) / NEAR_BACK;
         eyeY = Math.min(y + high + short_ * RISE, g.ceiling(eyeX, eyeZ, y + 0.5f) - 0.25f);
+        // up for a chase, over a hill or a cliff behind her: higher still, over it
+        if (chase > 0.01f && !in && g instanceof City) eyeY = Math.max(eyeY, ((City) g).ground(eyeX, eyeZ) + CHASE_OVER * chase);
         // and looks down at her rather than over her, so that she stays in the frame
         float ahead = up ? 0f : (in ? AHEAD_IN : riding ? RIDE_AHEAD : swims ? SWIM_AHEAD : AHEAD) * (1f - short_);
+        ahead += (CHASE_AHEAD - ahead) * chase;
         float tx = x + fx * ahead, tz = z + fz * ahead;
         float ty = y + ((in ? LOOK_UP_IN : swims ? SWIM_LOOK : LOOK_UP) + (up ? CLIMB_LOOK : 0f)) * (1f - short_) + 0.8f * short_;
+        ty += (y + 1f - ty) * chase;
         float dx = tx - eyeX, dz = tz - eyeZ;
         eyePitch = (float) Math.atan2(ty - eyeY, Math.sqrt(dx * dx + dz * dz));
         // never so high over her, looking on, that she drops out of the bottom of the frame
@@ -973,6 +984,12 @@ final class Runner {
     private float dodgeHigh = 1f, dodgeBack = 1f;
     private final float[] leafLow = new float[1];
     static final float MIN_BACK = 2.6f;
+    // the eye on a chase: far behind her and high, over the roofs, looking down along her way, so
+    // that those after her are seen big below it, she on ahead of them, the way on beyond her; how
+    // fast it goes up and comes down
+    static final float CHASE_BACK = 58f, CHASE_HIGH = 32f, CHASE_AHEAD = 8f, CHASE_RATE = 1.2f, CHASE_OVER = 14f;
+    /** Whether the eye should be up for a chase (1) or down where it always is (0), and how far it is up now. */
+    float chaseWant, chase;
     // the eye on her swimming: so far back, so high over the water, looking so far on and so high there
     static final float SWIM_BACK = 4.6f, SWIM_HIGH = 3.1f, SWIM_AHEAD = 9f, SWIM_LOOK = 0.4f;
     // the seat, from the hips down: the figure stands so much lower than the seat's top

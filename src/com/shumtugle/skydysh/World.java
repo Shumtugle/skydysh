@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.2.6";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.2.7";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1525,7 +1525,10 @@ final class World {
         }
         whiteOut = Math.max(0f, whiteOut - dt);
         dawn = Math.max(0f, dawn - dt);
+        shake = Math.max(0f, shake - dt * SHAKE_DIES);
         if (herd == null) wrecked(false);
+        // on a chase the eye goes up high over her, those after her seen
+        runner.chaseWant = herd != null && !herd.over() && herd.coming() > 0 ? 1f : 0f;
         if (indoors == null) shore.update(dt, runner.x, runner.z);
         if (indoors == null) villagers.update(dt, driving != null ? driving.x : runner.x, driving != null ? driving.z : runner.z);
         if (stayed != null) {
@@ -4208,26 +4211,18 @@ final class World {
             host.buzz(60);
             dispatch = new Dispatch(host, Lang.lines("herd.yacht", mission.round, null));
             return;
-        } else if (got == Herd.ON) {
-            errand = NO_ERRAND;
-            runner.stopLead();
-            letGo();
         } else if (got == Herd.BOOM) {
             host.sound(Synth.THUNDER, 1f, 0.9f);
             host.sound(Synth.CRASH, 0.9f, 0.6f);
             host.sound(Synth.SPLASH, 0.7f, 0.7f);
             host.buzz(320);
             whiteOut = WHITE_OUT;
+            shake = 1f;
         } else if (got == Herd.WRECKED) {
-            runner.held = false;
-            runner.recenter();
             dispatch = new Dispatch(host, Lang.lines("herd.wreck", mission.round, null));
             return;
         }
-        if (hd.watching()) {
-            yachtsWatched();
-            return;
-        }
+
         if (got == Herd.CAME) {
             host.sound(Synth.CHIME, 0.45f, 1.5f);
             host.buzz(30);
@@ -4272,36 +4267,11 @@ final class World {
         }
     }
 
-    // the eye on the yachts going up: low on the shore beyond the crowd after her, so far out
-    // along the pier from its foot, so far to the crowd's side, so high; looking at a point so far
-    // out along the pier, so high
-    static final float YACHT_EYE_OUT = 0f, YACHT_EYE_SIDE = 44f, YACHT_EYE_UP = 5f, YACHT_LOOK_OUT = 4f, YACHT_LOOK_UP = 2.5f;
-    private final float[] yachtEye = new float[5], yachtAim = new float[3], pierAt = new float[2];
-
-    /**
-     * The yachts going up: she stands still on the pier facing them, the finger not heard; the
-     * eye low on the shore beyond those after her, looking past them and her out to the yachts.
-     */
-    private void yachtsWatched() {
-        Runner r = runner;
-        Herd hd = herd;
-        r.held = true;
-        r.speed = 0f;
-        Herd.target(yachtAim);
-        r.heading = (float) Math.atan2(yachtAim[0] - r.x, yachtAim[2] - r.z);
-        // the side of the pier they are on
-        float side = 0f;
-        for (int k = 0; k < Herd.ALL; k++) if (hd.state[k] == Herd.COMES) side += Island.acrossPier(hd.x[k], hd.z[k]);
-        Island.onPier(YACHT_EYE_OUT, side < 0f ? -YACHT_EYE_SIDE : YACHT_EYE_SIDE, pierAt);
-        yachtEye[0] = pierAt[0];
-        yachtEye[2] = pierAt[1];
-        yachtEye[1] = Math.max(city.ground(pierAt[0], pierAt[1]), City.WATER) + YACHT_EYE_UP;
-        Island.onPier(YACHT_LOOK_OUT, 0f, pierAt);
-        float tx = pierAt[0] - yachtEye[0], tz = pierAt[1] - yachtEye[2];
-        yachtEye[3] = (float) Math.atan2(tx, tz);
-        yachtEye[4] = (float) Math.atan2(Island.DECK + YACHT_LOOK_UP - yachtEye[1], Math.sqrt(tx * tx + tz * tz));
-        r.eyeAt(yachtEye);
-    }
+    // the eye shaken by a blast: how far at most, how fast it dies away, how fast it shakes
+    static final float SHAKE_FAR = 0.9f, SHAKE_DIES = 0.9f, SHAKE_FAST = 31f;
+    /** How hard the eye shakes now, 1 at a blast, dying to nothing. */
+    private float shake;
+    private final float[] yachtAim = new float[3];
 
     /** The yachts wrecked or whole, as the job says; the pier's cells built again when that changes. */
     private void wrecked(boolean now) {
@@ -4844,6 +4814,14 @@ final class World {
             eyeZ = eyeNow[2];
             eyeYaw = eyeNow[3];
             eyePitch = eyeNow[4];
+        }
+        // shaken by a blast
+        if (shake > 0f) {
+            float a = shake * shake * SHAKE_FAR;
+            eyeX += a * (float) Math.sin(time * SHAKE_FAST);
+            eyeY += a * (float) Math.sin(time * SHAKE_FAST * 1.37f + 1f);
+            eyeZ += a * (float) Math.sin(time * SHAKE_FAST * 0.83f + 2f);
+            eyePitch += a * 0.03f * (float) Math.sin(time * SHAKE_FAST * 1.11f);
         }
         // the desktop stand's own eye, put where a shot wants it
         if (standEye != null) {

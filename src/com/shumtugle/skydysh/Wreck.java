@@ -3,8 +3,8 @@ package com.shumtugle.skydysh;
 import java.util.Random;
 
 /**
- * The yachts going up: a golden mallet thrown from the shore flies end over end out over the
- * pier and comes down among the yachts; a ball of fire there, white at heart, swelling and going
+ * The yachts going up: a golden mallet thrown from among those after her flies end over end
+ * over her and comes down among the yachts (the farther, the longer and higher its way); a ball of fire there, white at heart, swelling and going
  * dark; the yachts' planks, rails and cabin roofs flung up and out, turning as they go, falling
  * back into the water and sinking, or onto the sand and lying there. The yachts themselves left
  * wrecked (see Island).
@@ -12,7 +12,7 @@ import java.util.Random;
 final class Wreck {
     // the mallet: how long it flies, how much higher than both ends its way goes at the top; how
     // fast it turns end over end
-    static final float FLY = 1.55f, APEX = 11f, SPIN = 13f;
+    static final float FLY_PER = 1f / 32f, FLY_MIN = 1.4f, FLY_MAX = 2.6f, APEX_PER = 0.22f, SPIN = 13f;
     // the fire: how long it swells and dies, how big it gets
     static final float BALL = 1.1f, BALL_R = 5.5f;
     // the pieces: how many, how fast out, how fast up, how hard they fall
@@ -34,6 +34,9 @@ final class Wreck {
     private final float[] spun = new float[9];
 
     /** Thrown from (x, y, z) at the yachts' middle (tx, ty, tz). */
+    // this throw: how long it flies, how much higher than both ends its way goes at the top
+    private float fly = 1.5f, apex = 11f;
+
     void thrown(float x, float y, float z, float tx, float ty, float tz) {
         from[0] = x;
         from[1] = y;
@@ -43,6 +46,10 @@ final class Wreck {
         to[2] = tz;
         clock = 0f;
         hit = -1f;
+        // the farther, the longer and higher
+        float far = (float) Math.sqrt((tx - x) * (tx - x) + (tz - z) * (tz - z));
+        fly = Math.max(FLY_MIN, Math.min(FLY_MAX, far * FLY_PER));
+        apex = Math.max(8f, far * APEX_PER);
     }
 
     /** A step on; true at the moment it comes down among the yachts. */
@@ -50,7 +57,7 @@ final class Wreck {
         if (clock < 0f) return false;
         clock += dt;
         boolean now = false;
-        if (hit < 0f && clock >= FLY) {
+        if (hit < 0f && clock >= fly) {
             hit = clock;
             burst();
             now = true;
@@ -119,9 +126,9 @@ final class Wreck {
     /** Where the mallet is in its flight, into out (x, y, z); false once it has come down or before it is thrown. */
     boolean flying(float[] out) {
         if (clock < 0f || hit >= 0f) return false;
-        float s = Math.min(1f, clock / FLY);
+        float s = Math.min(1f, clock / fly);
         out[0] = from[0] + (to[0] - from[0]) * s;
-        out[1] = from[1] + (to[1] - from[1]) * s + 4f * APEX * s * (1f - s);
+        out[1] = from[1] + (to[1] - from[1]) * s + 4f * apex * s * (1f - s);
         out[2] = from[2] + (to[2] - from[2]) * s;
         return true;
     }

@@ -17,7 +17,7 @@ at 28 -9 3.14159
 wait 0.3
 herd 5
 wait 0.3
-navrun 39.5 0 p
+navrun 39.5 5 p
 navrun 12 0.25 y
 navrun 40 2 c
 where
