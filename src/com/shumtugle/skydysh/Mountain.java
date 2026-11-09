@@ -11,7 +11,7 @@ package com.shumtugle.skydysh;
  *
  * At the road's foot an arch over it with the laboratory's name; on the slope facing the town the
  * name again in great white letters standing on the grass; at the road's top end a parking deck of
- * ten spaces, the brums' own pickups in some of them.
+ * ten spaces, the brums' own pickups in some of them, a white rail round it and round the top.
  *
  * All of it is worked out, not built of tiles: how high the ground is anywhere on it (the road, the
  * deck, or the slope), where the rails stand; the town asks it (see City.ground, City.country).
@@ -28,6 +28,11 @@ final class Mountain {
     static final float SPAN = TURNS * 2f * (float) Math.PI;
     // the rails along it, so far apart, how high
     static final float POST_EVERY = 1.4f, POST_HALF = 0.85f, RAIL_HIGH = 1.1f;
+    // the road's last bit round (so much of a turn) level with the top, the deck it runs onto; the
+    // first bit of its outer edge with no rail, where it comes round off its foot past the arch
+    static final float END_FLAT = 0.35f, OUT_FROM = 0.04f;
+    /** How far out the rail round the top's edge stands: in line with the road's inner rail up there. */
+    static final float RIM = PLATEAU - 0.35f;
     /** How far from the middle the land is clear of the mountain and its road, the outer rail and a little more. */
     static final float CLEAR = R + 2f * HALF + 4f;
     /** How high the slope may be at its foot before it holds a pickup back. */
@@ -57,7 +62,7 @@ final class Mountain {
     // ---- the parking deck at the road's top end: straight on from it, westward, a flat of paving
     // on a wall of stone; an aisle down its middle (the road's own width, the road coming into it),
     // five spaces either side, the north ones nose to the flat, the south ones nose out ----
-    static final float DECK_X0 = MX - 26f, DECK_X1 = MX + 2f, DECK_Z0 = MZ - 46f, DECK_Z1 = MZ - 22f;
+    static final float DECK_X0 = MX - 34f, DECK_X1 = MX + 2f, DECK_Z0 = MZ - 46f, DECK_Z1 = MZ - 22f;
     static final float SPACE_W = 3.2f, SPACE_D = 5.5f, AISLE_Z = MZ - 34.5f, SPACE_X0 = MX - 3.6f;
     static final int SPACES = 10;
     /** The spaces the brums' own pickups stand in; the rest are free. */
@@ -101,8 +106,9 @@ final class Mountain {
         return Math.abs(x - MX) < 1.6f && z > DOOR_Z - 1.6f && z < DOOR_Z + 0.2f && Math.abs(y - (TOP + PODIUM_HIGH)) < 1f;
     }
 
-    // ---- the arch over the road's foot: two piers, the name on the span between them ----
-    static final float ARCH_Z = (City.EDGE_J * City.CELL + City.ROAD + MZ - (R + HALF)) * 0.5f;
+    // ---- the arch over the road's foot, just off the town's last street, square to it: two
+    // piers, the name on the span between them ----
+    static final float ARCH_Z = City.EDGE_J * City.CELL + City.ROAD + 2.6f;
     static final float PIER_OFF = HALF + 1.6f, PIER_HALF = 0.8f, ARCH_HIGH = 9f, SPAN_HALF = 0.9f;
 
     // ---- the name on the slope, toward the town: great white letters, each standing on the grass ----
@@ -110,9 +116,9 @@ final class Mountain {
     // a dot of a letter, how big; how far apart the letters along the slope
     static final float SIGN_A = 2.4f, SIGN_R = 222f, SIGN_DOT = 2.1f, SIGN_STEP = 13f;
 
-    /** How high the road is so far round (a heading from A0 on). */
+    /** How high the road is so far round (a heading from A0 on): up evenly, its last bit level with the top. */
     static float rise(float t) {
-        return TOP * (t - A0) / SPAN;
+        return TOP * Math.min(1f, (t - A0) / (SPAN - END_FLAT));
     }
 
     /** How far from the middle the slope is at height y. */
@@ -221,7 +227,7 @@ final class Mountain {
 
     private static void posts() {
         if (posts != null) return;
-        float[] p = new float[3 * 4096];
+        float[] p = new float[3 * 8192];
         int n = 0;
         float t = A0;
         while (t < A0 + SPAN) {
@@ -229,17 +235,79 @@ final class Mountain {
             for (int e = -1; e <= 1; e += 2) {
                 if (n * 3 + 3 > p.length) p = java.util.Arrays.copyOf(p, p.length * 2);
                 float rp = rr + e * (HALF + 0.35f);
-                // none across the foot of the road, where it comes in from the town
-                if (e > 0 && t < A0 + 0.04f) continue;
-                p[n * 3] = MX + rp * s;
-                p[n * 3 + 1] = MZ + rp * c;
+                // none across the foot of the road, where it comes in from the town; none on the deck
+                if (e > 0 && t < A0 + OUT_FROM) continue;
+                float px = MX + rp * s, pz = MZ + rp * c;
+                if (onDeck(px, pz)) continue;
+                p[n * 3] = px;
+                p[n * 3 + 1] = pz;
                 p[n * 3 + 2] = y + RAIL_HIGH;
                 n++;
             }
             t += POST_EVERY / rr;
         }
+        // across the end of the road's foot, past where it turns off round
+        float ez = MZ - (roadR(A0) - HALF - 0.35f);
+        for (float x = MX + POST_EVERY; x <= MX + HALF + 0.4f; x += POST_EVERY) n = post(p, n, x, ez, RAIL_HIGH);
+        n = post(p, n, MX + HALF + 0.35f, ez, RAIL_HIGH);
+        // round the deck: its south side, its west, its north as far as the flat; its east up to the road
+        float[] e = deckEdges();
+        for (int k = 0; k < e.length; k += 4) {
+            float ax = e[k], az = e[k + 1], bx = e[k + 2], bz = e[k + 3], l = (float) Math.hypot(bx - ax, bz - az);
+            int m = Math.max(1, Math.round(l / POST_EVERY));
+            for (int q = 0; q <= m; q++) {
+                if (n * 3 + 3 > p.length) p = java.util.Arrays.copyOf(p, p.length * 2);
+                n = post(p, n, ax + (bx - ax) * q / m, az + (bz - az) * q / m, TOP + RAIL_HIGH);
+            }
+        }
+        // round the top's edge, from the deck's north side round to where the road's inner rail comes up level
+        for (float a = rimFrom(); a <= rimTo(); a += POST_EVERY / RIM) {
+            if (n * 3 + 3 > p.length) p = java.util.Arrays.copyOf(p, p.length * 2);
+            float x = MX + RIM * (float) Math.sin(a), z = MZ + RIM * (float) Math.cos(a);
+            if (!inHall(x, z)) n = post(p, n, x, z, TOP + RAIL_HIGH);
+        }
         posts = p;
         postN = n;
+    }
+
+    private static int post(float[] p, int n, float x, float z, float top) {
+        p[n * 3] = x;
+        p[n * 3 + 1] = z;
+        p[n * 3 + 2] = top;
+        return n + 1;
+    }
+
+    /** Whether a road's post at (x, z) would stand on the deck, or so near its edge it stood into it. */
+    private static boolean onDeck(float x, float z) {
+        return x < DECK_X1 + POST_HALF && x > DECK_X0 - 1f && z > DECK_Z0 - 1f && z < DECK_Z1 + 1f;
+    }
+
+    /** Whether (x, z) is in the top station's hall, or so near it a post would stand in its wall. */
+    private static boolean inHall(float x, float z) {
+        float tz = TOP_Z + 6f, m = HALL_HALF + POST_HALF;
+        return Math.abs(x - CABLE_X) < m && Math.abs(z - tz) < m;
+    }
+
+    /** How far in from the deck's edge its rail stands. */
+    static final float DECK_RAIL_IN = 0.3f;
+
+    /** The deck's rail, in straight runs, each (ax, az, bx, bz): south, west, north to the flat, east to the road. */
+    private static float[] deckEdges() {
+        float i = DECK_RAIL_IN, x0 = DECK_X0 + i, x1 = DECK_X1 - i, z0 = DECK_Z0 + i, z1 = DECK_Z1 - i;
+        float nx = MX + RIM * (float) Math.sin(rimFrom());
+        float ro = roadR(A0 + SPAN) + HALF + 0.35f, ez = MZ - (float) Math.sqrt(ro * ro - (x1 - MX) * (x1 - MX));
+        return new float[]{x1, z0, x0, z0, x0, z0, x0, z1, x0, z1, nx, z1, x1, z0, x1, ez};
+    }
+
+    /** Where round the rail on the top's edge starts: where it meets the deck's north rail. */
+    private static float rimFrom() {
+        float dz = (DECK_Z1 - DECK_RAIL_IN) - MZ;
+        return (float) Math.PI + (float) Math.acos(-dz / RIM);
+    }
+
+    /** Where it ends: where the road's inner rail comes up level with the top, a round on. */
+    private static float rimTo() {
+        return A0 + 2f * (float) Math.PI - END_FLAT;
     }
 
     /** The rails' posts in the cell (i, j), as its walls. */
@@ -366,6 +434,14 @@ final class Mountain {
                 float yx = k * s / norm, yy = 1f / norm, yz = k * c / norm;
                 float[] turn = frame(c, 0f, -s, yx, yy, yz, zx, zy, zz);
                 float cx = MX + rm * s - yx * thick, cy = ym - yy * thick, cz = MZ + rm * c - yz * thick;
+                // the ring nearest the top no further up than the top's edge: else, a little over
+                // it, it would stand up through the deck lying on the edge
+                if (g == rings - 1) {
+                    float over = longHalf - (r0 - r1) * 0.5f * norm;
+                    cx += zx * over;
+                    cy += zy * over;
+                    cz += zz * over;
+                }
                 int color;
                 float mat;
                 if (ym > snowLine) {
@@ -383,12 +459,10 @@ final class Mountain {
         }
     }
 
-    /** The flat on top: paved, a low wall round its edge but where the road comes up. */
+    /** The flat on top: paved (the white rail round its edge is drawn with the road, see fences). */
     private static void top(DrawList d) {
-        float[] diag = {0.7071f, 0f, 0.7071f, 0f, 1f, 0f, -0.7071f, 0f, 0.7071f};
-        float h = PLATEAU * 0.93f;
-        d.box(MX, TOP - 0.5f, MZ, h, 0.5f, h, null, 0xB9B2A4, DrawList.PAVING);
-        d.box(MX, TOP - 0.5f, MZ, h, 0.5f, h, diag, 0xB9B2A4, DrawList.PAVING);
+        // eight sides round, a hair under the road and the deck where they lie over its edge
+        octagon(d, MX, TOP - 0.53f, MZ, PLATEAU, 0.5f, 0xB9B2A4, DrawList.PAVING);
     }
 
     // a letter, five dots across and seven down, a row a string ('#' lit)
@@ -422,20 +496,22 @@ final class Mountain {
         float cx = (DECK_X0 + DECK_X1) * 0.5f, cz = (DECK_Z0 + DECK_Z1) * 0.5f, hx = (DECK_X1 - DECK_X0) * 0.5f, hz = (DECK_Z1 - DECK_Z0) * 0.5f;
         float foot = 18f;
         d.box(cx, TOP - 0.2f - foot * 0.5f, cz, hx, foot * 0.5f, hz, null, 0x9A8F80, DrawList.STONE);
-        d.box(cx, TOP - 0.1f, cz, hx, 0.1f, hz, null, 0x6A5A55, DrawList.ASPHALT);
+        // a hair over the top's paving where the two lie together
+        d.box(cx, TOP - 0.08f, cz, hx, 0.1f, hz, null, 0x6A5A55, DrawList.ASPHALT);
         int white = 0xF2EEDF;
         for (int row = 0; row < 2; row++) {
             float z0 = row == 0 ? AISLE_Z + HALF : AISLE_Z - HALF - SPACE_D, z1 = z0 + SPACE_D;
             for (int k = 0; k <= 5; k++) {
                 float x = SPACE_X0 + SPACE_W * 0.5f - k * SPACE_W;
-                d.box(x, TOP + 0.005f, (z0 + z1) * 0.5f, 0.07f, 0.01f, SPACE_D * 0.5f, null, white, DrawList.PAINT);
+                d.box(x, TOP + 0.025f, (z0 + z1) * 0.5f, 0.07f, 0.01f, SPACE_D * 0.5f, null, white, DrawList.PAINT);
             }
         }
         // the kerb along the edges but where the road comes in
         int kerb = 0xC9C3B6;
         d.box(cx, TOP + 0.12f, DECK_Z0 + 0.2f, hx, 0.12f, 0.2f, null, kerb, DrawList.STONE);
         d.box(DECK_X0 + 0.2f, TOP + 0.12f, cz, 0.2f, 0.12f, hz, null, kerb, DrawList.STONE);
-        d.box((DECK_X0 + MX - 21f) * 0.5f, TOP + 0.12f, DECK_Z1 - 0.2f, (MX - 21f - DECK_X0) * 0.5f, 0.12f, 0.2f, null, kerb, DrawList.STONE);
+        float nx = MX + RIM * (float) Math.sin(rimFrom());
+        d.box((DECK_X0 + nx) * 0.5f, TOP + 0.12f, DECK_Z1 - 0.2f, (nx - DECK_X0) * 0.5f, 0.12f, 0.2f, null, kerb, DrawList.STONE);
         // the sign: a post, a blue board, a white P on it facing the road coming up
         float sx = MX + 1f, sz = AISLE_Z - HALF - 1.2f;
         d.box(sx, TOP + 1.5f, sz, 0.08f, 1.5f, 0.08f, null, 0xA8AAA8, DrawList.POLISHED);
@@ -445,7 +521,7 @@ final class Mountain {
         for (int row = 0; row < 7; row++)
             for (int col = 0; col < 5; col++)
                 if (lit(g, row, col))
-                    d.box(sx + 0.07f, TOP + 3.3f + (3 - row) * dot, sz - (col - 2) * dot, 0.01f, dot * 0.45f, dot * 0.45f, null, white, DrawList.PLAIN);
+                    d.box(sx + 0.07f, TOP + 3.3f + (3 - row) * dot, sz + (col - 2) * dot, 0.01f, dot * 0.45f, dot * 0.45f, null, white, DrawList.PLAIN);
     }
 
     /**
@@ -689,10 +765,12 @@ final class Mountain {
         int asphalt = 0x5E4844, stone = 0x9A8F80, rail = 0xD9D9D2, kerb = 0x8A8276;
         float fz0 = City.EDGE_J * City.CELL + City.ROAD, fz1 = footZ();
         d.box(MX, -0.12f, (fz0 + fz1) * 0.5f, HALF, 0.12f, (fz1 - fz0) * 0.5f + HALF, null, asphalt, DrawList.ASPHALT);
+        // it runs on onto the deck: drawn only up to the deck's edge
+        float end = A0 + SPAN - (float) Math.asin((DECK_X1 - MX) / roadR(A0 + SPAN));
         float t = A0;
         int n = 0;
-        while (t < A0 + SPAN) {
-            float rr = roadR(t), t1 = Math.min(A0 + SPAN, t + PIECE / rr), r1 = roadR(t1);
+        while (t < end) {
+            float rr = roadR(t), t1 = Math.min(end, t + PIECE / rr), r1 = roadR(t1);
             float ax = MX + rr * (float) Math.sin(t), ay = rise(t), az = MZ + rr * (float) Math.cos(t);
             float bx = MX + r1 * (float) Math.sin(t1), by = rise(t1), bz = MZ + r1 * (float) Math.cos(t1);
             float[] turn = along(ax, ay, az, bx, by, bz);
@@ -705,11 +783,37 @@ final class Mountain {
             if (n % 2 == 0) d.box(mx, my + 0.005f, mz, 0.07f, 0.01f, l * 0.3f, turn, 0xF2EEDF, DrawList.PAINT);
             float wy = my - 3.4f;
             d.box(mx + xx * (HALF + 0.3f), wy, mz + xz * (HALF + 0.3f), 0.3f, 3.4f, l * 0.5f + 0.15f, turn, stone, DrawList.STONE);
-            d.box(mx + xx * (HALF + 0.3f), my + 0.5f, mz + xz * (HALF + 0.3f), 0.05f, 0.5f, l * 0.5f + 0.05f, turn, rail,
-                    DrawList.RAIL);
+            if (t >= A0 + OUT_FROM)
+                d.box(mx + xx * (HALF + 0.3f), my + 0.5f, mz + xz * (HALF + 0.3f), 0.05f, 0.5f, l * 0.5f + 0.05f, turn, rail,
+                        DrawList.RAIL);
             d.box(mx - xx * (HALF + 0.4f), my + 0.25f, mz - xz * (HALF + 0.4f), 0.4f, 0.4f, l * 0.5f, turn, kerb, DrawList.STONE);
             t = t1;
             n++;
         }
+        // across the end of the road's foot, past where it turns off
+        float ez = MZ - (roadR(A0) - HALF - 0.3f);
+        d.box(MX + (HALF + 0.3f) * 0.5f, 0.5f, ez, (HALF + 0.3f) * 0.5f, 0.5f, 0.05f, null, rail, DrawList.RAIL);
+        fences(d, rail);
+    }
+
+    /** The rail round the deck, in its straight runs, and round the top's edge piece by piece but through the station's hall. */
+    private static void fences(DrawList d, int rail) {
+        float[] e = deckEdges();
+        for (int k = 0; k < e.length; k += 4) rail(d, e[k], TOP, e[k + 1], e[k + 2], TOP, e[k + 3], rail);
+        float step = PIECE / RIM, to = rimTo();
+        for (float a = rimFrom(); a < to; a += step) {
+            float b = Math.min(to, a + step);
+            float ax = MX + RIM * (float) Math.sin(a), az = MZ + RIM * (float) Math.cos(a);
+            float bx = MX + RIM * (float) Math.sin(b), bz = MZ + RIM * (float) Math.cos(b);
+            if (inHall(ax, az) || inHall(bx, bz)) continue;
+            rail(d, ax, TOP, az, bx, TOP, bz, rail);
+        }
+    }
+
+    /** A rail from a to b, standing on the ground there. */
+    private static void rail(DrawList d, float ax, float ay, float az, float bx, float by, float bz, int color) {
+        float l = (float) Math.hypot(bx - ax, bz - az);
+        d.box((ax + bx) * 0.5f, (ay + by) * 0.5f + 0.5f, (az + bz) * 0.5f, 0.05f, 0.5f, l * 0.5f + 0.05f, along(ax, ay, az, bx, by, bz), color,
+                DrawList.RAIL);
     }
 }

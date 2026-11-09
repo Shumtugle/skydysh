@@ -1,0 +1,51 @@
+# The road's foot and its top. The arch just off the town's last street, square to it, no rail
+# under it, the rail along the road's outer edge starting past its west pier. At the top the road
+# level with the deck where it runs onto it; a white rail round the deck and round the top's edge,
+# the way open only where the road comes in and toward the tower. At the wheel on the deck: round
+# in its west end, out onto the road and down; out of a space nose first onto the flat, round, out.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+at -480 600 0
+wait 0.3
+eye -470 4 638 -0.4 0.16
+wait 0.1
+shot a0
+eye -480 2.4 636 0 0.16
+wait 0.1
+shot a1
+eye -470 9 668 -2.6 -0.12
+wait 0.1
+shot a2
+eye -458 155 893 -1.45 -0.25
+wait 0.1
+shot t0
+eye -470 158 870 -0.75 -0.3
+wait 0.1
+shot t1
+eye -512 157 875 0.75 -0.3
+wait 0.1
+shot t2
+eye off
+drivein -492 895.5 -1.5708
+wait 0.4
+pedal 0.9 0 0 0 x
+pedal 0.8 160 0 0 x
+pedal 0.8 160 0 0 x
+pedal 0.8 160 0 0 x
+shot r0
+pedal 1.6 0 0 0 x
+pedal 3 0 0 0 x
+where
+drivein -483.6 902.75 3.1416
+wait 0.4
+pedal 0.6 0 0 0 x
+pedal 1.2 -160 0 0 x
+pedal 1.0 0 0 0 x
+shot r1
+pedal 3 0 0 0 x
+where

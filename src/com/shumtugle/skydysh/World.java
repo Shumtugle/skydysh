@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.2.2";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.2.3";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -4338,8 +4338,9 @@ final class World {
             }
         }
         if (best != null) return best;
+        // backed into it, nose to the aisle: she drives straight out
         int k = Mountain.freeSpace();
-        Pickup p = new Pickup(Mountain.spaceX(k), Mountain.spaceZ(k), Mountain.spaceHeading(k), 0x1AB5L);
+        Pickup p = new Pickup(Mountain.spaceX(k), Mountain.spaceZ(k), Mountain.spaceHeading(k) + (float) Math.PI, 0x1AB5L);
         p.y = Mountain.TOP;
         duty.all.add(p);
         return p;

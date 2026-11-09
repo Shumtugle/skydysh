@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.3
+
+- The arch over the road's foot moved to the town's end of it, square to the street, clear of the
+  road's turn: before, it stood right on the turn, crooked to the road going on, and the rail along
+  the road's outer edge ran in under it. That rail starts now past the arch's west pier; a short
+  rail closes the end of the foot past where the road turns off round.
+- The road's last bit up runs level with the deck: before, it was still climbing where it met the
+  deck, a step up onto it and the deck's stone face across the road. The road's rails end at the
+  deck's edge instead of standing on into it.
+- A white rail round the deck, open only where the road comes in and toward the tower, and round
+  the top's edge: a pickup was held back at the edges as by a wall no one could see. The deck runs
+  eight metres further west, room to turn round in. The pickup put there for her stands backed in,
+  nose to the aisle, so she drives straight out.
+- The top's paving no longer pokes out in points over the slope, nor shows through the deck; the
+  slope's snow no longer stands up through the deck's edge. The P on the deck's sign reads the
+  right way round.
+
 ## 1.2.2
 
 - The laboratory on the mountain made a place to come to. An arch over the road's foot with its

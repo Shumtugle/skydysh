@@ -119,7 +119,9 @@ Before it is unpacked, there is no navigator. The lobby is open at any time; the
 only for the job.
 
 On the mountain, at the wheel, the road is the only way up: off it the slope holds the pickup back,
-and it does not leave the road, the deck or the flat on top for the slope. On the slope toward the
+and it does not leave the road, the deck or the flat on top for the slope. The road's last bit runs
+level onto the deck; a white rail goes round the deck and round the top's edge, open only where the
+road comes in and toward the tower. On the slope toward the
 town the laboratory's name stands in great white letters.
 
 Brums to the island (the twelfth job, a story, after the navigator), in the morning: five knots
