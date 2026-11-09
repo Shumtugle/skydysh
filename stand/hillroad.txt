@@ -1,0 +1,35 @@
+# The mountain's road and its slope. At the wheel where the ridge's mounds once stood across the
+# road (now none nearer the mountain than its outer rail): on up round, the rail holding it in.
+# At the wheel from the fields into the slope: held at its foot, as by a wall. On foot at the
+# outer rail: held by it, over it with a jump, gliding down over the slope. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+navon
+drivein -726 902 -0.11
+wait 0.3
+pedal 3 8 0 0 x
+shot k0
+drivein -770 850 1.25
+wait 0.3
+pedal 4 0 0 0 x
+trace 1 0.5
+shot k1
+getout
+wait 0.5
+at -726 902 -1.5708
+wait 0.3
+down 137 400
+wait 1.2
+where
+up 137 400
+swipe 137 400
+down 137 400
+wait 0.6
+where
+shot k2
+up 137 400

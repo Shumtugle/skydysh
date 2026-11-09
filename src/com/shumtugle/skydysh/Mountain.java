@@ -24,6 +24,20 @@ final class Mountain {
     static final float SPAN = TURNS * 2f * (float) Math.PI;
     // the rails along it, so far apart, how high
     static final float POST_EVERY = 1.4f, POST_HALF = 0.85f, RAIL_HIGH = 1.1f;
+    /** How far from the middle the land is clear of the mountain and its road, the outer rail and a little more. */
+    static final float CLEAR = R + 2f * HALF + 4f;
+    /** How high the slope may be at its foot before it holds a pickup back. */
+    static final float CLIMB = 0.3f;
+
+    /**
+     * Whether the slope holds a pickup back going from (ox, oz) to (x, z): off the road, up the
+     * mountain past its very foot. Up the mountain the road is the only way; down it, it may roll.
+     */
+    static boolean holds(float ox, float oz, float x, float z) {
+        if (!near(x, z) || !Float.isNaN(road(x, z))) return false;
+        float c = cone(x, z);
+        return c > CLIMB && c >= cone(ox, oz);
+    }
 
     /** How high the road is so far round (a heading from A0 on). */
     static float rise(float t) {

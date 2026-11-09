@@ -1098,6 +1098,37 @@ public final class Stand implements World.Host {
             world.runner.put(l[0] + l[2] * back, City.WALK_TOP, l[1] + l[3] * back, (float) Math.atan2(-l[2], -l[3]));
             world.runner.recenter();
             step();
+        } else if (c.equals("wallsnear")) {
+            // wallsnear X Z METERS: the walls of the town within so far of (x, z), told
+            float x = f(p[1]), z = f(p[2]), m = f(p[3]);
+            int ci = (int) Math.floor(x / City.CELL), cj = (int) Math.floor(z / City.CELL);
+            for (int j = cj - 1; j <= cj + 1; j++)
+                for (int i = ci - 1; i <= ci + 1; i++) {
+                    City.Cell cl = world.city.cell(i, j);
+                    for (int k = 0; k < cl.wallN; k++) {
+                        int o = k * City.Cell.WALL;
+                        float nx = Math.max(cl.walls[o], Math.min(x, cl.walls[o + 2])), nz = Math.max(cl.walls[o + 1], Math.min(z, cl.walls[o + 3]));
+                        if ((nx - x) * (nx - x) + (nz - z) * (nz - z) > m * m) continue;
+                        System.out.println(String.format("           wall %.1f %.1f - %.1f %.1f, top %.1f bottom %.1f (cell %d %d)", cl.walls[o], cl.walls[o + 1], cl.walls[o + 2], cl.walls[o + 3], cl.walls[o + 4], cl.walls[o + 5], i, j));
+                    }
+                }
+            System.out.println(String.format("           ground %.2f, road %.2f, cone %.2f", world.city.ground(x, z), Mountain.road(x, z), Mountain.cone(x, z)));
+        } else if (c.equals("roadscan")) {
+            // roadscan: along the middle of the mountain's road, every meter, what stands in a pickup's way
+            int hits = 0;
+            float[] q = new float[2];
+            for (float t = Mountain.A0 + 0.02f; t < Mountain.A0 + Mountain.SPAN; t += 1f / Mountain.roadR(t)) {
+                float rr = Mountain.roadR(t), x = Mountain.MX + rr * (float) Math.sin(t), z = Mountain.MZ + rr * (float) Math.cos(t);
+                for (float side = -2.5f; side <= 2.5f; side += 2.5f) {
+                    q[0] = x + side * (float) Math.sin(t);
+                    q[1] = z + side * (float) Math.cos(t);
+                    float qx = q[0], qz = q[1];
+                    if (world.city.push(q, 0.9f, Mountain.rise(t))) {
+                        if (hits++ < 20) System.out.println(String.format("           in the way at %.1f %.1f (round %.2f, side %.1f)", qx, qz, (t - Mountain.A0) / 6.2832f, side));
+                    }
+                }
+            }
+            System.out.println("           road scanned: " + hits + " in the way");
         } else if (c.equals("navrun")) {
             // navrun SECONDS EVERY PREFIX: on foot, a finger that keeps her on the navigator's line,
             // a few meters on along it; shot so often (EVERY 0: none); where she is told at each

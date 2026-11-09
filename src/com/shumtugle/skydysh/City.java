@@ -397,7 +397,7 @@ final class City implements Ground {
         return ((long) i << 32) ^ (j & 0xFFFFFFFFL);
     }
 
-    private Cell cell(int i, int j) {
+    Cell cell(int i, int j) {
         long k = key(i, j);
         Cell c = cells.get(k);
         if (c == null) {
@@ -926,8 +926,11 @@ final class City implements Ground {
         // mounds every ten meters, each wider than that, so that they run together into one ridge;
         // each a rock foot and grass stepping in to its top; where the road goes, cut back in steps
         for (float cx = x0 + 5f; cx < x0 + CELL; cx += 10f) {
-            // where the mountain stands, the ridge goes into it
-            if (Math.abs(cx - Mountain.MX) < Mountain.R - 20f) continue;
+            // where the mountain stands, none: not one comes nearer it than the outer rail of its road
+            // (a mound's foot reaches so far across and along), else it stands across the road
+            float nx = Math.max(cx - 9f, Math.min(Mountain.MX, cx + 9f)) - Mountain.MX;
+            float nz = Math.max(mid - depth - 4f, Math.min(Mountain.MZ, mid + depth + 4f)) - Mountain.MZ;
+            if (nx * nx + nz * nz < Mountain.CLEAR * Mountain.CLEAR) continue;
             // about the pass the cliffs stand instead
             if (Math.abs(cx - px) < CLIFF_REACH - 6f) continue;
             float hgt = 10f + (float) Math.abs(Math.sin(cx * 0.037f) * 7f + Math.sin(cx * 0.013f + 1f) * 5f);

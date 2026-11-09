@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.1
+
+- The mountain's road clear: up its first round, on the west side, the pickup stopped as at a
+  wall. The ridge's mounds stood right up against the mountain, their walls across the road; now
+  none comes nearer the mountain than its road's outer rail.
+- Up the mountain only by its road: off it, the slope holds a pickup back at its foot, as a wall
+  does, and it runs on along the foot with what went that way. Down it, a pickup may roll. On
+  foot she goes up the slopes as before, and over the rails with a jump.
+
 ## 1.2.0
 
 - A new job, the twelfth, after the navigator: brums to the island. In the morning five knots of

@@ -126,6 +126,26 @@ final class Pickup {
                 }
             }
         }
+        // not up the mountain's slope, off its road: back, and on along the slope's foot with what
+        // went along it, its nose turned that way, as along a wall
+        if (Mountain.holds(x - fx * speed * dt, z - fz * speed * dt, x, z)) {
+            x -= fx * speed * dt;
+            z -= fz * speed * dt;
+            float rx = x - Mountain.MX, rz = z - Mountain.MZ, rl = (float) Math.sqrt(rx * rx + rz * rz);
+            if (rl > 1e-3f) {
+                float ax = rz / rl, az = -rx / rl, along = ax * fx + az * fz;
+                if (along < 0f) {
+                    ax = -ax;
+                    az = -az;
+                    along = -along;
+                }
+                speed *= along;
+                float to = (float) Math.atan2(ax, az), d = to - heading;
+                while (d > Math.PI) d -= 2f * (float) Math.PI;
+                while (d < -Math.PI) d += 2f * (float) Math.PI;
+                heading += d * Math.min(1f, dt * 8f);
+            } else speed = 0f;
+        }
         // not into the sea: it stops at the water's edge
         if (City.overWater(x, z)) {
             x -= fx * speed * dt;
