@@ -100,6 +100,7 @@ release, each seen on the stand before the phone.
 - 1.2.3 The mountain's ends put right: the arch square at the town's end of the road's foot, the road level onto the deck, a rail round the deck and the top's edge, room to turn on the deck.
 - 1.2.4 The arch's name whole between its piers.
 - 1.2.5 Brums to the island, the second part: out along the pier, the golden mallet, the yachts gone up; up to the lighthouse, a replay from the pier.
+- 1.2.6 The brums only on foot (no ladders, roofs, lifts); stairs up the island, its top cleared.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -141,9 +142,17 @@ release, each seen on the stand before the phone.
 
 ## Next
 
-- Brums to the island, the rest: 1.2.6 up at the lighthouse, the flight to the secret balcony, a
-  lever in the hall that raises a drawbridge in the spit; the brums left on the island for good,
-  the lever the bridge's from then on; the report. Whether the yachts stay wrecked after the job.
+- Brums to the island, the rest: 1.2.7 a drawbridge in the spit (down till the end), the run
+  along the spit shown from above as a scene, she and the crowd after her. 1.2.8 at the lighthouse
+  the dispatcher shows where to leap and why; in the hall a switch on the wall raises the bridge;
+  the brums left on the island; the report. The yachts stay wrecked till the island is opened again.
+- The mountain road by car shown as a scene, up from the arch to the deck and back down, any
+  vehicle but the helicopter; on foot, run it.
+- Brums to the island: a prologue in the morning on the dispatcher's set, how it came about: in
+  LAB Inc.'s hall a collider gives birth to a small black hole by accident, its jet breaks the
+  brums' firmware, they scatter. The hall as it really is inside: she is to go there later.
+- Brums to the island: off the navigator's line too long, those after her go off; she is put back;
+  where they went off the town is left cracked, violet and black. Not too strict.
 - The yachts: a boat to take out (the boat in the game's four ways to go).
 - Likes for finding places worth seeing in the town (fine yards, palaces: to be drawn first).
 - The panel skipped in the concert: the light comes on for her, the panel stays on the list

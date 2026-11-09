@@ -159,25 +159,30 @@ final class Island {
         return line[k * 2 + 1];
     }
 
-    // ---- the way up, for the navigator: from the pier's foot in to the path where it passes,
-    // then up the path to the lighthouse's door ----
+    // ---- the way up, for the navigator: from the pier's foot up the stairs, across the top to
+    // the lighthouse's door; its points so far apart ----
+    static final float CLIMB_STEP = 6f;
     private static float[] climb;
     private static int climbN;
 
     private static void climb() {
         if (climb != null) return;
         float[] p = pier();
-        float a0 = pathA(0f), u0 = Math.max(0f, (PIER_A - a0) / (PATH_TURNS * 2f * (float) Math.PI));
-        int k0 = (int) Math.ceil(u0 * PATH_PIECES);
-        climbN = 1 + PATH_PIECES - k0 + 1;
+        int steps = (int) Math.ceil((stairsFrom() - STAIRS_TO) / CLIMB_STEP);
+        climbN = 1 + steps + 1 + 1;
         climb = new float[climbN * 2];
         climb[0] = p[0];
         climb[1] = p[1];
-        for (int k = k0, n = 1; k <= PATH_PIECES; k++, n++) {
-            float u = k / (float) PATH_PIECES, a = pathA(u), r = pathR(u) * wob(a);
-            climb[n * 2] = IX + (float) Math.sin(a) * r;
-            climb[n * 2 + 1] = IZ + (float) Math.cos(a) * r;
+        float sa = (float) Math.sin(PIER_A), ca = (float) Math.cos(PIER_A), w = wob(PIER_A);
+        for (int k = 0; k <= steps; k++) {
+            float r = Math.max(STAIRS_TO, stairsFrom() - k * CLIMB_STEP) * w;
+            climb[(k + 1) * 2] = IX + sa * r;
+            climb[(k + 1) * 2 + 1] = IZ + ca * r;
         }
+        float[] at = new float[3];
+        door(at);
+        climb[(climbN - 1) * 2] = at[0];
+        climb[(climbN - 1) * 2 + 1] = at[2];
     }
 
     static int climbCount() {
@@ -319,6 +324,7 @@ final class Island {
         slopes(far);
         trees(far);
         path(far);
+        stairs(far);
         pierDrawn(far);
         lighthouse(far);
     }
@@ -453,7 +459,77 @@ final class Island {
         }
     }
 
-    /** Trees on the ledges and the top, thick on them, none on the rock or the sand. */
+    // ---- the stairs: straight up from the pier's foot to the top, in from the sand (as far out
+    // as the profile is drawn before the wobble) to the top's edge; how wide, half; a tread how
+    // deep; how high a rail, its posts so far apart ----
+    static final float STAIRS_TO = PR[12] - 2f, STAIRS_HALF = 1.8f, TREAD = 0.8f, RAIL_HIGH = 1.1f, POST_EVERY = 4f;
+
+    private static float stairsFrom() {
+        return PR[4] + 1f;
+    }
+
+    /** Whether (x, z) is on the stairs, or within so far of them. */
+    static boolean onStairs(float x, float z, float within) {
+        float dx = x - IX, dz = z - IZ, sa = (float) Math.sin(PIER_A), ca = (float) Math.cos(PIER_A);
+        float along = dx * sa + dz * ca, across = dx * ca - dz * sa, w = wob(PIER_A);
+        return along > (STAIRS_TO - within) * w && along < (PR[3] + within) * w && Math.abs(across) < STAIRS_HALF + within;
+    }
+
+    /**
+     * The stairs: up the rock in stone steps, a tread at a time, each as high as the rock rises
+     * over it; across each ledge a strip of trodden gravel; wooden rails on posts both sides all
+     * the way, to be seen from the pier and from the top.
+     */
+    private static void stairs(DrawList d) {
+        float sa = (float) Math.sin(PIER_A), ca = (float) Math.cos(PIER_A), w = wob(PIER_A);
+        float[] t = yaw(PIER_A);
+        // across, to the right going up
+        float ox = -ca, oz = sa;
+        float from = PR[3], to = STAIRS_TO;
+        for (float r = from; r > to; r -= TREAD) {
+            float r0 = r * w, r1 = Math.max(to, r - TREAD) * w, rm = (r0 + r1) * 0.5f;
+            float x0 = IX + sa * r0, z0 = IZ + ca * r0, x1 = IX + sa * r1, z1 = IZ + ca * r1;
+            float h0 = height(x0, z0), h1 = height(x1, z1), xm = IX + sa * rm, zm = IZ + ca * rm;
+            float rise = h1 - h0, half = (r0 - r1) * 0.5f;
+            if (rise > 0.2f) {
+                // a stone step: its top a little over the rock's middle, down to the foot of the rise
+                float top = (h0 + h1) * 0.5f + rise * 0.25f + 0.05f, low = h0 - 0.3f;
+                d.box(xm, (top + low) * 0.5f, zm, STAIRS_HALF, (top - low) * 0.5f, half, t, 0xC9BFAE, DrawList.STONE);
+                d.box(xm - sa * (half - 0.06f), top + 0.01f, zm - ca * (half - 0.06f), STAIRS_HALF, 0.02f, 0.06f, t, 0xA89C88, DrawList.STONE);
+            } else {
+                float y = Math.max(h0, h1) + 0.06f;
+                d.box(xm, y, zm, STAIRS_HALF, 0.06f, half + 0.05f, t, 0xD9C08E, DrawList.GRAVEL);
+            }
+        }
+        // the rails: posts both sides, a rail from post to post
+        for (int e = -1; e <= 1; e += 2) {
+            float px = 0f, py = 0f, pz = 0f;
+            boolean first = true;
+            for (float r = from; r >= to - 0.01f; r -= POST_EVERY) {
+                float rr = Math.max(to, r) * w, x = IX + sa * rr + ox * e * (STAIRS_HALF + 0.15f), z = IZ + ca * rr + oz * e * (STAIRS_HALF + 0.15f);
+                float g = height(x, z), y = g + RAIL_HIGH;
+                d.box(x, g + RAIL_HIGH * 0.5f, z, 0.08f, RAIL_HIGH * 0.5f + 0.3f, 0.08f, null, 0x6B4A30, DrawList.WOOD);
+                if (!first) {
+                    float len = (float) Math.sqrt((x - px) * (x - px) + (y - py) * (y - py) + (z - pz) * (z - pz));
+                    d.box((x + px) * 0.5f, (y + py) * 0.5f, (z + pz) * 0.5f, 0.06f, 0.06f, len * 0.5f + 0.06f, along(px, py, pz, x, y, z), 0x8A5F3C,
+                            DrawList.WOOD);
+                }
+                first = false;
+                px = x;
+                py = y;
+                pz = z;
+            }
+        }
+        // across the top to the lighthouse's door: a strip of gravel
+        float[] at = new float[3];
+        door(at);
+        float sx = IX + sa * to * w, sz = IZ + ca * to * w, sy = height(sx, sz) + 0.06f;
+        float len = (float) Math.sqrt((at[0] - sx) * (at[0] - sx) + (at[2] - sz) * (at[2] - sz));
+        d.box((sx + at[0]) * 0.5f, Math.max(sy, at[1] + 0.06f), (sz + at[2]) * 0.5f, STAIRS_HALF, 0.06f, len * 0.5f, yaw((float) Math.atan2(at[0] - sx, at[2] - sz)),
+                0xD9C08E, DrawList.GRAVEL);
+    }
+
+    /** Trees on the ledges, thick on them, none on the rock or the sand, the stairs or the top. */
     private static void trees(DrawList d) {
         Random rnd = new Random(0x15A1DL);
         for (int k = 0; k < 1100; k++) {
@@ -462,9 +538,10 @@ final class Island {
             // on a ledge or the top: where the ground is nearly level
             float h = height(x, z), hx = height(x + 1f, z), hz = height(x, z + 1f);
             if (Math.abs(hx - h) > 0.6f || Math.abs(hz - h) > 0.6f || h < 1f) continue;
-            if (onPath(x, z, 2.2f)) continue;
-            // none round the lighthouse
-            if ((x - IX) * (x - IX) + (z - IZ) * (z - IZ) < 10f * 10f) continue;
+            if (onPath(x, z, 2.2f) || onStairs(x, z, 3f)) continue;
+            // none on the top (the last ledge and the round over it): a clear place round the
+            // lighthouse, open to the town
+            if (r < PR[11] + 2f) continue;
             Garden.tree(d, rnd, x, h, z, 5f + rnd.nextFloat() * 4f);
         }
     }

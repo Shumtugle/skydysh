@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.6
+
+- The brums go only where one goes on foot, everywhere now, not only out on the island: not up a
+  fire escape's ladder, not over the roofs, not into a house or a lift, not through the water or
+  the air. Where her way leaves the ground they wait at its edge and go on if it comes down again
+  near by. Up a ladder or in a lift she is no longer caught; on a car's roof they still come.
+- The island: stairs from the pier's foot straight up the rock to the top, stone steps up each
+  rock face, gravel across each ledge and across the top to the lighthouse's door, wooden rails
+  both sides. The navigator's way up goes by them (the winding path stays, the line no longer).
+- The island's top cleared: no trees on the last ledge or the round over it, grass round the
+  lighthouse, open to the sea and the town.
+- Up there the count of brums no longer falls to nothing when they have lost her: those waiting
+  still count.
+
 ## 1.2.5
 
 - Brums to the island, the second part. At the pier the job goes on: the dispatcher sends her out

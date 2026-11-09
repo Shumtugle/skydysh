@@ -82,6 +82,8 @@ final class Herd {
     int after, kept;
     // her way: points in a ring, how many kept in all
     private final float[] tx = new float[TRAIL], ty = new float[TRAIL], tz = new float[TRAIL];
+    // which points of her way were indoors
+    private final boolean[] tin = new boolean[TRAIL];
     private long trail;
     // where she was so far back along her way when each knot came after her: a try again starts there
     private final float[] backX = new float[KNOTS], backY = new float[KNOTS], backZ = new float[KNOTS];
@@ -128,7 +130,8 @@ final class Herd {
     /** How many are after her now. */
     int coming() {
         int n = 0;
-        for (int k = 0; k < ALL; k++) if (state[k] == COMES) n++;
+        // out on the island those that lost her still count: they wait for her there
+        for (int k = 0; k < ALL; k++) if (state[k] == COMES || step >= BOAT && (after & (1 << k / EACH)) != 0) n++;
         return n;
     }
 
@@ -146,7 +149,7 @@ final class Herd {
         if (step == DONE) return NONE;
         clock += dt;
         if (step == SCENE) return scene(dt, hx, hy, hz, city);
-        keep(hx, hy, hz);
+        keep(hx, hy, hz, out);
         int got = NONE;
         for (int k = 0; k < ALL; k++) {
             if (state[k] == WAITS) {
@@ -241,15 +244,20 @@ final class Herd {
 
     /** Her way kept: a point each time she is so far on from the last. */
     private void keep(float hx, float hy, float hz) {
+        keep(hx, hy, hz, true);
+    }
+
+    private void keep(float hx, float hy, float hz, boolean out) {
         if (trail > 0) {
             int n = (int) ((trail - 1) % TRAIL);
             float dx = hx - tx[n], dz = hz - tz[n], dy = hy - ty[n];
-            if (dx * dx + dz * dz + dy * dy < TRAIL_STEP * TRAIL_STEP) return;
+            if (dx * dx + dz * dz + dy * dy < TRAIL_STEP * TRAIL_STEP && tin[n] == !out) return;
         }
         int n = (int) (trail % TRAIL);
         tx[n] = hx;
         ty[n] = hy;
         tz[n] = hz;
+        tin[n] = !out;
         trail++;
     }
 
@@ -265,15 +273,18 @@ final class Herd {
             at[k]++;
         }
         float gx, gy, gz;
+        boolean foot;
         if (at[k] >= trail - 1) {
             gx = hx;
             gy = hy;
             gz = hz;
+            foot = out && onFoot(hx, hy, hz, city);
         } else {
             int n = (int) (at[k] % TRAIL);
             gx = tx[n];
             gy = ty[n];
             gz = tz[n];
+            foot = !tin[n] && onFoot(gx, gy, gz, city);
         }
         float dx = gx - x[k], dz = gz - z[k], d = (float) Math.sqrt(dx * dx + dz * dz);
         // how far behind her along her way
@@ -299,14 +310,14 @@ final class Herd {
             speed[k] = 0f;
             return false;
         }
-        // out on the island, where she went by water or through the air they do not go: they wait
-        // at its edge, or go on to where her way is on foot again if that is near
-        if (step >= BOAT && !onFoot(gx, gy, gz, city)) {
+        // where she went by water, up a ladder, over the roofs, through the air or indoors they do
+        // not go: they wait at its edge, or go on to where her way is on foot again if that is near
+        if (!foot) {
             long j = at[k] + 1;
             boolean found = false;
             for (; j < trail; j++) {
                 int n = (int) (j % TRAIL);
-                if (!onFoot(tx[n], ty[n], tz[n], city)) continue;
+                if (tin[n] || !onFoot(tx[n], ty[n], tz[n], city)) continue;
                 float qx = tx[n] - x[k], qz = tz[n] - z[k];
                 found = qx * qx + qz * qz < 20f * 20f;
                 break;
@@ -347,7 +358,11 @@ final class Herd {
         return out && hx2 * hx2 + hz2 * hz2 < CATCH * CATCH && Math.abs(hy - y[k]) < 2.5f;
     }
 
-    /** Whether a point of her way (or she) is somewhere one can go on foot: not swimming, not up in the air. */
+    /**
+     * Whether a point of her way (or she) is somewhere one can go on foot: not swimming, not more
+     * than a man's height over the street or the ground (a car's roof is, a house's is not; a step
+     * of the promenade is, a ladder is not).
+     */
     private static boolean onFoot(float x, float y, float z, City city) {
         if (y < City.WATER + 0.25f) return false;
         float g = Island.onPier(x, z) ? Island.DECK : city.ground(x, z);

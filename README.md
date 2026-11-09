@@ -145,11 +145,15 @@ At the pier the dispatcher sends her out along it to a yacht. A few steps out, t
 to the shore: those after her have come up in a crowd behind her, and the nearest of them throws a
 golden mallet over her head; it comes down among the yachts, they go up in a ball of fire, planks
 flying, and the blast flings the crowd back onto the sand and the slope. The yachts are left
-broken in two, sunk, burning. No way off by sea: up to the lighthouse, the navigator's line from
-the pier's foot in to the path and up it. Those flung down lie a moment, then get up and come
+broken in two, sunk, burning. No way off by sea: up to the lighthouse, the navigator's line up
+the stairs from the pier's foot and across the top to its door. Those flung down lie a moment, then get up and come
 after her again; one that comes up to her now goes off and it is tried again from the pier, they
-lying where the blast threw them. Out on the island they do not follow her through the water or
-through the air, and losing her they wait where they are rather than go back to the town.
+lying where the blast threw them. Out on the island, losing her, they wait where they are rather
+than go back to the town, and still count as hers.
+
+Anywhere, they go only where one goes on foot: not through the water, not up a ladder or over the
+roofs, not through the air, not indoors (a step of the promenade, or a car's roof, they do take).
+Where her way leaves the ground they wait at its edge, and go on if it comes down again near by.
 
 Up on the right, the navigator (once fitted): a small map turned the way the eye looks, the streets drawn
 from the town itself (the sea, the beach, the blocks, the fields and the road out), she a blue
@@ -302,8 +306,10 @@ After the first, the containers are on home's list: straight into the cabin with
 and back on the sofa when she comes down; or at the crane whenever she climbs it.
 
 Out to sea south of home a spit of sand winds from the water's edge to an island, tall and green
-in ledges, trees on them and a path up to a lighthouse on the top; off its north-east shore a
-pier with yachts moored to it. (And something for whoever leaps from the lighthouse toward home.)
+in ledges, trees on them and a path winding up to a lighthouse on the top; off its north-east
+shore a pier with yachts moored to it, and from the pier's foot stairs straight up the rock, ledge
+by ledge, rails both sides, to the top. The top is clear of trees: grass round the lighthouse,
+open on all sides to the sea and the town. (And something for whoever leaps from the lighthouse toward home.)
 
 Up on the right, till the navigator is hers, a compass: a glass button as the pause is, across
 from it, a needle turning on it, coral to the north. Touched, it shows where she is in whole meters (X across, Z along, H how high), so a place
