@@ -102,6 +102,7 @@ release, each seen on the stand before the phone.
 - 1.2.5 Brums to the island, the second part: out along the pier, the golden mallet, the yachts gone up; up to the lighthouse, a replay from the pier.
 - 1.2.6 The brums only on foot (no ladders, roofs, lifts); stairs up the island, its top cleared.
 - 1.2.7 The chase from high up; the yachts with nobody stopping, the eye shaken; no fire on the wrecks.
+- 1.2.8 The job named Hotheads, its tale on the story page; the golden mallet carried from the workshop.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -143,19 +144,19 @@ release, each seen on the stand before the phone.
 
 ## Next
 
-- Brums to the island, the rest: 1.2.8 the way up: a tunnel into the rock from the pier's foot,
+- Hotheads, the rest: 1.2.9 the way up: a tunnel into the rock from the pier's foot,
   rising gently through the island, out onto a ledge on its far side; from there stairs right and
-  left round the island up to the lighthouse (the straight stairs too steep). 1.2.9 the lighthouse
+  left round the island up to the lighthouse (the straight stairs too steep). 1.3.0 the lighthouse
   a safe place: in at its door, up the tower; at the gallery the dispatcher says the secret study
   can be reached by a leap from here, and that in it a switch locks the island. A drawbridge in the
   spit, down till the end; the switch raises it; the brums left on the island; the report. The
   yachts stay wrecked till the island is opened again.
 - The mountain road by car shown as a scene, up from the arch to the deck and back down, any
   vehicle but the helicopter; on foot, run it.
-- Brums to the island: a prologue in the morning on the dispatcher's set, how it came about: in
-  LAB Inc.'s hall a collider gives birth to a small black hole by accident, its jet breaks the
-  brums' firmware, they scatter. The hall as it really is inside: she is to go there later.
-- Brums to the island: off the navigator's line too long, those after her go off; she is put back;
+- Hotheads: a prologue in the morning on the dispatcher's set, the tale as the story page tells
+  it: the collider at night, the black hole the size of a cherry, its violet jet through the night
+  shift on their chargers, the firmware burnt out, down by the cable car into the town at dawn. The hall as it really is inside: she is to go there later.
+- Hotheads: off the navigator's line too long, those after her go off; she is put back;
   where they went off the town is left cracked, violet and black. Not too strict.
 - The yachts: a boat to take out (the boat in the game's four ways to go).
 - Likes for finding places worth seeing in the town (fine yards, palaces: to be drawn first).

@@ -41,8 +41,10 @@ final class Herd {
     // throw; how long after the blast it is watched; how fast, and how far up, those after her are
     // flung by it (the nearer the harder); how long they lie once it is over
     static final float BOAT_AT = 4f, THROW_AT = 0.7f, AFTER = 3.2f, KNOCK = 11f, KNOCK_NEAR = 45f, KNOCK_UP = 7.5f, STUN = 2.6f;
-    // the golden mallet a little bigger than hers, to be seen from afar
+    // the golden mallet a little bigger than hers, to be seen from afar; the one that carries it
+    // from the start (of the knot at the workshop, which took it there), and throws it
     static final float GOLDEN = Toss.SCALE * 1.4f;
+    static final int BEARER = 2 * EACH + 1;
 
     /** Whether mission n is this: the twelfth kind. */
     static boolean its(int n) {
@@ -393,7 +395,8 @@ final class Herd {
     private final float[] tmp = new float[3];
 
     /**
-     * Out along the pier: nobody stops. The one in the thick of the crowd after her is to throw:
+     * Out along the pier: nobody stops. The one with the golden mallet (or, were it not after her,
+     * the one in the thick of the crowd) is to throw:
      * it stands, turns to the yachts and throws, while she runs on and the rest come on.
      */
     private void begin(float hx, float hz, City city) {
@@ -410,6 +413,11 @@ final class Herd {
             n++;
         }
         if (n == 0) return;
+        // the one with the mallet, if it is up and after her
+        if (state[BEARER] == COMES && down[BEARER] <= 0f && !airborne[BEARER]) {
+            thrower = BEARER;
+            return;
+        }
         cx /= n;
         cz /= n;
         float best = Float.MAX_VALUE;
@@ -750,7 +758,7 @@ final class Herd {
             }
             float yaw = heading[k] + (float) Math.PI;
             Frida.draw(d, x[k], y[k], z[k], yaw, Chase.SIZE, motion, t, false);
-            if (k == thrower && step == SCENE && !thrown) inHand(d, k, yaw, motion, t);
+            if (!thrown && (k == thrower && step == SCENE || k == BEARER && thrower < 0)) inHand(d, k, yaw, motion, t);
         }
         Frida.hot = false;
     }

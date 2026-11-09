@@ -124,10 +124,14 @@ level onto the deck; a white rail goes round the deck and round the top's edge, 
 road comes in and toward the tower. On the slope toward the
 town the laboratory's name stands in great white letters.
 
-Brums to the island (the twelfth job, a story, after the navigator), in the morning: five knots
+Hotheads (the twelfth job, a story, after the navigator; once called Brums to the island). At
+night up at LAB Inc. a trial of the collider gave birth to a black hole the size of a cherry; its
+jet burnt out the firmware of the night shift of brums on their chargers, leaving them a fallback
+alone: follow the nearest brum that works, which in the town is she; touched, one goes off; they
+walk only. In the morning: five knots
 of hot brums, three in each, stand about the town on the corners of its crossings (the old town,
 the concert hall, the workshop, the archive, the park), burnt to coal, their faces glowing like
-embers, their eyes and plates white hot, ticking. The navigator's line leads to the first knot not
+embers (one of the workshop's carrying a golden mallet it took there), their eyes and plates white hot, ticking. The navigator's line leads to the first knot not
 yet after her, along the streets; come within sight of one, and after a moment it comes after her,
 all three, along the way she ran, turning where she turned, hanging some thirty meters behind her
 while she runs and coming up if she stands. One that comes up to her goes off: a flash, and a try

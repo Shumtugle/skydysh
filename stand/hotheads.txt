@@ -1,0 +1,18 @@
+# Hotheads: the one of the knot at the workshop, waiting at its corner with the golden mallet
+# glowing in its hand. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+navon
+mission 12
+at 28 -9 3.14159
+wait 0.3
+navrun 6 0 p
+eye -2.6 3.2 584.4 -2.356 -0.12
+wait 0.1
+shot b0
+eye off

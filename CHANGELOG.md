@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.8
+
+- The twelfth job is called Hotheads now (it was Brums to the island), and it has its tale: at
+  night up at LAB Inc. a trial of the collider gave birth to a black hole the size of a cherry; its
+  jet burnt out the firmware of the night shift of brums on their chargers. Of their programs a
+  fallback is left: follow the nearest brum that works, which in the town is she; one that touches
+  her goes off; they walk only. They are to be mended at LAB once the hole is tamed; till then, the
+  island. The story page tells it, and says why they do not follow up ladders or indoors.
+- One of the knot at the workshop carries the golden mallet from the start, glowing in its hand;
+  out on the pier it is that one that throws it (if it is not after her, one from the thick of the
+  crowd still does).
+
 ## 1.2.7
 
 - A chase seen from high up: while any brums are after her the eye goes up far behind her and
