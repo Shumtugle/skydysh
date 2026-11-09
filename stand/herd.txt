@@ -1,0 +1,46 @@
+# Brums to the island. The briefing; a knot of hot brums waiting on its corner in the old town;
+# she runs by along the navigator's line, the knot sees her and the screen says it is after her;
+# down the street toward the eye, the knot coming behind her. Then with all five knots after her,
+# from the promenade down the steps, along the spit to the island, round its sand to the pier, the
+# yachts ahead: done. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+navon
+mission 12
+dispatch
+wait 3
+shot s0
+tap 137 320
+tap 137 320
+wait 0.5
+at -128 92 0
+wait 0.3
+eye -123 2.6 152 -2.6 -0.1
+wait 0.2
+shot k0
+eye off
+navrun 12 1 r
+eye -126 3.8 172 3.1416 -0.15
+wait 0.1
+shot k1
+eye off
+keep where 0
+restart
+free
+navon
+mission 12
+at 28 -9 3.14159
+wait 0.3
+herd 5
+wait 0.3
+navrun 16 0 p
+shot p1
+navrun 14 0 p
+shot p2
+navrun 10 0 p
+where

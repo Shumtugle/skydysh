@@ -108,6 +108,23 @@ time, each in a pickup round a loop of the town's streets: orange dots on the ma
 at their wheels in the street. The navigator finds the way down the mountain's road and up it.
 Before it is fitted, there is no navigator.
 
+Brums to the island (the twelfth job, a story, after the navigator), in the morning: five knots
+of hot brums, three in each, stand about the town on the corners of its crossings (the old town,
+the concert hall, the workshop, the archive, the park), burnt to coal, their faces glowing like
+embers, their eyes and plates white hot, ticking. The navigator's line leads to the first knot not
+yet after her, along the streets; come within sight of one, and after a moment it comes after her,
+all three, along the way she ran, turning where she turned, hanging some thirty meters behind her
+while she runs and coming up if she stands. One that comes up to her goes off: a flash, and a try
+again from a little before the last knot came, those after her then a way behind her. Left too
+far behind (at the wheel, say), they lose her and go back to their corner. A knot counts once it
+is after her, not when she is at its corner. With all five after her, the line goes out of the
+town: down the steps from the promenade, along the spit, round the island's sand to the pier; she
+is to be there with all of them out past the beach. The dispatcher's screen says when the first
+knot and when all five are after her, and when one went off; low on the frame, when another came
+or one fell behind. Up on the left under the pause, how many are after her; on the map, orange
+dots. The navigator's line goes along the spit and round the island to the pier for any place out
+there.
+
 Up on the right, the navigator (once fitted): a small map turned the way the eye looks, the streets drawn
 from the town itself (the sea, the beach, the blocks, the fields and the road out), she a blue
 dot with a white point her way, and to the mission's mark a line along the streets by the

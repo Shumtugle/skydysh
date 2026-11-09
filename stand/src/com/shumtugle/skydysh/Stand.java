@@ -1098,6 +1098,69 @@ public final class Stand implements World.Host {
             world.runner.put(l[0] + l[2] * back, City.WALK_TOP, l[1] + l[3] * back, (float) Math.atan2(-l[2], -l[3]));
             world.runner.recenter();
             step();
+        } else if (c.equals("navrun")) {
+            // navrun SECONDS EVERY PREFIX: on foot, a finger that keeps her on the navigator's line,
+            // a few meters on along it; shot so often (EVERY 0: none); where she is told at each
+            float secs = f(p[1]), every = f(p[2]), next = 0f;
+            int n = Math.round(secs / DT), k = 0;
+            float[] way = new float[2];
+            float screen = 0f;
+            for (int i = 0; i < n; i++) {
+                if (world.standInDispatch()) {
+                    // the dispatcher's screen: shot once it has typed, then touched away
+                    if (bdown) world.touch(World.UP, bx, by);
+                    bdown = false;
+                    if (screen == 0f && world.herd != null && world.herd.blastBy >= 0) {
+                        Herd hd = world.herd;
+                        int b = hd.blastBy;
+                        System.out.println(String.format("%7.2fs  went off: %d, %s, lag %.1f", time, b, hd.blastAt, hd.blastLag));
+                        hd.blastBy = -1;
+                    }
+                    screen += DT;
+                    if (screen >= 2.5f) {
+                        if (every > 0f) shot(p[3] + "s" + (k++));
+                        for (int q = 0; q < 2 && world.standInDispatch(); q++) {
+                            world.touch(World.DOWN, World.W * 0.5f, 320f);
+                            step();
+                            world.touch(World.UP, World.W * 0.5f, 320f);
+                            step();
+                        }
+                        screen = 0f;
+                    }
+                    step();
+                    continue;
+                }
+                if (world.nav.ahead(6f, way)) {
+                    // a finger held still, and her turned toward the line straight (as a quick thumb would)
+                    Runner r = world.runner;
+                    if (!bdown) {
+                        bx = World.W * 0.5f;
+                        world.touch(World.DOWN, bx, by);
+                        bdown = true;
+                    }
+                    float want = (float) Math.atan2(way[0] - r.x, way[1] - r.z), dd = want - r.heading;
+                    while (dd > Math.PI) dd -= 2f * (float) Math.PI;
+                    while (dd < -Math.PI) dd += 2f * (float) Math.PI;
+                    r.heading += Math.max(-4f * DT, Math.min(4f * DT, dd));
+                }
+                step();
+                if (every > 0f && i * DT >= next) {
+                    Runner rr = world.runner;
+                    System.out.println(String.format("%7.2fs  her %.1f %.1f %.1f speed %.1f%s", time, rr.x, rr.y, rr.z, rr.speed,
+                            world.herd != null ? String.format(", knots %d, after her %d, step %d", world.herd.knots(), world.herd.coming(), world.herd.step) : ""));
+                    shot(p[3] + (k++));
+                    next += every;
+                }
+            }
+            if (bdown) world.touch(World.UP, bx, by);
+            bdown = false;
+        } else if (c.equals("herd")) {
+            // herd KNOTS: the first so many knots of the hot brums after her, a little behind her
+            Herd hd = world.herd;
+            int knots = Integer.parseInt(p[1]);
+            Runner r = world.runner;
+            for (int g = 0; g < knots; g++) hd.standAfter(g, r.x - (float) Math.sin(r.heading) * 32f, r.y, r.z - (float) Math.cos(r.heading) * 32f, r.x, r.y, r.z);
+            step();
         } else if (c.equals("walk")) {
             // walk SECONDS EVERY PREFIX: indoors, a finger that goes where the place says to (to the
             // lift and in; come down, out at the front), shot so often

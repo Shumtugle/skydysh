@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.1.6";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.2.0";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -53,6 +53,7 @@ final class World {
     Mend mend;                               // the mission now, when it is the helicopter mended and flown back
     Port port;                               // the mission now, when it is the port, the first time
     Lab lab;                                 // the mission now, when it is the navigator's trial
+    Herd herd;                               // the mission now, when it is the hot brums led off
     /** The containers in the port and the crane over them; she at its controls or not. */
     final Quay quay;
     /** She is in the crane's cabin, working it; so from home's list, with no way to go. */
@@ -179,11 +180,18 @@ final class World {
         mend = null;
         port = null;
         lab = null;
+        herd = null;
+        herd = null;
         flying = false;
         if (concert != null) concert.stop();
         concert = null;
         city.extra = null;
-        if (Lab.its(n)) {
+        if (Herd.its(n)) {
+            mission.round = n;
+            folder = null;
+            herd = new Herd(city);
+            chase = nobody;
+        } else if (Lab.its(n)) {
             mission.round = n;
             folder = null;
             lab = new Lab();
@@ -305,6 +313,11 @@ final class World {
         host.saveInt(SAVE_MISSION, n);
     }
 
+    /** For the desktop stand: whether the dispatcher's screen is up. */
+    boolean standInDispatch() {
+        return dispatch != null;
+    }
+
     /** For the desktop stand: a touch on the sign of a question by the briefing; false if it is not shown. */
     boolean standHelp() {
         float[] at = new float[2];
@@ -379,6 +392,7 @@ final class World {
         if (mend != null) return mend.doneAt;
         if (port != null) return port.doneAt;
         if (lab != null) return lab.doneAt;
+        if (herd != null) return herd.doneAt;
         if (concert != null) return concert.doneAt;
         if (tow != null) return tow.doneAt;
         if (puppy != null) return puppy.doneAt;
@@ -403,9 +417,9 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 3, 1, 1, 1, 1};
+    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 3, 1, 1, 1, 1, 1};
     /** How many kinds of mission there are; they come in turn, round and round. */
-    static final int KINDS = 11;
+    static final int KINDS = 12;
 
     /** Mission n's kind: the hunt 1, the folder 2, the delivery 3. */
     static int kindOf(int n) {
@@ -549,14 +563,14 @@ final class World {
 
     /** The brums of the mission now. */
     Chase[] brums() {
-        if (free || delivery != null || rescue != null || puppy != null || tow != null || concert != null || archive != null || mend != null || port != null || lab != null) return NONE;
+        if (free || delivery != null || rescue != null || puppy != null || tow != null || concert != null || archive != null || mend != null || port != null || lab != null || herd != null) return NONE;
         return folder != null ? folder.rivals : mission.brums;
     }
 
     /** Whether the mission now is a hunt. */
     boolean hunt() {
         return !free && folder == null && delivery == null && rescue == null && puppy == null && tow == null && concert == null && archive == null && mend == null && port == null
-                && lab == null;
+                && lab == null && herd == null;
     }
 
     /** Whether the mission now is done with, won or not. */
@@ -565,6 +579,7 @@ final class World {
         if (mend != null) return mend.over();
         if (port != null) return port.over();
         if (lab != null) return lab.over();
+        if (herd != null) return herd.over();
         if (concert != null) return concert.over();
         if (tow != null) return tow.over();
         if (puppy != null) return puppy.over();
@@ -605,7 +620,7 @@ final class World {
 
     /** Whether the mission just over was lost: the hunt's time out, the folder taken first, the puppy got out by others. */
     private boolean failed() {
-        if (puppy != null || tow != null || concert != null || archive != null || mend != null || port != null || lab != null) return false;
+        if (puppy != null || tow != null || concert != null || archive != null || mend != null || port != null || lab != null || herd != null) return false;
         return hunt() ? mission.late : folder != null && folder.theirs;
     }
 
@@ -636,6 +651,7 @@ final class World {
         if (mend != null) return Dispatch.mended(mission.round, clock(mend.doneAt));
         if (port != null) return Dispatch.ported(mission.round, clock(port.doneAt), likes, paidNow);
         if (lab != null) return Dispatch.navigated(mission.round, clock(lab.doneAt), likes, paidNow);
+        if (herd != null) return Dispatch.herded(mission.round, clock(herd.doneAt), likes, paidNow);
         if (concert != null) return Dispatch.concerted(mission.round, clock(concert.doneAt), likes, paidNow);
         if (tow != null) return Dispatch.towed(mission.round, clock(tow.doneAt));
         if (puppy != null) return Dispatch.puppied(mission.round, clock(puppy.doneAt), likes, paidNow);
@@ -732,6 +748,7 @@ final class World {
         mend = null;
         port = null;
         lab = null;
+        herd = null;
         if (concert != null) concert.stop();
         concert = null;
         chase = nobody;
@@ -1098,7 +1115,7 @@ final class World {
     static final String SAVE_NAV = "nav";
     private boolean navShut;
     private float navTime = -1f;
-    private final float[] navDots = new float[16], testerAt = new float[3];
+    private final float[] navDots = new float[48], testerAt = new float[3];
     /** For the desktop stand: the navigator out, whatever has been played. */
     boolean standNav;
     // the folded navigator: a small square, its side
@@ -1156,6 +1173,8 @@ final class World {
                 navDots[dots * 2 + 1] = testerAt[1];
                 dots++;
             }
+        // the hot brums after her
+        if (herd != null) dots += herd.dots(navDots, dots);
         nav.draw(f, navX(), NAV_Y, x, z, runner.eyeYaw, heading, speed, dt, navDots, dots);
         nav.strip(f, navX(), NAV_Y + Nav.SIDE);
         // the map open: where she is, in numbers, under it
@@ -1418,6 +1437,8 @@ final class World {
                 // the walls drawn back: the street goes on (the next mission, after a report)
                 dispatch = null;
                 overFor = 0f;
+                // the hot brums after her give her the moment she stood in her head
+                if (herd != null) herd.hold();
                 if (soloNext) {
                     soloNext = false;
                     openSolo();
@@ -1479,6 +1500,7 @@ final class World {
             mend = null;
             port = null;
             lab = null;
+            herd = null;
             saveCopter();
             // after the concert the dark has come down: she wakes at home, on her sofa, in the morning
             boolean slept = concert != null;
@@ -1610,6 +1632,8 @@ final class World {
             mendStep(dt);
         } else if (lab != null) {
             labStep(dt);
+        } else if (herd != null) {
+            herdStep(dt);
         } else if (port != null) {
             port.update(dt, craning, quay.solved);
         } else if (tow != null) {
@@ -3614,6 +3638,7 @@ final class World {
         mend = null;
         port = null;
         lab = null;
+        herd = null;
         if (concert != null) concert.stop();
         concert = null;
         city.extra = null;
@@ -4127,8 +4152,12 @@ final class World {
 
     /** The same, so far down the frame. */
     private void caption(Px f, String key, float down) {
+        caption(f, Lang.lines(key, mission.round, null), down);
+    }
+
+    /** Lines said over the frame, so far down it, each on a dark band. */
+    private void caption(Px f, String[] say, float down) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2;
-        String[] say = Lang.lines(key, mission.round, null);
         int y = (int) (h * down);
         for (int k = 0; k < say.length; k++) {
             int wd = PixelFont.width(say[k], 1);
@@ -4137,6 +4166,89 @@ final class World {
             shadowed(f, say[k], (W - wd) / 2, y, 1, cream, ink);
             y += 13;
         }
+    }
+
+    // ---- the hot brums led off (see Herd) ----
+    private float herdTick, herdUntil;
+    private String[] herdSay;
+    private final float[] herdAgain = new float[4];
+
+    /**
+     * A step of it: the knots that see her come after her (the first and the last told on the
+     * screen, the rest over the frame); one that comes up to her goes off, and it is tried again
+     * from a little before the last knot came; near them, their ticking; the town runs from them.
+     */
+    private void herdStep(float dt) {
+        Herd hd = herd;
+        float x = driving != null ? driving.x : runner.x, y = driving != null ? driving.y : runner.y, z = driving != null ? driving.z : runner.z;
+        int got = hd.update(dt, x, y, z, indoors == null, city);
+        if (got == Herd.CAME) {
+            host.sound(Synth.CHIME, 0.45f, 1.5f);
+            host.buzz(30);
+            if (hd.knots() == 1) dispatch = new Dispatch(host, Lang.lines("herd.first", mission.round, null));
+            else herdSaid(Lang.lines("herd.came", mission.round, null), hd.knots());
+        } else if (got == Herd.ALL_CAME) {
+            host.sound(Synth.CHIME, 0.55f, 1.2f);
+            host.buzz(40);
+            dispatch = new Dispatch(host, Lang.lines("herd.all", mission.round, null));
+        } else if (got == Herd.LOST) {
+            host.sound(Synth.TOCK, 0.4f, 0.7f);
+            herdSaid(Lang.lines("herd.lost", mission.round, null), hd.knots());
+        } else if (got == Herd.BLAST) {
+            host.sound(Synth.THUNDER, 0.9f, 1.3f);
+            host.sound(Synth.CRASH, 0.8f, 0.8f);
+            host.buzz(240);
+            whiteOut = WHITE_OUT;
+            if (driving != null) getOut();
+            hd.again(city, herdAgain);
+            runner.put(herdAgain[0], herdAgain[1], herdAgain[2], herdAgain[3]);
+            runner.recenter();
+            runner.update(0f, city, cars, walkers);
+            herdUntil = 0f;
+            dispatch = new Dispatch(host, Lang.lines("herd.blast", mission.round, null));
+            return;
+        } else if (got == Herd.WON) {
+            host.sound(Synth.CHIME, 0.6f, 1f);
+            host.buzz(60);
+        }
+        // near them, their ticking: quicker the nearer
+        float near = hd.nearest(x, z);
+        herdTick -= dt;
+        if (near < 25f && herdTick <= 0f) {
+            herdTick = 0.25f + near * 0.03f;
+            host.sound(Synth.TOCK, 0.1f + 0.25f * (1f - near / 25f), 1.7f);
+        }
+        // the town runs from them: one of those after her at a time
+        int k = (int) (time * 4f) % Herd.ALL;
+        if (hd.state[k] == Herd.COMES) {
+            walkers.alarm(hd.x[k], hd.z[k], 7f);
+            pets.alarm(hd.x[k], hd.z[k], 8f);
+        }
+    }
+
+    /** Lines over the frame for a while: how many knots are after her put in. */
+    private void herdSaid(String[] lines, int knots) {
+        for (int k = 0; k < lines.length; k++) lines[k] = lines[k].replace("{knots}", String.valueOf(knots));
+        herdSay = lines;
+        herdUntil = time + 3.5f;
+    }
+
+    /**
+     * Over the frame: the clock in the corner, under it how many are after her; what was said
+     * a moment ago; where the way goes now, in a word and a mark.
+     */
+    private void herdFlat(DrawList d, Px f) {
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E, hot = 0xFFFF8A3A;
+        Herd hd = herd;
+        String c = clock(hd.over() ? hd.doneAt : hd.clock);
+        shadowed(f, c, W - PixelFont.width(c, 2) - 8, 14, 2, cream, ink);
+        // how many after her: on the left, under the pause, clear of the navigator
+        String n = hd.coming() + "/" + Herd.ALL;
+        shadowed(f, n, 8, (int) (pauseY() + 22f), 2, hot, ink);
+        if (herdSay != null && time < herdUntil) caption(f, herdSay, 0.66f);
+        if (!hd.goal(goal)) return;
+        wordAtTop(f, Lang.lines(hd.goalWord(), mission.round, null)[0], green, ink);
+        placeMark(d, f, goal[0], goal[1], goal[2], hd.mark(), Marks.OPEN);
     }
 
     // ---- the navigator's trial ----
@@ -4393,6 +4505,7 @@ final class World {
         else if (mend != null) mendFlat(d, f);
         else if (port != null) portFlat(d, f);
         else if (lab != null) labFlat(d, f);
+        else if (herd != null) herdFlat(d, f);
         else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);
@@ -4487,6 +4600,7 @@ final class World {
         Mountain.cabins(d, time);
         Island.yachts(d, time);
         if (lab != null) lab.draw(d, time, eyeX, eyeZ);
+        if (herd != null) herd.draw(d, time, eyeX, eyeZ);
         cars.draw(d, eyeX, eyeZ, ex, ez);
         felled.draw(d, eyeX, eyeZ, ex, ez);
         villagers.draw(d, city, eyeX, eyeZ);
@@ -4539,6 +4653,7 @@ final class World {
         else if (mend != null) mendFlat(d, f);
         else if (port != null) portFlat(d, f);
         else if (lab != null) labFlat(d, f);
+        else if (herd != null) herdFlat(d, f);
         else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);

@@ -187,6 +187,11 @@ final class Nav {
      * its road from there.
      */
     private void find(float x, float z) {
+        boolean fromIsle = Island.off(x, z), toIsle = Island.off(goalX, goalZ);
+        if (fromIsle || toIsle) {
+            isle(x, z, fromIsle, toIsle);
+            return;
+        }
         boolean fromHill = Mountain.onHill(x, z), toHill = Mountain.onHill(goalX, goalZ);
         wayN = 0;
         put(x, z);
@@ -211,6 +216,48 @@ final class Nav {
         town(sx, sz, gx, gz, fromHill);
         for (int k = up - 1; k >= 0; k--) put(hill[k * 2], hill[k * 2 + 1]);
         if (toHill || fromHill) put(goalX, goalZ);
+    }
+
+    /**
+     * The way when she or the place is out past the beach: along the spit and round the island
+     * (see Island's way on foot) to or from the spit's root, and through the streets from there;
+     * both out there, along it from her to the place.
+     */
+    private void isle(float x, float z, boolean fromIsle, boolean toIsle) {
+        wayN = 0;
+        put(x, z);
+        int from = fromIsle ? Island.lineNear(x, z) : 0, to = toIsle ? Island.lineNear(goalX, goalZ) : 0;
+        if (fromIsle) {
+            // the nearest point already passed on her way to the place: not gone back to
+            int dir = toIsle && to > from ? 1 : -1, next = from + dir;
+            if (next >= 0 && next < Island.lineCount() && from != (toIsle ? to : 0)) {
+                float ax = Island.lineX(next) - Island.lineX(from), az = Island.lineZ(next) - Island.lineZ(from);
+                if ((x - Island.lineX(from)) * ax + (z - Island.lineZ(from)) * az > 0f) from = next;
+            }
+        }
+        if (fromIsle && toIsle) {
+            int step = to >= from ? 1 : -1;
+            for (int k = from; k != to + step; k += step) put(Island.lineX(k), Island.lineZ(k));
+            put(goalX, goalZ);
+            wentN = 0;
+            return;
+        }
+        if (fromIsle) {
+            for (int k = from; k >= 1; k--) put(Island.lineX(k), Island.lineZ(k));
+            town(Island.lineX(0), Island.lineZ(0), goalX, goalZ, false);
+            return;
+        }
+        // on the promenade a few steps from the steps down: straight to them, not by the road
+        float sx = Island.lineX(0) - x, sz = Island.lineZ(0) - z;
+        boolean near = z < City.SHORE * City.CELL - City.CURB && sx * sx + sz * sz < 40f * 40f;
+        // already past the top of the steps, going down them: the top is not gone back to
+        float ax = Island.lineX(1) - Island.lineX(0), az = Island.lineZ(1) - Island.lineZ(0);
+        float past = ((x - Island.lineX(0)) * ax + (z - Island.lineZ(0)) * az) / (ax * ax + az * az);
+        if (near && past <= 0f) put(Island.lineX(0), Island.lineZ(0));
+        else if (!near) town(x, z, Island.lineX(0), Island.lineZ(0), true);
+        // the root put by the streets' part, as its end
+        for (int k = 1; k <= to; k++) put(Island.lineX(k), Island.lineZ(k));
+        put(goalX, goalZ);
     }
 
     /** The streets' part of the way, from (x, z) to (gx, gz), onto the way so far; (x, z) itself put if not already. */
@@ -325,6 +372,22 @@ final class Nav {
             dist[v] = d;
             from[v] = u;
         }
+    }
+
+    /** The point so far on along the way from its start, into out (x, z); false with no way. */
+    boolean ahead(float far, float[] out) {
+        if (wayN < 2) return false;
+        for (int k = 1; k < wayN; k++) {
+            float dx = way[k * 2] - way[k * 2 - 2], dz = way[k * 2 + 1] - way[k * 2 - 1], l = (float) Math.sqrt(dx * dx + dz * dz);
+            if (l >= far || k == wayN - 1) {
+                float t = l < 1e-3f ? 1f : Math.min(1f, far / l);
+                out[0] = way[k * 2 - 2] + dx * t;
+                out[1] = way[k * 2 - 1] + dz * t;
+                return true;
+            }
+            far -= l;
+        }
+        return false;
     }
 
     private void put(float x, float z) {

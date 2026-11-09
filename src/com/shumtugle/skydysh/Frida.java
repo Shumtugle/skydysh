@@ -37,6 +37,12 @@ final class Frida {
     static boolean black;
     static final int BLACK = 0x2A2A2E, BLACK_DARK = 0x1C1C20;
     static final int SLATE = 0x6F8A94, SLATE_DARK = 0x557079;
+    /**
+     * Drawn as a hot brum, smouldering: the brick burnt to coal, the white of the dress gone to
+     * ash, the face glowing from within like an ember, the eyes and the plate white hot.
+     */
+    static boolean hot;
+    static final int HOT = 0x2E2220, HOT_DARK = 0x221816, ASH = 0x5E5450, EMBER = 0xF2561E, HOT_GLOW = 0xFFB060;
 
     /** A block's color as a rival's: the brick violet, the rest as it is. */
     static int rival(int own) {
@@ -374,7 +380,7 @@ final class Frida {
             rot[6] = -sy * r00 + cy * r20; rot[7] = -sy * r01 + cy * r21; rot[8] = -sy * r02 + cy * r22;
             float wx = x + cy * px + sy * pz, wz = z - sy * px + cy * pz;
             boolean plate = COL[i] == SHEM || COL[i] == SIGN;
-            if (plate && !fire && !violet && !slate && !black) continue;
+            if (plate && !fire && !violet && !slate && !black && !hot) continue;
             if (capPos != null) {
                 if (plate) {
                     if (COL[i] == SHEM) {
@@ -398,7 +404,12 @@ final class Frida {
             }
             int col = COL[i] == EYES ? Street.mix(0x2A1C14, Street.mix(EYES, 0xFF6A12, eyeHeat), eyes) : COL[i];
             int mat = MAT[i];
-            if ((violet || slate || black) && !fire) {
+            if (hot && !fire) {
+                int own = COL[i];
+                col = own == BRICK ? HOT : own == BRICK_DARK ? HOT_DARK : own == EYES || own == SHEM ? HOT_GLOW : own == SIGN ? 0x2A1208
+                        : own == WHITE || own == LACE || own == POCKET ? ASH : own == FACE ? EMBER : own;
+                if (own == EYES || own == SHEM || own == FACE) mat = DrawList.GLOW;
+            } else if ((violet || slate || black) && !fire) {
                 int own = COL[i];
                 col = own == EYES ? EYES : slate ? (own == BRICK ? SLATE : own == BRICK_DARK ? SLATE_DARK : own)
                         : black ? (own == BRICK ? BLACK : own == BRICK_DARK ? BLACK_DARK : own) : rival(own);

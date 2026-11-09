@@ -87,6 +87,85 @@ final class Island {
         return new float[]{IX + fx * PIER_FROM * w, IZ + fz * PIER_FROM * w, fx, fz, fz, -fx};
     }
 
+    // ---- the way on foot, for the navigator: from the promenade down the steps nearest the
+    // spit to the beach, to the spit's root, out along its crest, then round the island's ring of
+    // sand to the pier's foot ----
+    // so far apart along the spit; the ring's step, its distance in from the shore's wobble
+    static final float LINE_STEP = 8f, RING_STEP = 0.08f, RING_R = 105f;
+    private static float[] line;
+    private static int lineN;
+
+    private static void line() {
+        if (line != null) return;
+        java.util.ArrayList<Float> pts = new java.util.ArrayList<Float>();
+        // the steps of the promenade's cell the spit leaves from: their top, their foot
+        float root = spitX(SPIT_FROM), sx = (float) Math.floor(root / City.CELL) * City.CELL + City.STAIRS_AT;
+        float pz = City.SHORE * City.CELL + City.PARAPET;
+        pts.add(sx);
+        pts.add(pz + 4f);
+        // well past the last step, so that the way leaves the steps straight, not over their side
+        pts.add(sx);
+        pts.add(pz - 4f * City.STAIR - 3f);
+        for (float z = SPIT_FROM; z > SPIT_TO; z -= LINE_STEP) {
+            pts.add(spitX(z));
+            pts.add(z);
+        }
+        float ex = spitX(SPIT_TO), a0 = (float) Math.atan2(ex - IX, SPIT_TO - IZ);
+        for (float a = a0; a < PIER_A; a += RING_STEP) {
+            float r = RING_R * wob(a);
+            pts.add(IX + (float) Math.sin(a) * r);
+            pts.add(IZ + (float) Math.cos(a) * r);
+        }
+        float[] p = pier();
+        pts.add(p[0]);
+        pts.add(p[1]);
+        line = new float[pts.size()];
+        for (int k = 0; k < line.length; k++) line[k] = pts.get(k);
+        lineN = line.length / 2;
+    }
+
+    /** Whether (x, z) is down on the beach or out past it, on the spit, the island or the sea about them: the way there goes by the steps and the spit. */
+    static boolean off(float x, float z) {
+        return z < City.SHORE * City.CELL + City.PARAPET - City.PARAPET_HALF - 0.1f;
+    }
+
+    /** The number of the way's point nearest (x, z). */
+    static int lineNear(float x, float z) {
+        line();
+        int best = 0;
+        float bd = Float.MAX_VALUE;
+        for (int k = 0; k < lineN; k++) {
+            float dx = line[k * 2] - x, dz = line[k * 2 + 1] - z, d = dx * dx + dz * dz;
+            if (d < bd) {
+                bd = d;
+                best = k;
+            }
+        }
+        return best;
+    }
+
+    static int lineCount() {
+        line();
+        return lineN;
+    }
+
+    static float lineX(int k) {
+        line();
+        return line[k * 2];
+    }
+
+    static float lineZ(int k) {
+        line();
+        return line[k * 2 + 1];
+    }
+
+    /** The pier's foot on the shore, (x, z), into out. */
+    static void pierFoot(float[] out) {
+        float[] p = pier();
+        out[0] = p[0];
+        out[1] = p[1];
+    }
+
     /** Where yacht k lies: its middle (x, z), its heading. */
     private static void yachtAt(int k, float[] out) {
         float[] p = pier();

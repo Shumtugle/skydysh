@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.0
+
+- A new job, the twelfth, after the navigator: brums to the island. In the morning five knots of
+  hot brums stand about the town, burnt to coal and glowing; seen, a knot comes after her along
+  the way she ran, and goes off if it comes up to her. The navigator leads to each in turn along
+  the streets, then out of the town to the pier on the island with all fifteen behind her. Caught,
+  it is tried again from the last knot. The first of three releases: the yachts and the way back
+  come next.
+- The navigator's line out past the beach: down the steps from the promenade, along the spit's
+  crest and round the island's sand to the pier, for any place out there.
+
 ## 1.1.6
 
 - Home's back door. Coming in at it from the yard, she went into a stranger's hall and out at
