@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.4
+
+- The arch's name whole: "LAB INC." was wider than the span between the piers, and the piers are
+  deeper than the glass, so its first letter and its full stop were buried in concrete, from either
+  side. The name is now sized to the clear span with a margin at each end, and centred on the glass
+  from top to bottom.
+
 ## 1.2.3
 
 - The arch over the road's foot moved to the town's end of it, square to the street, clear of the

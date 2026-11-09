@@ -98,6 +98,7 @@ release, each seen on the stand before the phone.
 - 1.2.1 The mountain's road clear of the ridge; up the mountain only by its road, at the wheel.
 - 1.2.2 The laboratory: the arch, the name on the slope, the deck with its pickups and brums, the lobby; the navigator handed over in a box and unpacked at the pickup.
 - 1.2.3 The mountain's ends put right: the arch square at the town's end of the road's foot, the road level onto the deck, a rail round the deck and the top's edge, room to turn on the deck.
+- 1.2.4 The arch's name whole between its piers.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -139,8 +140,8 @@ release, each seen on the stand before the phone.
 
 ## Next
 
-- Brums to the island, the rest: 1.2.4 at the pier the dispatcher sends her to a yacht, a brum
-  throws a golden mallet, the yachts go up; 1.2.5 up to the lighthouse, the flight to the secret
+- Brums to the island, the rest: 1.2.5 at the pier the dispatcher sends her to a yacht, a brum
+  throws a golden mallet, the yachts go up; 1.2.6 up to the lighthouse, the flight to the secret
   balcony, a lever in the hall that raises a drawbridge in the spit; the brums left on the island
   for good, the lever the bridge's from then on.
 - The yachts: a boat to take out (the boat in the game's four ways to go).

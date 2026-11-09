@@ -109,7 +109,7 @@ final class Mountain {
     // ---- the arch over the road's foot, just off the town's last street, square to it: two
     // piers, the name on the span between them ----
     static final float ARCH_Z = City.EDGE_J * City.CELL + City.ROAD + 2.6f;
-    static final float PIER_OFF = HALF + 1.6f, PIER_HALF = 0.8f, ARCH_HIGH = 9f, SPAN_HALF = 0.9f;
+    static final float PIER_OFF = HALF + 1.6f, PIER_HALF = 0.8f, ARCH_HIGH = 9f, SPAN_HALF = 0.9f, NAME_MARGIN = 0.45f;
 
     // ---- the name on the slope, toward the town: great white letters, each standing on the grass ----
     // where (a heading off the middle, toward the town; so far out, between the road's two rounds);
@@ -567,8 +567,11 @@ final class Mountain {
         d.box(MX, sy, ARCH_Z, PIER_OFF + PIER_HALF, 1.4f, SPAN_HALF * 0.6f, null, 0x24484E, DrawList.GLASS);
         d.box(MX, sy + 1.5f, ARCH_Z, PIER_OFF + PIER_HALF + 0.2f, 0.12f, SPAN_HALF * 0.7f, null, copper, DrawList.GOLD);
         d.box(MX, sy - 1.5f, ARCH_Z, PIER_OFF + PIER_HALF + 0.1f, 0.1f, SPAN_HALF * 0.65f, null, copper, DrawList.GOLD);
+        // the name fits the clear span between the piers with a margin at each end; the piers are
+        // deeper than the glass, so whatever reached past them was buried in concrete
         String word = "LAB INC.";
-        float dot = 0.26f, across = word.length() * 6f * dot - dot;
+        float clear = 2f * (PIER_OFF - PIER_HALF) - 2f * NAME_MARGIN;
+        float dot = clear / (word.length() * 6f - 1f), across = word.length() * 6f * dot - dot;
         for (int face = -1; face <= 1; face += 2)
             for (int k = 0; k < word.length(); k++) {
                 int g = glyph(word.charAt(k));
@@ -577,7 +580,7 @@ final class Mountain {
                         if (!lit(g, row, col)) continue;
                         // read left to right from either side
                         float ax = -across * 0.5f + (k * 6 + col) * dot + dot * 0.5f;
-                        d.box(MX - face * ax, sy + 0.8f - row * dot, ARCH_Z + face * (SPAN_HALF * 0.6f + 0.03f), dot * 0.42f, dot * 0.42f, 0.03f,
+                        d.box(MX - face * ax, sy + 3f * dot - row * dot, ARCH_Z + face * (SPAN_HALF * 0.6f + 0.03f), dot * 0.42f, dot * 0.42f, 0.03f,
                                 null, neon, DrawList.GLOW);
                     }
             }
