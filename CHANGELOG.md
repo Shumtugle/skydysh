@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.4
+
+- The dispatcher at home in his room again: since 1.3.2, indoors, the eye stayed behind her and
+  his words spilled over the room's own screen.
+- The hearts a thin column of red ones up the right side, spaced, swaying a little, fainter the
+  higher they rise; a burst a short stream of a few seconds, not a cloud.
+
 ## 1.3.3
 
 - Black Cherry, the thirteenth job. Up at LAB Inc., a lift in the lobby goes down to the collider

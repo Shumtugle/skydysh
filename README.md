@@ -277,7 +277,8 @@ the mission is played again.
 
 Likes, not money. Every job brings likes: a story the first time it is done, a game (the hunt,
 the folder, the containers, the panel on its own) every time it is won. They pour up the right
-side of the screen as a stream of small hearts, as if many hands were tapping at once: a burst
+side of the screen as a thin column of red hearts, spaced, swaying a little, fainter the higher
+they rise, as if many hands were tapping at once: a short stream
 when a job is won and again over its report at home, a smaller one at a moment worth it (a plate
 struck, the road through the pass open), a few drifting up all the while the music plays in the
 hall. In the town between jobs a long flight off a roof, landed, brings likes too, and so does a ride

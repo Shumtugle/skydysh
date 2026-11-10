@@ -108,6 +108,7 @@ release, each seen on the stand before the phone.
 - 1.3.1 The mountain road at the wheel shown as a scene, up and down.
 - 1.3.2 The night at LAB on the briefing's set; off the line the brums heat and go off; the torn ground where they did.
 - 1.3.3 Black Cherry: down the lobby's lift into the collider hall, the knocked magnets set with the mallet under the jet; the hole taken by the ring; the island opened again.
+- 1.3.4 The dispatcher at home in his room again; the hearts a thin red column.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.

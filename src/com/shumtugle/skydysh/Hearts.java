@@ -1,8 +1,8 @@
 package com.shumtugle.skydysh;
 
 /**
- * The hearts: a stream of small hearts rising up the right side of the screen, as if many hands
- * were tapping at once, and the likes they count. A moment worth it pours a burst at once and a
+ * The hearts: a stream of red hearts rising up the right side of the screen in a thin column, as if
+ * many hands were tapping at once, fading as they go higher, and the likes they count. A moment worth it pours a burst at once and a
  * tail after it; a quiet one (music in the hall) lets a few drift up all the while. The sum shows
  * at the stream's foot while likes come in and goes once they stop. Drawn in the flat layer.
  * Plain Java, no platform classes.
@@ -11,11 +11,13 @@ final class Hearts {
     /** At most so many in the air at once. */
     static final int MOST = 180;
     /** Hearts let go a second while a burst is pouring. */
-    static final float POUR = 70f;
+    static final float POUR = 7f;
+    /** At most so many waiting to be let go: a burst is a short stream, not a long one. */
+    static final float POUR_MOST = 26f;
     /** Rising speed, pixels a second, and how it slows with age. */
-    static final float RISE_MIN = 95f, RISE_MAX = 165f, DRAG = 0.22f;
-    /** How long a heart lives, seconds; the last share of it fades. */
-    static final float LIFE_MIN = 2.4f, LIFE_MAX = 3.8f, FADE = 0.4f;
+    static final float RISE_MIN = 125f, RISE_MAX = 165f, DRAG = 0.12f;
+    /** How long a heart lives, seconds; it comes in over the first share of it, then fades as it rises. */
+    static final float LIFE_MIN = 3.2f, LIFE_MAX = 4f, FADE_IN = 0.06f;
     /** The sum at the foot stays so long after the last like, the last second fading. */
     static final float SHOWN_FOR = 3.2f;
     /** How fast the sum shown runs up to the sum, a share of the gap a second. */
@@ -23,21 +25,18 @@ final class Hearts {
     /** How strong the sum shows between jobs when nothing comes in. */
     static final float QUIET = 0.75f;
 
-    // the shapes: a small heart (5x5) and a big one (7x6), rows top down
-    private static final String[] SMALL = { ".#.#.", "#####", "#####", ".###.", "..#.." };
+    // the shapes, rows top down: the sum's mark (7x6); the stream's heart, rounder (9x8)
     private static final String[] BIG = { ".##.##.", "#######", "#######", ".#####.", "..###..", "...#..." };
+    private static final String[] ROUND = { ".##...##.", "####.####", "#########", "#########", ".#######.", "..#####..", "...###...", "....#...." };
+    /** The stream's heart: so many pixels a cell (born at one, grown to it in the first moment). */
+    static final int CELL = 2;
 
-    /** Their colours, red and pink most of all, a few warm and a few cool. */
-    private static final int[] TINTS = {
-        0xFFFF4F6E, 0xFFFF4F6E, 0xFFFF7A9C, 0xFFFF7A9C, 0xFFFF9CC2,
-        0xFFFFB48A, 0xFFFFD27A, 0xFF7FE6D2, 0xFFF4E8D2, 0xFFFF5C7A
-    };
+    /** Their colours: red, a few deeper, a few lighter. */
+    private static final int[] TINTS = { 0xFFFF2D4B, 0xFFFF2D4B, 0xFFFF2D4B, 0xFFE8203C, 0xFFE8203C, 0xFFC81830, 0xFFFF4A62 };
 
     private final float[] x = new float[MOST], y = new float[MOST], vy = new float[MOST];
     private final float[] age = new float[MOST], life = new float[MOST], sway = new float[MOST], beat = new float[MOST], phase = new float[MOST];
     private final int[] tint = new int[MOST];
-    /** How many pixels a cell of each heart is: 1 to 3. */
-    private final int[] size = new int[MOST];
     private int count;
     private final java.util.Random rnd = new java.util.Random(0x4EA27L);
 
@@ -59,12 +58,12 @@ final class Hearts {
     void add(long likes, int hearts) {
         total += likes;
         if (likes > 0) showFor = SHOWN_FOR;
-        toPour += hearts;
+        toPour = Math.min(POUR_MOST, toPour + hearts);
     }
 
     /** Hearts only, no likes with them (a report going over what was won). */
     void pour(int hearts) {
-        toPour += hearts;
+        toPour = Math.min(POUR_MOST, toPour + hearts);
     }
 
     /** A few drifting up while this lasts: so many a second; called each step it should go on. */
@@ -115,20 +114,20 @@ final class Hearts {
     void draw(Px f, int w, int h, boolean always) {
         for (int k = 0; k < count; k++) {
             float t = age[k] / life[k];
-            // in: grown from small in the first moment; out: faded over the last share of its life
-            float a = t > 1f - FADE ? (1f - t) / FADE : 1f;
-            if (a <= 0f) continue;
+            // in over the first moment; fading as it rises, the higher the fainter
+            float a = Math.min(1f, t / FADE_IN) * (float) Math.pow(Math.max(0f, 1f - t), 0.8f);
+            if (a <= 0.02f) continue;
             // born small, grown to its size in the first moment
-            int sz = age[k] < 0.15f ? 1 : size[k];
-            float px = x[k] + sway[k] * (float) Math.sin(phase[k] + beat[k] * age[k]);
-            heart(f, Math.round(px), Math.round(y[k]), sz > 1 ? BIG : SMALL, sz, tint[k], a);
+            int sz = age[k] < 0.12f ? 1 : CELL;
+            float px = x[k] + sway[k] * (float) Math.sin(phase[k] + beat[k] * age[k]) - ROUND[0].length() * sz * 0.5f;
+            heart(f, Math.round(px), Math.round(y[k]), ROUND, sz, tint[k], a, false);
         }
         // the sum: while likes come in; between jobs, always, a little quieter
         if (total <= 0 || showFor <= 0f && !always) return;
         float a = Math.max(Math.min(1f, showFor), always ? QUIET : 0f);
         String s = World.grouped(Math.round(shown));
         int fy = footY(h), hx = w - 8 - 7;
-        heart(f, hx, fy, BIG, 1, 0xFFFF4F6E, a);
+        heart(f, hx, fy, BIG, 1, 0xFFFF4F6E, a, true);
         int tx = hx - 3 - PixelFont.width(s, 1);
         PixelFont.draw(f, s, tx + 1, fy + 1, 1, fade(0xFF232A4A, a * 0.8f));
         PixelFont.draw(f, s, tx, fy, 1, fade(0xFFF4E8D2, a));
@@ -145,17 +144,15 @@ final class Hearts {
             copy(--count, 0);
         }
         int k = count++;
-        x[k] = w - 26f + (rnd.nextFloat() - 0.5f) * 14f;
-        y[k] = footY(h) - 6f + rnd.nextFloat() * 4f;
+        x[k] = w - 20f + (rnd.nextFloat() - 0.5f) * 12f;
+        y[k] = footY(h) - 22f + rnd.nextFloat() * 4f;
         vy[k] = RISE_MIN + rnd.nextFloat() * (RISE_MAX - RISE_MIN);
         age[k] = 0f;
         life[k] = LIFE_MIN + rnd.nextFloat() * (LIFE_MAX - LIFE_MIN);
-        sway[k] = 4f + rnd.nextFloat() * 12f;
-        beat[k] = 2f + rnd.nextFloat() * 2.5f;
+        sway[k] = 3f + rnd.nextFloat() * 6f;
+        beat[k] = 1.5f + rnd.nextFloat() * 1.5f;
         phase[k] = rnd.nextFloat() * 6.283f;
         tint[k] = TINTS[rnd.nextInt(TINTS.length)];
-        float r = rnd.nextFloat();
-        size[k] = r < 0.25f ? 1 : r < 0.75f ? 2 : 3;
     }
 
     private void copy(int from, int to) {
@@ -168,25 +165,24 @@ final class Hearts {
         beat[to] = beat[from];
         phase[to] = phase[from];
         tint[to] = tint[from];
-        size[to] = size[from];
     }
 
     /** A heart standing for likes, as big as asked (its cells so many pixels across), its top left at (x, y). */
     static void mark(Px f, int x, int y, int scale, int color) {
-        heart(f, x, y, BIG, scale, color, 1f);
+        heart(f, x, y, BIG, scale, color, 1f, true);
     }
 
-    /** One heart, its top left at (x0, y0), each cell scale pixels across, a dark edge under it and a light fleck. */
-    private static void heart(Px f, int x0, int y0, String[] rows, int scale, int c, float a) {
+    /** One heart, its top left at (x0, y0), each cell scale pixels across; marked: a dark edge under it and a light fleck. */
+    private static void heart(Px f, int x0, int y0, String[] rows, int scale, int c, float a, boolean marked) {
         int edge = fade(Px.scale(c, 0.35f), a * 0.7f), fill = fade(c, a), fleck = fade(Px.mix(c, 0xFFFFFFFF, 0.6f), a);
-        for (int r = 0; r < rows.length; r++)
+        if (marked) for (int r = 0; r < rows.length; r++)
             for (int q = 0; q < rows[r].length(); q++)
                 if (rows[r].charAt(q) == '#') f.rect(x0 + q * scale + 1, y0 + r * scale + 1, x0 + (q + 1) * scale + 1, y0 + (r + 1) * scale + 1, edge);
         for (int r = 0; r < rows.length; r++)
             for (int q = 0; q < rows[r].length(); q++)
                 if (rows[r].charAt(q) == '#') f.rect(x0 + q * scale, y0 + r * scale, x0 + (q + 1) * scale, y0 + (r + 1) * scale, fill);
         // the shine on the left lobe
-        f.rect(x0 + scale, y0 + scale, x0 + 2 * scale, y0 + 2 * scale, fleck);
+        if (marked) f.rect(x0 + scale, y0 + scale, x0 + 2 * scale, y0 + 2 * scale, fleck);
     }
 
     /** A colour with its alpha brought down by a. */
