@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.1
+
+- The opening's giant before the old house is the green brum who lives there, not her: his door,
+  his golden blow on the button; the game begins after it before her own home.
+
 ## 1.4.0
 
 - Home moves inland, to a quarter of its own, four blocks up from the shore and east: home alone

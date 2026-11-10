@@ -6,16 +6,17 @@ import java.util.Random;
  * What the game opens with, some seven and a half seconds; the one word in it is the game's name.
  *
  * The eye comes in from far out over the sea, low over the beach and the promenade with its palms,
- * across the shore road to the square with its fountain, and turns along the shore to home. It
- * stops before her: a giant, two and a half times her own height, standing in the shore road
- * before home's door with a golden mallet in her right hand. Her eyes light, and a low blow of
- * metal sounds. The town goes dark; one light is left, on her, and the mallet glows of itself.
+ * across the shore road to the square with its fountain, and turns along the shore to the old
+ * house. It stops before the brum who lives there, green: a giant, two and a half times her own
+ * height, standing in the shore road before his door with a golden mallet in his right hand. His
+ * eyes light, and a low blow of metal sounds. The town goes dark; one light is left, on him, and
+ * the mallet glows of itself.
  * Over the frame the name is typed as the dispatcher's screen types, in the letters of its tube,
  * a white cursor before them; a high chime. Out of the road before her rises a pedestal, orange,
  * a speaker's stand, as tall as a speaker's is to the speaker, a golden button on its top, and at
- * once she swings the mallet back over her head and brings it down on the button: a clang, the
+ * once he swings the mallet back over his head and brings it down on the button: a clang, the
  * boom of the ground, a flash. The frame goes white, and at its whitest the game begins, in the
- * same town, before home. Over the last three seconds before the blow, up in the frame's corner,
+ * same town, before home, hers. Over the last three seconds before the blow, up in the frame's corner,
  * small, an old film's count down: three, two, one, a ring and a ring in it in the name's gold,
  * the cross of its lines, the hand sweeping round, the numeral in the name's cream; nothing waits
  * for it.
@@ -385,7 +386,10 @@ final class Opening {
         }
         String m = motion();
         float mt = motionTime();
+        // the brum who lives in the old house, green: the town's own, before his door
+        Frida.green = true;
         Frida.draw(d, OX, FLOOR, OZ, 0f, SIZE, m, mt);
+        Frida.green = false;
         grip(m, mt);
         Mallet.draw(d, turn, hand[0], hand[1], hand[2], MALLET, 0f, true, 0, Mallet.ALL);
         // the mallet's head lights what is near it

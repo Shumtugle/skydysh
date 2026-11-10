@@ -12,11 +12,11 @@ a plane are to come.
 The town is lived in by humans and brums. A brum is a shell of brick and stone made to stand
 and walk; she is one, and so are the ones she hunts.
 
-It opens, at every start, with a flight in from the sea over the beach and the square to home,
-where she stands in the shore road with a golden mallet; the town goes dark but for her, the
-name is typed in the letters of the dispatcher's tube, and an orange stand with a golden button
-rises out of the road before her, as tall as a speaker's stand is to the speaker, and at once she
-brings the mallet down on the button, a flash, the white; over the last three seconds before the
+It opens, at every start, with a flight in from the sea over the beach and the square to the
+old house, where the green brum who lives there stands in the shore road with a golden mallet;
+the town goes dark but for him, the name is typed in the letters of the dispatcher's tube, and an
+orange stand with a golden button rises out of the road before him, as tall as a speaker's stand
+is to the speaker, and at once he brings the mallet down on the button, a flash, the white; over the last three seconds before the
 blow, small, up in the corner, in the name's gold and cream, an old film's count down, three,
 two, one, that nothing waits for; a touch skips it. The game
 begins with the first job, the runaways, straight from the dispatcher's room, which is her head:

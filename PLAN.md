@@ -111,6 +111,7 @@ release, each seen on the stand before the phone.
 - 1.3.4 The dispatcher at home in his room again; the hearts a thin red column.
 - 1.3.5 Home wide inside: hall and hearth, wardrobe, bedroom, dining room, kitchen, windows with plants.
 - 1.4.0 Home's quarter inland: home as wide as its rooms, the shop, the taxis' stand, the park; a green brum in the old flat.
+- 1.4.1 The green brum plays the opening, before his door.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
