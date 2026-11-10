@@ -189,6 +189,22 @@ wall right of the mallet's board. Thrown, it goes down, its lamp turns red: the 
 then on the bridge stands up, the yachts lie wrecked, the brums stand about on the sand by the
 pier, ticking, waiting to be mended. The lighthouse's door takes her up to the gallery any time.
 
+Black Cherry (the thirteenth job, a story, after the hotheads). The black hole of that night is
+still held in its trap in the collider hall under the mountain, the size of a cherry, but six of
+the ring's magnets are knocked off their stands, and it spins: the jet from its pole goes down to
+the floor and round the hall like a lighthouse's beam, high over her head by the trap, low by the
+floor further out, where it can be leapt. Up at the laboratory, in the lobby a lift goes down to
+the hall (on this job, and once it is done). The knocked magnets hang askew off their stands,
+blinking red; a tap within reach of one and she swings the mallet at it (turning to it; in the hall
+the mallet is never thrown): it is back on its stand, lit green, and the jet goes round slower. A
+touch of the jet heats her, her face like coal, low on the frame how hot; away from it she cools;
+three touches close together and she is too hot: a flash, and a try again from the lift's doors,
+the magnets set staying set. The last set, the eye is held on the trap: the jet dies away, the hole
+swells, is drawn in to a bead, a flash, and the chargers' lamps go green one by one. Then the
+island is opened: the bridge in the spit comes down, the yachts are whole again, the brums are
+gone off the sand to be mended. Once it is done, the hall is calm, the bead turning slowly in its
+trap, the night shift back on its chargers.
+
 Anywhere, they go only where one goes on foot: not through the water, not up a ladder or over the
 roofs, not through the air, not indoors (a step of the promenade, or a car's roof, they do take).
 Where her way leaves the ground they wait at its edge, and go on if it comes down again near by.

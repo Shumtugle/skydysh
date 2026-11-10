@@ -1194,6 +1194,12 @@ public final class Stand implements World.Host {
         } else if (c.equals("scar")) {
             // scar X Z: a blast's spot torn there
             world.standScar(f(p[1]), f(p[2]));
+        } else if (c.equals("cherry")) {
+            // cherry: how the black cherry stands; cherry in: her down in the collider hall at the
+            // lift's doors; cherry set N: its first N magnets set
+            String said = p.length < 2 ? world.standCherryState() : p[1].equals("in") ? world.standCherry(-1) : world.standCherry(Integer.parseInt(p[2]));
+            System.out.println(String.format("%7.2fs  %s", time, said));
+            step();
         } else if (c.equals("hot")) {
             // hot: how hot those after her are, the way left, the least it was
             System.out.println(String.format("%7.2fs  %s", time, world.standHot()));

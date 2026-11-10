@@ -107,6 +107,7 @@ release, each seen on the stand before the phone.
 - 1.3.0 Hotheads to its end: the lighthouse a refuge, the leap, the switch in the hall, the bridge up, the island shut.
 - 1.3.1 The mountain road at the wheel shown as a scene, up and down.
 - 1.3.2 The night at LAB on the briefing's set; off the line the brums heat and go off; the torn ground where they did.
+- 1.3.3 Black Cherry: down the lobby's lift into the collider hall, the knocked magnets set with the mallet under the jet; the hole taken by the ring; the island opened again.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -148,11 +149,8 @@ release, each seen on the stand before the phone.
 
 ## Next
 
-- The island opened again (after the job at LAB, the brums mended): the bridge down, new yachts,
-  sailing from there.
-- The job at LAB: down into the collider's hall (the one on the dispatcher's set), the black hole
-  in its trap to be put right; the brums mended after it.
-- The yachts: a boat to take out (the boat in the game's four ways to go).
+- The yachts: a boat to take out from the island's pier (the boat in the game's four ways to go).
+- The cable car: a cabin stuck, she comes down along the cable.
 - Likes for finding places worth seeing in the town (fine yards, palaces: to be drawn first).
 - The panel skipped in the concert: the light comes on for her, the panel stays on the list
   unplayed (the whole job can be put by already, from its first moment since 1.0.2).

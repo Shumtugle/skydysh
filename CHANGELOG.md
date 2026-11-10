@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.3
+
+- Black Cherry, the thirteenth job. Up at LAB Inc., a lift in the lobby goes down to the collider
+  hall (the one on the dispatcher's set): six of the ring's magnets knocked off their stands, the
+  black hole spinning in its trap, its jet going down to the floor and round the hall. A tap near a
+  knocked magnet swings the mallet at it and sets it again, lit green; each one set, the jet goes
+  round slower. Touched by the jet she heats; three touches close together, too hot: a try again
+  from the lift, the magnets set staying set. All six set, the ring takes the hole: the jet dies,
+  the hole is drawn in to a bead, a flash, the chargers go green.
+- Done, the island is opened: the bridge in the spit down, the yachts whole, the brums gone off
+  its sand. The hall stays calm after, the night shift back on its chargers.
+- The briefing's set shows the hall as it is now, the jet going round.
+- Riding a lift in a great hall, the eye stays near the lift.
+
 ## 1.3.2
 
 - The night at LAB on the dispatcher's set, under the briefing's words: the collider's hall under

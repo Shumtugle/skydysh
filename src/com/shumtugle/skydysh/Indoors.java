@@ -38,8 +38,8 @@ final class Indoors implements Ground {
     final int side;
     final float liftV;
     final int floors;
-    /** Whether there is a door at the back, on the yard. */
-    boolean backDoor = true;
+    /** Whether there is a door at the back, on the yard; at the front, on the street (a room deep underground has none). */
+    boolean backDoor = true, frontDoor = true;
     // what it is made of: the frame of the lift's doors, its lamps, the cabin's walls
     int frameColor = 0xB9A27A, cabColor = 0x7A5236, lampLit = 0xFFB347;
     float frameMat = DrawList.GOLD;
@@ -220,6 +220,9 @@ final class Indoors implements Ground {
         doorsInTheWay();
     }
 
+    // the eye on her riding the lift: at most so far from its doors
+    static final float RIDE_EYE_OFF = 7.5f;
+
     // how far in from the door she comes; in a hall deeper than so much, how far
     static final float IN_STEPS = 2.6f, DEEP_HALL = 16f, IN_DEEP = 4.6f;
 
@@ -249,10 +252,10 @@ final class Indoors implements Ground {
         clock += dt;
         float u = u(r.x, r.z), v = v(r.x, r.z);
         // the glass doors: open while she is near them; through one, she is out
-        front = toward(front, near(u, v, 0f, WALL) < DOORS_NEAR, dt * 2.5f);
+        front = frontDoor ? toward(front, near(u, v, 0f, WALL) < DOORS_NEAR, dt * 2.5f) : 0f;
         back = backDoor ? toward(back, near(u, v, 0f, deep - WALL) < DOORS_NEAR, dt * 2.5f) : 0f;
         int out = NONE;
-        if (front > 0.85f && v < WALL * 0.3f) out = OUT_FRONT;
+        if (frontDoor && front > 0.85f && v < WALL * 0.3f) out = OUT_FRONT;
         if (back > 0.85f && v > deep - WALL * 0.3f) out = OUT_BACK;
         float t = clock - liftAt;
         float callU = side * (half - 0.9f);
@@ -346,7 +349,7 @@ final class Indoors implements Ground {
     private void doorsInTheWay() {
         solidN = fixedN;
         float top = FLOOR + high;
-        if (front < 0.85f) solid(-DOOR_HALF, 0f, DOOR_HALF, WALL, top);
+        if (frontDoor && front < 0.85f) solid(-DOOR_HALF, 0f, DOOR_HALF, WALL, top);
         if (backDoor && back < 0.85f) solid(-DOOR_HALF, deep - WALL, DOOR_HALF, deep, top);
         float wu = side * half, wu1 = side * (half + WALL);
         if (hasLift && doors < 0.85f) solid(Math.min(wu, wu1), liftV - LIFT_HALF, Math.max(wu, wu1), liftV + LIFT_HALF, top);
@@ -366,7 +369,8 @@ final class Indoors implements Ground {
             return true;
         }
         if (lift != ABOARD && lift != RISING && lift != SINKING && lift != LEAVING) return false;
-        float eu = -side * (half - 1.1f), ev = liftV + 1.3f, ey = FLOOR + 2.7f;
+        // across the hall from the lift, but no further off than so much (a great hall would lose her)
+        float eu = side * (half - Math.min(2f * half - 1.1f, RIDE_EYE_OFF)), ev = liftV + 1.3f, ey = FLOOR + 2.7f;
         float tu = side * (half + WALL + CAB_DEEP * 0.45f), tv = liftV, ty = FLOOR + 1.75f;
         eye[0] = wx(eu, ev);
         eye[1] = ey;
@@ -380,7 +384,7 @@ final class Indoors implements Ground {
     /** For a player that knows the way (the desktop stand): where to go now, x and z. */
     void goal(Runner r, float[] out) {
         float u = u(r.x, r.z), v = v(r.x, r.z), gu, gv;
-        if (lobby) {
+        if (lobby && !hasLift) {
             // to the counter, where the box is given out; given, back out of the door
             out[0] = wx(deskU, given ? -1f : deskV);
             out[1] = wz(deskU, given ? -1f : deskV);
@@ -442,6 +446,8 @@ final class Indoors implements Ground {
     boolean secret;
     /** Whether this is the laboratory's lobby (see Rooms.lobby); whether she has been given what she came for there. */
     boolean lobby, given;
+    /** Whether this is the collider hall under the mountain (see Collider), down the lobby's lift; whether the night shift is back on its chargers. */
+    boolean collider, shiftBack;
     float sofaU, sofaV, sofaFaceU, sofaFaceV = -1f;
     /** Where the eye stands while she sits (across, in). */
     float sofaEyeU, sofaEyeV;
@@ -511,7 +517,7 @@ final class Indoors implements Ground {
         d.append(still);
         float top = FLOOR;
         // the glass doors: two leaves each, sliding apart
-        for (int k = 0; k < (backDoor ? 2 : 1); k++) {
+        for (int k = frontDoor ? 0 : 1; k < (backDoor ? 2 : 1); k++) {
             float open = k == 0 ? front : back, v = k == 0 ? WALL * 0.5f : deep - WALL * 0.5f;
             float slide = open * DOOR_HALF * 0.92f;
             for (int s = -1; s <= 1; s += 2) {

@@ -655,6 +655,8 @@ final class Rooms {
      */
     // the lobby: half across, deep, high; where its counter stands (along, half across); where
     // she stands at it to be given the box
+    /** The lobby's lift down to the collider hall: so far in from its door. */
+    static final float LOBBY_LIFT_V = 13f;
     static final float LOBBY_HALF = 11f, LOBBY_DEEP = 22f, LOBBY_HIGH = 7f, COUNTER_V = 15f, COUNTER_HALF = 4.2f, AT_COUNTER = 1.3f;
 
     /**
@@ -663,12 +665,13 @@ final class Rooms {
      * along the counter's front; behind it, on the end wall, the name lit large and a wall of dark
      * glass with the town's streets in light on it; round pillars, benches along the side walls, a
      * glass case with the navigator in it, plants. Its people (brums at work, waiting, coming and
-     * going, the one at the counter) are drawn as it goes on (see LabTop).
+     * going, the one at the counter) are drawn as it goes on (see LabTop). With a lift, in the
+     * left-hand wall between the benches and the glass case: down to the collider hall.
      */
-    static Indoors lobby(float doorX, float doorZ) {
-        Indoors in = new Indoors(doorX, doorZ, 0f, -1f, LOBBY_HALF, LOBBY_DEEP, 1, 4f, 1);
+    static Indoors lobby(float doorX, float doorZ, boolean lift) {
+        Indoors in = new Indoors(doorX, doorZ, 0f, -1f, LOBBY_HALF, LOBBY_DEEP, -1, LOBBY_LIFT_V, 1);
         in.backDoor = false;
-        in.hasLift = false;
+        in.hasLift = lift;
         in.lobby = true;
         in.high = LOBBY_HIGH;
         in.frameColor = 0x7FB8B0;
@@ -733,8 +736,42 @@ final class Rooms {
         piece(in, rnd, PLANT, -1, deep - w - 0.8f, low);
         piece(in, rnd, PLANT, 1, deep - w - 0.8f, low);
         lamps(in, 4);
+        if (lift) cabin(in);
         in.deskU = 0f;
         in.deskV = cv - 0.5f - AT_COUNTER;
+        in.done();
+        return in;
+    }
+
+    /**
+     * The collider hall deep under the laboratory (see Collider), as a room: no door but the lift
+     * up to the lobby, in its left-hand wall near the front, its doors in a frame of steel; the
+     * shell and the detector built once; the night shift on its chargers, if back.
+     */
+    static Indoors collider(boolean back) {
+        float half = Collider.HALF_W, deep = 2f * Collider.HALF_D;
+        Indoors in = new Indoors(Collider.HX, Collider.HZ - Collider.HALF_D, 0f, -1f, half, deep, 1, Collider.LIFT_V, 1);
+        in.backDoor = false;
+        in.frontDoor = false;
+        in.collider = true;
+        in.shiftBack = back;
+        in.high = Collider.HIGH;
+        in.frameColor = 0xB2BAC0;
+        in.frameMat = DrawList.POLISHED;
+        in.cabColor = 0x5E7F82;
+        in.lampLit = 0x7FF6E8;
+        DrawList d = in.still();
+        Collider.shell(d, Indoors.FLOOR, true);
+        Collider.detector(d, Indoors.FLOOR);
+        Collider.solids(in);
+        // the lift's doors in their frame, the button's plate beside them, the plate of the floor lamps
+        float f = Indoors.FLOOR, lh = Indoors.LIFT_HALF, s = in.side, fu = s * (half - 0.03f);
+        for (int e = -1; e <= 1; e += 2)
+            in.box(d, fu, f + Indoors.LIFT_HIGH * 0.5f, in.liftV + e * (lh + 0.07f), 0.03f, Indoors.LIFT_HIGH * 0.5f + 0.07f, 0.07f, in.frameColor, in.frameMat);
+        in.box(d, fu, f + Indoors.LIFT_HIGH + 0.07f, in.liftV, 0.03f, 0.07f, lh + 0.14f, in.frameColor, in.frameMat);
+        in.box(d, s * (half - 0.015f), f + 1.3f, in.liftV + lh + 0.42f, 0.015f, 0.14f, 0.09f, in.frameColor, in.frameMat);
+        in.box(d, s * (half - 0.015f), f + Indoors.LIFT_HIGH + 0.42f, in.liftV, 0.015f, 0.1f, in.floors * 0.1f + 0.12f, 0x2A2420, DrawList.PLAIN);
+        cabin(in);
         in.done();
         return in;
     }

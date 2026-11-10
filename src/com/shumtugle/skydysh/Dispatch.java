@@ -246,11 +246,11 @@ final class Dispatch {
     static int paidKinds;
 
     /**
-     * The likes each kind of job brings, by kind (1 the hunt … 11 the navigator): the hunt, the
+     * The likes each kind of job brings, by kind (1 the hunt … 13 the black cherry): the hunt, the
      * folder, the delivery, the call out, the puppy, the tow, the hall's light, the archive, the
-     * skid, the containers, the navigator.
+     * skid, the containers, the navigator, the hotheads, the black cherry.
      */
-    static final int[] LIKES = { 0, 20000, 200000, 50000, 60000, 70000, 30000, 40000, 50000, 50000, 10000, 80000, 90000 };
+    static final int[] LIKES = { 0, 20000, 200000, 50000, 60000, 70000, 30000, 40000, 50000, 50000, 10000, 80000, 90000, 100000 };
     /** The panel on its own, put right from home's list: every time. */
     static final int PANEL_LIKES = 5000;
 
@@ -294,6 +294,7 @@ final class Dispatch {
         if (Port.its(round)) return priced(Lang.lines("brief.port", round, null), round);
         if (Lab.its(round)) return priced(Lang.lines("brief.lab", round, null), round);
         if (Herd.its(round)) return priced(Lang.lines("brief.herd", round, null), round);
+        if (Cherry.its(round)) return priced(Lang.lines("brief.cherry", round, null), round);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
@@ -342,6 +343,11 @@ final class Dispatch {
     /** The hot brums led out to the island: the pay, what has been won in all, the time. */
     static String[] herded(int round, String time, int money, int got) {
         return fill(Lang.lines("report.herd", round, time), got, money);
+    }
+
+    /** The black hole taken by the ring, the island opened: the pay, what has been won in all, the time. */
+    static String[] sealed(int round, String time, int money, int got) {
+        return fill(Lang.lines("report.cherry", round, time), got, money);
     }
 
     /** The field in the port put in order: the pay, what has been won in all, the time. */

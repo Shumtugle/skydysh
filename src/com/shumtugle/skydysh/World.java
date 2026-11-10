@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.3.2";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.3.3";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -54,6 +54,7 @@ final class World {
     Port port;                               // the mission now, when it is the port, the first time
     Lab lab;                                 // the mission now, when it is the navigator's trial
     Herd herd;                               // the mission now, when it is the hot brums led off
+    Cherry cherry;                           // the mission now, when it is the black hole in the collider hall
     /** The containers in the port and the crane over them; she at its controls or not. */
     final Quay quay;
     /** She is in the crane's cabin, working it; so from home's list, with no way to go. */
@@ -183,11 +184,18 @@ final class World {
         labCar = null;
         labSeen = -1;
         herd = null;
+        cherry = null;
         flying = false;
         if (concert != null) concert.stop();
         concert = null;
         city.extra = null;
-        if (Herd.its(n)) {
+        if (Cherry.its(n)) {
+            mission.round = n;
+            folder = null;
+            cherry = new Cherry();
+            cherryAim = -1;
+            chase = nobody;
+        } else if (Herd.its(n)) {
             mission.round = n;
             folder = null;
             herd = new Herd(city);
@@ -394,6 +402,7 @@ final class World {
         if (port != null) return port.doneAt;
         if (lab != null) return lab.doneAt;
         if (herd != null) return herd.doneAt;
+        if (cherry != null) return cherry.doneAt;
         if (concert != null) return concert.doneAt;
         if (tow != null) return tow.doneAt;
         if (puppy != null) return puppy.doneAt;
@@ -418,9 +427,9 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 3, 1, 1, 1, 2, 2};
+    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 3, 1, 1, 1, 2, 2, 1};
     /** How many kinds of mission there are; they come in turn, round and round. */
-    static final int KINDS = 12;
+    static final int KINDS = 13;
 
     /** Mission n's kind: the hunt 1, the folder 2, the delivery 3. */
     static int kindOf(int n) {
@@ -564,14 +573,14 @@ final class World {
 
     /** The brums of the mission now. */
     Chase[] brums() {
-        if (free || delivery != null || rescue != null || puppy != null || tow != null || concert != null || archive != null || mend != null || port != null || lab != null || herd != null) return NONE;
+        if (free || delivery != null || rescue != null || puppy != null || tow != null || concert != null || archive != null || mend != null || port != null || lab != null || herd != null || cherry != null) return NONE;
         return folder != null ? folder.rivals : mission.brums;
     }
 
     /** Whether the mission now is a hunt. */
     boolean hunt() {
         return !free && folder == null && delivery == null && rescue == null && puppy == null && tow == null && concert == null && archive == null && mend == null && port == null
-                && lab == null && herd == null;
+                && lab == null && herd == null && cherry == null;
     }
 
     /** Whether the mission now is done with, won or not. */
@@ -581,6 +590,7 @@ final class World {
         if (port != null) return port.over();
         if (lab != null) return lab.over();
         if (herd != null) return herd.over();
+        if (cherry != null) return cherry.over();
         if (concert != null) return concert.over();
         if (tow != null) return tow.over();
         if (puppy != null) return puppy.over();
@@ -621,7 +631,7 @@ final class World {
 
     /** Whether the mission just over was lost: the hunt's time out, the folder taken first, the puppy got out by others. */
     private boolean failed() {
-        if (puppy != null || tow != null || concert != null || archive != null || mend != null || port != null || lab != null || herd != null) return false;
+        if (puppy != null || tow != null || concert != null || archive != null || mend != null || port != null || lab != null || herd != null || cherry != null) return false;
         return hunt() ? mission.late : folder != null && folder.theirs;
     }
 
@@ -653,6 +663,7 @@ final class World {
         if (port != null) return Dispatch.ported(mission.round, clock(port.doneAt), likes, paidNow);
         if (lab != null) return Dispatch.navigated(mission.round, clock(lab.doneAt), likes, paidNow);
         if (herd != null) return Dispatch.herded(mission.round, clock(herd.doneAt), likes, paidNow);
+        if (cherry != null) return Dispatch.sealed(mission.round, clock(cherry.doneAt), likes, paidNow);
         if (concert != null) return Dispatch.concerted(mission.round, clock(concert.doneAt), likes, paidNow);
         if (tow != null) return Dispatch.towed(mission.round, clock(tow.doneAt));
         if (puppy != null) return Dispatch.puppied(mission.round, clock(puppy.doneAt), likes, paidNow);
@@ -750,6 +761,7 @@ final class World {
         port = null;
         lab = null;
         herd = null;
+        cherry = null;
         if (concert != null) concert.stop();
         concert = null;
         chase = nobody;
@@ -1502,6 +1514,7 @@ final class World {
             port = null;
             lab = null;
             herd = null;
+            cherry = null;
             saveCopter();
             // after the concert the dark has come down: she wakes at home, on her sofa, in the morning
             boolean slept = concert != null;
@@ -1657,6 +1670,8 @@ final class World {
             labStep(dt);
         } else if (herd != null) {
             herdStep(dt);
+        } else if (cherry != null) {
+            cherryStep(dt);
         } else if (port != null) {
             port.update(dt, craning, quay.solved);
         } else if (tow != null) {
@@ -1679,6 +1694,8 @@ final class World {
             mission.update(dt, runner, city, cars);
             chase = mission.target(chase);
         }
+        // in the collider hall the mallet is swung at the magnets there, never thrown
+        toss.lent = indoors != null && indoors.collider;
         toss.update(dt, runner, brums(), city, runner.tapped(), hunt());
         frighten();
         int rode = riding();
@@ -1733,7 +1750,8 @@ final class World {
 
     // ---- doors: in from the street (or the yard), or down from a roof, a place indoors; out again ----
     static final float SWAP = 0.3f;          // the dark coming down at a door, and lifting again
-    static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5, TO_HOME = 6, TO_CONCERT = 7, TO_SECRET = 8, TO_LOBBY = 9, TO_TOWER = 10;
+    static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5, TO_HOME = 6, TO_CONCERT = 7, TO_SECRET = 8, TO_LOBBY = 9, TO_TOWER = 10,
+            TO_COLLIDER = 11, TO_LOBBY_UP = 12;
     /** The place indoors she is in; null out of doors. */
     Indoors indoors;
     private float swapT = -1f;
@@ -1768,7 +1786,7 @@ final class World {
         if (indoors != null && indoors.concert && chair(dt)) return;
         if (indoors != null) {
             int e = indoors.update(dt, r, host);
-            if (e == Indoors.UP) go(TO_ROOF);
+            if (e == Indoors.UP) go(indoors.lobby ? TO_COLLIDER : indoors.collider ? TO_LOBBY_UP : TO_ROOF);
             else if (e == Indoors.OUT_FRONT) go(TO_STREET);
             else if (e == Indoors.OUT_BACK) go(TO_YARD);
             return;
@@ -2352,7 +2370,7 @@ final class World {
         if (rescue != null) return DrawList.TINT_GREEN;
         if (puppy != null) return DrawList.TINT_TURQUOISE;
         if (tow != null) return DrawList.TINT_AMBER;
-        if (archive != null || mend != null || port != null || lab != null) return DrawList.TINT_TURQUOISE;
+        if (archive != null || mend != null || port != null || lab != null || cherry != null) return DrawList.TINT_TURQUOISE;
         if (concert != null) return DrawList.TINT_CREAM;
         if (delivery != null) return DrawList.TINT_AMBER;
         if (folder != null) return DrawList.TINT_TURQUOISE;
@@ -2702,8 +2720,18 @@ final class World {
                 indoors.enter(r, l[10] > 0.5f);
                 break;
             case TO_LOBBY:
-                indoors = Rooms.lobby(Mountain.MX, Mountain.DOOR_Z);
+                indoors = Rooms.lobby(Mountain.MX, Mountain.DOOR_Z, colliderOpen());
                 indoors.enter(r, false);
+                break;
+            case TO_COLLIDER:
+                // down the lobby's lift: out of it into the collider hall
+                indoors = Rooms.collider(cherry == null && (kindsWon & (1 << 13)) != 0);
+                indoors.comeDown(r);
+                break;
+            case TO_LOBBY_UP:
+                // up the hall's lift: out of it into the lobby
+                indoors = Rooms.lobby(Mountain.MX, Mountain.DOOR_Z, true);
+                indoors.comeDown(r);
                 break;
             case TO_TOWER:
                 // up the lighthouse's stairs in the dark: out on its gallery, on the side to the town
@@ -2742,8 +2770,9 @@ final class World {
                     host.sound(Synth.DOOR, 0.35f, 1.1f);
                     break;
                 }
-                if (indoors != null && indoors.lobby) {
+                if (indoors != null && (indoors.lobby || indoors.collider)) {
                     // out of the laboratory's door onto the podium, facing the deck and the town
+                    // (from the hall under it too: the job put by, or played again)
                     leave();
                     r.put(Mountain.MX, Mountain.TOP + Mountain.PODIUM_HIGH, Mountain.DOOR_Z - OUT_STEP - 0.8f, (float) Math.PI);
                     host.sound(Synth.DOOR, 0.35f, 1.05f);
@@ -3779,6 +3808,7 @@ final class World {
         port = null;
         lab = null;
         herd = null;
+        cherry = null;
         if (concert != null) concert.stop();
         concert = null;
         city.extra = null;
@@ -4480,6 +4510,12 @@ final class World {
 
     /** Whether the set shows the night at LAB: the hotheads' briefing, before it has begun. */
     private boolean prologue() {
+        if (cherry != null && cherry.clock <= 0f) {
+            // the black cherry's briefing: the hall as it is now
+            cherry.idle(time);
+            Collider.view(colliderView);
+            return true;
+        }
         if (herd == null || herd.clock > 0f || herd.over()) return false;
         Collider.view(colliderView);
         return true;
@@ -4549,6 +4585,202 @@ final class World {
         if (!aimed) return;
         wordAtTop(f, Lang.lines(hd.goalWord(), mission.round, null)[0], green, ink);
         placeMark(d, f, goal[0], goal[1], goal[2], hd.mark(), Marks.OPEN);
+    }
+
+    // ---- the black cherry: the hole in the collider hall (see Cherry) ----
+    /** The magnet a blow is on its way to (of Cherry.KNOCKED), or -1. */
+    private int cherryAim = -1;
+    private float cherryUntil;
+    private String[] cherrySay;
+    private final float[] cherryEye = new float[5];
+
+    /** Whether the lobby's lift goes down to the collider hall: on the job, and once it is done. */
+    private boolean colliderOpen() {
+        return cherry != null || (kindsWon & (1 << 13)) != 0;
+    }
+
+    /** The set's picture of the hall: the black cherry's briefing, the hall as it is; else the night it went wrong. */
+    private void setDrawn(DrawList d) {
+        if (cherry != null) Collider.live(d, Collider.FLOOR, time, cherry, true, false);
+        else Collider.draw(d, time, dispatch.sceneTime());
+    }
+
+    /**
+     * A step of it: in the hall, the dispatcher's word the first time; the jet's touch and the heat
+     * (too hot: the flash, back at the lift's doors); a blow at a knocked magnet sets it; the ring
+     * taking the hole, the eye held on the trap; done, the island opened.
+     */
+    private void cherryStep(float dt) {
+        Cherry ch = cherry;
+        Runner r = runner;
+        Indoors in = indoors;
+        boolean inHall = in != null && in.collider && swapT < 0f && in.holds(r.x, r.z);
+        int was = ch.step;
+        int got = ch.update(dt, inHall, r.x, r.y - Indoors.FLOOR, r.z);
+        // a tap, a blow of the mallet: at the knocked magnet in reach, she turning to it (the mallet
+        // swung here, not thrown); it lands at the height of the swing
+        if (inHall && ch.step == Cherry.MEND && driving == null && !r.held && !r.inAir() && r.throwing() < 0f && r.tapped()) {
+            cherryAim = ch.within(r.x, r.z);
+            float tx = r.x + (float) Math.sin(r.heading) * 2f, tz = r.z + (float) Math.cos(r.heading) * 2f;
+            if (cherryAim >= 0) {
+                tx = Collider.ringX(Cherry.KNOCKED[cherryAim]);
+                tz = Collider.ringZ(Cherry.KNOCKED[cherryAim]);
+            }
+            r.lock(Toss.STRIKE_LOCK, tx, tz);
+            host.sound(Synth.WHOOSH, 0.3f, 1.3f);
+        }
+        if (cherryAim >= 0 && r.throwing() >= Toss.RELEASE) {
+            ch.setOne(cherryAim);
+            cherryAim = -1;
+            host.sound(Synth.CLANG, 0.8f, 0.9f);
+            host.sound(Synth.STONE, 0.5f, 0.6f);
+            host.buzz(70);
+            if (ch.step == Cherry.MEND) {
+                String[] w = Lang.lines("cherry.set", mission.round, null);
+                for (int q = 0; q < w.length; q++) w[q] = w[q].replace("{left}", String.valueOf(Cherry.KNOCKED.length - ch.setCount()));
+                cherrySay = w;
+                cherryUntil = time + 2.5f;
+            }
+        }
+        if (r.throwing() < 0f) cherryAim = -1;
+        if (got == Cherry.HALL) {
+            host.sound(Synth.CHIME, 0.5f, 1f);
+            dispatch = new Dispatch(host, Lang.lines("cherry.hall", mission.round, null));
+            return;
+        } else if (got == Cherry.TOUCH) {
+            host.sound(Synth.HUM, 0.6f, 1.6f);
+            host.buzz(140);
+        } else if (got == Cherry.HOT) {
+            // too hot: the flash, and she is at the lift's doors again, the magnets set as they were
+            host.sound(Synth.THUNDER, 0.8f, 1.4f);
+            host.buzz(260);
+            whiteOut = WHITE_OUT;
+            ch.again();
+            float u = in.side * (in.half - 1.6f);
+            r.put(in.wx(u, in.liftV), Indoors.FLOOR, in.wz(u, in.liftV), in.heading(-in.side, 0f));
+            r.recenter();
+            cherrySay = null;
+            dispatch = new Dispatch(host, Lang.lines("cherry.hot", mission.round, null));
+            return;
+        } else if (got == Cherry.FLASH) {
+            host.sound(Synth.thunder(2), 0.9f, 0.8f);
+            host.sound(Synth.CHIME, 0.6f, 0.7f);
+            host.buzz(220);
+            whiteOut = WHITE_OUT;
+        } else if (got == Cherry.WON) {
+            openIsland();
+            host.sound(Synth.CHIME, 0.6f, 1f);
+            host.buzz(60);
+        }
+        if (ch.step == Cherry.SEAL && was == Cherry.MEND) {
+            host.sound(Synth.WHOOSH, 0.6f, 0.5f);
+            cherrySay = null;
+        }
+        // the ring taking the hole: she stands, the eye on the trap from before it and to one side
+        if (ch.step == Cherry.SEAL && in != null && in.collider) {
+            if (was != Cherry.SEAL) {
+                errand = NO_ERRAND;
+                r.stopLead();
+                letGo();
+            }
+            r.held = true;
+            r.speed = 0f;
+            cherryEye[0] = Collider.HX - 7f;
+            cherryEye[1] = Indoors.FLOOR + 3.2f;
+            cherryEye[2] = Collider.DET_Z - 11f;
+            float tx = Collider.HX - cherryEye[0], tz = Collider.DET_Z - cherryEye[2];
+            cherryEye[3] = (float) Math.atan2(tx, tz);
+            cherryEye[4] = (float) Math.atan2(Indoors.FLOOR + Collider.HOLE_Y - 1.2f - cherryEye[1], Math.sqrt(tx * tx + tz * tz));
+            r.eyeAt(cherryEye);
+        } else if (was == Cherry.SEAL) {
+            r.held = false;
+            r.recenter();
+        }
+    }
+
+    /** The island opened: the bridge down, the yachts whole again, the brums on it taken off to be mended; kept. */
+    private void openIsland() {
+        Island.shut = false;
+        host.saveInt(SAVE_SHUT, 2);
+        wrecked(false);
+    }
+
+    /**
+     * Over the frame: the clock in the corner, under the pause how many magnets are set; what was
+     * said a moment ago, or how hot she is; where the way goes now, in a word and a mark: up to the
+     * laboratory, to the lift in its lobby, in the hall the nearest magnet still off.
+     */
+    private void cherryFlat(DrawList d, Px f) {
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E, orange = 0xFFFF8A3A;
+        Cherry ch = cherry;
+        String c = clock(ch.over() ? ch.doneAt : ch.clock);
+        shadowed(f, c, W - PixelFont.width(c, 2) - 8, 14, 2, cream, ink);
+        Indoors in = indoors;
+        boolean inHall = in != null && in.collider;
+        if (inHall && ch.step == Cherry.MEND) {
+            String n = ch.setCount() + "/" + Cherry.KNOCKED.length;
+            shadowed(f, n, 8, (int) (pauseY() + 22f), 2, orange, ink);
+        }
+        if (ch.step != Cherry.MEND && ch.step != Cherry.UP) return;
+        if (inHall && ch.heat > 0f) {
+            String[] w = Lang.lines("cherry.burn", mission.round, null);
+            String p = String.valueOf(Math.round(ch.heat * 100f));
+            for (int k = 0; k < w.length; k++) w[k] = w[k].replace("{p}", p);
+            caption(f, w, 0.66f);
+        } else if (cherrySay != null && time < cherryUntil) caption(f, cherrySay, 0.66f);
+        else if (in == null && driving != null && Mountain.deck(driving.x, driving.z)) caption(f, "lab.leave");
+        String word;
+        int pic;
+        if (inHall) {
+            int k = ch.nearestOff(runner.x, runner.z);
+            if (k < 0) return;
+            int piece = Cherry.KNOCKED[k];
+            goal[0] = Collider.ringX(piece);
+            goal[1] = Indoors.FLOOR + Collider.RING_Y + 1.6f;
+            goal[2] = Collider.ringZ(piece);
+            word = "cherry.magnet";
+            pic = Marks.PIN;
+        } else if (in != null && in.lobby) {
+            float u = in.side * (in.half - 0.4f);
+            goal[0] = in.wx(u, in.liftV);
+            goal[1] = Indoors.FLOOR + 2.4f;
+            goal[2] = in.wz(u, in.liftV);
+            word = "cherry.lift";
+            pic = Marks.LIFT;
+        } else if (in == null) {
+            boolean wheel = driving != null;
+            int k = Mountain.freeSpace();
+            goal[0] = wheel ? Mountain.spaceX(k) : Mountain.MX;
+            goal[1] = Mountain.TOP + 4f;
+            goal[2] = wheel ? Mountain.spaceZ(k) : Mountain.DOOR_Z - 1f;
+            word = wheel ? "lab.parking" : "goal.lab";
+            pic = Marks.LAB;
+        } else return;
+        wordAtTop(f, Lang.lines(word, mission.round, null)[0], green, ink);
+        placeMark(d, f, goal[0], goal[1], goal[2], pic, Marks.OPEN);
+    }
+
+    /** For the desktop stand: her down the lift into the collider hall at once, out of the cabin; or, with n of 0 or more, so many magnets set. */
+    String standCherry(int n) {
+        if (n >= 0) {
+            if (cherry == null) return "no black cherry now";
+            cherry.standSet(n);
+            return "set " + cherry.setCount() + " step " + cherry.step;
+        }
+        indoors = Rooms.collider(cherry == null && (kindsWon & (1 << 13)) != 0);
+        float u = indoors.side * (indoors.half - 1.6f);
+        runner.put(indoors.wx(u, indoors.liftV), Indoors.FLOOR, indoors.wz(u, indoors.liftV), indoors.heading(-indoors.side, 0f));
+        runner.room = indoors;
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        return "in the collider hall";
+    }
+
+    /** For the desktop stand: how the black cherry stands. */
+    String standCherryState() {
+        if (cherry == null) return "no black cherry now; island shut " + Island.shut;
+        return String.format(java.util.Locale.ROOT, "step %d set %d heat %.2f jet %.2f reach %.1f clock %.1f", cherry.step, cherry.setCount(), cherry.heat,
+                cherry.jet, cherry.reach, cherry.clock);
     }
 
     // ---- the navigator's trial ----
@@ -4932,7 +5164,8 @@ final class World {
         }
         // the set showing the night at LAB: the hall, nothing of home
         boolean scene = dispatch != null && dispatch.inScene();
-        if (scene) Collider.draw(d, time, dispatch.sceneTime()); else if (indoors.shot(eyeNow)) d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.25f, 0.03f, 80f);
+        if (scene) setDrawn(d); else if (indoors.shot(eyeNow)) d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.25f, 0.03f, 80f);
+        else if (standEye != null) d.camera(standEye[0], standEye[1], standEye[2], standEye[3], standEye[4], W * 1.2f, 0.03f, 80f);
         else d.camera(r.eyeX, r.eyeY, r.eyeZ, r.eyeYaw, r.eyePitch, W * 1.2f, 0.03f, 80f);
         if (!scene) {
         // the room, unless the eye has gone back into her head past its walls (she sits against one)
@@ -4958,6 +5191,8 @@ final class World {
         }
         // the switch in the secret hall: down once the island is shut, going down as she throws it
         if (indoors.secret) Rooms.lever(d, indoors, Island.shut ? 1f : leverAt >= 0f ? Math.min(1f, leverAt / LEVER_S) : 0f);
+        // the collider hall: its ring, the hole and its jet, the chargers
+        if (indoors.collider) Collider.live(d, Indoors.FLOOR, time, cherry, false, indoors.shiftBack);
         if (indoors.lobby && (dispatch == null || indoors.holds(eyeNow[0], eyeNow[2]))) {
             // the lobby's brums; the box in the counter's hands while it is for her, then on its
             // way from them to hers, up a little on the way
@@ -4974,7 +5209,11 @@ final class World {
             }
         }
         if (!r.hidden && !inChair() && (dispatch == null || dispatch.showsHer())) {
+            // heated by the jet: her face like coal
+            boolean glows = cherry != null && cherry.heat > 0.3f && !Frida.hot;
+            if (glows) Frida.hot = true;
             r.draw(d);
+            if (glows) Frida.hot = false;
             toss.draw(d, r);
             if (archive != null && archive.carrying()) archive.carried(d, r);
             if (lab != null && lab.carrying()) {
@@ -4992,6 +5231,7 @@ final class World {
         else if (port != null) portFlat(d, f);
         else if (lab != null) labFlat(d, f);
         else if (herd != null) herdFlat(d, f);
+        else if (cherry != null) cherryFlat(d, f);
         else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);
@@ -5008,6 +5248,8 @@ final class World {
         panelFlat(d, f);
         storyFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
+        // the white of the hall's flash, going off
+        if (indoors.collider && whiteOut > 0f) Opening.wash(f, whiteOut / WHITE_OUT);
         meter(f);
     }
 
@@ -5118,7 +5360,7 @@ final class World {
         Island.kept(d, time, eyeX, eyeZ);
         scars.draw(d, city, eyeX, eyeZ);
         // the set showing the night at LAB: its hall, deep in the mountain
-        if (dispatch != null && dispatch.inScene()) Collider.draw(d, time, dispatch.sceneTime());
+        if (dispatch != null && dispatch.inScene()) setDrawn(d);
         if (lab != null) lab.draw(d, time, eyeX, eyeZ);
         if (herd != null) herd.draw(d, time, eyeX, eyeZ);
         cars.draw(d, eyeX, eyeZ, ex, ez);
@@ -5174,6 +5416,7 @@ final class World {
         else if (port != null) portFlat(d, f);
         else if (lab != null) labFlat(d, f);
         else if (herd != null) herdFlat(d, f);
+        else if (cherry != null) cherryFlat(d, f);
         else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);

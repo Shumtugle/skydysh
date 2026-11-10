@@ -1,0 +1,78 @@
+# The black cherry: on the dispatcher's set the collider hall as it is now, the hole spinning in
+# its trap, its jet going round; the lobby's lift down to the hall; the hall, six magnets knocked
+# off their stands, blinking red; a blow at one sets it, lit green; the jet; the ring taking the
+# hole, the flash, the chargers green; the island opened after, the bridge down, the yachts whole;
+# the hall calm once the job is done, the shift back on its chargers. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 8190
+keep where 0
+keep isleShut 1
+restart
+mission 13
+dispatch
+wait 2.5
+shot b0
+close
+at -480 908 0
+wait 0.5
+tap 137 420
+wait 0.5
+down 137 420
+wait 4.4
+up 137 420
+wait 1.4
+where
+shot l0
+walk 9 3 lw
+cherry
+shot h0
+close
+wait 0.5
+eye -466 11.3 914 -0.567 -0.34
+wait 0.1
+shot h1
+eye off
+inroom -9.15 22.21
+face -1.18
+wait 0.4
+cherry
+shot m0
+tap 137 420
+wait 0.7
+cherry
+shot m1
+wait 3
+cherry
+shot j0
+cherry set 6
+wait 1.2
+shot s0
+wait 1.4
+shot s1
+wait 0.9
+shot s2
+wait 1.3
+shot s3
+wait 2.5
+cherry
+wait 4
+cherry
+keep where 0
+restart
+free
+wait 1
+eye 20 6 -180 -2.17 -0.15
+wait 0.1
+shot o0
+eye 136 4 -327 -0.5 -0.12
+wait 0.1
+shot o1
+eye off
+cherry in
+wait 0.5
+eye -466 11.3 914 -0.567 -0.34
+wait 0.1
+shot c0
+eye off
