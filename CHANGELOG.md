@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.5
+
+- The town hall's roof: its cornice lay over the whole roof half a meter above what she stands
+  on, so her feet and the copter's skids sank into it as into snow, and the pad was hidden under
+  it. The cornice is round the edge now, under the roof's top.
+- The towers on the town hall's roof are solid: the one over the door, the two round ones at the
+  ends. She no longer walks through them.
+- The archive's roof the same as the town hall's: what she stands on is its top.
+- The ridge across the country is a slope now, not a row of walls: she runs up it and over,
+  anywhere but by the pass, where the cliffs stand as they were, and by the mountain. Trees
+  stand on its slopes. A pickup does not drive up it.
+
 ## 1.4.4
 
 - Zebras on the streets: at each end of a street, just off the crossing at the pavements'

@@ -495,7 +495,7 @@ final class City implements Ground {
         }
         // past the town's last street, the country: grass, the road out, the village square, all
         // level; but for the mountain and the road up it
-        if (z > EDGE_J * CELL + CURB) return Mountain.ground(x, z);
+        if (z > EDGE_J * CELL + CURB) return Math.max(Mountain.ground(x, z), ridge(x, z));
         float ox = x - Math.round(x / CELL) * CELL, oz = z - Math.round(z / CELL) * CELL;
         return Math.abs(ox) < CURB || Math.abs(oz) < CURB ? 0f : WALK_TOP;
     }
@@ -957,68 +957,90 @@ final class City implements Ground {
             float tx = x0 + 4f + rnd.nextFloat() * (CELL - 8f), tz = z0 + 6f + rnd.nextFloat() * (CELL - 12f);
             float h = 6.5f + rnd.nextFloat() * 3.5f;
             if (onRoute(tx, tz, 6f) || j == RIDGE_J + 1 && tz < z0 + CLIFF_ON + 3f && Math.abs(tx - routeX(tz)) < CLIFF_REACH + 3f || j == EDGE_J && tz < z0 + 10f || inQuarry(tx, tz, 3f) || Mountain.near(tx, tz)) continue;
-            tree(c, c.detail, rnd, tx, 0f, tz, h);
+            // on the ridge, up its slope where it stands
+            tree(c, c.detail, rnd, tx, ridge(tx, tz) - 0.1f, tz, h);
             c.wall(tx - 0.2f, tz - 0.2f, tx + 0.2f, tz + 0.2f);
         }
         if (rnd.nextInt(2) == 0) {
             float bx = x0 + 6f + rnd.nextFloat() * (CELL - 12f), bz = z0 + 8f + rnd.nextFloat() * (CELL - 16f);
             float r = 0.8f + rnd.nextFloat() * 1.2f;
-            if (!onRoute(bx, bz, 4f) && !(j == EDGE_J && bz < z0 + 10f) && !inQuarry(bx, bz, 3f) && !Mountain.near(bx, bz)) {
+            if (!onRoute(bx, bz, 4f) && !(j == EDGE_J && bz < z0 + 10f) && !inQuarry(bx, bz, 3f) && !Mountain.near(bx, bz) && ridge(bx, bz) < 0.2f) {
                 c.detail.box(bx, r * 0.55f, bz, r, r * 0.6f, r * 0.85f, yawFrame(rnd.nextFloat() * 3f), 0x9C968A, DrawList.STONE);
                 c.wall(bx - r * 0.8f, bz - r * 0.7f, bx + r * 0.8f, bz + r * 0.7f, r * 1.1f);
             }
         }
     }
 
+    // ---- the ridge: one long hill across the country, its crest wandering a little, rising and
+    // falling as it goes; a slope she walks up and over, as on the mountain; falling away to
+    // nothing by the pass, where the cliffs stand, and by the mountain ----
+    /** How far the ridge's slopes reach from its crest, north and south; its tallest. */
+    static final float RIDGE_DEPTH = CELL * 0.5f - 5f, RIDGE_MOST = 24f;
+    // how far from the road the slopes begin to rise beside the cliffs, and over how far they rise
+    // to their height; the same by the mountain
+    static final float RIDGE_FROM_PASS = 36f, RIDGE_RISE = 12f, RIDGE_FROM_MOUNTAIN = 25f;
+    // the slices it is drawn in across, and the pieces down each slice, crest to foot
+    static final float RIDGE_SLICE = 4f;
+    static final int RIDGE_PIECES = 12;
+
+    /** Where the ridge's crest is at x, z. */
+    static float ridgeMid(float x) {
+        return RIDGE_J * CELL + CELL * 0.5f + (float) Math.sin(x * 0.05f) * 4f;
+    }
+
+    private static float smooth(float t) {
+        t = Math.max(0f, Math.min(1f, t));
+        return t * t * (3f - 2f * t);
+    }
+
+    /** How tall the ridge's crest is at x: as the hills were, low by the pass and the mountain. */
+    static float ridgeTall(float x) {
+        float h = Math.min(RIDGE_MOST, 10f + (float) Math.abs(Math.sin(x * 0.037f) * 7f + Math.sin(x * 0.013f + 1f) * 5f));
+        h *= smooth((Math.abs(x - routeX(PASS_Z)) - RIDGE_FROM_PASS) / RIDGE_RISE);
+        float mx = x - Mountain.MX, mz = ridgeMid(x) - Mountain.MZ;
+        h *= smooth(((float) Math.sqrt(mx * mx + mz * mz) - Mountain.CLEAR) / RIDGE_FROM_MOUNTAIN);
+        return h;
+    }
+
+    /** How high the ridge's slope is at (x, z): 0 off it. */
+    static float ridge(float x, float z) {
+        float t = (z - ridgeMid(x)) / RIDGE_DEPTH;
+        if (t <= -1f || t >= 1f) return 0f;
+        float h = ridgeTall(x);
+        return h <= 0f ? 0f : h * (0.5f + 0.5f * (float) Math.cos(Math.PI * t));
+    }
+
+    /** Whether a pickup going from (ox, oz) to (x, z) would drive up the ridge's slope: it does not. */
+    static boolean ridgeHolds(float ox, float oz, float x, float z) {
+        float h = ridge(x, z);
+        return h > Mountain.CLIMB && h > ridge(ox, oz) + 0.02f;
+    }
+
     /**
-     * The ridge: green hills shoulder to shoulder the whole way across, rock showing at their feet;
-     * where the road goes, the pass, cut between two faces of rock.
+     * The ridge in this cell: slices across it, each pieces of slope from foot to crest and down
+     * again, rock low down, grass above, a lighter green high up; the cliffs of the pass by the road.
      */
     private void ridge(Cell c, Random rnd, float x0, float z0) {
         DrawList d = c.boxes;
-        float mid = z0 + CELL * 0.5f, depth = CELL * 0.5f - 5f;
-        float px = routeX(PASS_Z);
-        // mounds every ten meters, each wider than that, so that they run together into one ridge;
-        // each a rock foot and grass stepping in to its top; where the road goes, cut back in steps
-        for (float cx = x0 + 5f; cx < x0 + CELL; cx += 10f) {
-            // where the mountain stands, none: not one comes nearer it than the outer rail of its road
-            // (a mound's foot reaches so far across and along), else it stands across the road
-            float nx = Math.max(cx - 9f, Math.min(Mountain.MX, cx + 9f)) - Mountain.MX;
-            float nz = Math.max(mid - depth - 4f, Math.min(Mountain.MZ, mid + depth + 4f)) - Mountain.MZ;
-            if (nx * nx + nz * nz < Mountain.CLEAR * Mountain.CLEAR) continue;
-            // about the pass the cliffs stand instead
-            if (Math.abs(cx - px) < CLIFF_REACH - 6f) continue;
-            float hgt = 10f + (float) Math.abs(Math.sin(cx * 0.037f) * 7f + Math.sin(cx * 0.013f + 1f) * 5f);
-            float dz = (float) Math.sin(cx * 0.05f) * 4f;
-            int green = Street.mix(0x6E9447, 0x86A85A, (float) Math.abs(Math.sin(cx * 0.07f)));
-            float lift = 0f;
-            for (int k = 0; k < 5; k++) {
-                float th = k == 0 ? 2.2f : (hgt - 2.2f) / 4f;
-                float hx = 9f - k * 1.6f, hz = depth - k * 4.2f;
-                float a = cx - hx, b = cx + hx, cutA = px - PASS_HALF - k * 1.6f, cutB = px + PASS_HALF + k * 1.6f;
-                if (b > cutA && a < cutB) {
-                    if (a < cutA) b = cutA;
-                    else if (b > cutB) a = cutB;
-                    else {
-                        lift += th;
-                        continue;
-                    }
-                }
-                a = Math.max(a, x0);
-                b = Math.min(b, x0 + CELL);
-                if (b - a > 0.2f)
-                    d.box((a + b) * 0.5f, lift + th * 0.5f, mid + dz, (b - a) * 0.5f, th * 0.5f, hz, null,
-                            k == 0 ? 0x9A8F80 : Street.scale(green, 0.92f + 0.04f * k), k == 0 ? DrawList.STONE : DrawList.GRASS);
-                lift += th;
+        float mid = z0 + CELL * 0.5f, depth = RIDGE_DEPTH;
+        for (float sx = x0 + RIDGE_SLICE * 0.5f; sx < x0 + CELL; sx += RIDGE_SLICE) {
+            float tall = ridgeTall(sx);
+            if (tall < 0.3f) continue;
+            float zc = ridgeMid(sx);
+            int green = Street.mix(0x6E9447, 0x86A85A, (float) Math.abs(Math.sin(sx * 0.07f)));
+            for (int k = 0; k < RIDGE_PIECES; k++) {
+                float za = zc - depth + 2f * depth * k / RIDGE_PIECES, zb = zc - depth + 2f * depth * (k + 1) / RIDGE_PIECES;
+                float ha = ridge(sx, za), hb = ridge(sx, zb);
+                float dz = zb - za, dh = hb - ha, len = (float) Math.sqrt(dz * dz + dh * dh);
+                float cs = dz / len, sn = dh / len, thick = 0.4f;
+                // its x across, its z up or down the slope, its y out of it
+                float[] turn = {1f, 0f, 0f, 0f, cs, sn, 0f, -sn, cs};
+                float cy = (ha + hb) * 0.5f - cs * thick, cz = (za + zb) * 0.5f + sn * thick;
+                float hm = (ha + hb) * 0.5f;
+                int color = hm < 2.4f ? 0x9A8F80 : hm > tall * 0.8f ? Street.scale(green, 1.08f) : Street.scale(green, 0.94f + 0.04f * (k % 3));
+                d.box(sx, cy, cz, RIDGE_SLICE * 0.5f + 0.02f, thick, len * 0.5f + 0.05f, turn, color,
+                        hm < 2.4f ? DrawList.STONE : DrawList.GRASS);
             }
-            float a = Math.max(x0, cx - 9f), b = Math.min(x0 + CELL, cx + 9f);
-            float cutA = px - PASS_HALF, cutB = px + PASS_HALF;
-            if (b > cutA && a < cutB) {
-                if (a < cutA) b = cutA;
-                else if (b > cutB) a = cutB;
-                else continue;
-            }
-            if (b - a > 0.2f) c.wall(a, mid + dz - depth, b, mid + dz + depth, hgt);
         }
         cliffs(c, x0, mid - depth, mid + depth, 0);
     }
@@ -1700,7 +1722,8 @@ final class City implements Ground {
         d.box(cx, 2.6f, z0 - 0.08f, hx, 2.6f, 0.1f, null, band, DrawList.STONE);
         for (float y = 0.9f; y < 5f; y += 0.9f) d.box(cx, y, z0 - 0.19f, hx, 0.03f, 0.02f, null, dark, DrawList.STONE);
         d.box(cx, 5.35f, z0 - 0.2f, hx + 0.1f, 0.15f, 0.25f, null, dark, DrawList.STONE);
-        d.box(cx, top + 0.25f, cz, hx + 0.35f, 0.25f, hz + 0.35f, null, band, DrawList.STONE);
+        // the cornice round the roof's edge, under it: the roof itself is the top she stands on
+        d.box(cx, top - 0.27f, cz, hx + 0.35f, 0.25f, hz + 0.35f, null, band, DrawList.STONE);
         // the windows of the upper floors in stone frames, a pediment over the first floor's
         for (int fl = 0; fl < 4; fl++) {
             float wy = 7f + fl * 2.9f;
@@ -1793,6 +1816,8 @@ final class City implements Ground {
         small.box(cx, b0 + 1.9f, tcz, 0.5f, 0.6f, 0.5f, null, 0xA8823A, DrawList.GOLD);
         small.box(cx, b0 + 2.6f, tcz, 0.08f, 0.25f, 0.08f, null, 0x3A3A3A, DrawList.PLAIN);
         dome(d, small, cx, b1 + 0.4f, tcz, thx - 0.1f, copper, gold);
+        // solid, up from the roof to the belfry's top: no walking through it
+        c.wall(cx - thx, tz0, cx + thx, tz1, b1 + 0.4f);
         // the round towers at the two ends, a storey over the roof
         for (int e = -1; e <= 1; e += 2) {
             float rx = cx + e * (hx - 2.6f), rz = z0 + 1.6f, rr = 2.6f, rt = top + 3.6f;
@@ -1801,6 +1826,7 @@ final class City implements Ground {
             for (int fl = 0; fl < 4; fl++)
                 small.box(rx, 7f + fl * 2.9f, rz - rr - 0.03f, 0.5f, 0.85f, 0.04f, null, glass, DrawList.GLASS);
             dome(d, small, rx, rt + 0.3f, rz, rr - 0.1f, copper, gold);
+            c.wall(rx - rr * 0.95f, rz - rr * 0.95f, rx + rr * 0.95f, rz + rr * 0.95f, rt + 0.3f);
         }
         // the lift: its door in the front, the hut on the roof
         lift(c, d, cx, z0, true, -1, high, stone);
@@ -1863,7 +1889,8 @@ final class City implements Ground {
         float top = ARCHIVE_HIGH + 0.5f;
         int stone = 0x8F918F, dark = 0x6E706E, wood = 0x3A2A20, glass = 0x1E2830;
         d.box(cx, top * 0.5f, cz, hx, top * 0.5f, hz, null, stone, DrawList.STONE);
-        d.box(cx, top + 0.3f, cz, hx + 0.3f, 0.3f, hz + 0.3f, null, dark, DrawList.STONE);
+        // the cornice, under the roof's top (the top is what she stands on)
+        d.box(cx, top - 0.32f, cz, hx + 0.3f, 0.3f, hz + 0.3f, null, dark, DrawList.STONE);
         d.box(cx, 0.6f, cz, hx + 0.15f, 0.6f, hz + 0.15f, null, dark, DrawList.STONE);
         for (int e = -1; e <= 1; e += 2) {
             float fz = e < 0 ? z0 : z1;

@@ -128,6 +128,12 @@ final class Pickup {
         }
         // not up the mountain's slope, off its road: back, and on along the slope's foot with what
         // went along it, its nose turned that way, as along a wall
+        // nor up the ridge's: back, and half as fast
+        if (City.ridgeHolds(x - fx * speed * dt, z - fz * speed * dt, x, z)) {
+            x -= fx * speed * dt;
+            z -= fz * speed * dt;
+            speed *= 0.5f;
+        }
         if (Mountain.holds(x - fx * speed * dt, z - fz * speed * dt, x, z)) {
             x -= fx * speed * dt;
             z -= fz * speed * dt;

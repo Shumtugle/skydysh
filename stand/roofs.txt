@@ -1,20 +1,41 @@
-# On the roofs: her on a roof, running along it to the street, a flick up at the edge: she jumps,
-# and falling high over the street she puts her arms out and glides across by herself.
+# The town hall's roof and the ridge (1.4.5): on the roof by the pad, her feet and the copter's
+# skids on its top, not sunk in it; she runs at the tower over the door and stops at it; the
+# ridge north of the fields a slope she runs up and over, from the fields and from its crest,
+# and the ridge seen from the fields.
 screen 1096 2560
-roof
-wait 0.3
-shot k0
-down 137 600
-wait 2.0
-shot k1
-move 137 590
-move 137 570
-move 137 545
-wait 0.3
-shot k2
+wait 0.4
+mission 8
+close
+at 34 147 1.57
+wait 1.5
+where
+shot r0
+eye 36.5 17.9 151.5 1.2 0.02
+wait 0.1
+shot r1
+eye off
+face 3.1416
 wait 0.5
+down 137 420
+wait 2
+up 137 420
+wait 0.5
+where
+shot r2
+free
+at 63 892 0
+wait 1.5
+where
+shot k0
+down 137 420
+wait 3
+where
+shot k1
+wait 3
+up 137 420
+wait 0.5
+where
+shot k2
+eye 63 14 840 0 0.02
+wait 0.1
 shot k3
-wait 0.6
-shot k4
-wait 0.8
-shot k5

@@ -115,6 +115,7 @@ release, each seen on the stand before the phone.
 - 1.4.2 Home a part of the town: open windows both ways, in and out with no dark.
 - 1.4.3 A bathroom in home, its mirror showing her: the room behind the glass built again, turned about.
 - 1.4.4 The streets alive: zebras, lights at some crossings, people crossing, cars that dodge pickups, go round what is in the way, wrecks that drive off.
+- 1.4.5 The town hall's roof underfoot, its towers solid; the ridge a slope to run over.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -156,6 +157,7 @@ release, each seen on the stand before the phone.
 
 ## Next
 
+- The archive's quarter again: an open yard, the archive a house with a foyer, corridors and rooms, a clerk at a desk at the end taking the folders; the copter's leg seen breaking off; the new leg loaded at the workshop and the copter mended, both shown.
 - The town's ends along the shore, west and east, and a forest past them (a steppe later, past the forest).
 - Canals: a loop from the sea through the town and back to it, past the last houses through a park in a wood; high bridges over it and two that lift, for a yacht to go through.
 - The taxis' stand: a job of its own, some day.
