@@ -343,7 +343,7 @@ final class Walkers {
         // its light, if the zebra is by a crossing that has one: the street's cars run along z if they cross along x
         int li = Math.round(zx[i] / City.CELL), lj = Math.round(zz[i] / City.CELL);
         float ddx = zx[i] - li * City.CELL, ddz = zz[i] - lj * City.CELL;
-        cLit[i] = ddx * ddx + ddz * ddz < 12f * 12f && Crossings.lit(li, lj);
+        cLit[i] = ddx * ddx + ddz * ddz < 12f * 12f && Crossings.working(li, lj);
         cLi[i] = li;
         cLj[i] = lj;
         cLitX[i] = nx == 0f;
@@ -394,6 +394,7 @@ final class Walkers {
         float nx = (cbx[i] - cax[i]) / cLen[i], nz = (cbz[i] - caz[i]) / cLen[i];
         if (cPhase[i] == WAITS) {
             cWaited[i] += dt;
+            if (cLit[i] && !Crossings.working(cLi[i], cLj[i])) cLit[i] = false;
             boolean go = cLit[i] ? Crossings.light(cLi[i], cLj[i], cLitX[i]) == Crossings.HALT && !carsComing(i) : !carsComing(i);
             if (go) cPhase[i] = WALKS;
             else if (cWaited[i] > CROSS_PATIENCE) {

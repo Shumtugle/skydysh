@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.7
+
+- A new story after the tow, on the same screen as its report: the brum towed out of the quarry,
+  his pickup in the workshop, asks her to take the job he was on his way to. A set of lights in
+  the town has gone wrong: all its lamps blink amber, the cars go through slowly, the people cross
+  as at a zebra with no lights. On the post on the right of the cars coming north stands a grey
+  box; at it, on foot, it opens on a panel to be mended, as the concert hall's was (four by four,
+  its three lamps red, amber and green). Mended and switched on, the lights go round again.
+- After it, between jobs, now and then a set of lights near her goes wrong of itself: no mark,
+  only the blinking amber. Mended, it brings likes every time; left far behind, it comes right.
+- The likes a job brings are no longer told in words: no big "+N" when it is done, no lines of
+  likes in the report. The hearts' fountain and the sum at the foot of the screen say it.
+- The tow's report says the pickup is being mended and the brum is left without wheels.
+
 ## 1.4.6
 
 - The archive's quarter again. Its garden is open to the street north of it: where a row of

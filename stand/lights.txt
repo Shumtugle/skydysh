@@ -1,0 +1,51 @@
+# The lights gone wrong (1.4.7): the job after the tow, its briefing; the crossing's lights all
+# blinking amber, the grey box on the post; at the box the panel opens, is mended and switched
+# on, and the lights go round again. Then between jobs: a light gone wrong of itself near her,
+# mended, its likes.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 32766
+keep where 0
+restart
+mission 14
+wait 1
+shot l0
+close
+wait 1
+fault
+where
+lights 8 4
+eye 513.5 2.4 224 0.22 0.08
+wait 0.1
+shot l1
+wait 0.5
+shot l1b
+eye off
+at 519 246.5 3.1416
+wait 1.1
+fault
+shot l2
+panel 99
+wait 0.2
+panel switch
+wait 2
+fault
+where2
+lights 8 4
+shot l3
+close
+wait 1
+free
+wait 62
+fault
+likes
+atfault
+wait 1
+fault
+panel 99
+wait 0.2
+panel switch
+wait 2.5
+fault
+likes

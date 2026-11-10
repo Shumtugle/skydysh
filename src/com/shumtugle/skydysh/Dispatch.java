@@ -250,7 +250,7 @@ final class Dispatch {
      * folder, the delivery, the call out, the puppy, the tow, the hall's light, the archive, the
      * skid, the containers, the navigator, the hotheads, the black cherry.
      */
-    static final int[] LIKES = { 0, 20000, 200000, 50000, 60000, 70000, 30000, 40000, 50000, 50000, 10000, 80000, 90000, 100000 };
+    static final int[] LIKES = { 0, 20000, 200000, 50000, 60000, 70000, 30000, 40000, 50000, 50000, 10000, 80000, 90000, 100000, 30000 };
     /** The panel on its own, put right from home's list: every time. */
     static final int PANEL_LIKES = 5000;
 
@@ -295,6 +295,7 @@ final class Dispatch {
         if (Lab.its(round)) return priced(Lang.lines("brief.lab", round, null), round);
         if (Herd.its(round)) return priced(Lang.lines("brief.herd", round, null), round);
         if (Cherry.its(round)) return priced(Lang.lines("brief.cherry", round, null), round);
+        if (Fault.its(round)) return Lang.lines("brief.fault", round, null);
         return Lang.lines(round <= 1 ? "brief.first" : "brief.more", round, null);
     }
 
@@ -368,6 +369,11 @@ final class Dispatch {
     /** The brum's pickup brought to the workshop: the time. */
     static String[] towed(int round, String time) {
         return Lang.lines("report.tow", round, time);
+    }
+
+    /** The light gone wrong mended: the time. */
+    static String[] faulted(int round, String time) {
+        return Lang.lines("report.fault", round, time);
     }
 
     /** The puppy brought to the vets': the pay, what has been won in all, the time. */

@@ -117,6 +117,7 @@ release, each seen on the stand before the phone.
 - 1.4.4 The streets alive: zebras, lights at some crossings, people crossing, cars that dodge pickups, go round what is in the way, wrecks that drive off.
 - 1.4.5 The town hall's roof underfoot, its towers solid; the ridge a slope to run over.
 - 1.4.6 The archive's quarter: the garden open to the street, the archive a house with a corridor and a duty room, the skid snapping off, the loading and the mending shown.
+- 1.4.7 Lights gone wrong: a story after the tow, and now and then between jobs, mended at a panel; likes not told in words.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.

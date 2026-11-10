@@ -236,7 +236,9 @@ final class Cars {
             // what holds it in its way: its nearest, and where it is
             float hold = CRUISE, holdX = 0f, holdZ = 0f;
             // a light at the crossing ahead: red, or amber while it can still stop, it stops before the zebra
-            if (Crossings.lit(ti[c], tj[c])) {
+            // its lights gone wrong: slow through it, minding the others
+            if (Crossings.wrong(ti[c], tj[c]) && left < 18f) want = Math.min(want, TURNING);
+            if (Crossings.working(ti[c], tj[c])) {
                 int light = Crossings.light(ti[c], tj[c], di[c] != 0);
                 float before = left - Crossings.STOP;
                 if (before > -0.6f && (light == Crossings.HALT || light == Crossings.WARN && before > speed[c] * speed[c] / 14f)) {

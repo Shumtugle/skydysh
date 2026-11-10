@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.6";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.7";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -55,6 +55,15 @@ final class World {
     Lab lab;                                 // the mission now, when it is the navigator's trial
     Herd herd;                               // the mission now, when it is the hot brums led off
     Cherry cherry;                           // the mission now, when it is the black hole in the collider hall
+    Fault fault;                             // the mission now, when it is the light gone wrong
+    /** A light gone wrong of itself about the town between jobs (none now, null); how long till the next. */
+    Fault stray;
+    private float strayIn = STRAY_FIRST;
+    // the lights gone wrong between jobs: the first so long after the light's job, then every so
+    // long and up to so much more; left behind farther than this, it comes right of itself; mended, so many likes
+    static final float STRAY_FIRST = 60f, STRAY_EVERY = 150f, STRAY_MORE = 150f, STRAY_LEFT = 700f;
+    static final int STRAY_LIKES = 3000, STRAY_HEARTS = 34;
+    private final int[] faultAt = new int[2];
     /** The containers in the port and the crane over them; she at its controls or not. */
     final Quay quay;
     /** She is in the crane's cabin, working it; so from home's list, with no way to go. */
@@ -187,11 +196,23 @@ final class World {
         labSeen = -1;
         herd = null;
         cherry = null;
+        dropFault();
         flying = false;
         if (concert != null) concert.stop();
         concert = null;
         city.extra = null;
-        if (Cherry.its(n)) {
+        if (Fault.its(n)) {
+            mission.round = n;
+            folder = null;
+            // a light near her gone wrong (one at a time: any of itself put right first)
+            stray = null;
+            if (!Fault.pick(runner.x, runner.z, 0xFA17L + n * 31L, faultAt)) {
+                faultAt[0] = City.HOME_I;
+                faultAt[1] = City.HOME_J;
+            }
+            fault = new Fault(faultAt[0], faultAt[1], 0xFA17L + host.loadInt(SAVE_PANELS) * 0x9E3779B97F4A7C15L);
+            chase = nobody;
+        } else if (Cherry.its(n)) {
             mission.round = n;
             folder = null;
             cherry = new Cherry();
@@ -405,6 +426,7 @@ final class World {
         if (lab != null) return lab.doneAt;
         if (herd != null) return herd.doneAt;
         if (cherry != null) return cherry.doneAt;
+        if (fault != null) return fault.doneAt;
         if (concert != null) return concert.doneAt;
         if (tow != null) return tow.doneAt;
         if (puppy != null) return puppy.doneAt;
@@ -429,9 +451,9 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 3, 2, 2, 1, 2, 2, 1};
+    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 3, 2, 2, 1, 2, 2, 1, 1};
     /** How many kinds of mission there are; they come in turn, round and round. */
-    static final int KINDS = 13;
+    static final int KINDS = 14;
 
     /** Mission n's kind: the hunt 1, the folder 2, the delivery 3. */
     static int kindOf(int n) {
@@ -575,14 +597,14 @@ final class World {
 
     /** The brums of the mission now. */
     Chase[] brums() {
-        if (free || delivery != null || rescue != null || puppy != null || tow != null || concert != null || archive != null || mend != null || port != null || lab != null || herd != null || cherry != null) return NONE;
+        if (free || delivery != null || rescue != null || puppy != null || tow != null || concert != null || archive != null || mend != null || port != null || lab != null || herd != null || cherry != null || fault != null) return NONE;
         return folder != null ? folder.rivals : mission.brums;
     }
 
     /** Whether the mission now is a hunt. */
     boolean hunt() {
         return !free && folder == null && delivery == null && rescue == null && puppy == null && tow == null && concert == null && archive == null && mend == null && port == null
-                && lab == null && herd == null && cherry == null;
+                && lab == null && herd == null && cherry == null && fault == null;
     }
 
     /** Whether the mission now is done with, won or not. */
@@ -593,6 +615,7 @@ final class World {
         if (lab != null) return lab.over();
         if (herd != null) return herd.over();
         if (cherry != null) return cherry.over();
+        if (fault != null) return fault.over();
         if (concert != null) return concert.over();
         if (tow != null) return tow.over();
         if (puppy != null) return puppy.over();
@@ -633,7 +656,7 @@ final class World {
 
     /** Whether the mission just over was lost: the hunt's time out, the folder taken first, the puppy got out by others. */
     private boolean failed() {
-        if (puppy != null || tow != null || concert != null || archive != null || mend != null || port != null || lab != null || herd != null || cherry != null) return false;
+        if (puppy != null || tow != null || concert != null || archive != null || mend != null || port != null || lab != null || herd != null || cherry != null || fault != null) return false;
         return hunt() ? mission.late : folder != null && folder.theirs;
     }
 
@@ -642,20 +665,9 @@ final class World {
         return liked(reportLines(), paidNow);
     }
 
-    /**
-     * A report with the likes it brought put in under the lines of what was done (after its head,
-     * its gap, and those lines): so many, and how many in all. Nothing brought, as it was.
-     */
+    /** A report as it is: the likes it brought are seen in the hearts' fountain and the sum on the screen, not told in words. */
     private String[] liked(String[] lines, int got) {
-        if (got <= 0) return lines;
-        int at = 2;
-        while (at < lines.length && !lines[at].isEmpty()) at++;
-        String[] out = new String[lines.length + 2];
-        System.arraycopy(lines, 0, out, 0, at);
-        out[at] = Lang.lines("likes.got", 0, null)[0].replace("{likes}", grouped(got));
-        out[at + 1] = Lang.lines("likes.all", 0, null)[0].replace("{likes}", grouped(likes));
-        System.arraycopy(lines, at, out, at + 2, lines.length - at);
-        return out;
+        return lines;
     }
 
     /** The report's own lines, before the likes. */
@@ -665,6 +677,7 @@ final class World {
         if (port != null) return Dispatch.ported(mission.round, clock(port.doneAt), likes, paidNow);
         if (lab != null) return Dispatch.navigated(mission.round, clock(lab.doneAt), likes, paidNow);
         if (herd != null) return Dispatch.herded(mission.round, clock(herd.doneAt), likes, paidNow);
+        if (fault != null) return Dispatch.faulted(mission.round, clock(fault.doneAt));
         if (cherry != null) return Dispatch.sealed(mission.round, clock(cherry.doneAt), likes, paidNow);
         if (concert != null) return Dispatch.concerted(mission.round, clock(concert.doneAt), likes, paidNow);
         if (tow != null) return Dispatch.towed(mission.round, clock(tow.doneAt));
@@ -736,7 +749,7 @@ final class World {
 
     /** For the desktop stand: the concert's panel, if open: so many of its pieces mended; or (pieces &lt; 0) its switch touched. */
     String standPanel(int pieces) {
-        Panel p = solo != null ? solo : concert != null && concert.panelOpen ? concert.panel : null;
+        Panel p = solo != null ? solo : concert != null && concert.panelOpen ? concert.panel : faultPanel();
         if (p == null) return "no panel open";
         if (pieces >= 0) {
             p.standMend(pieces);
@@ -764,6 +777,7 @@ final class World {
         lab = null;
         herd = null;
         cherry = null;
+        dropFault();
         if (concert != null) concert.stop();
         concert = null;
         chase = nobody;
@@ -863,6 +877,10 @@ final class World {
         }
         if (solo != null) {
             if (type == DOWN) solo.touch(x, y, host);
+            return;
+        }
+        if (faultPanel() != null) {
+            if (type == DOWN) faultPanel().touch(x, y, host);
             return;
         }
         if (opening != null) {
@@ -1213,14 +1231,6 @@ final class World {
         return compassShows() && onButton(x, y, compassX(), pauseY());
     }
 
-    /** The likes a job won brings, told big in the middle: "+N" in the hearts' pink, a heart after it. */
-    private void bigLikes(Px f, String big) {
-        int ink = 0xFF232A4A, pink = 0xFFFF7A9C, scale = 4, gap = 6, mark = 7 * 3;
-        int wide = PixelFont.width(big, scale) + gap + mark, x = (W - wide) / 2, y = h / 2 - 40;
-        shadowed(f, big, x, y, scale, pink, ink);
-        Hearts.mark(f, x + PixelFont.width(big, scale) + gap, y + 2, 3, 0xFFFF4F6E);
-    }
-
     /** Where she is (or what she drives), in whole meters: across, along, how high. */
     private String coords() {
         float x = driving != null ? driving.x : runner.x, z = driving != null ? driving.z : runner.z;
@@ -1407,6 +1417,18 @@ final class World {
             story.update(dt);
             return;
         }
+        if (stray != null && stray.open()) {
+            // a light gone wrong between jobs, its box open: the panel over everything, the town still
+            stray.update(dt, runner, true);
+            if (stray.over()) strayMended();
+            else if (!stray.open()) letGo();
+            return;
+        }
+        if (fault != null && fault.open()) {
+            fault.update(dt, runner, true);
+            if (!fault.open()) letGo();
+            return;
+        }
         if (solo != null) {
             // the panel from home's screen, over everything; the room stands still
             solo.update(dt);
@@ -1504,6 +1526,8 @@ final class World {
             rescue = null;
             puppy = null;
             crowd = null;
+            // the brum towed asks her to take his job: the light gone wrong, at once, on one screen
+            boolean chainLight = tow != null && !passed(14);
             if (tow != null) towed = tow;
             tow = null;
             // the helicopter stays where the archive job left it; its second half begins at once,
@@ -1517,6 +1541,7 @@ final class World {
             lab = null;
             herd = null;
             cherry = null;
+            fault = null;
             saveCopter();
             // after the concert the dark has come down: she wakes at home, on her sofa, in the morning
             boolean slept = concert != null;
@@ -1529,6 +1554,12 @@ final class World {
                 waiting = null;
                 chooseMission(9);
                 dispatch = new Dispatch(host, said).then(briefing()).story(9);
+                return;
+            }
+            if (chainLight) {
+                waiting = null;
+                chooseMission(14);
+                dispatch = new Dispatch(host, said).then(briefing()).story(14);
                 return;
             }
             if (slept) {
@@ -1619,6 +1650,7 @@ final class World {
         int round = mission.round;
         if (free) {
             chase = nobody;
+            if (dispatch == null) strayStep(dt);
             // the job at the concert hall done once: its middle door is open to her, on foot
             if ((kindsWon & (1 << 7)) != 0 && indoors == null && swapT < 0f && driving == null && concertDoor(dt)) {
                 host.sound(Synth.DOOR, 0.45f, 0.9f);
@@ -1677,6 +1709,14 @@ final class World {
             herdStep(dt);
         } else if (cherry != null) {
             cherryStep(dt);
+        } else if (fault != null) {
+            boolean was = fault.open();
+            fault.update(dt, runner, driving == null && indoors == null);
+            if (fault.open() && !was) {
+                letGo();
+                host.sound(Synth.LATCH, 0.5f, 1.3f);
+                host.buzz(20);
+            }
         } else if (port != null) {
             port.update(dt, craning, quay.solved);
         } else if (tow != null) {
@@ -2398,6 +2438,7 @@ final class World {
         if (puppy != null) return DrawList.TINT_TURQUOISE;
         if (tow != null) return DrawList.TINT_AMBER;
         if (archive != null || mend != null || port != null || lab != null || cherry != null) return DrawList.TINT_TURQUOISE;
+        if (fault != null) return DrawList.TINT_AMBER;
         if (concert != null) return DrawList.TINT_CREAM;
         if (delivery != null) return DrawList.TINT_AMBER;
         if (folder != null) return DrawList.TINT_TURQUOISE;
@@ -3687,7 +3728,9 @@ final class World {
     /** Whether a kind is still to be played in its turn: neither won nor put by; the landing gear only after the archive. */
     private boolean open(int k) {
         if (passed(k)) return false;
-        return k != 9 || (kindsWon & (1 << 8)) != 0;
+        // the landing gear only after the archive; the light gone wrong only after the tow
+        if (k == 9) return (kindsWon & (1 << 8)) != 0;
+        return k != 14 || (kindsWon & (1 << 6)) != 0;
     }
 
     /** Whether a kind is behind her: won, or put by to be played when she likes. */
@@ -3908,6 +3951,7 @@ final class World {
         lab = null;
         herd = null;
         cherry = null;
+        dropFault();
         if (concert != null) concert.stop();
         concert = null;
         city.extra = null;
@@ -4169,9 +4213,6 @@ final class World {
         Folder fo = folder;
         String clock = clock(fo.over() ? fo.doneAt : fo.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        // the likes it brings: told big once done (not before: the job is the job)
-        int due = Dispatch.due(mission.round);
-        String sum = grouped(due);
         // the rivals: a mark each, alight while it is about, and what it has still to go
         for (int k = 0; k < Folder.RIVALS; k++) {
             Chase g = fo.rivals[k];
@@ -4184,8 +4225,6 @@ final class World {
             shadowed(f, m, 22, y, 1, g.y > 1f ? gold : cream, ink);
         }
         if (fo.over() && fo.hers) {
-            String big = "+" + sum;
-            if (due > 0) bigLikes(f, big);
             return;
         }
         if (fo.theirs) {
@@ -4231,9 +4270,6 @@ final class World {
         Delivery dv = delivery;
         String clock = clock(dv.over() ? dv.doneAt : dv.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        // the likes it brings: told big once done (not before: the job is the job)
-        int due = Dispatch.due(mission.round);
-        String sum = grouped(due);
         // the crates on the pickup she drives, in a row of little squares
         Pickup p = driving != null ? driving : dv.carrying;
         for (int k = 0; k < Pickup.CRATES; k++) {
@@ -4242,8 +4278,6 @@ final class World {
             f.rect(11 + k * 11, 13, 18 + k * 11, 20, on ? 0xFFC79B5E : 0xFF3A4660);
         }
         if (dv.over()) {
-            String big = "+" + sum;
-            if (due > 0) bigLikes(f, big);
             return;
         }
         if (!dv.goal(duty, driving, runner, goal)) return;
@@ -4290,11 +4324,7 @@ final class World {
         Puppy pu = puppy;
         String clock = clock(pu.over() ? pu.doneAt : pu.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        int due = Dispatch.due(mission.round);
-        String sum = grouped(due);
         if (pu.over()) {
-            String big = "+" + sum;
-            if (due > 0) bigLikes(f, big);
             return;
         }
         if (!pu.goal(goal)) return;
@@ -4319,12 +4349,8 @@ final class World {
         Concert co = concert;
         String clock = clock(co.doneAt >= 0f ? co.doneAt : co.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        int due = Dispatch.due(mission.round);
-        String sum = grouped(due);
         if (co.step >= Concert.SEATED) {
             // the pay, big, a moment after she sits; then only the music
-            String big = "+" + sum;
-            if (due > 0 && co.listened() < 3f) bigLikes(f, big);
             return;
         }
         boolean in = indoors != null && indoors.concert;
@@ -4351,9 +4377,9 @@ final class World {
 
     /** The panel over the frame, while it is open: nothing of the frame's own buttons shows through it. */
     private void panelFlat(DrawList d, Px f) {
-        Panel p = solo != null ? solo : concert != null && concert.panelOpen ? concert.panel : null;
+        Panel p = solo != null ? solo : concert != null && concert.panelOpen ? concert.panel : faultPanel();
         if (p == null) return;
-        p.draw(f, Lang.lines("panel.plate", 0, null)[0]);
+        p.draw(f, Lang.lines(p == faultPanel() ? "fault.plate" : "panel.plate", 0, null)[0]);
         d.badgeN = 0;
         d.tube[0] = d.tube[2] = 0f;
     }
@@ -5112,6 +5138,76 @@ final class World {
         placeMark(d, f, goal[0], goal[1], goal[2], lb.mark(), Marks.OPEN);
     }
 
+    // ---- the lights gone wrong (see Fault): the job, and now and then one of itself between jobs ----
+
+    /** The panel of a light's box, if one is open now. */
+    private Panel faultPanel() {
+        if (fault != null && fault.open()) return fault.panel;
+        if (stray != null && stray.open()) return stray.panel;
+        return null;
+    }
+
+    /** The job's light no more (the job put by, played again, or over): if it is still wrong, right again. */
+    private void dropFault() {
+        if (fault != null && !fault.over() && stray == null) Crossings.mended();
+        fault = null;
+    }
+
+    /**
+     * Between jobs, once the light's job is behind her: now and then a light near her goes wrong;
+     * left far behind, it comes right of itself; at its box on foot, the box opens.
+     */
+    private void strayStep(float dt) {
+        if (!passed(14) || fault != null) return;
+        if (stray == null) {
+            strayIn -= dt;
+            if (strayIn > 0f || indoors != null) return;
+            strayIn = STRAY_EVERY + (float) Math.random() * STRAY_MORE;
+            if (Fault.pick(runner.x, runner.z, (long) (time * 1000f), faultAt))
+                stray = new Fault(faultAt[0], faultAt[1], (long) (time * 977f) + 0x57A7L);
+            return;
+        }
+        float dx = stray.boxX() - runner.x, dz = stray.boxZ() - runner.z;
+        if (dx * dx + dz * dz > STRAY_LEFT * STRAY_LEFT) {
+            Crossings.mended();
+            stray = null;
+            return;
+        }
+        boolean was = stray.open();
+        stray.update(dt, runner, driving == null && indoors == null && dispatch == null);
+        if (stray.over()) {
+            strayMended();
+            return;
+        }
+        if (stray.open() && !was) {
+            letGo();
+            host.sound(Synth.LATCH, 0.5f, 1.3f);
+            host.buzz(20);
+        }
+    }
+
+    /** A light gone wrong between jobs mended: its likes, every time. */
+    private void strayMended() {
+        stray = null;
+        letGo();
+        host.sound(Synth.CHIME, 0.45f, 1.1f);
+        host.buzz(60);
+        like(STRAY_LIKES, STRAY_HEARTS);
+        saveLikes();
+    }
+
+    /** Over the frame, the light gone wrong: the clock in the corner; the way to its box, in a word and a mark. */
+    private void faultFlat(DrawList d, Px f) {
+        int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E;
+        Fault fl = fault;
+        String clock = clock(fl.over() ? fl.doneAt : fl.clock);
+        shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
+        if (fl.over() || fl.open()) return;
+        fl.goal(goal);
+        wordAtTop(f, Lang.lines("goal.light", mission.round, null)[0], green, ink);
+        placeMark(d, f, goal[0], goal[1], goal[2], Marks.PANEL, Marks.OPEN);
+    }
+
     /** Over the frame, the tow: the clock in the corner; where the way goes now, in a word and a mark. */
     private void towFlat(DrawList d, Px f) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, green = 0xFF46D27E;
@@ -5150,12 +5246,7 @@ final class World {
         Rescue rs = rescue;
         String clock = clock(rs.over() ? rs.doneAt : rs.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        // the likes it brings: told big once done (not before: the job is the job)
-        int due = Dispatch.due(mission.round);
-        String sum = grouped(due);
         if (rs.over()) {
-            String big = "+" + sum;
-            if (due > 0) bigLikes(f, big);
             return;
         }
         if (!rs.goal(duty, driving, runner, goal)) return;
@@ -5431,6 +5522,7 @@ final class World {
         else if (lab != null) labFlat(d, f);
         else if (herd != null) herdFlat(d, f);
         else if (cherry != null) cherryFlat(d, f);
+        else if (fault != null) faultFlat(d, f);
         else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);
@@ -5638,6 +5730,7 @@ final class World {
         else if (lab != null) labFlat(d, f);
         else if (herd != null) herdFlat(d, f);
         else if (cherry != null) cherryFlat(d, f);
+        else if (fault != null) faultFlat(d, f);
         else if (tow != null) towFlat(d, f);
         else if (puppy != null) puppyFlat(d, f);
         else if (rescue != null) rescueFlat(d, f);

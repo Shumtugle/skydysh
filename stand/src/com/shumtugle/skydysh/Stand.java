@@ -960,6 +960,20 @@ public final class Stand implements World.Host {
             String[] says = {"green", "amber", "red"};
             System.out.println(String.format("%7.2fs  crossing %d %d: %s; along x %s, along z %s", time, li, lj,
                     Crossings.lit(li, lj) ? "lights" : "no lights", says[Crossings.light(li, lj, true)], says[Crossings.light(li, lj, false)]));
+        } else if (c.equals("atfault")) {
+            // atfault: her on foot at the box of the light gone wrong now, facing it
+            Fault fl = world.fault != null ? world.fault : world.stray;
+            if (fl != null) {
+                world.runner.put(fl.boxX(), City.WALK_TOP, fl.boxZ() + 1.1f, (float) Math.PI);
+                world.runner.recenter();
+            }
+            step();
+        } else if (c.equals("fault")) {
+            // fault: the light gone wrong now (the job's, or one of itself between jobs), its box, its panel
+            Fault fl = world.fault != null ? world.fault : world.stray;
+            System.out.println(fl == null ? String.format("%7.2fs  no light gone wrong", time)
+                    : String.format("%7.2fs  %s light gone wrong at crossing %d %d, box %.1f %.1f, step %d%s", time, fl == world.fault ? "the job's" : "a stray",
+                    fl.ci, fl.cj, fl.boxX(), fl.boxZ(), fl.step, fl.open() ? ", panel open" : ""));
         } else if (c.equals("wreck")) {
             // wreck X Z YAW: car 0 a wreck lying there, just come to rest
             world.cars.standWreck(0, f(p[1]), f(p[2]), f(p[3]));

@@ -37,6 +37,46 @@ final class Crossings {
     /** The town's clock for its lights, seconds. */
     static float time;
 
+    // a crossing whose lights have gone wrong (see Fault): all blinking amber; none if not on
+    private static int wrongI, wrongJ;
+    private static boolean wrong;
+
+    /** The lights of crossing (i, j) gone wrong: blinking amber, the cars and people finding their own way. */
+    static void broken(int i, int j) {
+        wrongI = i;
+        wrongJ = j;
+        wrong = true;
+    }
+
+    /** The lights gone wrong mended (or left behind): all go round as they should again. */
+    static void mended() {
+        wrong = false;
+    }
+
+    /** Whether the lights of crossing (i, j) are wrong now. */
+    static boolean wrong(int i, int j) {
+        return wrong && i == wrongI && j == wrongJ;
+    }
+
+    /** Whether some crossing's lights are wrong now. */
+    static boolean anyWrong() {
+        return wrong;
+    }
+
+    /** Whether crossing (i, j) has lights that work: the cars and people heed them. */
+    static boolean working(int i, int j) {
+        return lit(i, j) && !wrong(i, j);
+    }
+
+    /** The grey box of a crossing's lights, on the post on the right of the cars coming north, on its pavement side: x, z. */
+    static float boxX(int i) {
+        return i * City.CELL + POST_OUT + 0.3f;
+    }
+
+    static float boxZ(int j) {
+        return j * City.CELL - POST_BACK;
+    }
+
     private Crossings() {
     }
 
@@ -170,6 +210,13 @@ final class Crossings {
                         DrawList.PLAIN);
             }
             c.wall(px - 0.12f, pz - 0.12f, px + 0.12f, pz + 0.12f, City.WALK_TOP + 3.7f);
+            // on the post for the cars coming north, the box with the lights' panel in it
+            if (w == 0) {
+                d.box(px + 0.27f, City.WALK_TOP + 1.25f, pz, 0.2f, 0.42f, 0.3f, null, 0x7C8388, DrawList.PAINT);
+                d.box(px + 0.48f, City.WALK_TOP + 1.25f, pz, 0.01f, 0.36f, 0.24f, null, 0x6A7176, DrawList.PAINT);
+                d.box(px + 0.49f, City.WALK_TOP + 1.42f, pz + 0.16f, 0.01f, 0.05f, 0.03f, null, 0xF2C230, DrawList.PAINT);
+                c.wall(px - 0.12f, pz - 0.32f, px + 0.48f, pz + 0.32f, City.WALK_TOP + 1.7f);
+            }
         }
     }
 
@@ -206,9 +253,12 @@ final class Crossings {
                 if (!lit(i, j)) continue;
                 float x = i * City.CELL, z = j * City.CELL, dx = x - ex, dz = z - ez;
                 if (dx * dx + dz * dz > 150f * 150f || dx * fx + dz * fz < -20f) continue;
+                boolean bad = wrong(i, j);
+                // gone wrong: amber only, blinking, on every post at once
+                if (bad && (time % 1f) > 0.55f) continue;
                 for (int w = 0; w < 4; w++) {
                     if (!comes(i, j, w)) continue;
-                    int s = light(i, j, w >= 2);
+                    int s = bad ? WARN : light(i, j, w >= 2);
                     float px = postX(x, w), pz = postZ(z, w), ax = faceX(w), az = faceZ(w);
                     boolean alongX = ax != 0f;
                     // red at the top, amber, green at the bottom
