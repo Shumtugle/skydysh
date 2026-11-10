@@ -45,6 +45,8 @@ final class Indoors implements Ground {
     float frameMat = DrawList.GOLD;
 
     private final DrawList still = new DrawList();
+    /** Home's bathroom turned about its mirror (the world behind the glass), and the panel over the mirror's back outside. */
+    final DrawList mirrored = new DrawList(), cover = new DrawList();
     // what is in her way: x0, z0, x1, z1, top, in the town's terms; the doors' last
     private float[] solid = new float[5 * 64];
     private int solidN, fixedN;

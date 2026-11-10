@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.3
+
+- A bathroom in home, in the bedroom's back corner: a bath with water in it, a toilet, a basin
+  under a mirror in a gold frame. The mirror shows her and the room as a mirror does: behind the
+  glass the bathroom is built again, turned about, and she walks in it as she walks before it.
+- The wardrobe's tall mirror, which showed nothing, is a tall press now.
+
 ## 1.4.2
 
 - Home a part of the town: its rooms are the house itself, their walls its walls, its windows

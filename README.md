@@ -255,7 +255,9 @@ its door (its sign over it) takes her in with no dark between, as a door does, t
 hall down the middle from the door to a glass door at the back onto the yard (under home's sign
 there too), a great cold hearth of pale stone on its left wall, the sea in a great frame over it,
 the sofa facing it across a rug, a low table, armchairs, books; through doorways on the left the
-wardrobe (rails of her dresses, boots, a tall mirror) and the bedroom (a great bed); on the right,
+wardrobe (rails of her dresses, boots, a tall press) and the bedroom (a great bed), and in the
+bedroom's corner the bathroom (a bath, a toilet, a basin under a mirror that shows her as a mirror
+does: the room behind the glass is built again, turned about); on the right,
 open to the hall, the dining room (a long table, a chandelier) and the kitchen (counters, the
 stove, the sink under a window, a tall fridge, an island); windows all round, plants under them,
 herbs on the sills. Come up to

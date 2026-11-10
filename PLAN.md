@@ -113,6 +113,7 @@ release, each seen on the stand before the phone.
 - 1.4.0 Home's quarter inland: home as wide as its rooms, the shop, the taxis' stand, the park; a green brum in the old flat.
 - 1.4.1 The green brum plays the opening, before his door.
 - 1.4.2 Home a part of the town: open windows both ways, in and out with no dark.
+- 1.4.3 A bathroom in home, its mirror showing her: the room behind the glass built again, turned about.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -154,8 +155,6 @@ release, each seen on the stand before the phone.
 
 ## Next
 
-- A bathroom in home, a mirror over its basin that shows her (the room behind it built again,
-  turned about, as games of old did it).
 - The taxis' stand: a job of its own, some day.
 - The yachts: a boat to take out from the island's pier (the boat in the game's four ways to go).
 - The cable car: a cabin stuck, she comes down along the cable.

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.2";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.3";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -5241,6 +5241,10 @@ final class World {
             walkers.draw(d, camAt[0], camAt[2], ex, ez);
             pets.draw(d, camAt[0], camAt[2], ex, ez, walkers);
         }
+        // in home's bathroom, with the eye there too: behind the mirror the room turned about, and
+        // she in it; else a plain wall's back over the mirror's hole
+        boolean mirror = inHome && !scene && dispatch == null && Rooms.inBath(indoors, camAt[0], camAt[2]);
+        if (inHome) d.append(mirror ? indoors.mirrored : indoors.cover);
         if (!scene) {
         // the room, unless the eye has gone back into her head past its walls (she sits against one)
         if (dispatch == null || indoors.holds(eyeNow[0], eyeNow[2])) {
@@ -5296,6 +5300,19 @@ final class World {
             r.draw(d);
             if (glows) Frida.hot = false;
             toss.draw(d, r);
+            if (mirror) {
+                // and in the mirror: she as the glass shows her, turned about its plane
+                Rooms.reflected(indoors, r.x, r.z, mirrorAt);
+                float ox = r.x, oz = r.z, oh = r.heading;
+                r.x = mirrorAt[0];
+                r.z = mirrorAt[1];
+                r.heading = mirrorHeading(oh);
+                r.draw(d);
+                toss.draw(d, r);
+                r.x = ox;
+                r.z = oz;
+                r.heading = oh;
+            }
             if (archive != null && archive.carrying()) archive.carried(d, r);
             if (lab != null && lab.carrying()) {
                 r.bone("hand_l", handTo);
@@ -5334,7 +5351,15 @@ final class World {
         meter(f);
     }
 
-    private final float[] eyeHere = new float[5], camAt = new float[5];
+    private final float[] eyeHere = new float[5], camAt = new float[5], mirrorAt = new float[2];
+
+    /** A heading as the mirror shows it: turned about its plane (across in the room's frame). */
+    private float mirrorHeading(float h) {
+        // the frame's across in the town's terms; turning about the plane across it flips that part
+        float ax = indoors.wx(1f, 0f) - indoors.wx(0f, 0f), az = indoors.wz(1f, 0f) - indoors.wz(0f, 0f);
+        float hx = (float) Math.sin(h), hz = (float) Math.cos(h), along = hx * ax + hz * az;
+        return (float) Math.atan2(hx - 2f * along * ax, hz - 2f * along * az);
+    }
 
     /** The eye in a room (in home, far enough to see the town through its windows), kept as camAt. */
     private void camIn(DrawList d, float[] e, float focal, boolean wide) {
@@ -5433,7 +5458,10 @@ final class World {
         float ex = (float) Math.sin(eyeYaw), ez = (float) Math.cos(eyeYaw);
         city.draw(d, eyeX, eyeZ, ex, ez);
         // home: its rooms are its walls
-        if (nearHome(eyeX, eyeZ)) homeRoom().draw(d);
+        if (nearHome(eyeX, eyeZ)) {
+            homeRoom().draw(d);
+            d.append(homeRoom().cover);
+        }
         Mountain.cabins(d, time);
         LabTop.deck(d, time, eyeX, eyeZ);
         labDrawn(d, r);

@@ -591,8 +591,8 @@ final class Rooms {
     static final float[][] HOME_WINDOWS = {
         {ON_FRONT, -4.6f, 1.1f, 1.2f, 4.4f}, {ON_FRONT, 4.6f, 1.1f, 1.2f, 4.4f}, {ON_FRONT, -12f, 1.0f, 1.2f, 4.4f},
         {ON_FRONT, 10f, 1.0f, 1.2f, 4.4f}, {ON_FRONT, 14f, 1.0f, 1.2f, 4.4f},
-        {ON_BACK, -4.6f, 1.1f, 1.2f, 4.4f}, {ON_BACK, 4.6f, 1.1f, 1.2f, 4.4f}, {ON_BACK, -12f, 1.1f, 1.2f, 4.4f}, {ON_BACK, 12f, 1.0f, 1.5f, 3.7f},
-        {ON_LEFT, 12.4f, 1.0f, 1.2f, 4.4f}, {ON_LEFT, 22.4f, 1.0f, 1.2f, 4.4f},
+        {ON_BACK, -4.6f, 1.1f, 1.2f, 4.4f}, {ON_BACK, 4.6f, 1.1f, 1.2f, 4.4f}, {ON_BACK, -9.5f, 1.0f, 1.2f, 4.4f}, {ON_BACK, 12f, 1.0f, 1.5f, 3.7f},
+        {ON_LEFT, 12.4f, 1.0f, 1.2f, 4.4f},
         {ON_RIGHT, 3f, 1.0f, 1.2f, 4.4f}, {ON_RIGHT, 9f, 1.0f, 1.2f, 4.4f}, {ON_RIGHT, 21.4f, 0.9f, 1.5f, 3.7f},
     };
 
@@ -611,6 +611,8 @@ final class Rooms {
             java.util.ArrayList<float[]> holes = new java.util.ArrayList<>();
             if (across) holes.add(new float[] {0f, dh, 0f, Indoors.DOOR_HIGH});
             for (float[] k : HOME_WINDOWS) if ((int) k[0] == on) holes.add(new float[] {k[1], k[2], k[3], k[4]});
+            // and the bathroom's mirror, a hole too: behind it the room turned about (see bath)
+            if (on == ON_LEFT) holes.add(new float[] {MIRROR_V, MIRROR_HALF, MIRROR_Y0, MIRROR_Y1});
             // in order along the wall (a few: picked one by one)
             for (int x = 0; x < holes.size(); x++)
                 for (int y = x + 1; y < holes.size(); y++)
@@ -675,8 +677,9 @@ final class Rooms {
      * boards; on its left wall a great hearth of pale stone, cold, logs laid in it, a marble
      * mantel, candlesticks and a clock on it, the sea in a great frame over it; before it the teal
      * sofa, a low table, two armchairs, a coral rug. Through the doorways on the left the wardrobe
-     * (rails of her dresses, black with white aprons, a few in colour; boots; a tall mirror) and
-     * the bedroom behind it (a great bed, its head to the outer wall); on the right, open to the
+     * (rails of her dresses, black with white aprons, a few in colour; boots; a tall press) and
+     * the bedroom behind it (a great bed, its head to the outer wall), the bathroom in its back
+     * corner with the mirror that shows her (see bath); on the right, open to the
      * hall, the dining room (a long table, its chairs, a chandelier) and the kitchen behind it
      * (counters along two walls, the stove, the sink under a window, a tall fridge, an island).
      * Windows all round the outer walls, a plant under or beside each, herbs on the sills.
@@ -699,7 +702,9 @@ final class Rooms {
         // the floor in parts side by side, none over another (far off they would flicker): boards
         // across the left and the hall, boards in the dining room, tiles in the kitchen
         float fl = 0.15f, kv = HOME_KITCHEN;
-        in.box(d, (-half - w + hall) * 0.5f, f - fl, deep * 0.5f, (half + w + hall) * 0.5f, fl, deep * 0.5f, 0xA8754A, DrawList.WOOD);
+        // (the bathroom's corner left out of the boards: it has its tiles, see bath)
+        in.box(d, (-half - w + BATH_U1) * 0.5f, f - fl, BATH_V0 * 0.5f, (BATH_U1 + half + w) * 0.5f, fl, BATH_V0 * 0.5f, 0xA8754A, DrawList.WOOD);
+        in.box(d, (BATH_U1 + hall) * 0.5f, f - fl, deep * 0.5f, (hall - BATH_U1) * 0.5f, fl, deep * 0.5f, 0xA8754A, DrawList.WOOD);
         in.box(d, (hall + half + w) * 0.5f, f - fl, kv * 0.5f, (half + w - hall) * 0.5f, fl, kv * 0.5f, 0xA8754A, DrawList.WOOD);
         in.box(d, (hall + half + w) * 0.5f, f - fl, (kv + deep) * 0.5f, (half + w - hall) * 0.5f, fl, (deep - kv) * 0.5f, 0xE9E1D2, DrawList.material(DrawList.TILES, 120));
         // the walls between: the hall's left, its two doorways (the wardrobe, the bedroom); the
@@ -795,7 +800,7 @@ final class Rooms {
                         spines[(k + r * 2) % spines.length], DrawList.PLAIN);
         in.solid(cu - 0.22f, cv - 1.25f, hall, cv + 1.25f, top);
 
-        // ---- the wardrobe: rails of dresses along the outer wall, boots, a tall mirror ----
+        // ---- the wardrobe: rails of dresses along the outer wall, boots, a tall press ----
         float ru = -half + 0.6f, ry = f + 3.1f;
         in.box(d, ru, ry, HOME_WARDROBE * 0.5f, 0.03f, 0.03f, HOME_WARDROBE * 0.5f - 1f, in.frameColor, DrawList.GOLD);
         in.box(d, ru - 0.1f, ry + 0.75f, HOME_WARDROBE * 0.5f, 0.45f, 0.04f, HOME_WARDROBE * 0.5f - 0.8f, wood, DrawList.WOOD);
@@ -825,15 +830,20 @@ final class Rooms {
             in.solid(c0 - 1.1f, w, c0 + 1.1f, w + 0.7f, f + 0.9f);
         }
         plant(in, d, rnd, -14.6f, w + 1.6f, 0);
-        // the tall mirror on the wall to the bedroom; a round seat in the middle
-        float mv = HOME_WARDROBE - PART - 0.04f;
-        in.box(d, -9.6f, f + 1.8f, mv, 0.6f, 1.6f, 0.03f, in.frameColor, DrawList.GOLD);
-        in.box(d, -9.6f, f + 1.8f, mv - 0.03f, 0.5f, 1.5f, 0.01f, 0xBFD6DE, DrawList.GLASS);
+        // a tall press for hats and gloves on the wall to the bedroom (the mirror that shows her is
+        // the bathroom's: behind this wall is the bedroom, no room for a world behind a glass);
+        // a round seat in the middle
+        float mv = HOME_WARDROBE - PART - 0.35f;
+        in.box(d, -9.6f, f + 1.4f, mv, 0.75f, 1.4f, 0.32f, wood, DrawList.WOOD);
+        in.box(d, -9.6f, f + 2.86f, mv, 0.82f, 0.06f, 0.36f, in.frameColor, DrawList.GOLD);
+        in.box(d, -9.6f, f + 1.4f, mv - 0.33f, 0.01f, 1.3f, 0.01f, 0x4A3020, DrawList.PLAIN);
+        for (int e = -1; e <= 1; e += 2) in.box(d, -9.6f + e * 0.1f, f + 1.5f, mv - 0.34f, 0.025f, 0.12f, 0.025f, in.frameColor, DrawList.GOLD);
+        in.solid(-10.35f, mv - 0.32f, -8.85f, mv + 0.32f, f + 2.9f);
         in.box(d, -12.6f, f + 0.25f, 5.2f, 0.7f, 0.25f, 0.7f, teal, DrawList.GRAIN);
         in.solid(-13.3f, 4.5f, -11.9f, 5.9f, f + 0.5f);
 
         // ---- the bedroom: the great bed, its head to the outer wall ----
-        float bv = 17.5f, bu0 = -half, bl = 3.8f, bw = 1.6f;
+        float bv = 15.6f, bu0 = -half, bl = 3.8f, bw = 1.6f;
         in.box(d, bu0 + 0.12f, f + 1.05f, bv, 0.12f, 1.05f, bw + 0.25f, teal, DrawList.GRAIN);
         in.box(d, bu0 + bl * 0.5f, f + 0.25f, bv, bl * 0.5f, 0.25f, bw, wood, DrawList.WOOD);
         in.box(d, bu0 + bl * 0.5f + 0.05f, f + 0.6f, bv, bl * 0.5f - 0.1f, 0.12f, bw - 0.08f, cream, DrawList.GRAIN);
@@ -850,8 +860,8 @@ final class Rooms {
         in.box(d, bu0 + bl + 0.55f, f + 0.25f, bv, 0.3f, 0.25f, bw - 0.1f, teal, DrawList.GRAIN);
         in.solid(bu0 + bl + 0.2f, bv - bw, bu0 + bl + 0.9f, bv + bw, f + 0.5f);
         rug(in, d, bu0 + bl * 0.6f, bv, bl * 0.5f + 1.4f, bw + 1.4f, 0.3f, 0x2F8A86, 0x3A4660);
-        plant(in, d, rnd, -half + 0.8f, 14.0f, 0);
-        plant(in, d, rnd, -12f, deep - w - 0.75f, 1);
+        plant(in, d, rnd, -half + 0.8f, 11.0f, 0);
+        plant(in, d, rnd, -9.5f, deep - w - 0.75f, 1);
         plant(in, d, rnd, -9.2f, 11.0f, 0);
 
         // ---- the dining room: the long table, its chairs, a chandelier ----
@@ -925,8 +935,149 @@ final class Rooms {
             in.box(d, iu - 1.15f, f + 0.82f, iv + k * 1.0f, 0.22f, 0.04f, 0.22f, coral, DrawList.GRAIN);
         }
         in.box(d, iu, ct + 0.18f, iv - 0.6f, 0.22f, 0.12f, 0.22f, 0xF6B54A, DrawList.POLISHED);
+        // ---- the bathroom, and the same turned about its mirror: the world behind the glass ----
+        bath(in, d, false, wall, low);
+        bath(in, in.mirrored, true, wall, low);
+        // outside, over the mirror's back, a panel of the wall's own (drawn while the eye is not in the bathroom)
+        in.box(in.cover, -half - w - 0.02f, f + (MIRROR_Y0 + MIRROR_Y1) * 0.5f, MIRROR_V, 0.03f, (MIRROR_Y1 - MIRROR_Y0) * 0.5f + 0.02f, MIRROR_HALF + 0.02f, 0xF1E6CF,
+                DrawList.PLAIN);
+        in.box(in.cover, -half + 0.02f, f + (MIRROR_Y0 + MIRROR_Y1) * 0.5f, MIRROR_V, 0.02f, (MIRROR_Y1 - MIRROR_Y0) * 0.5f, MIRROR_HALF, 0xBFD6DE, DrawList.GLASS);
         in.done();
         return in;
+    }
+
+    // the bathroom, in the bedroom's back corner on the outer wall: across from the outer wall to
+    // its wall on the bedroom, in from its wall on the bedroom to the back; its doorway from the
+    // bedroom, its middle across, half as wide
+    static final float BATH_U1 = -11f, BATH_V0 = 19f, BATH_DOOR_U = -13.3f, BATH_DOOR_HALF = 0.95f;
+    // the mirror over the basin, in the outer wall (its inner face the mirror's plane, across):
+    // so far in, half as wide, from and to over the floor
+    static final float MIRROR_U = -HOME_HALF, MIRROR_V = 20.4f, MIRROR_HALF = 0.75f, MIRROR_Y0 = 1.45f, MIRROR_Y1 = 3.7f;
+
+    /** Whether the eye at (x, z) is in home's bathroom (then the mirror shows the room turned about). */
+    static boolean inBath(Indoors in, float x, float z) {
+        float u = in.u(x, z), v = in.v(x, z);
+        return u > MIRROR_U && u < BATH_U1 - PART && v > BATH_V0 + PART && v < in.deep - Indoors.WALL;
+    }
+
+    /** Where her reflection stands for her at (x, z) (x, z into out), turned about the mirror's plane. */
+    static void reflected(Indoors in, float x, float z, float[] out) {
+        float u = in.u(x, z), v = in.v(x, z), mu = 2f * MIRROR_U - u;
+        out[0] = in.wx(mu, v);
+        out[1] = in.wz(mu, v);
+    }
+
+    // building the bathroom again, turned about the mirror's plane (across): see bath
+    private static boolean turned;
+
+    private static float mu(float u) {
+        return turned ? 2f * MIRROR_U - u : u;
+    }
+
+    /** A box of the bathroom: as it is, or turned about the mirror. */
+    private static void bbox(Indoors in, DrawList d, float u, float y, float v, float hu, float hy, float hv, int color, float material) {
+        in.box(d, mu(u), y, v, hu, hy, hv, color, material);
+    }
+
+    /** A thing in her way in the bathroom: only as it is (the turned one is behind the glass). */
+    private static void bsolid(Indoors in, float u0, float v0, float u1, float v1, float top) {
+        if (!turned) in.solid(u0, v0, u1, v1, top);
+    }
+
+    /**
+     * Home's bathroom, into d: turned (the world in the mirror) or as it is. Its walls on the
+     * bedroom (a doorway in the one across), white tiles low on them and on the outer wall; its
+     * floor of small tiles; the bath along the back wall, water in it, its gold tap; the toilet in
+     * the corner; the basin on the outer wall under the mirror, its gold tap; a towel on its rail,
+     * a mat, a small plant, a lamp. Turned, it has as well what the room has round it and the
+     * mirror would show: the back wall, the ceiling, the wall it stands on (the outer one, turned,
+     * is beyond), and through its doorway a glimpse of the bedroom.
+     */
+    private static void bath(Indoors in, DrawList d, boolean turn, int wall, int low) {
+        turned = turn;
+        float f = Indoors.FLOOR, w = Indoors.WALL, h = in.high, deep = in.deep, u0 = MIRROR_U, u1 = BATH_U1, v0 = BATH_V0, top = f + h;
+        int white = 0xF4F2EC, tile = 0xE6EEF0, gold = 0xC9A15A, water = 0x6FC2CC, coral = 0xE0644A, teal = 0x2F8A86;
+        // the floor of small tiles
+        // (turned, all starts at the mirror's plane: past it the turned would lie over what is)
+        float us = turn ? u0 : u0 - w;
+        bbox(in, d, (us + u1) * 0.5f, f - 0.15f, (v0 + deep) * 0.5f, (u1 - us) * 0.5f, 0.15f, (deep - v0) * 0.5f, 0xDCE6E8, DrawList.material(DrawList.TILES, 60));
+        // the wall on the bedroom along the bathroom's side (across at u1), and the one across (in at v0) with its doorway
+        bbox(in, d, u1, (f + top) * 0.5f, (v0 + deep) * 0.5f, PART, h * 0.5f, (deep - v0) * 0.5f, wall, DrawList.PAINT);
+        bsolid(in, u1 - PART, v0, u1 + PART, deep, top + 1f);
+        float da = BATH_DOOR_U - BATH_DOOR_HALF, db = BATH_DOOR_U + BATH_DOOR_HALF;
+        float[][] runs = {{us, da}, {db, u1 + PART}};
+        for (float[] r : runs) {
+            bbox(in, d, (r[0] + r[1]) * 0.5f, (f + top) * 0.5f, v0, (r[1] - r[0]) * 0.5f, h * 0.5f, PART, wall, DrawList.PAINT);
+            bsolid(in, r[0], v0 - PART, r[1], v0 + PART, top + 1f);
+        }
+        bbox(in, d, BATH_DOOR_U, (f + DOORWAY_HIGH + top) * 0.5f, v0, BATH_DOOR_HALF, (top - f - DOORWAY_HIGH) * 0.5f, PART, wall, DrawList.PAINT);
+        bbox(in, d, BATH_DOOR_U, f + DOORWAY_HIGH, v0, BATH_DOOR_HALF + 0.06f, 0.06f, PART + 0.03f, 0xF4EEE2, DrawList.PLAIN);
+        for (float e : new float[] {da, db}) bbox(in, d, e, f + DOORWAY_HIGH * 0.5f, v0, 0.06f, DOORWAY_HIGH * 0.5f, PART + 0.03f, 0xF4EEE2, DrawList.PLAIN);
+        // pale glazed panels low on its walls, inside, a teal line over them: the side, the
+        // doorway's wall, the back, the outer (round the basin)
+        float th = 0.7f, ty = f + th;
+        float lineY = f + th * 2f + 0.03f;
+        bbox(in, d, u1 - PART - 0.025f, lineY, (v0 + deep - w) * 0.5f, 0.025f, 0.03f, (deep - w - v0 - PART) * 0.5f, teal, DrawList.PAINT);
+        for (float[] r : new float[][] {{u0, da}, {db, u1 - PART}})
+            bbox(in, d, (r[0] + r[1]) * 0.5f, lineY, v0 + PART + 0.025f, (r[1] - r[0]) * 0.5f, 0.03f, 0.025f, teal, DrawList.PAINT);
+        bbox(in, d, (u0 + u1 - PART) * 0.5f, lineY, deep - w - 0.025f, (u1 - PART - u0) * 0.5f, 0.03f, 0.025f, teal, DrawList.PAINT);
+        bbox(in, d, u0 + 0.04f, lineY, (v0 + PART + deep - w) * 0.5f, 0.025f, 0.03f, (deep - w - v0 - PART) * 0.5f, teal, DrawList.PAINT);
+        bbox(in, d, u1 - PART - 0.02f, ty, (v0 + deep - w) * 0.5f, 0.02f, th, (deep - w - v0 - PART) * 0.5f, tile, DrawList.POLISHED);
+        for (float[] r : new float[][] {{u0, da}, {db, u1 - PART}})
+            bbox(in, d, (r[0] + r[1]) * 0.5f, ty, v0 + PART + 0.02f, (r[1] - r[0]) * 0.5f, th, 0.02f, tile, DrawList.POLISHED);
+        bbox(in, d, (u0 + u1 - PART) * 0.5f, ty, deep - w - 0.02f, (u1 - PART - u0) * 0.5f, th, 0.02f, tile, DrawList.POLISHED);
+        bbox(in, d, u0 + 0.035f, ty, (v0 + PART + deep - w) * 0.5f, 0.02f, th, (deep - w - v0 - PART) * 0.5f, tile, DrawList.POLISHED);
+        // the bath along the back wall, water in it, its tap
+        float bu = -12.6f, bvv = deep - w - 0.5f;
+        bbox(in, d, bu, f + 0.33f, bvv, 1.25f, 0.33f, 0.48f, white, DrawList.POLISHED);
+        bbox(in, d, bu, f + 0.6f, bvv, 1.1f, 0.04f, 0.36f, water, DrawList.POLISHED);
+        bbox(in, d, bu + 0.9f, f + 0.85f, bvv + 0.4f, 0.04f, 0.18f, 0.04f, gold, DrawList.GOLD);
+        bbox(in, d, bu + 0.9f, f + 1.0f, bvv + 0.28f, 0.04f, 0.04f, 0.14f, gold, DrawList.GOLD);
+        bsolid(in, bu - 1.25f, bvv - 0.48f, bu + 1.25f, bvv + 0.48f, f + 0.66f);
+        // the toilet in the corner by the outer wall, facing across
+        float tu = u0 + 0.55f, tv = deep - w - 0.6f;
+        bbox(in, d, tu, f + 0.22f, tv, 0.26f, 0.22f, 0.2f, white, DrawList.POLISHED);
+        bbox(in, d, tu + 0.08f, f + 0.47f, tv, 0.34f, 0.04f, 0.26f, white, DrawList.POLISHED);
+        bbox(in, d, u0 + 0.16f, f + 0.75f, tv, 0.13f, 0.3f, 0.3f, white, DrawList.POLISHED);
+        bsolid(in, u0, tv - 0.32f, tu + 0.42f, tv + 0.32f, f + 0.55f);
+        // the basin on the outer wall under the mirror: its cupboard, its top, the bowl, the tap
+        float sv = MIRROR_V, su = u0 + 0.3f;
+        bbox(in, d, su, f + 0.42f, sv, 0.3f, 0.42f, 0.65f, teal, DrawList.PAINT);
+        bbox(in, d, su + 0.02f, f + 0.87f, sv, 0.32f, 0.03f, 0.68f, white, DrawList.POLISHED);
+        bbox(in, d, su + 0.04f, f + 0.88f, sv, 0.2f, 0.025f, 0.3f, 0xB8C8CC, DrawList.POLISHED);
+        bbox(in, d, u0 + 0.08f, f + 1.02f, sv, 0.04f, 0.12f, 0.04f, gold, DrawList.GOLD);
+        bbox(in, d, u0 + 0.16f, f + 1.12f, sv, 0.1f, 0.03f, 0.03f, gold, DrawList.GOLD);
+        bsolid(in, u0, sv - 0.68f, u0 + 0.62f, sv + 0.68f, f + 0.9f);
+        // the mirror's frame round the hole in the outer wall, inside
+        float my = f + (MIRROR_Y0 + MIRROR_Y1) * 0.5f, mh = (MIRROR_Y1 - MIRROR_Y0) * 0.5f;
+        if (!turn) {
+            for (int e = -1; e <= 1; e += 2) bbox(in, d, u0 + 0.03f, my, sv + e * (MIRROR_HALF + 0.06f), 0.03f, mh + 0.12f, 0.06f, gold, DrawList.GOLD);
+            for (int e = -1; e <= 1; e += 2) bbox(in, d, u0 + 0.03f, my + e * (mh + 0.06f), sv, 0.03f, 0.06f, MIRROR_HALF + 0.12f, gold, DrawList.GOLD);
+        }
+        // a towel on its rail on the side wall, the mat before the bath, a small plant, the lamp
+        bbox(in, d, u1 - PART - 0.08f, f + 1.6f, 20.6f, 0.03f, 0.03f, 0.55f, gold, DrawList.GOLD);
+        bbox(in, d, u1 - PART - 0.1f, f + 1.25f, 20.6f, 0.04f, 0.38f, 0.45f, coral, DrawList.GRAIN);
+        bbox(in, d, bu, f + 0.02f, bvv - 1.05f, 0.9f, 0.02f, 0.45f, coral, DrawList.GRAIN);
+        bbox(in, d, u1 - PART - 0.45f, f + 0.25f, v0 + PART + 0.5f, 0.25f, 0.25f, 0.25f, 0xB0613E, DrawList.STONE);
+        in.ball(d, mu(u1 - PART - 0.45f), f + 0.8f, v0 + PART + 0.5f, 0.38f, 0x4F7A3A, DrawList.MATTE);
+        bsolid(in, u1 - PART - 0.75f, v0 + PART + 0.2f, u1 - PART - 0.15f, v0 + PART + 0.8f, f + 1.1f);
+        float lu = (u0 + u1) * 0.5f, lv = (v0 + deep) * 0.5f;
+        bbox(in, d, lu, top - 0.05f, lv, 0.36f, 0.03f, 0.36f, gold, DrawList.GOLD);
+        bbox(in, d, lu, top - 0.1f, lv, 0.3f, 0.03f, 0.3f, 0xFFE9BE, DrawList.GLOW);
+        if (turn) {
+            // what the room has round the bathroom that the mirror shows: the back wall, the ceiling,
+            // the outer wall turned (beyond), and through the doorway the bedroom's boards and its wall
+            // (the bedroom so far across as it shows through the doorway at a slant, its far wall)
+            float ue = -10f, gv = v0 - 4f, ce = u1 + PART;
+            bbox(in, d, (u0 + ce) * 0.5f, (f + top) * 0.5f, deep - w * 0.5f, (ce - u0) * 0.5f, h * 0.5f, w * 0.5f, wall, DrawList.PLAIN);
+            bbox(in, d, (u0 + ce) * 0.5f, top + 0.15f, (v0 + deep) * 0.5f, (ce - u0) * 0.5f, 0.15f, (deep - v0) * 0.5f, Street.scale(wall, 1.04f), DrawList.PLAIN);
+            bbox(in, d, (u0 + ue) * 0.5f, top + 0.15f, (gv + v0) * 0.5f, (ue - u0) * 0.5f, 0.15f, (v0 - gv) * 0.5f, Street.scale(wall, 1.04f), DrawList.PLAIN);
+            bbox(in, d, (u0 + ue) * 0.5f, f - 0.15f, (gv + v0) * 0.5f, (ue - u0) * 0.5f, 0.15f, (v0 - gv) * 0.5f - PART, 0xA8754A, DrawList.WOOD);
+            bbox(in, d, (u0 + ue) * 0.5f, (f + top) * 0.5f, gv, (ue - u0) * 0.5f, h * 0.5f, 0.1f, wall, DrawList.PAINT);
+            bbox(in, d, (u0 + ue) * 0.5f, f + 0.55f, gv + 0.12f, (ue - u0) * 0.5f, 0.55f, 0.02f, low, DrawList.PAINT);
+            bbox(in, d, ue, (f + top) * 0.5f, (gv + v0) * 0.5f, 0.1f, h * 0.5f, (v0 - gv) * 0.5f, wall, DrawList.PAINT);
+        }
+        turned = false;
     }
 
     /**
