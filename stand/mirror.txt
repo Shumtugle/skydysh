@@ -1,0 +1,29 @@
+# Home's bathroom: her before the basin, the mirror over it showing her and the room turned about; from the bedroom through its doorway; the house's side from the garden, nothing of the mirror's back.
+wait 0.4
+lang ru
+keep kinds 14
+keep where 0
+restart
+free
+wait 1.5
+down 137 420
+wait 0.5
+wait 0.4
+up 137 420
+wait 1
+inroom -14.4 20.6
+face 1.5708
+wait 1
+eye 301 2.25 292.65 1.86 -0.04
+wait 0.1
+shot h0
+eye 300.6 1.9 290.2 1.2 0.02
+wait 0.1
+shot h1
+eye off
+inroom -12 16
+wait 0.5
+eye 318 3.2 291.3 -1.5708 -0.02
+wait 0.1
+shot h2
+eye off
