@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.5
+
+- Home wide inside, as she is tall: a hall from the front door to the yard's, with a great cold
+  hearth, the sofa facing it, armchairs, books; the wardrobe (her dresses on rails, boots, a tall
+  mirror) and the bedroom (a great bed) through doorways on the left; the dining room and the
+  kitchen open on the right; seven-metre ceilings; windows all round with plants under them.
+- Floors laid side by side, never one over another, so that far off they do not flicker.
+
 ## 1.3.4
 
 - The dispatcher at home in his room again: since 1.3.2, indoors, the eye stayed behind her and

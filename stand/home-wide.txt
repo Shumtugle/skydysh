@@ -1,0 +1,39 @@
+# Home wide inside: on the sofa before the great hearth; then, held, the hall from its front corner, the bedroom, the wardrobe, the kitchen, the dining room; her in the hall facing the yard door. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 62
+restart
+at 32 -2 0
+wait 0.3
+tapsign home
+errand 8 0 x
+wait 3.5
+close
+wait 1
+inroom 0 1
+wait 0.3
+where
+shot a0
+eye 26 5.3 11 0.847 -0.19
+wait 0.1
+shot a1
+eye 41 4.5 32.5 2.447 -0.44
+wait 0.1
+shot a2
+eye 41 4.5 10 1.012 -0.35
+wait 0.1
+shot a3
+eye 23 4.5 22 -0.559 -0.34
+wait 0.1
+shot a4
+eye 23 4.5 20 -2.6 -0.54
+wait 0.1
+shot a5
+eye off
+swipe 137 500 137 300
+wait 1
+inroom 0 3
+face 0
+wait 1
+shot a6

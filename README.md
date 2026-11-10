@@ -241,9 +241,14 @@ deep enough she swims high in the water, upright, her head and shoulders out, a 
 stroke at the water's top (still, she settles slowly a little lower, never under), as far out
 as the open sea lets her; back in the shallows
 she stands up and wades out. Home is there, where the game begins: one large house with a tower and a lamp on
-top, the same in every town; its sign over the door takes her in, to a room of her own: a sofa
-against a side wall, lamps either side, the sea in a frame over it, books, plants, and a glass
-door at the back onto the yard, under home's sign there too. Come up to
+top, the same in every town; its sign over the door takes her in, to a home far wider within than the house is without: a
+hall down the middle from the door to a glass door at the back onto the yard (under home's sign
+there too), a great cold hearth of pale stone on its left wall, the sea in a great frame over it,
+the sofa facing it across a rug, a low table, armchairs, books; through doorways on the left the
+wardrobe (rails of her dresses, boots, a tall mirror) and the bedroom (a great bed); on the right,
+open to the hall, the dining room (a long table, a chandelier) and the kitchen (counters, the
+stove, the sink under a window, a tall fridge, an island); windows all round, plants under them,
+herbs on the sills. Come up to
 the sofa and she sits; the game is kept, and the screen in her head asks which mission now (or
 the next one, or just a rest). A touch, and she gets up.
 

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.3.4";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.3.5";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -5167,8 +5167,8 @@ final class World {
         // (with the dispatcher on, the eye is his, set above; else the lift's shot, or behind her)
         if (scene) setDrawn(d);
         else if (dispatch != null) {
-        } else if (indoors.shot(eyeNow)) d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.25f, 0.03f, 80f);
-        else if (standEye != null) d.camera(standEye[0], standEye[1], standEye[2], standEye[3], standEye[4], W * 1.2f, 0.03f, 80f);
+        } else if (standEye != null) d.camera(standEye[0], standEye[1], standEye[2], standEye[3], standEye[4], W * 1.2f, 0.03f, 80f);
+        else if (indoors.shot(eyeNow)) d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.25f, 0.03f, 80f);
         else d.camera(r.eyeX, r.eyeY, r.eyeZ, r.eyeYaw, r.eyePitch, W * 1.2f, 0.03f, 80f);
         if (!scene) {
         // the room, unless the eye has gone back into her head past its walls (she sits against one)
