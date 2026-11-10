@@ -947,6 +947,25 @@ public final class Stand implements World.Host {
             System.out.println(String.format("%7.2fs  %s", time, q != null
                     ? String.format("at the wheel, %.1f m/s, at %.1f %.1f", q.speed, q.x, q.z)
                     : String.format("on foot at %.1f %.1f", world.runner.x, world.runner.z)));
+        } else if (c.equals("cars")) {
+            // cars [METERS]: the cars round her, each told; the people waiting at zebras and crossing on them
+            float far = p.length > 1 ? f(p[1]) : 60f;
+            Runner r = world.runner;
+            System.out.println(String.format("%7.2fs  traffic: waiting %d, crossing %d;%s", time, world.walkers.crossingNow(false),
+                    world.walkers.crossingNow(true), world.cars.told(r.x, r.z, far)));
+            System.out.println(String.format("%7.2fs  at zebras:%s", time, world.walkers.toldCrossing()));
+        } else if (c.equals("lights")) {
+            // lights I J: how the lights of crossing (I, J) stand for the cars along x and along z
+            int li = Math.round(f(p[1])), lj = Math.round(f(p[2]));
+            String[] says = {"green", "amber", "red"};
+            System.out.println(String.format("%7.2fs  crossing %d %d: %s; along x %s, along z %s", time, li, lj,
+                    Crossings.lit(li, lj) ? "lights" : "no lights", says[Crossings.light(li, lj, true)], says[Crossings.light(li, lj, false)]));
+        } else if (c.equals("wreck")) {
+            // wreck X Z YAW: car 0 a wreck lying there, just come to rest
+            world.cars.standWreck(0, f(p[1]), f(p[2]), f(p[3]));
+        } else if (c.equals("oncoming")) {
+            // oncoming METERS: at the wheel, car 0 coming at the pickup head on down the street, so far ahead
+            if (world.driving != null) world.cars.standComing(world.driving, f(p[1]));
         } else if (c.equals("pickups")) {
             // pickups: the duty pickups out now, where each stands
             StringBuilder b = new StringBuilder();

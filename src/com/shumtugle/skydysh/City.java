@@ -1430,6 +1430,8 @@ final class City implements Ground {
                     c.wall(px - 0.25f, z - 0.25f, px + 0.25f, z + 0.25f);
                 }
         }
+        // the zebras on its two streets, and the lights at its crossing if it has them
+        Crossings.build(this, c, i, j);
         return c;
     }
 
@@ -3256,6 +3258,7 @@ final class City implements Ground {
                 // the street running north: on its east side they face north, on its west side south
                 if (rnd.nextBoolean()) {
                     float x = x0 + s * off, z = z0 + t;
+                    if (Crossings.onZebra(this, index(x0 + 1f), index(z0 + 1f), true, t, len)) continue;
                     if (keep || keptClear(x, z) || keptClear(x, z + 2f) || keptClear(x, z - 2f) || moved.contains(lampKey(x, z))) continue;
                     Cars.car(c.parked, x, z, s > 0 ? 0f : (float) Math.PI, paint, true, kind);
                     c.wall(x - 0.95f, z - len, x + 0.95f, z + len, top);
@@ -3263,6 +3266,7 @@ final class City implements Ground {
                 } else {
                     // the street running east: on its south side they face east, on its north side west
                     float x = x0 + t, z = z0 + s * off;
+                    if (Crossings.onZebra(this, index(x0 + 1f), index(z0 + 1f), false, t, len)) continue;
                     if (keptClear(x, z) || keptClear(x + 2f, z) || keptClear(x - 2f, z) || moved.contains(lampKey(x, z))) continue;
                     Cars.car(c.parked, x, z, s < 0 ? (float) (Math.PI / 2) : (float) (-Math.PI / 2), paint, true, kind);
                     c.wall(x - len, z - 0.95f, x + len, z + 0.95f, top);

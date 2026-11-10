@@ -1,0 +1,51 @@
+# The town's streets alive (1.4.4): zebras at the corners of a crossing with lights by home's
+# quarter, seen from above and from the pavement, the lights changing, people waiting at the
+# curb and crossing; a zebra before a place's way in (home's door and the shop across); a wreck
+# in a lane that the cars go round, that comes to and drives off; a car met head on by the
+# pickup getting out of its way into the other lane.
+screen 1096 2560
+wait 0.4
+keep kinds 14
+keep where 0
+restart
+free
+at 262 244 -0.785
+wait 4
+lights 4 4
+cars 90
+eye 256 46 214 0 -0.95
+wait 0.1
+shot s0
+eye 249.5 1.8 249 0.75 0.02
+wait 0.1
+shot s1
+wait 6
+lights 4 4
+cars 90
+eye 259 2.6 226 0.12 0.03
+wait 0.1
+shot s2
+eye 288 14 236 0 -0.5
+wait 0.1
+shot s3
+eye off
+wreck 258 300 0
+wait 2.5
+cars 90
+eye 268 30 268 -0.3 -0.75
+wait 0.1
+shot s4
+wait 7
+cars 90
+shot s5
+eye off
+drivein 254 100 0
+oncoming 75
+pedal 2.0 0 0 0
+cars 60
+pedal 0.5 0 0 0
+cars 60
+shot s6
+pedal 0.5 0 0 0
+cars 60
+shot s7

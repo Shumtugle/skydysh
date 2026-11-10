@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.4.4
+
+- Zebras on the streets: at each end of a street, just off the crossing at the pavements'
+  corners; but along a place people go to (a square or a garden, the old town's lanes, the town
+  hall, the concert hall, the vets', the archive, home and the shop, the old house, the
+  workshop's gate) one only, before its way in. No car parks on them.
+- Lights at some crossings, about one in three: a post on the right of each way in, red, amber,
+  green, the two streets green in turn. The cars stop before the zebra at red, and at amber while
+  they can.
+- The people going round the blocks cross the streets now: straight on at a corner, over to the
+  block across before a place's way in. At the curb they wait for the light, or, where there is
+  none, till no car comes that could not stop; the cars stop for them at a zebra and for anyone
+  in the road.
+- A car or a pickup coming at someone on foot: they step quickly out of its way, and back after.
+  Sitting or walking a square, they get up and off.
+- The cars are nimble: a pickup on the move coming at one, it jinks aside (into the other lane
+  if there is no room on the right), faster if it comes from behind, on and aside if head on,
+  braking if it would cross before it.
+- Something standing in a car's way (a wreck, a pickup left in the road, her) it goes round by
+  the other lane when that is clear, and in the end anyway; a car coming the other way in its
+  lane it slows for and keeps right. A queue at a light or a zebra waits its turn.
+- A rammed car, come to rest, stands a while and then comes to, finds its street and drives off.
+
 ## 1.4.3
 
 - A bathroom in home, in the bedroom's back corner: a bath with water in it, a toilet, a basin

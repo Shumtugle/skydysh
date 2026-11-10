@@ -5,10 +5,14 @@ import java.util.Random;
 /**
  * The town's traffic: cars of a few kinds (sedans, hatchbacks, little town cars, taxis in black
  * and yellow, vans) on the right of the road, going on or turning at the
- * crossings as it falls out, never turning back; slowing for a turn, for a car ahead and for
- * the runner in the road before them. Not for a brum on the run: they run into it, stop short
- * a while, and wait while it lies there or stands in the road. They come from out of sight round the runner and go out of
- * it behind her, and are put back somewhere else round her.
+ * crossings as it falls out; slowing for a turn, for a car ahead, for the runner in the road
+ * before them; stopping at a red light and for people on a zebra. Something standing in the way
+ * (a wreck, a pickup, someone in the road) they wait for a moment, then go round by the other lane
+ * when it is clear. A pickup on the move coming at them, they get out of its way, aside and faster
+ * or braking. Rammed, a car slides to a wreck, and a while later comes to and drives off. Not for a
+ * brum on the run: they run into it, stop short a while, and wait while it lies there or stands in
+ * the road. They come from out of sight round the runner and go out of it behind her, and are put
+ * back somewhere else round her.
  *
  * Also the cars themselves, for any car anywhere: the parked ones along the curbs are built with
  * the town (see City).
@@ -135,7 +139,66 @@ final class Cars {
     float ramX, ramZ, ramHard;
     static final float SLIDE_DRAG = 2.2f, SPIN_DRAG = 2.4f, KNOCKED_FOR = 2.6f;
 
+    // why a car stands or crawls: nothing holds it; it waits its turn (a light, people on a zebra,
+    // the cars before it waiting); something stands in its way (a wreck, a pickup, someone in the
+    // road); it is caught in a knot of cars at a crossing
+    static final int FREE = 0, WAIT = 1, BLOCK = 2, KNOT = 3;
+    // held up by something in the way so long, it goes round it by the other lane when that is clear
+    // so far ahead; a little faster than a crawl while it pulls out; given up after so long
+    static final float PASS_AFTER = 0.9f, PASS_CLEAR = 34f, PASS_CREEP = 3.2f, PASS_MOST = 9f, PASS_ANYWAY = 5f;
+    // how far a car may be off its lane: into the other lane, short of the cars parked on its right
+    static final float OFF_LEFT = -LANE - City.ROAD + 1.1f, OFF_RIGHT = 1f, OFF_RATE = 4.5f;
+    // a pickup coming at it: looked for so far ahead in time, as near as this it would pass; out
+    // of its way so far aside, for so long; faster, when it comes from behind
+    static final float DODGE_LOOK = 1.9f, DODGE_NEAR = 3.4f, DODGE_FOR = 0.75f, DODGE_FAST = 1.7f;
+    // met head on it keeps rolling so fast to steer aside; and it jinks aside so fast at most (meters a second)
+    static final float DODGE_ROLL = 6f, DODGE_JINK = 4.5f;
+    // how far aside of a pickup's way a car must be to be clear of it, middle to middle
+    static final float DODGE_CLEAR = 2.6f;
+    // a wreck comes to after a while and drives off, if no one stands by it
+    static final float COME_TO = 4.5f, COME_TO_MORE = 3.5f;
+
+    private final int[] why = new int[MOST];
+    // how long it has been held up by something in the way; going round it (seconds left), and what it goes round
+    private final float[] blocked = new float[MOST], passing = new float[MOST], passX = new float[MOST], passZ = new float[MOST];
+    // how far off its lane it keeps (to its right +), and where it is going to keep
+    private final float[] off = new float[MOST];
+    // getting out of a pickup's way: for so long more, so far off its lane, faster (+1) or braking (-1)
+    private final float[] dodging = new float[MOST], dodgeOff = new float[MOST], dodgeGas = new float[MOST];
+    // a wreck: how long it has stood, and how long it stands before it comes to
+    private final float[] stood = new float[MOST], comeTo = new float[MOST];
+
+    /** The pickup she drives, if she does: the cars keep out of its way as of any pickup on the move. */
+    Pickup driven;
+    /** The people about, for the cars to stop for at a zebra and in the road; none, none. */
+    Walkers walkers;
+    private final Pickup[] threats = new Pickup[8];
+    private int threatN;
+
+    /** Why car c stands or crawls (FREE, WAIT, BLOCK, KNOT). */
+    int why(int c) {
+        return why[c];
+    }
+
+    /** Whether car c is going round something in its way. */
+    boolean passing(int c) {
+        return passing[c] > 0f;
+    }
+
+    /** Whether car c is getting out of a pickup's way. */
+    boolean dodging(int c) {
+        return dodging[c] > 0f;
+    }
+
     void update(float dt, Runner r, Chase[] brums) {
+        Crossings.time += dt;
+        // the pickups on the move about the town
+        threatN = 0;
+        if (driven != null && Math.abs(driven.speed) > 2f) threats[threatN++] = driven;
+        if (duty != null) for (int k = 0; k < duty.all.size() && threatN < threats.length; k++) {
+            Pickup p = duty.all.get(k);
+            if (p != driven && Math.abs(p.speed) > 2f) threats[threatN++] = p;
+        }
         for (int c = 0; c < MOST; c++) {
             float rx = x[c] - r.x, rz = z[c] - r.z;
             if (!live[c] || rx * rx + rz * rz > GONE * GONE) {
@@ -144,6 +207,11 @@ final class Cars {
             }
             if (knocked[c] > 0f || wreck[c]) {
                 slide(c, dt);
+                if (wreck[c] && live[c]) {
+                    stood[c] += dt;
+                    // come to and off, when no one is by it
+                    if (stood[c] > comeTo[c] && rx * rx + rz * rz > 16f && !touched(c)) comeTo(c);
+                }
                 continue;
             }
             // toward the next crossing, on the right of the road
@@ -164,57 +232,289 @@ final class Cars {
             boolean turns = ni[c] != di[c] || nj[c] != dj[c];
             float want = turns && left < 14f ? TURNING : CRUISE;
             float fx = (float) Math.sin(heading[c]), fz = (float) Math.cos(heading[c]);
+            int whyNow = FREE;
+            // what holds it in its way: its nearest, and where it is
+            float hold = CRUISE, holdX = 0f, holdZ = 0f;
+            // a light at the crossing ahead: red, or amber while it can still stop, it stops before the zebra
+            if (Crossings.lit(ti[c], tj[c])) {
+                int light = Crossings.light(ti[c], tj[c], di[c] != 0);
+                float before = left - Crossings.STOP;
+                if (before > -0.6f && (light == Crossings.HALT || light == Crossings.WARN && before > speed[c] * speed[c] / 14f)) {
+                    float lim = Math.max(0f, before * 1.1f);
+                    if (lim < want) {
+                        want = lim;
+                        whyNow = WAIT;
+                    }
+                }
+            }
+            // people on a zebra ahead, or waiting at one with no light: it stops before it, if it can
+            if (walkers != null) {
+                float lim = walkers.zebraAhead(x[c], z[c], fx, fz, speed[c]);
+                if (lim < want) {
+                    want = lim;
+                    whyNow = WAIT;
+                }
+            }
             // someone in the road ahead: stop short of them (the runner, a brum down, a pickup left)
             float others = r.y > OVER_ROAD ? CRUISE : clear(c, fx, fz, r.x, r.z);
-            for (Chase g : brums) if (g.down()) others = Math.min(others, clear(c, fx, fz, g.x, g.z));
+            if (others < hold) {
+                hold = others;
+                holdX = r.x;
+                holdZ = r.z;
+            }
+            for (Chase g : brums)
+                if (g.down()) {
+                    float o = clear(c, fx, fz, g.x, g.z);
+                    if (o < hold) {
+                        hold = o;
+                        holdX = g.x;
+                        holdZ = g.z;
+                    }
+                }
             if (duty != null) for (int k = 0; k < duty.all.size(); k++) {
                 Pickup p = duty.all.get(k);
-                if (!p.driven) others = Math.min(others, clear(c, fx, fz, p.x, p.z));
+                if (p.driven || Math.abs(p.speed) > 2f) continue;
+                float o = clear(c, fx, fz, p.x, p.z);
+                if (o < hold) {
+                    hold = o;
+                    holdX = p.x;
+                    holdZ = p.z;
+                }
             }
-            // a car ahead going the same way, or across it: keep back from it; not one coming the
-            // other way, nor any while it is edging out of a knot of them
-            float byCars = CRUISE;
+            others = hold;
+            // people crossing in the road where there is no zebra (or fleeing over it): stop short of them too
+            float folk = walkers != null ? walkers.inRoadAhead(x[c], z[c], fx, fz) : CRUISE;
+            // a car ahead going the same way, or across it, or a wreck however it lies: keep back from
+            // it; one coming the other way in its lane, slow for it and keep to the right
+            float byCars = CRUISE, headOn = CRUISE;
+            int byWhy = FREE;
             for (int o = 0; o < MOST; o++) {
                 if (o == c || !live[o]) continue;
                 float ox = x[o] - x[c], oz = z[o] - z[c];
                 float along = ox * fx + oz * fz, across = Math.abs(ox * fz - oz * fx);
-                if (along <= 0f || along >= GAP || across >= 2.2f) continue;
-                if ((float) Math.cos(heading[o] - heading[c]) < -0.3f) continue;
-                byCars = Math.min(byCars, Math.max(0f, (along - 6f) * 1.2f));
+                if (along <= 0f || along >= GAP + 10f || across >= 2.2f) continue;
+                boolean dead = wreck[o] || knocked[o] > 0f;
+                if (!dead && (float) Math.cos(heading[o] - heading[c]) < -0.3f) {
+                    if (along < 24f) headOn = Math.min(headOn, Math.max(0f, (along - 7f) * 0.9f));
+                    continue;
+                }
+                if (along >= GAP) continue;
+                float lim = Math.max(0f, (along - 6f) * 1.2f);
+                if (lim < byCars) {
+                    byCars = lim;
+                    byWhy = dead || halt[o] > 0f || why[o] == BLOCK ? BLOCK : why[o] == WAIT ? WAIT : KNOT;
+                    if (byWhy == BLOCK) {
+                        holdX = x[o];
+                        holdZ = z[o];
+                    }
+                }
             }
-            // held up by the other cars alone a good while (a knot at a crossing, one stopped
-            // after a knock): it edges out past them, never minding them a moment
+            if (byWhy == BLOCK && byCars < others) others = byCars;
+            // which holds it most, and so why it stands
+            float most = Math.min(Math.min(others, byCars), Math.min(folk, headOn));
+            if (most < want) {
+                want = most;
+                whyNow = most == others && others < CRUISE ? BLOCK : most == byCars ? byWhy : WAIT;
+            }
+            // something in its way a while: round it by the other lane, when that is clear
+            if (whyNow == BLOCK && speed[c] < 1.2f) blocked[c] += dt;
+            else blocked[c] = Math.max(0f, blocked[c] - dt * 2f);
+            // (long held, it pulls out all the same: what comes the other way slows for it)
+            if (passing[c] <= 0f && blocked[c] > PASS_AFTER && left > 10f && (oncomingClear(c) || blocked[c] > PASS_ANYWAY)) {
+                passing[c] = PASS_MOST;
+                passX[c] = holdX;
+                passZ[c] = holdZ;
+                blocked[c] = 0f;
+            }
+            float offWant = 0f, turnRate = 2.4f;
+            if (passing[c] > 0f) {
+                passing[c] -= dt;
+                float behind = (passX[c] - x[c]) * di[c] + (passZ[c] - z[c]) * dj[c];
+                if (behind < -5f || turns && left < 8f) passing[c] = 0f;
+                else if (headOn < 3f && behind > 2f) passing[c] = 0f;   // one coming: back in, and wait
+                else {
+                    offWant = -2f * LANE;
+                    // what it goes round no longer holds it, only what is right before it
+                    if (whyNow == BLOCK) want = Math.max(want, Math.min(PASS_CREEP, Math.min(folk, headOn)));
+                }
+            } else if (headOn < CRUISE) offWant = OFF_RIGHT;
+            // held up by the other cars alone a good while (a knot at a crossing, not a queue at a
+            // light): it edges out past them, never minding them a moment
             edging[c] -= dt;
-            if (byCars < 0.5f && others > 1f && speed[c] < 0.5f && halt[c] <= 0f) {
+            if (whyNow == KNOT && speed[c] < 0.5f && halt[c] <= 0f) {
                 if ((waited[c] += dt) > 2.5f) {
                     edging[c] = 2f;
                     waited[c] = 0f;
                 }
             } else waited[c] = 0f;
-            if (edging[c] > 0f) byCars = Math.max(byCars, TURNING * 0.6f);
+            if (edging[c] > 0f && whyNow == KNOT) want = Math.max(want, Math.min(TURNING * 0.6f, Math.min(others, folk)));
             spooked[c] -= dt;
             if (spooked[c] > 0f) {
                 // frightened: away fast, minding only what is right before it
                 want = Math.max(want, CRUISE * 1.7f);
-                byCars = Math.max(byCars, CRUISE * 1.7f);
-                if (others > 3.3f) others = CRUISE * 1.7f;
+                if (others < 3.3f || folk < 3.3f) want = Math.min(want, Math.min(others, folk));
                 halt[c] = 0f;
             }
-            want = Math.min(want, Math.min(byCars, others));
+            // a pickup on the move coming at it: out of its way, aside, and faster or braking
+            dodge(c, fx, fz);
+            float slide = 0f;
+            if (dodging[c] > 0f) {
+                dodging[c] -= dt;
+                offWant = dodgeOff[c];
+                turnRate = 4.5f;
+                if (dodgeGas[c] > 0f) want = Math.max(want, Math.min(CRUISE * DODGE_FAST, Math.max(others, 4f)));
+                else if (dodgeGas[c] < -0.5f) want = 0f;
+                else want = Math.min(Math.max(want, DODGE_ROLL), CRUISE);
+                // nimble: it jinks aside at once, as much as it steers
+                float lat = di[c] != 0 ? -(z[c] - tj[c] * City.CELL) * di[c] : (x[c] - ti[c] * City.CELL) * dj[c];
+                slide = Math.max(-DODGE_JINK, Math.min(DODGE_JINK, (LANE + dodgeOff[c] - lat) * 4f));
+            }
+            why[c] = whyNow;
             if (halt[c] > 0f) {
                 halt[c] -= dt;
                 want = 0f;
             }
-            float rate = want < speed[c] ? 9f : 2.5f;
+            float rate = want < speed[c] ? (dodging[c] > 0f ? 14f : 9f) : (dodging[c] > 0f ? 6f : 2.5f);
             speed[c] += Math.max(-rate * dt, Math.min(rate * dt, want - speed[c]));
-            float aim = (float) Math.atan2(ex, ez), d = aim - heading[c];
+            if (turns && left < 14f && passing[c] <= 0f) offWant = 0f;
+            offWant = Math.max(OFF_LEFT, Math.min(OFF_RIGHT, offWant));
+            off[c] += Math.max(-OFF_RATE * dt, Math.min(OFF_RATE * dt, offWant - off[c]));
+            // the way to steer: along its street, a little ahead, keeping the line it means to keep;
+            // turned off the street's way (into a turn, or coming to after a knock), toward the
+            // crossing it goes to
+            float sh = (float) Math.atan2(di[c], dj[c]);
+            float aim;
+            if (left > 12f && (float) Math.cos(sh - heading[c]) > 0.85f) {
+                float look = Math.max(6f, speed[c] * 0.7f), line = LANE + off[c];
+                float ax = di[c] != 0 ? x[c] + di[c] * look : ti[c] * City.CELL + dj[c] * line;
+                float az = di[c] != 0 ? tj[c] * City.CELL - di[c] * line : z[c] + dj[c] * look;
+                aim = (float) Math.atan2(ax - x[c], az - z[c]);
+            } else aim = (float) Math.atan2(ex, ez);
+            float d = aim - heading[c];
             while (d > Math.PI) d -= 2f * (float) Math.PI;
             while (d < -Math.PI) d += 2f * (float) Math.PI;
-            float most = 2.4f * dt * Math.max(0.3f, speed[c] / CRUISE);
-            heading[c] += Math.max(-most, Math.min(most, d));
-            x[c] += (float) Math.sin(heading[c]) * speed[c] * dt;
-            z[c] += (float) Math.cos(heading[c]) * speed[c] * dt;
+            float turn = turnRate * dt * Math.max(0.3f, speed[c] / CRUISE);
+            heading[c] += Math.max(-turn, Math.min(turn, d));
+            x[c] += (float) Math.sin(heading[c]) * speed[c] * dt + dj[c] * slide * dt;
+            z[c] += (float) Math.cos(heading[c]) * speed[c] * dt - di[c] * slide * dt;
         }
+    }
+
+    /** Whether the other lane is clear for car c to go round something: no car coming in it for a good way. */
+    private boolean oncomingClear(int c) {
+        for (int o = 0; o < MOST; o++) {
+            if (o == c || !live[o]) continue;
+            float ox = x[o] - x[c], oz = z[o] - z[c];
+            float along = ox * di[c] + oz * dj[c], aside = ox * dj[c] - oz * di[c];
+            // in the other lane (to its left), ahead or beside
+            if (along < -4f || along > PASS_CLEAR || aside > 1f || aside < -City.ROAD - 1f) continue;
+            if (wreck[o] || knocked[o] > 0f) {
+                if (aside < -1.5f && along < 14f) return false;
+                continue;
+            }
+            if ((float) Math.cos(heading[o] - heading[c]) < 0.3f || aside < -2.4f) return false;
+        }
+        for (int k = 0; k < threatN; k++) {
+            float ox = threats[k].x - x[c], oz = threats[k].z - z[c];
+            if (ox * ox + oz * oz < PASS_CLEAR * PASS_CLEAR) return false;
+        }
+        return true;
+    }
+
+    /**
+     * A pickup on the move that would run into car c soon: the car makes for the side away from
+     * where it would pass, braking if it would be before the car, faster if behind.
+     */
+    private void dodge(int c, float fx, float fz) {
+        for (int k = 0; k < threatN; k++) {
+            Pickup p = threats[k];
+            float pvx = (float) Math.sin(p.heading) * p.speed, pvz = (float) Math.cos(p.heading) * p.speed;
+            float rx = p.x - x[c], rz = p.z - z[c];
+            if (rx * rx + rz * rz > 45f * 45f) continue;
+            float vx = pvx - fx * speed[c], vz = pvz - fz * speed[c], vv = vx * vx + vz * vz;
+            if (vv < 1f) continue;
+            float t = -(rx * vx + rz * vz) / vv;
+            if (t < 0f || t > DODGE_LOOK) continue;
+            float qx = rx + vx * t, qz = rz + vz * t;
+            if (qx * qx + qz * qz > DODGE_NEAR * DODGE_NEAR) continue;
+            // where it would pass the car: on its right (+) or left, before it (+) or behind
+            float side = qx * fz - qz * fx, fore = qx * fx + qz * fz;
+            float now = rx * fx + rz * fz;
+            // away from where it would pass; but if there is no room that way (the parked cars on
+            // the right), the other way, round it
+            float need = DODGE_CLEAR - Math.abs(side), roomLeft = off[c] - OFF_LEFT, roomRight = OFF_RIGHT - off[c];
+            boolean left = side > 0f;
+            if (left && roomLeft < need && roomRight > roomLeft) left = false;
+            else if (!left && roomRight < need && roomLeft > roomRight) left = true;
+            float to = left ? off[c] - Math.max(need, 0f) - 0.8f : off[c] + Math.max(need, 0f) + 0.8f;
+            to = Math.max(OFF_LEFT, Math.min(OFF_RIGHT, to));
+            dodging[c] = DODGE_FOR;
+            dodgeOff[c] = to;
+            // from behind: away faster; head on: on, aside; across its way ahead: it brakes
+            boolean meets = (float) Math.cos(p.heading - heading[c]) * Math.signum(p.speed) < -0.6f;
+            dodgeGas[c] = fore < 0f && now < 0f ? 1f : meets ? 0f : -1f;
+            halt[c] = 0f;
+            return;
+        }
+    }
+
+    /** Whether someone stands at car c (she, a pickup), so that a wreck does not drive off into them. */
+    private boolean touched(int c) {
+        if (duty == null) return false;
+        for (int k = 0; k < duty.all.size(); k++) {
+            Pickup p = duty.all.get(k);
+            float dx = p.x - x[c], dz = p.z - z[c];
+            if (dx * dx + dz * dz < 25f) return true;
+        }
+        return false;
+    }
+
+    /**
+     * A wreck comes to: it finds the street it lies nearest, turns its way (the way it is nearer
+     * facing) and drives off down it, from where it lies, back into its lane.
+     */
+    private void comeTo(int c) {
+        float gx = Math.round(x[c] / City.CELL), gz = Math.round(z[c] / City.CELL);
+        float awayX = Math.abs(x[c] - gx * City.CELL), awayZ = Math.abs(z[c] - gz * City.CELL);
+        float fx = (float) Math.sin(heading[c]), fz = (float) Math.cos(heading[c]);
+        int row = (int) gz;
+        boolean alongZ = awayX < awayZ;
+        // the street along x must be one of the town's; so must the one along z go where it points
+        if (!alongZ && (row < City.SHORE || row > City.EDGE_J)) alongZ = true;
+        if (alongZ) {
+            int b = fz >= 0f ? 1 : -1;
+            int j = b > 0 ? City.index(z[c]) + 1 : City.index(z[c]);
+            if (j > City.EDGE_J || j < City.SHORE) {
+                b = -b;
+                j = b > 0 ? City.index(z[c]) + 1 : City.index(z[c]);
+            }
+            if (j > City.EDGE_J || j < City.SHORE) {
+                live[c] = false;
+                return;
+            }
+            di[c] = 0;
+            dj[c] = b;
+            ti[c] = (int) gx;
+            tj[c] = j;
+            off[c] = Math.max(OFF_LEFT, Math.min(OFF_RIGHT, (x[c] - gx * City.CELL) * b - LANE));
+        } else {
+            int a = fx >= 0f ? 1 : -1;
+            di[c] = a;
+            dj[c] = 0;
+            ti[c] = a > 0 ? City.index(x[c]) + 1 : City.index(x[c]);
+            tj[c] = row;
+            off[c] = Math.max(OFF_LEFT, Math.min(OFF_RIGHT, -(z[c] - gz * City.CELL) * a - LANE));
+        }
+        choose(c);
+        wreck[c] = false;
+        knocked[c] = 0f;
+        stood[c] = 0f;
+        speed[c] = 0f;
+        halt[c] = 0.6f;
+        passing[c] = 0f;
+        dodging[c] = 0f;
+        why[c] = FREE;
+        waited[c] = edging[c] = 0f;
     }
 
     /** A rammed car sliding and turning to rest, against the town's walls; then a wreck. */
@@ -255,6 +555,8 @@ final class Cars {
         if (knocked[c] <= 0f || kvx[c] * kvx[c] + kvz[c] * kvz[c] < 0.04f && Math.abs(spin[c]) < 0.05f) {
             knocked[c] = 0f;
             wreck[c] = true;
+            stood[c] = 0f;
+            comeTo[c] = COME_TO + rnd.nextFloat() * COME_TO_MORE;
             // never left standing in a bay at the factory's gate or the warehouse's: it is towed off
             if (City.inBay(true, x[c], z[c]) || City.inBay(false, x[c], z[c]) || City.inClinicBay(x[c], z[c]) || City.inWorkshopBay(x[c], z[c])) live[c] = false;
         }
@@ -351,6 +653,8 @@ final class Cars {
             choose(c);
             knocked[c] = 0f;
             wreck[c] = false;
+            off[c] = passing[c] = dodging[c] = blocked[c] = 0f;
+            why[c] = FREE;
             live[c] = true;
             return;
         }
@@ -400,6 +704,76 @@ final class Cars {
         live[0] = true;
     }
 
+    /** For the desktop stand: car c a wreck at (x, z) facing so, just come to rest. */
+    void standWreck(int c, float px, float pz, float yaw) {
+        x[c] = px;
+        z[c] = pz;
+        heading[c] = yaw;
+        speed[c] = 0f;
+        halt[c] = 0f;
+        kind[c] = SEDAN;
+        paint[c] = PAINT[3];
+        live[c] = true;
+        knocked[c] = 0f;
+        wreck[c] = true;
+        stood[c] = 0f;
+        comeTo[c] = COME_TO + COME_TO_MORE;
+    }
+
+    /**
+     * For the desktop stand: car 0 coming down the street at the pickup p, so far ahead of it, in
+     * its own lane; the pickup put in that lane too, so that they meet head on.
+     */
+    void standComing(Pickup p, float ahead) {
+        int a = Math.round((float) Math.sin(p.heading)), b = Math.round((float) Math.cos(p.heading));
+        if (a != 0) b = 0;
+        int c = 0;
+        if (a != 0) {
+            float zs = Math.round(p.z / City.CELL) * City.CELL;
+            di[c] = -a;
+            dj[c] = 0;
+            z[c] = zs - di[c] * LANE;
+            p.z = z[c];
+            x[c] = p.x + a * ahead;
+            ti[c] = di[c] > 0 ? City.index(x[c]) + 1 : City.index(x[c]);
+            tj[c] = Math.round(zs / City.CELL);
+        } else {
+            float xs = Math.round(p.x / City.CELL) * City.CELL;
+            di[c] = 0;
+            dj[c] = -b;
+            x[c] = xs + dj[c] * LANE;
+            p.x = x[c];
+            z[c] = p.z + b * ahead;
+            ti[c] = Math.round(xs / City.CELL);
+            tj[c] = dj[c] > 0 ? City.index(z[c]) + 1 : City.index(z[c]);
+        }
+        ni[c] = di[c];
+        nj[c] = dj[c];
+        heading[c] = (float) Math.atan2(di[c], dj[c]);
+        speed[c] = CRUISE;
+        halt[c] = 0f;
+        kind[c] = SEDAN;
+        paint[c] = PAINT[1];
+        live[c] = true;
+        wreck[c] = false;
+        knocked[c] = 0f;
+        off[c] = passing[c] = dodging[c] = 0f;
+    }
+
+    /** For the desktop stand: the cars within so far of (px, pz), each told: how fast, why it stands, going round, dodging, a wreck. */
+    String told(float px, float pz, float far) {
+        StringBuilder b = new StringBuilder();
+        String[] whys = {"free", "wait", "block", "knot"};
+        for (int c = 0; c < MOST; c++) {
+            if (!live[c]) continue;
+            float dx = x[c] - px, dz = z[c] - pz;
+            if (dx * dx + dz * dz > far * far) continue;
+            b.append(String.format(" [%d %.0f,%.0f %.1fm/s %s%s%s%s]", c, x[c], z[c], speed[c], whys[why[c]],
+                    passing[c] > 0f ? " passing" : "", dodging[c] > 0f ? " dodging" : "", wreck[c] ? " wreck " + Math.round(stood[c]) : ""));
+        }
+        return b.toString();
+    }
+
     /** Car c put standing at (x, z) facing so, of a kind and paint, held there (the stand's show). */
     void stand(int c, float px, float pz, float yaw, int k, int p) {
         x[c] = px;
@@ -434,6 +808,15 @@ final class Cars {
                     break;
                 }
         }
+    }
+
+    /** How many pickups are on the move about the town this frame, and each. */
+    int threatCount() {
+        return threatN;
+    }
+
+    Pickup threat(int k) {
+        return threats[k];
     }
 
     /** Whether car c is a wreck, or sliding to become one. */

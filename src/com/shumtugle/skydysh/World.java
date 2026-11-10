@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.3";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.4";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -121,6 +121,8 @@ final class World {
         this.host = host;
         cars.duty = duty;
         cars.city = city;
+        cars.walkers = walkers;
+        walkers.cars = cars;
         byte[] moves = host.asset("moves.bin");
         if (moves != null) Frida.use(Moves.read(moves));
         if (FolkPack.town == null) FolkPack.town = FolkPack.read(host.asset("folk.bin"));
@@ -1700,6 +1702,7 @@ final class World {
         frighten();
         int rode = riding();
         float rx0 = rode >= 0 ? cars.x[rode] : 0f, rz0 = rode >= 0 ? cars.z[rode] : 0f, rh0 = rode >= 0 ? cars.heading[rode] : 0f;
+        cars.driven = driving;
         cars.update(dt, runner, brums());
         if (rode >= 0) carried(rode, rx0, rz0, rh0, dt);
         else rideFor = 0f;
@@ -5237,6 +5240,7 @@ final class World {
             float ex = (float) Math.sin(camAt[3]), ez = (float) Math.cos(camAt[3]);
             city.draw(d, camAt[0], camAt[2], ex, ez);
             cars.draw(d, camAt[0], camAt[2], ex, ez);
+            Crossings.lamps(d, camAt[0], camAt[2], ex, ez);
             duty.draw(d, camAt[0], camAt[2], ex, ez, time, null);
             walkers.draw(d, camAt[0], camAt[2], ex, ez);
             pets.draw(d, camAt[0], camAt[2], ex, ez, walkers);
@@ -5483,6 +5487,7 @@ final class World {
         if (lab != null) lab.draw(d, time, eyeX, eyeZ);
         if (herd != null) herd.draw(d, time, eyeX, eyeZ);
         cars.draw(d, eyeX, eyeZ, ex, ez);
+        Crossings.lamps(d, eyeX, eyeZ, ex, ez);
         felled.draw(d, eyeX, eyeZ, ex, ez);
         villagers.draw(d, city, eyeX, eyeZ);
         if (rescue != null) {

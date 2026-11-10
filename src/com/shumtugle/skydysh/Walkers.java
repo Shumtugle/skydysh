@@ -35,7 +35,17 @@ final class Walkers {
     static final float BEACH_NEAR = 120f, LOUNGE_SEAT = 0.3f;
     // what one is doing: going round a block, sitting on a bench, going round a fountain, to and
     // fro along a garden's path
-    static final int ROUND = 0, SITS = 1, FOUNTAIN = 2, PATH = 3, FLEE = 4;
+    static final int ROUND = 0, SITS = 1, FOUNTAIN = 2, PATH = 3, FLEE = 4, CROSS = 5;
+    // going round a block, they cross the street at a zebra now and then: straight on at a corner,
+    // over to the block across at one before a place's way in; at the curb they wait for the light
+    // (red for the street's cars) or, with none, till no car comes that could not stop; given up
+    // after so long. Over it a little briskly
+    static final float CROSS_CORNER = 0.18f, CROSS_MID = 0.35f, CROSS_PATIENCE = 14f, CROSS_PACE = 1.35f;
+    // a car or a pickup coming at one: looked for so far ahead in time, as near as this it would
+    // pass; aside so fast for so long, no farther than this; back to the way after so long clear
+    static final float DODGE_LOOK = 1.5f, DODGE_NEAR = 1.9f, DODGE_RUN = 4.6f, DODGE_FOR = 0.6f, DODGE_MOST = 3.6f,
+            DODGE_BACK = 0.9f, HURRY = 4f;
+    private static final int WAITS = 0, WALKS = 1;
     // off at a run: from where, how long now, how long the stare first, how fast; gone after so long
     private final float[] fromX = new float[MOST], fromZ = new float[MOST], fleeFor = new float[MOST],
             stare = new float[MOST], runs = new float[MOST], turned = new float[MOST];
@@ -61,6 +71,21 @@ final class Walkers {
     // what one stands on (or, sitting, sits on): the pavement, a bench, the sand
     private final float[] gy = new float[MOST];
     private final float[] seatBuf = new float[3 * 96];
+    // crossing: from (cax, caz) over to (cbx, cbz), so far now of so far; the zebra's middle; waiting or
+    // walking, how long waited; the light it waits for (its crossing, the street's cars along x or
+    // not), if any; and the block, the way round it and the direction they go on in after
+    private final float[] cax = new float[MOST], caz = new float[MOST], cbx = new float[MOST], cbz = new float[MOST],
+            cAt = new float[MOST], cLen = new float[MOST], zx = new float[MOST], zz = new float[MOST], cWaited = new float[MOST],
+            nu = new float[MOST], ndir = new float[MOST];
+    private final int[] cPhase = new int[MOST], cLi = new int[MOST], cLj = new int[MOST], nbi = new int[MOST], nbj = new int[MOST];
+    private final boolean[] cLit = new boolean[MOST], cLitX = new boolean[MOST], zAlongX = new boolean[MOST];
+    // stepped out of the way of a car: so far off where they walk (x, z), going aside so fast for so
+    // long more, and how long since the last one came at them
+    private final float[] ox = new float[MOST], oz = new float[MOST], dvx = new float[MOST], dvz = new float[MOST],
+            dodgeFor = new float[MOST], calm = new float[MOST];
+    /** The traffic, for the people to keep out of its way and to cross between; none, none. */
+    Cars cars;
+    private final float[] threat = new float[2];
     private float retry;
 
     private static float side() {
@@ -109,7 +134,16 @@ final class Walkers {
                 alarm(i, r.x, r.z);
                 continue;
             }
+            if (mode[i] == CROSS) {
+                cross(i, dt, city);
+                continue;
+            }
             if (mode[i] != ROUND) {
+                // a car coming at one sitting or walking a square: up and off out of its way
+                if (coming(x[i], z[i])) {
+                    alarm(i, x[i] - threat[0], z[i] - threat[1]);
+                    continue;
+                }
                 elsewhere(i, dt, r, ch);
                 continue;
             }
@@ -122,11 +156,351 @@ final class Walkers {
             float want = near < SHY ? 0.55f : 0f;
             aside[i] += (want - aside[i]) * Math.min(1f, dt * 5f);
             float pace = shy ? 0.4f : 1f;
+            float was = u[i];
             u[i] = (u[i] + dir[i] * v[i] * pace * dt + len) % len;
             ph[i] += dt * v[i] * pace * 3.2f;
             place(i);
+            if (city != null && dodgeFor[i] <= 0f && ox[i] == 0f && oz[i] == 0f && crossing(i, was, city)) continue;
+            stepAside(i, dt, city);
         }
         started = true;
+    }
+
+    /**
+     * A car or pickup on the move about to run into someone at (px, pz): the way out of its path
+     * (away across it, on the side they already are) into threat; false if none comes at them.
+     */
+    private boolean coming(float px, float pz) {
+        if (cars == null) return false;
+        int n = Cars.MOST + cars.threatCount();
+        for (int k = 0; k < n; k++) {
+            float vx, vz, qx, qz;
+            if (k < Cars.MOST) {
+                if (!cars.live(k) || cars.wrecked(k) || cars.speed[k] < 2.5f) continue;
+                vx = (float) Math.sin(cars.heading[k]) * cars.speed[k];
+                vz = (float) Math.cos(cars.heading[k]) * cars.speed[k];
+                qx = cars.x[k];
+                qz = cars.z[k];
+            } else {
+                Pickup p = cars.threat(k - Cars.MOST);
+                vx = (float) Math.sin(p.heading) * p.speed;
+                vz = (float) Math.cos(p.heading) * p.speed;
+                qx = p.x;
+                qz = p.z;
+            }
+            float rx = px - qx, rz = pz - qz;
+            if (rx * rx + rz * rz > 30f * 30f) continue;
+            float vv = vx * vx + vz * vz;
+            if (vv < 4f) continue;
+            float t = (rx * vx + rz * vz) / vv;
+            if (t < 0f || t > DODGE_LOOK) continue;
+            float mx = qx + vx * t - px, mz = qz + vz * t - pz;
+            if (mx * mx + mz * mz > DODGE_NEAR * DODGE_NEAR) continue;
+            float vl = (float) Math.sqrt(vv), nx = -vz / vl, nz = vx / vl;
+            float sd = rx * nx + rz * nz >= 0f ? 1f : -1f;
+            threat[0] = nx * sd;
+            threat[1] = nz * sd;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * One going round a block: out of the way of a car coming at them, quick and aside; back to
+     * where they walk once none has come a while. Kept out of the walls.
+     */
+    private void stepAside(int i, float dt, City city) {
+        calm[i] += dt;
+        if (coming(x[i], z[i])) {
+            if (dodgeFor[i] <= 0f) {
+                dvx[i] = threat[0] * DODGE_RUN;
+                dvz[i] = threat[1] * DODGE_RUN;
+            }
+            dodgeFor[i] = DODGE_FOR;
+            calm[i] = 0f;
+        }
+        if (dodgeFor[i] > 0f) {
+            dodgeFor[i] -= dt;
+            ox[i] += dvx[i] * dt;
+            oz[i] += dvz[i] * dt;
+            float l = (float) Math.sqrt(ox[i] * ox[i] + oz[i] * oz[i]);
+            if (l > DODGE_MOST) {
+                ox[i] *= DODGE_MOST / l;
+                oz[i] *= DODGE_MOST / l;
+            }
+            yaw[i] = (float) Math.atan2(dvx[i], dvz[i]);
+            ph[i] += dt * DODGE_RUN * 3.2f;
+        } else if (calm[i] > 0.8f && (ox[i] != 0f || oz[i] != 0f)) {
+            float l = (float) Math.sqrt(ox[i] * ox[i] + oz[i] * oz[i]), step = DODGE_BACK * dt;
+            if (l <= step) ox[i] = oz[i] = 0f;
+            else {
+                ox[i] -= ox[i] / l * step;
+                oz[i] -= oz[i] / l * step;
+            }
+        }
+        if (ox[i] == 0f && oz[i] == 0f) return;
+        float bx = x[i], bz = z[i];
+        float[] p = {bx + ox[i], bz + oz[i]};
+        if (city != null) city.push(p, 0.3f, City.WALK_TOP);
+        ox[i] = p[0] - bx;
+        oz[i] = p[1] - bz;
+        x[i] = p[0];
+        z[i] = p[1];
+    }
+
+    // which street the side e of block (bi, bj) is on: the cell owning it, running north or not;
+    // and the block across it
+    private static int sideI(int bi, int e) {
+        return e == 1 ? bi + 1 : bi;
+    }
+
+    private static int sideJ(int bj, int e) {
+        return e == 2 ? bj + 1 : bj;
+    }
+
+    private static boolean sideNorth(int e) {
+        return e == 1 || e == 3;
+    }
+
+    private static int acrossI(int bi, int e) {
+        return e == 1 ? bi + 1 : e == 3 ? bi - 1 : bi;
+    }
+
+    private static int acrossJ(int bj, int e) {
+        return e == 0 ? bj - 1 : e == 2 ? bj + 1 : bj;
+    }
+
+    /** Whether block row j is one people go round: in the town, not the sea, not past its end. */
+    private static boolean block(int j) {
+        return !City.sea(j) && !City.country(j);
+    }
+
+    /**
+     * One going round their block has come from u = was to where they are now: at a corner, or
+     * by a zebra before a place's way in, they may make to cross the street there. True if they do.
+     */
+    private boolean crossing(int i, float was, City city) {
+        float s = side(), len = s * 4f;
+        int e0 = (int) (was / s) % 4, e1 = (int) (u[i] / s) % 4;
+        float du = u[i] - was;
+        if (du > len * 0.5f) du -= len;
+        if (du < -len * 0.5f) du += len;
+        if (e0 != e1 && Math.abs(du) < s) {
+            // round a corner: straight on over the street ahead
+            if (rnd.nextFloat() > CROSS_CORNER) return false;
+            int e = e0, over = dir[i] > 0f ? (e + 1) % 4 : (e + 3) % 4;
+            int ni = acrossI(bi[i], over), nj = acrossJ(bj[i], over);
+            if (!block(nj)) return false;
+            // the corner they are at: the start of the side going on (or of their own, going back)
+            int q = dir[i] > 0f ? (e + 1) % 4 : e;
+            float x0 = bi[i] * City.CELL + RING, z0 = bj[i] * City.CELL + RING;
+            float cx = q == 1 || q == 2 ? x0 + s : x0, cz = q >= 2 ? z0 + s : z0;
+            float t = sideNorth(over) ? cz - bj[i] * City.CELL : cx - bi[i] * City.CELL;
+            if (!Crossings.zebraAt(city, sideI(bi[i], over), sideJ(bj[i], over), sideNorth(over), t)) return false;
+            // on in the block across: the same side, at its start or end, the same way
+            float landU = dir[i] > 0f ? e * s + 0.01f : (e + 1) * s - 0.01f;
+            startCross(i, cx, cz, over, ni, nj, landU, dir[i]);
+            return true;
+        }
+        if (e0 != e1) return false;
+        // along a side: past its zebra before a place's way in
+        int e = e1;
+        float k0 = was - e * s, k1 = u[i] - e * s;
+        float t0 = e < 2 ? RING + k0 : RING + s - k0, t1 = e < 2 ? RING + k1 : RING + s - k1;
+        float m = Crossings.mid(city, sideI(bi[i], e), sideJ(bj[i], e), sideNorth(e));
+        if (m < 0f || (t0 - m) * (t1 - m) > 0f || rnd.nextFloat() > CROSS_MID) return false;
+        int ni = acrossI(bi[i], e), nj = acrossJ(bj[i], e);
+        if (!block(nj)) return false;
+        float x0 = bi[i] * City.CELL, z0 = bj[i] * City.CELL;
+        float cx = e == 0 || e == 2 ? x0 + m : e == 1 ? x0 + City.CELL - RING : x0 + RING;
+        float cz = e == 1 || e == 3 ? z0 + m : e == 2 ? z0 + City.CELL - RING : z0 + RING;
+        // on the far side, the side facing back; which way round, as it falls
+        int back = (e + 2) % 4;
+        float nx0 = ni * City.CELL + RING, nz0 = nj * City.CELL + RING;
+        float lx = cx + (e == 1 ? 2f * RING : e == 3 ? -2f * RING : 0f), lz = cz + (e == 2 ? 2f * RING : e == 0 ? -2f * RING : 0f);
+        float k = back == 0 ? lx - nx0 : back == 1 ? lz - nz0 : back == 2 ? nx0 + s - lx : nz0 + s - lz;
+        startCross(i, cx, cz, e, ni, nj, back * s + Math.max(0.01f, Math.min(s - 0.01f, k)), rnd.nextBoolean() ? 1f : -1f);
+        return true;
+    }
+
+    /** Person i makes to cross from (ax, az) over the street on side e of their block, into block (ni, nj) at u, going on so. */
+    private void startCross(int i, float ax, float az, int e, int ni, int nj, float landU, float goes) {
+        float nx = e == 1 ? 1f : e == 3 ? -1f : 0f, nz = e == 2 ? 1f : e == 0 ? -1f : 0f;
+        mode[i] = CROSS;
+        cPhase[i] = WAITS;
+        cWaited[i] = 0f;
+        // not all on one line: a little to one side or the other along the zebra
+        float spread = ((i % 3) - 1) * 0.45f;
+        cax[i] = ax + nz * spread;
+        caz[i] = az + nx * spread;
+        cbx[i] = cax[i] + nx * 2f * RING;
+        cbz[i] = caz[i] + nz * 2f * RING;
+        cLen[i] = 2f * RING;
+        cAt[i] = 0f;
+        zx[i] = ax + nx * RING;
+        zz[i] = az + nz * RING;
+        zAlongX[i] = nx != 0f;
+        // its light, if the zebra is by a crossing that has one: the street's cars run along z if they cross along x
+        int li = Math.round(zx[i] / City.CELL), lj = Math.round(zz[i] / City.CELL);
+        float ddx = zx[i] - li * City.CELL, ddz = zz[i] - lj * City.CELL;
+        cLit[i] = ddx * ddx + ddz * ddz < 12f * 12f && Crossings.lit(li, lj);
+        cLi[i] = li;
+        cLj[i] = lj;
+        cLitX[i] = nx == 0f;
+        nbi[i] = ni;
+        nbj[i] = nj;
+        nu[i] = landU;
+        ndir[i] = goes;
+        ox[i] = oz[i] = 0f;
+        x[i] = cax[i];
+        z[i] = caz[i];
+        yaw[i] = (float) Math.atan2(nx, nz);
+        aside[i] = 0f;
+    }
+
+    /** Whether a car comes on the street that could not stop before the zebra of person i. */
+    private boolean carsComing(int i) {
+        if (cars == null) return false;
+        int n = Cars.MOST + cars.threatCount();
+        for (int k = 0; k < n; k++) {
+            float hx, hz, sp, px, pz;
+            if (k < Cars.MOST) {
+                if (!cars.live(k)) continue;
+                hx = (float) Math.sin(cars.heading[k]);
+                hz = (float) Math.cos(cars.heading[k]);
+                sp = cars.wrecked(k) ? 0f : cars.speed[k];
+                px = cars.x[k];
+                pz = cars.z[k];
+            } else {
+                Pickup p = cars.threat(k - Cars.MOST);
+                hx = (float) Math.sin(p.heading) * Math.signum(p.speed);
+                hz = (float) Math.cos(p.heading) * Math.signum(p.speed);
+                sp = Math.abs(p.speed);
+                px = p.x;
+                pz = p.z;
+            }
+            // only those going along the street the zebra is across
+            if (zAlongX[i] ? Math.abs(hz) < 0.7f : Math.abs(hx) < 0.7f) continue;
+            float rx = zx[i] - px, rz = zz[i] - pz;
+            float along = rx * hx + rz * hz, aside = Math.abs(rx * hz - rz * hx);
+            if (aside > City.ROAD + 1f || along < -2.6f || along > 45f) continue;
+            if (along < 2.6f || along < sp * sp / 16f + 2.6f + sp * 0.6f) return true;
+        }
+        return false;
+    }
+
+    /** One crossing a street: waiting at the curb, then over it; out of the way of what comes at them; then on round the block across. */
+    private void cross(int i, float dt, City city) {
+        float nx = (cbx[i] - cax[i]) / cLen[i], nz = (cbz[i] - caz[i]) / cLen[i];
+        if (cPhase[i] == WAITS) {
+            cWaited[i] += dt;
+            boolean go = cLit[i] ? Crossings.light(cLi[i], cLj[i], cLitX[i]) == Crossings.HALT && !carsComing(i) : !carsComing(i);
+            if (go) cPhase[i] = WALKS;
+            else if (cWaited[i] > CROSS_PATIENCE) {
+                // given up: on round their own block
+                mode[i] = ROUND;
+                return;
+            }
+            x[i] = cax[i];
+            z[i] = caz[i];
+            yaw[i] = (float) Math.atan2(nx, nz);
+            aside[i] = 1f;
+            return;
+        }
+        aside[i] = 0f;
+        float pace = v[i] * CROSS_PACE;
+        // something coming at them in the road: on at a run to the nearer curb ahead, or back
+        float px = cax[i] + nx * cAt[i], pz = caz[i] + nz * cAt[i];
+        int way = 1;
+        if (coming(px, pz)) {
+            way = threat[0] * nx + threat[1] * nz >= 0f ? 1 : -1;
+            pace = HURRY;
+        }
+        cAt[i] += way * pace * dt;
+        ph[i] += pace * dt * 3.2f;
+        if (cAt[i] <= 0f) {
+            // back on the curb: wait again
+            cAt[i] = 0f;
+            cPhase[i] = WAITS;
+            cWaited[i] = 0f;
+        }
+        if (cAt[i] >= cLen[i]) {
+            // over: on round the block across
+            bi[i] = nbi[i];
+            bj[i] = nbj[i];
+            u[i] = nu[i];
+            dir[i] = ndir[i];
+            mode[i] = ROUND;
+            place(i);
+            return;
+        }
+        x[i] = cax[i] + nx * cAt[i];
+        z[i] = caz[i] + nz * cAt[i];
+        yaw[i] = (float) Math.atan2(nx * way, nz * way);
+    }
+
+    /**
+     * How fast a car at (px, pz) going along (fx, fz) at speed sp may go for the people at a zebra
+     * ahead of it: crossing on it, or waiting by it where there is no light, if it can still stop.
+     */
+    float zebraAhead(float px, float pz, float fx, float fz, float sp) {
+        float lim = Cars.CRUISE * 2f;
+        for (int i = 0; i < ROUNDERS; i++) {
+            if (!live[i] || mode[i] != CROSS) continue;
+            if (cPhase[i] == WAITS && cLit[i]) continue;
+            if (zAlongX[i] ? Math.abs(fz) < 0.7f : Math.abs(fx) < 0.7f) continue;
+            float rx = zx[i] - px, rz = zz[i] - pz;
+            float along = rx * fx + rz * fz, aside = Math.abs(rx * fz - rz * fx);
+            if (aside > City.ROAD + 1f || along < -1f || along > 40f) continue;
+            float stop = along - Crossings.HALF - Crossings.NOSE;
+            if (cPhase[i] == WAITS && (stop < sp * sp / 16f || stop > 25f)) continue;
+            if (stop < -0.5f) continue;
+            if (cPhase[i] == WALKS) {
+                // over: past the car's side of the road, or not yet near it, coming the other way
+                float side = (x[i] - px) * fz - (z[i] - pz) * fx;
+                float nx = cbx[i] - cax[i], nz = cbz[i] - caz[i];
+                float toward = -(nx * fz - nz * fx) * Math.signum(side);
+                if (Math.abs(side) > 2.2f && (toward <= 0f || Math.abs(side) > 4.8f)) continue;
+            }
+            lim = Math.min(lim, Math.max(0f, stop * 1.1f));
+        }
+        return lim;
+    }
+
+    /** How fast a car at (px, pz) going along (fx, fz) may go for anyone in the road before it: no faster than it can stop short. */
+    float inRoadAhead(float px, float pz, float fx, float fz) {
+        float lim = Cars.CRUISE * 2f;
+        for (int i = 0; i < MOST; i++) {
+            if (!live[i] || mode[i] == SITS) continue;
+            float rx = x[i] - px, rz = z[i] - pz;
+            float along = rx * fx + rz * fz;
+            if (along < 0f || along > 16f) continue;
+            float aside = Math.abs(rx * fz - rz * fx);
+            if (aside > 2.1f) continue;
+            // in the road: nearer a street's middle than its asphalt's edge
+            float sx = Math.abs(x[i] - Math.round(x[i] / City.CELL) * City.CELL), sz = Math.abs(z[i] - Math.round(z[i] / City.CELL) * City.CELL);
+            if (Math.min(sx, sz) > City.ROAD + 0.2f) continue;
+            lim = Math.min(lim, Math.max(0f, (along - 3.4f) * 1.1f));
+        }
+        return lim;
+    }
+
+    /** For the desktop stand: each one at a zebra, told: where, waiting or crossing, how far over, how long waited, by a light. */
+    String toldCrossing() {
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < ROUNDERS; i++)
+            if (live[i] && mode[i] == CROSS)
+                b.append(String.format(" [%d %.0f,%.0f %s %.1f/%.1f w%.1f%s]", i, x[i], z[i], cPhase[i] == WALKS ? "walks" : "waits",
+                        cAt[i], cLen[i], cWaited[i], cLit[i] ? " lit" : ""));
+        return b.toString();
+    }
+
+    /** For the desktop stand: how many are waiting at a zebra, and how many crossing on one. */
+    int crossingNow(boolean walking) {
+        int n = 0;
+        for (int i = 0; i < ROUNDERS; i++)
+            if (live[i] && mode[i] == CROSS && (cPhase[i] == WALKS) == walking) n++;
+        return n;
     }
 
     /** One sitting, or walking a square: the walk along its way, stopping short of someone running at them. */
@@ -414,6 +788,8 @@ final class Walkers {
             if (!anywhere && (dx * fx + dz * fz) / dd > 0.7f && dd < 60f) continue;
             looks(i);
             gy[i] = City.WALK_TOP;
+            ox[i] = oz[i] = 0f;
+            dodgeFor[i] = 0f;
             mode[i] = ROUND;
             live[i] = true;
             return;
