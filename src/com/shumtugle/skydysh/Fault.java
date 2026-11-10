@@ -3,9 +3,9 @@ package com.shumtugle.skydysh;
 /**
  * A light gone wrong: at one crossing with lights all of them blink amber, the cars find their own
  * way through it and the people cross as at a zebra with none. At its foot, on the post on the
- * right of the cars coming north, a grey box: on foot at it, she opens it, and inside is a panel to
- * be mended, as the concert hall's was (a smaller one); mended and switched on, the lights go round
- * again as they should.
+ * right of the cars coming north, a grey box: on foot at it with the screwdriver in her hand, she
+ * opens it, and inside are the wires of the three lamps to be joined again (see Wires); joined, the
+ * lights go round again as they should.
  *
  * As a job, the fourteenth kind: the brum towed out of the quarry, his pickup in the workshop now,
  * asks her to take the job he was on his way to: a light in the town gone wrong. A story: played
@@ -22,8 +22,6 @@ final class Fault {
     static final int GO = 0, OPEN = 1, DONE = 2;
     /** How near the box she has to come, on foot; how long she stands at it before it opens. */
     static final float NEAR = 1.9f, STAND = 0.35f;
-    /** The panel inside the box: so many pieces each way. */
-    static final int GRID = 4;
     // where to look for a light to go wrong: no nearer her than this, no farther
     static final float FROM = 110f, TO = 340f;
 
@@ -31,8 +29,8 @@ final class Fault {
     float clock, doneAt = -1f;
     /** The crossing whose lights have gone wrong. */
     final int ci, cj;
-    /** The panel inside the box, while it is open. */
-    Panel panel;
+    /** The wires inside the box, while it is open. */
+    Wires panel;
     private float stood;
     private final long seed;
 
@@ -57,19 +55,19 @@ final class Fault {
     }
 
     /**
-     * A step on: her, on foot or not. True at the moment the box is opened (the panel over
-     * everything from then on, till it is mended and switched on, or left).
+     * A step on: her, on foot or not, the screwdriver in her hand or not. True at the moment the
+     * box is opened (the wires over everything from then on, till they are joined, or left).
      */
-    boolean update(float dt, Runner r, boolean onFoot) {
+    boolean update(float dt, Runner r, boolean onFoot, boolean screwdriver) {
         if (step == DONE) return false;
         clock += dt;
         if (step == GO) {
             float dx = r.x - boxX(), dz = r.z - boxZ();
             if (onFoot && !r.inAir() && dx * dx + dz * dz < NEAR * NEAR) {
                 stood += dt;
-                if (stood >= STAND) {
+                if (stood >= STAND && screwdriver) {
                     step = OPEN;
-                    panel = new Panel(GRID, seed + (long) (clock * 1000f));
+                    panel = new Wires(seed + (long) (clock * 1000f));
                     return true;
                 }
             } else stood = 0f;
@@ -90,7 +88,13 @@ final class Fault {
         return false;
     }
 
-    /** Whether the panel is open over everything now. */
+    /** Whether she stands at the box now (the screwdriver wanted to open it). */
+    boolean atBox(Runner r) {
+        float dx = r.x - boxX(), dz = r.z - boxZ();
+        return step == GO && dx * dx + dz * dz < NEAR * NEAR;
+    }
+
+    /** Whether the wires are open over everything now. */
     boolean open() {
         return step == OPEN && panel != null;
     }

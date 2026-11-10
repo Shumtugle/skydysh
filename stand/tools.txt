@@ -1,0 +1,24 @@
+# The ring of her tools (1.4.8): the small button over her mallet held, the ring open round it,
+# the mallet at the top and the screwdriver at the bottom; slid down onto the screwdriver, lit;
+# let go, the screwdriver in her hand, the mallet at her hip; then back to the mallet.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 32766
+keep where 0
+restart
+free
+wait 1.5
+pie down
+wait 0.4
+shot p0
+pie move 0 48
+wait 0.2
+shot p1
+pie up 0 48
+wait 0.4
+shot p2
+pie down
+pie move 0 -45
+pie up 0 -45
+wait 0.3

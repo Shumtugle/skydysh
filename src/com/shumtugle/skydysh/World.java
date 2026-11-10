@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.7";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.8";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -156,6 +156,7 @@ final class World {
         Runner.classic = !TWO_THUMBS_OFFERED || host.loadInt(SAVE_CONTROLS) != 2;
         navShut = host.loadInt(SAVE_NAV) == 1;
         coordsShown = host.loadInt(SAVE_COORDS) == 1;
+        toss.tool = Math.max(0, Math.min(Toss.TOOLS - 1, host.loadInt(SAVE_TOOL)));
         plates = host.loadInt(SAVE_PLATES);
         likes = host.loadInt(SAVE_LIKES);
         if (likes == 0) likes = host.loadInt(SAVE_MONEY);
@@ -749,7 +750,7 @@ final class World {
 
     /** For the desktop stand: the concert's panel, if open: so many of its pieces mended; or (pieces &lt; 0) its switch touched. */
     String standPanel(int pieces) {
-        Panel p = solo != null ? solo : concert != null && concert.panelOpen ? concert.panel : faultPanel();
+        Panel p = solo != null ? solo : concert != null && concert.panelOpen ? concert.panel : null;
         if (p == null) return "no panel open";
         if (pieces >= 0) {
             p.standMend(pieces);
@@ -839,6 +840,8 @@ final class World {
     private float pressedAt = -9f;
 
     void touch(int type, int id, float x, float y) {
+        // the ring of her tools, out of its button over her mallet: the finger is its own till lifted
+        if (pieTouch(type, id, x, y)) return;
         // the navigator touched: folded or opened, wherever she is
         if (type == DOWN && !paused && onNav(x, y)) {
             navShut = !navShut;
@@ -879,8 +882,8 @@ final class World {
             if (type == DOWN) solo.touch(x, y, host);
             return;
         }
-        if (faultPanel() != null) {
-            if (type == DOWN) faultPanel().touch(x, y, host);
+        if (faultWires() != null) {
+            faultWires().touch(type, x, y, host);
             return;
         }
         if (opening != null) {
@@ -1245,6 +1248,104 @@ final class World {
         shadowed(f, at, compassX() + PAUSE_HALF - PixelFont.width(at, 1), pauseY() + PAUSE_HALF + 8, 1, Nav.TEXT, Nav.INK);
     }
 
+    // ---- the ring of her tools: a small button floating over her mallet; held, the tools open in a
+    // ring round it, the first straight up and the rest on round clockwise; slid onto one, it is
+    // lit; lifted there, she holds it. Lifted in the middle, nothing. A hand that knows the way
+    // slides and lifts before the ring is drawn at all ----
+    static final String SAVE_TOOL = "tool";
+    // the button: half its size; the ring: how far out its tools are, how big; the middle that means
+    // no; how long the finger stays before the ring is drawn
+    static final float PIE_HALF = 13f, PIE_R = 48f, PIE_ITEM = 17f, PIE_DEAD = 16f, PIE_REVEAL = 0.26f;
+    private int pieFinger = -1, pieHot = -1;
+    float pieX, pieY;
+    private float pieCx, pieCy, pieAt;
+    private boolean pieSeen;
+    private final float[] pieAnchor = new float[3];
+
+    /** The sign of each tool in the ring. */
+    private static int toolSign(int tool) {
+        return tool == Toss.SCREWDRIVER ? Badges.SCREWDRIVER : Badges.MALLET;
+    }
+
+    /** Whether the ring's button is there: on foot, her hands free to choose (not at a wheel, a seat, a ladder, the water, a screen). */
+    private boolean pieOffered() {
+        Runner r = runner;
+        return driving == null && !paused && !aboard() && !piloting() && !seated() && !inChair() && dispatch == null && story == null
+                && opening == null && !r.climbing() && !r.swimming() && !r.hidden && !craning && solo == null && faultWires() == null
+                && !(concert != null && concert.panelOpen) && toss.state == Toss.HELD;
+    }
+
+    /** The ring's button over her mallet, and the ring itself while it is held. */
+    private void pieButton(DrawList d) {
+        pieSeen = false;
+        if (!pieOffered() && pieFinger < 0) return;
+        Runner r = runner;
+        float rx = (float) Math.cos(r.heading), rz = -(float) Math.sin(r.heading);
+        // beside her right hip, where the mallet hangs, and up over it
+        if (!d.project(r.x + rx * 0.75f, r.y + 1.85f, r.z + rz * 0.75f, pieAnchor)) return;
+        float tx = Math.max(PIE_HALF + 4f, Math.min(W - PIE_HALF - 4f, pieAnchor[0]));
+        float ty = Math.max(pauseY() + PAUSE_HALF + PIE_HALF + 8f, Math.min(h - PIE_HALF - 40f, pieAnchor[1]));
+        // eased after her, so that it does not shake with her stride
+        pieX += (tx - pieX) * 0.35f;
+        pieY += (ty - pieY) * 0.35f;
+        if (Math.abs(pieX - tx) > 80f || Math.abs(pieY - ty) > 80f) {
+            pieX = tx;
+            pieY = ty;
+        }
+        pieSeen = true;
+        if (pieFinger < 0) {
+            d.badge(pieX, pieY, PIE_HALF, toolSign(toss.tool), 0.7f, 0f);
+            return;
+        }
+        // held: the ring, once the finger has stayed or gone out of the middle
+        boolean shown = time - pieAt > PIE_REVEAL || pieHot >= 0;
+        d.badge(pieCx, pieCy, PIE_HALF, toolSign(toss.tool), 0.5f, 0f);
+        if (!shown) return;
+        for (int k = 0; k < Toss.TOOLS; k++) {
+            float a = k * 2f * (float) Math.PI / Toss.TOOLS;
+            float sx = pieCx + (float) Math.sin(a) * PIE_R, sy = pieCy - (float) Math.cos(a) * PIE_R;
+            boolean hot = k == pieHot;
+            d.badge(sx, sy, hot ? PIE_ITEM * 1.25f : PIE_ITEM, toolSign(k), hot ? 1f : 0.7f, hot ? 0.45f : k == toss.tool ? 0.15f : 0f);
+        }
+    }
+
+    /** A finger on the ring's button, or the finger holding the ring: true if it is the ring's. */
+    private boolean pieTouch(int type, int id, float x, float y) {
+        if (pieFinger >= 0) {
+            if (id != pieFinger) return false;
+            float dx = x - pieCx, dy = y - pieCy;
+            if (Math.sqrt(dx * dx + dy * dy) < PIE_DEAD) pieHot = -1;
+            else {
+                float a = (float) Math.atan2(dx, -dy);
+                if (a < 0f) a += 2f * (float) Math.PI;
+                float each = 2f * (float) Math.PI / Toss.TOOLS;
+                pieHot = ((int) Math.floor((a + each * 0.5f) / each)) % Toss.TOOLS;
+            }
+            if (type == UP) {
+                if (pieHot >= 0 && pieHot != toss.tool) {
+                    toss.tool = pieHot;
+                    host.saveInt(SAVE_TOOL, pieHot);
+                    host.sound(Synth.TOCK, 0.4f, pieHot == Toss.SCREWDRIVER ? 1.6f : 1.1f);
+                    host.buzz(15);
+                }
+                pieFinger = -1;
+                pieHot = -1;
+            }
+            return true;
+        }
+        if (type != DOWN || !pieSeen || !pieOffered()) return false;
+        if (Math.abs(x - pieX) > PIE_HALF + 7f || Math.abs(y - pieY) > PIE_HALF + 7f) return false;
+        pieFinger = id;
+        pieHot = -1;
+        pieAt = time;
+        // the ring's middle where the button is, kept in from the frame's edges
+        pieCx = Math.max(PIE_R + PIE_ITEM + 4f, Math.min(W - PIE_R - PIE_ITEM - 4f, pieX));
+        pieCy = Math.max(PIE_R + PIE_ITEM + 60f, Math.min(h - PIE_R - PIE_ITEM - 10f, pieY));
+        letGo();
+        host.buzz(10);
+        return true;
+    }
+
     /** The compass, a button as the pause is, across from it on the right. */
     int compassX() {
         return W - pauseX();
@@ -1419,13 +1520,13 @@ final class World {
         }
         if (stray != null && stray.open()) {
             // a light gone wrong between jobs, its box open: the panel over everything, the town still
-            stray.update(dt, runner, true);
+            stray.update(dt, runner, true, true);
             if (stray.over()) strayMended();
             else if (!stray.open()) letGo();
             return;
         }
         if (fault != null && fault.open()) {
-            fault.update(dt, runner, true);
+            fault.update(dt, runner, true, true);
             if (!fault.open()) letGo();
             return;
         }
@@ -1711,7 +1812,7 @@ final class World {
             cherryStep(dt);
         } else if (fault != null) {
             boolean was = fault.open();
-            fault.update(dt, runner, driving == null && indoors == null);
+            fault.update(dt, runner, driving == null && indoors == null, toss.tool == Toss.SCREWDRIVER);
             if (fault.open() && !was) {
                 letGo();
                 host.sound(Synth.LATCH, 0.5f, 1.3f);
@@ -2009,6 +2110,7 @@ final class World {
         }
         d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PAUSE, 0.75f, 0f);
         compassButton(d);
+        pieButton(d);
         if (piloting()) {
             sticks(d);
             return;
@@ -4377,9 +4479,16 @@ final class World {
 
     /** The panel over the frame, while it is open: nothing of the frame's own buttons shows through it. */
     private void panelFlat(DrawList d, Px f) {
-        Panel p = solo != null ? solo : concert != null && concert.panelOpen ? concert.panel : faultPanel();
+        Wires wires = faultWires();
+        if (wires != null) {
+            wires.draw(f, Lang.lines("fault.plate", 0, null)[0]);
+            d.badgeN = 0;
+            d.tube[0] = d.tube[2] = 0f;
+            return;
+        }
+        Panel p = solo != null ? solo : concert != null && concert.panelOpen ? concert.panel : null;
         if (p == null) return;
-        p.draw(f, Lang.lines(p == faultPanel() ? "fault.plate" : "panel.plate", 0, null)[0]);
+        p.draw(f, Lang.lines("panel.plate", 0, null)[0]);
         d.badgeN = 0;
         d.tube[0] = d.tube[2] = 0f;
     }
@@ -5141,7 +5250,7 @@ final class World {
     // ---- the lights gone wrong (see Fault): the job, and now and then one of itself between jobs ----
 
     /** The panel of a light's box, if one is open now. */
-    private Panel faultPanel() {
+    private Wires faultWires() {
         if (fault != null && fault.open()) return fault.panel;
         if (stray != null && stray.open()) return stray.panel;
         return null;
@@ -5174,7 +5283,7 @@ final class World {
             return;
         }
         boolean was = stray.open();
-        stray.update(dt, runner, driving == null && indoors == null && dispatch == null);
+        stray.update(dt, runner, driving == null && indoors == null && dispatch == null, toss.tool == Toss.SCREWDRIVER);
         if (stray.over()) {
             strayMended();
             return;
@@ -5204,7 +5313,8 @@ final class World {
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
         if (fl.over() || fl.open()) return;
         fl.goal(goal);
-        wordAtTop(f, Lang.lines("goal.light", mission.round, null)[0], green, ink);
+        boolean wants = fl.atBox(runner) && toss.tool != Toss.SCREWDRIVER;
+        wordAtTop(f, Lang.lines(wants ? "goal.screwdriver" : "goal.light", mission.round, null)[0], green, ink);
         placeMark(d, f, goal[0], goal[1], goal[2], Marks.PANEL, Marks.OPEN);
     }
 

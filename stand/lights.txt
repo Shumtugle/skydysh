@@ -1,6 +1,7 @@
 # The lights gone wrong (1.4.7): the job after the tow, its briefing; the crossing's lights all
-# blinking amber, the grey box on the post; at the box the panel opens, is mended and switched
-# on, and the lights go round again. Then between jobs: a light gone wrong of itself near her,
+# blinking amber, the grey box on the post; at the box with the mallet in hand the word asks for
+# the screwdriver; with it, the box opens on the wires of the three lamps, joined, and the lights
+# go round again. Then between jobs: a light gone wrong of itself near her,
 # mended, its likes.
 screen 1096 2560
 wait 0.4
@@ -22,13 +23,18 @@ shot l1
 wait 0.5
 shot l1b
 eye off
+tool 0
 at 519 246.5 3.1416
 wait 1.1
 fault
 shot l2
-panel 99
-wait 0.2
-panel switch
+tool 1
+wait 0.6
+fault
+shot l2b
+wires
+wait 0.4
+shot l2c
 wait 2
 fault
 where2
@@ -43,9 +49,7 @@ likes
 atfault
 wait 1
 fault
-panel 99
-wait 0.2
-panel switch
+wires
 wait 2.5
 fault
 likes

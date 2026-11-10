@@ -23,6 +23,9 @@ final class Toss {
     int thrown;
     /** Lent out: something else throws it (it is still drawn swung while she throws); away, out of her hand and drawn by that. */
     boolean lent, away;
+    /** What she holds: the mallet, or the screwdriver (the mallet then at her hip, and nothing thrown). */
+    static final int MALLET = 0, SCREWDRIVER = 1, TOOLS = 2;
+    int tool = MALLET;
     /** Blows struck at arm's length, so far. */
     int struck;
 
@@ -80,6 +83,7 @@ final class Toss {
         clock += dt;
         if (lent) return;
         if (state == HELD) {
+            if (tool != MALLET) return;
             if (r.inAir() || r.hidden || r.room != null || r.held || r.climbing() || r.riding) return;
             Chase run = hunt && !tap ? reached(r, brums) : null;
             if (run != null) {
@@ -200,6 +204,22 @@ final class Toss {
         if (state == HELD && r.swimming()) return;
         if (state == HELD && r.climbing()) {
             slung(d, r);
+            return;
+        }
+        if (state == HELD && tool == SCREWDRIVER) {
+            // the mallet at her hip; the screwdriver in her fist, its blade down and forward
+            slung(d, r);
+            grip(r);
+            float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading);
+            float ax = fx * 0.55f, ay = -0.83f, az = fz * 0.55f;
+            // a big one, for a big hand: the yellow handle in the fist, the steel shaft, the blade
+            d.box(hand[0] + ax * 0.05f, hand[1] + ay * 0.05f, hand[2] + az * 0.05f, 0.09f, 0.09f, 0.09f, null, 0xE8B828, DrawList.PAINT);
+            d.box(hand[0] + ax * 0.16f, hand[1] + ay * 0.16f, hand[2] + az * 0.16f, 0.07f, 0.07f, 0.07f, null, 0x2A2E34, DrawList.PLAIN);
+            for (int k = 1; k <= 5; k++) {
+                float t = 0.16f + k * 0.08f;
+                d.box(hand[0] + ax * t, hand[1] + ay * t, hand[2] + az * t, 0.03f, 0.03f, 0.03f, null, 0xC9CCD0, DrawList.POLISHED);
+            }
+            d.box(hand[0] + ax * 0.62f, hand[1] + ay * 0.62f, hand[2] + az * 0.62f, 0.016f, 0.05f, 0.04f, null, 0xE6E9EC, DrawList.POLISHED);
             return;
         }
         float hx, hy, hz;

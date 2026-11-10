@@ -23,7 +23,9 @@ final class Badges {
     static final int AGAIN = 25;
     // the compass's needle, on its own (no pane: it turns over a blank one), coral to the north
     static final int NEEDLE = 26;
-    static final int COUNT = 27, CELLS = 6, SIZE = 160;
+    // a screwdriver: a fat handle low on the left, the shaft up to the right, its blade at the end
+    static final int SCREWDRIVER = 27;
+    static final int COUNT = 28, CELLS = 6, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -172,6 +174,16 @@ final class Badges {
                 return arrow(y, x);
             case RIGHT:
                 return arrow(y, -x);
+            case SCREWDRIVER: {
+                // the handle, rounded, ridged; the shaft; the flat blade at its tip
+                float c = 0.7071f, lx = (x + y) * c, ly = (y - x) * c;
+                float handle = rbox(lx, ly, -0.38f, 0f, 0.34f, 0.17f, 0.12f);
+                float grooves = Math.min(box(lx, ly, -0.38f, 0.07f, 0.26f, 0.025f), box(lx, ly, -0.38f, -0.07f, 0.26f, 0.025f));
+                handle = Math.max(handle, -grooves);
+                float shaft = box(lx, ly, 0.27f, 0f, 0.33f, 0.045f);
+                float blade = box(lx, ly, 0.66f, 0f, 0.07f, 0.09f);
+                return min(handle, shaft, blade);
+            }
             case MALLET: {
                 // the head across the end of a short handle, two bands round it; a cap on the handle's end
                 float c = 0.7071f, hx = x - 0.24f, hy = y - 0.24f;

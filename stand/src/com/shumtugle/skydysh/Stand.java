@@ -960,6 +960,25 @@ public final class Stand implements World.Host {
             String[] says = {"green", "amber", "red"};
             System.out.println(String.format("%7.2fs  crossing %d %d: %s; along x %s, along z %s", time, li, lj,
                     Crossings.lit(li, lj) ? "lights" : "no lights", says[Crossings.light(li, lj, true)], says[Crossings.light(li, lj, false)]));
+        } else if (c.equals("pie")) {
+            // pie down|move DX DY|up: a finger (number 5) on the ring's button, slid so far from it, lifted
+            if (p[1].equals("down")) {
+                pieFrom[0] = world.pieX;
+                pieFrom[1] = world.pieY;
+                world.touch(World.DOWN, 5, pieFrom[0], pieFrom[1]);
+            } else if (p[1].equals("move")) world.touch(World.MOVE, 5, pieFrom[0] + f(p[2]), pieFrom[1] + f(p[3]));
+            else world.touch(World.UP, 5, pieFrom[0] + (p.length > 3 ? f(p[2]) : 0f), pieFrom[1] + (p.length > 3 ? f(p[3]) : 0f));
+            step();
+            System.out.println(String.format("%7.2fs  ring button at %.0f %.0f, tool %d", time, world.pieX, world.pieY, world.toss.tool));
+        } else if (c.equals("tool")) {
+            // tool N: in her hand the mallet (0) or the screwdriver (1)
+            world.toss.tool = Math.round(f(p[1]));
+        } else if (c.equals("wires")) {
+            // wires: the light's box open, every wire in it laid
+            Fault fl = world.fault != null ? world.fault : world.stray;
+            if (fl != null && fl.panel != null) fl.panel.standSolve();
+            System.out.println(String.format("%7.2fs  %s", time, fl == null || fl.panel == null ? "no box open" : "the wires laid"));
+            step();
         } else if (c.equals("atfault")) {
             // atfault: her on foot at the box of the light gone wrong now, facing it
             Fault fl = world.fault != null ? world.fault : world.stray;
@@ -1405,6 +1424,7 @@ public final class Stand implements World.Host {
     }
 
     // the bot's finger: where it is on the glass, and whether it is down
+    private final float[] pieFrom = new float[2];
     private float bx = World.W * 0.5f, by = 600f;
     private boolean bdown;
 

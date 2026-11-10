@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.8
+
+- Her tools: a small button floats over her mallet. Hold it, and her tools open in a ring round
+  it, the mallet at the top, the screwdriver at the bottom; slide onto one and let go, and she
+  holds it; let go in the middle, nothing changes. A hand that knows the way slides and lets go
+  before the ring is drawn. The choice is kept.
+- With the screwdriver in her hand the mallet hangs at her hip and nothing is thrown.
+- The box of a set of lights gone wrong opens to the screwdriver only (with the mallet the word
+  over the frame asks for it), and its puzzle is its own now: the wires of the three lamps, red,
+  amber and green, each pair of ends to be joined by a wire of its colour drawn with a finger,
+  no two through one socket and every socket used. The concert hall's panel is the hall's again.
+
 ## 1.4.7
 
 - A new story after the tow, on the same screen as its report: the brum towed out of the quarry,
