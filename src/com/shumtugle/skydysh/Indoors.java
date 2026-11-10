@@ -446,6 +446,8 @@ final class Indoors implements Ground {
     boolean home;
     /** The secret hall behind home's balcony door: out of it, back onto the balcony. */
     boolean secret;
+    /** The archive, in at its door on the garden (see Rooms.archive). */
+    boolean archive;
     /** Whether this is the laboratory's lobby (see Rooms.lobby); whether she has been given what she came for there. */
     boolean lobby, given;
     /** Whether this is the collider hall under the mountain (see Collider), down the lobby's lift; whether the night shift is back on its chargers. */

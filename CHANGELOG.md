@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.4.6
+
+- The archive's quarter again. Its garden is open to the street north of it: where a row of
+  houses stood with an arch through it, a lawn, a paved way from the gate to the pad, trees, an
+  iron railing on a low wall along the pavement, a wide gate between two stone piers with
+  lanterns, its leaves standing open.
+- The helicopter coming down in the garden: its right skid snaps off and is flung out onto the
+  ground beside it, the stumps of the struts left under its side; it leans down onto that side.
+- The archive is a house to go into: in at its door on the garden, a foyer with pillars, benches,
+  palms and a board; a corridor with four rooms off each side, a desk, a chair, a lamp and
+  shelves of folders in each, a clerk at work in most; at its end the duty room, a counter across
+  it, shelves of grey boxes to the ceiling behind. The clerk on duty gets up and takes the
+  folders from her over the counter.
+- At the workshop a brum comes out of its gate with the new skid in his arms, lifts it into the
+  pickup's bed and goes back in, seen from across the road; the pickup stands meanwhile.
+- The mending seen from beside the helicopter: she holds the skid up into its place and knocks
+  it home with the mallet, sparks at each blow; then it rights itself.
+- The records of the archive and the mending start again (what is played has changed).
+
 ## 1.4.5
 
 - The town hall's roof: its cornice lay over the whole roof half a meter above what she stands

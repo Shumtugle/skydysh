@@ -975,7 +975,7 @@ public final class Stand implements World.Host {
             // where2: on foot, at the wheel, or at home, and the mission
             System.out.println(String.format("%7.2fs  %s, free %b, mission %d", time,
                     world.indoors != null ? "indoors" + (world.indoors.home ? " at home" : "") : world.driving != null ? "at the wheel" : "on foot",
-                    world.free, world.mission.round));
+                    world.free, world.mission.round) + (world.archive != null ? ", archive step " + world.archive.step : "") + (world.mend != null ? ", mend step " + world.mend.step : ""));
         } else if (c.equals("likes")) {
             // likes: how many in all, and whether hearts are in the air
             System.out.println(String.format("%7.2fs  likes %d%s", time, world.likes, world.hearts.busy() ? ", hearts up" : ""));

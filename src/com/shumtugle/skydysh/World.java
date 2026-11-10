@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.5";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.6";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -429,7 +429,7 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 3, 1, 1, 1, 2, 2, 1};
+    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 3, 2, 2, 1, 2, 2, 1};
     /** How many kinds of mission there are; they come in turn, round and round. */
     static final int KINDS = 13;
 
@@ -1652,6 +1652,9 @@ final class World {
                 runner.stopLead();
                 letGo();
                 host.sound(Synth.WHOOSH, 0.5f, 0.6f);
+            } else if (got == Archive.ENTER) {
+                // in at the door on the garden, into the archive's foyer
+                go(TO_ARCHIVE);
             } else if (got == Archive.CRACK) {
                 host.sound(Synth.CLANG, 0.9f, 0.55f);
                 host.sound(Synth.STONE, 0.7f, 0.7f);
@@ -1730,6 +1733,8 @@ final class World {
         fliers.update(dt, true);
         felled.update(dt, runner.x, runner.z, city);
         reparkFar();
+        // the mend's scenes are shown from an eye of their own, whatever else has set one
+        if (mend != null && mend.scene()) mendEye();
     }
 
     /** The folder in her hands: over the edge of the roof to the street, down along it, gliding. */
@@ -1754,7 +1759,7 @@ final class World {
     // ---- doors: in from the street (or the yard), or down from a roof, a place indoors; out again ----
     static final float SWAP = 0.3f;          // the dark coming down at a door, and lifting again
     static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5, TO_HOME = 6, TO_CONCERT = 7, TO_SECRET = 8, TO_LOBBY = 9, TO_TOWER = 10,
-            TO_COLLIDER = 11, TO_LOBBY_UP = 12, TO_OLD = 13;
+            TO_COLLIDER = 11, TO_LOBBY_UP = 12, TO_OLD = 13, TO_ARCHIVE = 14;
     /** The place indoors she is in; null out of doors. */
     Indoors indoors;
     private float swapT = -1f;
@@ -2268,7 +2273,10 @@ final class World {
         }
         if (rescue != null) rescue.ram(p, dt);
         int ramsWere = cars.rams;
-        p.drive(dt, go, wheel, brakeIn, false, city, cars, walkers);
+        // the skid being put in its bed at the workshop: it stands
+        boolean kept = mend != null && mend.holdsVan();
+        if (kept) p.speed = 0f;
+        p.drive(dt, go && !kept, kept ? 0f : wheel, kept ? 1f : brakeIn, false, city, cars, walkers);
         if (cars.rams != ramsWere) {
             // a car rammed: a jolt in the hand, the people off; the pickup, not a scratch
             p.speed *= 0.9f;
@@ -2728,6 +2736,10 @@ final class World {
                 indoors = Rooms.hall(houseOf, seed, city.backClear(houseOf, 0), true);
                 indoors.comeDown(r);
                 break;
+            case TO_ARCHIVE:
+                indoors = Rooms.archive(City.archiveDoorX(), City.archiveWallZ());
+                indoors.enter(r, false);
+                break;
             case TO_CONCERT:
                 indoors = Rooms.concert(City.concertDoorX(), City.concertDoorZ());
                 indoors.enter(r, false);
@@ -2799,6 +2811,13 @@ final class World {
                     leave();
                     r.put(Mountain.MX, Mountain.TOP + Mountain.PODIUM_HIGH, Mountain.DOOR_Z - OUT_STEP - 0.8f, (float) Math.PI);
                     host.sound(Synth.DOOR, 0.35f, 1.05f);
+                    break;
+                }
+                if (indoors != null && indoors.archive) {
+                    // out of the archive's door onto the garden, facing it
+                    leave();
+                    r.put(City.archiveDoorX(), City.WALK_TOP, City.archiveWallZ() + OUT_STEP + 1.2f, 0f);
+                    host.sound(Synth.DOOR, 0.35f, 0.95f);
                     break;
                 }
                 if (indoors != null && indoors.secret) {
@@ -3009,11 +3028,59 @@ final class World {
         parked.standAt(x, y, z, hd, kept == 1);
     }
 
+    private final float[] mendAt = new float[3], sceneEyeNow = new float[5];
+
+    /**
+     * The eye of the mend's scenes: the skid put in the bed, from across the road, the gate and the
+     * pickup both in sight; the mending, from beside the helicopter, the skid and her in sight.
+     */
+    private void mendEye() {
+        Mend m = mend;
+        float tx, ty, tz, ex, ey, ez;
+        if (m.step == Mend.LOADING) {
+            Pickup v = m.van;
+            tx = (v.x + Mend.gateX()) * 0.5f;
+            tz = (v.z + Mend.gateZ()) * 0.5f - 1.5f;
+            ty = 1.4f;
+            ex = tx + MEND_EYE_ACROSS;
+            ez = tz - MEND_EYE_BACK;
+            ey = MEND_EYE_UP;
+        } else {
+            Copter cp = m.copter;
+            m.fit(mendAt);
+            float c = (float) Math.cos(cp.heading), s = (float) Math.sin(cp.heading);
+            tx = mendAt[0];
+            ty = mendAt[1] + 0.8f;
+            tz = mendAt[2];
+            // out from its right side and ahead of it, low
+            ex = tx + c * MEND_EYE_ACROSS * 0.7f + s * MEND_EYE_BACK * 0.5f;
+            ez = tz - s * MEND_EYE_ACROSS * 0.7f + c * MEND_EYE_BACK * 0.5f;
+            ey = MEND_EYE_UP * 0.75f;
+        }
+        float dx = tx - ex, dz = tz - ez;
+        sceneEyeNow[0] = ex;
+        sceneEyeNow[1] = ey;
+        sceneEyeNow[2] = ez;
+        sceneEyeNow[3] = (float) Math.atan2(dx, dz);
+        sceneEyeNow[4] = (float) Math.atan2(ty - ey, Math.sqrt(dx * dx + dz * dz));
+        runner.eyeAt(sceneEyeNow);
+    }
+
+    // the mend's scenes: the eye so far across, so far back, so high
+    static final float MEND_EYE_ACROSS = 11f, MEND_EYE_BACK = 7f, MEND_EYE_UP = 4f;
+
     /** A frame of the mend: what its step brought, heard and done. */
     private void mendStep(float dt) {
         Mend m = mend;
         int got = m.update(dt, driving, runner, host, boarding(dt, m.copter, m.step == Mend.BOARD));
         if (m.van != null) m.van.kept = true;
+        // mending: she stands at the helicopter's side, facing where the skid goes
+        if (m.step == Mend.MENDING) {
+            m.fit(mendAt);
+            runner.held = true;
+            runner.speed = 0f;
+            if (m.work() < Mend.FIT_FOR) runner.heading = (float) Math.atan2(mendAt[0] - runner.x, mendAt[2] - runner.z);
+        }
         switch (got) {
             case Mend.LOADED:
                 // the skid put in the bed by the workshop's brums
@@ -3025,11 +3092,20 @@ final class World {
                 host.sound(Synth.CLANG, 0.4f, 0.9f);
                 host.buzz(30);
                 break;
-            case Mend.BLOW:
+            case Mend.BLOW: {
+                // the mallet swung at the skid where it goes
+                m.fit(mendAt);
+                runner.lock(Toss.STRIKE_LOCK, mendAt[0], mendAt[2]);
                 host.sound(Synth.CLANG, 0.55f, 1.1f + 0.1f * (float) Math.sin(time * 7f));
                 host.buzz(25);
                 break;
+            }
+            case Mend.BAY:
+                // in the bay: the workshop's brum comes out with the skid
+                host.sound(Synth.DOOR, 0.4f, 0.8f);
+                break;
             case Mend.MENDED:
+                runner.held = false;
                 host.sound(Synth.CHIME, 0.5f, 1.2f);
                 host.buzz(60);
                 break;
@@ -4289,8 +4365,8 @@ final class World {
         String clock = clock(ar.over() ? ar.doneAt : ar.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
         if (ar.handing()) {
-            // what the clerk says, handing it over
-            caption(f, "archive.hand");
+            // what the clerk says, handing it over (over the archive's counter, nothing is said)
+            if (ar.step == Archive.HAND) caption(f, "archive.hand");
             return;
         }
         String w = ar.goalWord(indoors, runner);
@@ -4320,6 +4396,11 @@ final class World {
         // between them, and off to the front of the hall and back toward its middle
         float mu = (in.u(r.x, r.z) + in.deskU) * 0.5f, mv = (in.v(r.x, r.z) + in.deskV) * 0.5f;
         float eu = mu - Math.signum(in.deskU) * HAND_EYE_IN, ev = mv - HAND_EYE_SIDE;
+        // over the archive's counter: from the side, a little toward the corridor
+        if (in.archive) {
+            eu = mu + HAND_EYE_IN * 1.5f;
+            ev = mv - 1f;
+        }
         handEye[0] = in.wx(eu, ev);
         handEye[1] = Indoors.FLOOR + HAND_EYE_UP;
         handEye[2] = in.wz(eu, ev);
@@ -5271,6 +5352,22 @@ final class World {
                 }
             }
         }
+        // the archive: its clerks, and the one on duty taking the folders over the counter
+        if (indoors.archive) {
+            Rooms.archiveFolk(d, indoors, time, archive != null && archive.dutyUp(), handsAt);
+            float pass = archive != null ? archive.passing() : -1f;
+            if (pass >= 0f) {
+                float face = indoors.heading(0f, -1f) + (float) Math.PI;
+                if (pass >= 1f) Archive.folder(d, handsAt[0], handsAt[1], handsAt[2], face);
+                else {
+                    float e = pass * pass * (3f - 2f * pass);
+                    r.bone("hand_l", handTo);
+                    float x = handTo[0] + (handsAt[0] - handTo[0]) * e, z = handTo[2] + (handsAt[2] - handTo[2]) * e;
+                    float y = handTo[1] - 0.05f + (handsAt[1] - handTo[1] + 0.05f) * e + 0.35f * (float) Math.sin(Math.PI * pass);
+                    Archive.folder(d, x, y, z, r.heading + (float) Math.PI * 0.5f + (face - r.heading - (float) Math.PI * 0.5f) * e);
+                }
+            }
+        }
         // the switch in the secret hall: down once the island is shut, going down as she throws it
         if (indoors.secret) Rooms.lever(d, indoors, Island.shut ? 1f : leverAt >= 0f ? Math.min(1f, leverAt / LEVER_S) : 0f);
         // the old flat: the brum who lives there, on the sofa, looking at the room
@@ -5496,7 +5593,7 @@ final class World {
         if (tow != null) tow.draw(d, time);
         shore.draw(d, city, eyeX, eyeZ, time);
         if (archive != null) archive.draw(d, r);
-        else if (mend != null) mend.draw(d, r);
+        else if (mend != null) mend.draw(d, r, time);
         else if (parked != null) Archive.drawCopter(d, parked, parked.broken ? Archive.AT_CONTROLS : Archive.NOBODY);
         quay.draw(d, craning);
         if (towed != null) {

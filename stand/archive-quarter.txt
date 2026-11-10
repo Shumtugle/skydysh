@@ -1,0 +1,94 @@
+# The archive's quarter (1.4.6): the papers flown over and the copter coming down in the garden,
+# its right skid snapping off and lying by it; the garden open to the street behind its railing
+# and gate; in at the door on the garden: the foyer, the corridor with its rooms, the duty room
+# at its end, the folders handed over the counter. Then the mend: the workshop's brum bringing
+# the new skid out to the pickup in the bay and lifting it into the bed, seen from across the
+# road; at the helicopter, the skid held up into its place and knocked home, sparks at the blows.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 8
+close
+at 32 135.6 0
+wait 2.5
+inroom 3.5 6.4
+face -1.57
+wait 4
+where
+inroom -5.5 8.5
+walk 14 100 w
+where
+at 45.4 140.4 0
+wait 1
+where
+wait 46
+where
+shot q0
+wait 2.5
+shot q1
+eye 224 6 662 3.1416 -0.12
+wait 0.1
+shot q2
+eye off
+where2
+at 224 598.2 3.1416
+wait 0.2
+where2
+wait 2
+where
+where2
+shot q3
+inroom 0 13
+face 3.1416
+wait 0.6
+shot q4
+inroom 0 34
+face 3.1416
+wait 0.6
+where
+down 137 420
+wait 0.4
+up 137 420
+wait 0.3
+where
+shot q5
+wait 1.3
+shot q6
+wait 2.5
+where
+shot q7
+inroom 0 3
+face 0
+down 137 420
+wait 1.5
+up 137 420
+wait 1
+where2
+mission 9
+close
+drivein -3.4 608 0
+wait 1.2
+where2
+shot m0
+wait 2.4
+shot m1
+wait 2.4
+shot m2
+wait 4
+drivein 224 637.8 -1.5708
+wait 0.3
+getout
+at 216 601 0.9
+wait 1
+copter
+at 226.6 609.6 -1.57
+wait 1.2
+where
+where2
+shot m3
+wait 1.4
+shot m4
+wait 2.6
+shot m5
+wait 2
+shot m6

@@ -293,6 +293,11 @@ final class City implements Ground {
         return ARCHIVE_I * CELL + CELL * 0.5f;
     }
 
+    /** The archive's back wall, on the garden, z (its door in its middle). */
+    static float archiveWallZ() {
+        return ARCHIVE_J * CELL + FRONT + DEPTH;
+    }
+
     static float archiveDoorZ() {
         return ARCHIVE_J * CELL + FRONT + DEPTH + 1.2f;
     }
@@ -1622,6 +1627,7 @@ final class City implements Ground {
         else row(c, rnd, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH, true, -1, open && !north);
         if (shop) shop(c, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b);
         else if (taxis) taxis(c, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b);
+        else if (archive) archiveFront(c, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b);
         else row(c, rnd, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b, true, 1, open && north);
         row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + a, x0 + a + DEPTH, false, -1, false);
         if (i == WORKSHOP_I && j == WORKSHOP_J) workshop(c, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b);
@@ -1914,9 +1920,10 @@ final class City implements Ground {
         float px = archivePadX(), pz = archivePadZ(), y = WALK_TOP;
         int hedge = 0x3E6B34, grass = 0x5E8A44, bed = 0x6A4632;
         d.box((x0 + x1) * 0.5f, y + 0.01f, (z0 + z1) * 0.5f, (x1 - x0) * 0.5f, 0.01f, (z1 - z0) * 0.5f, null, grass, DrawList.GRASS);
-        // the hedges, a gap in the north one for the way in from the arch, and one in the south for the door
+        // the hedge along the south, a gap in it for the door; the north open to the forecourt
         for (int e = -1; e <= 1; e += 2) {
             float hz = e < 0 ? z0 + 0.6f : z1 - 0.6f;
+            if (e > 0) continue;
             for (int s = -1; s <= 1; s += 2) {
                 float a = px + s * 2f, b = s < 0 ? x0 + 0.5f : x1 - 0.5f;
                 d.box((a + b) * 0.5f, y + 0.45f, hz, Math.abs(b - a) * 0.5f, 0.45f, 0.5f, null, hedge, DrawList.LEAVES);
@@ -1935,6 +1942,57 @@ final class City implements Ground {
         // the pad: gravel, a white ring and letter
         d.box(px, y + 0.02f, pz, PAD_R, 0.02f, PAD_R, null, 0x9C968A, DrawList.GRAVEL);
         pad(small, px, y + 0.05f, pz, PAD_R - 1.2f, 0xF2EAD6);
+    }
+
+    /**
+     * The archive's garden open to the street north of it: where the north row of houses stood, a
+     * forecourt of lawn with a paved way down its middle from the gate to the pad; along the
+     * pavement an iron railing on a low stone wall, a wide gate in its middle between two stone
+     * piers with lanterns on them, its two leaves standing open against the railing.
+     */
+    private void archiveFront(Cell c, float x0, float x1, float z0, float z1) {
+        DrawList d = c.boxes, small = c.detail;
+        float y = WALK_TOP, mx = (x0 + x1) * 0.5f, fz = z1 - 0.35f, gate = 6f;
+        int grass = 0x5E8A44, pave = 0xC8C2B4, stone = 0x8F918F, iron = 0x23262C, gold = 0xC9A15A;
+        d.box(mx, y + 0.01f, (z0 + z1) * 0.5f, (x1 - x0) * 0.5f, 0.01f, (z1 - z0) * 0.5f, null, grass, DrawList.GRASS);
+        d.box(mx, y + 0.02f, (z0 + z1) * 0.5f - 1f, 2.2f, 0.01f, (z1 - z0) * 0.5f + 1f, null, pave, DrawList.PAVING);
+        // the low wall and the railing on it, both sides of the gate
+        for (int e = -1; e <= 1; e += 2) {
+            float a = mx + e * gate, b = e < 0 ? x0 : x1, cx = (a + b) * 0.5f, hx = Math.abs(b - a) * 0.5f;
+            d.box(cx, y + 0.3f, fz, hx, 0.3f, 0.25f, null, stone, DrawList.STONE);
+            small.box(cx, y + 1.75f, fz, hx, 0.03f, 0.03f, null, iron, DrawList.PLAIN);
+            small.box(cx, y + 0.72f, fz, hx, 0.03f, 0.03f, null, iron, DrawList.PLAIN);
+            for (float t = Math.min(a, b) + 0.12f; t < Math.max(a, b); t += 0.24f)
+                small.box(t, y + 1.2f, fz, 0.015f, 0.6f, 0.015f, null, iron, DrawList.PLAIN);
+            for (float t = Math.min(a, b) + 0.12f; t < Math.max(a, b); t += 0.24f)
+                small.box(t, y + 1.83f, fz, 0.025f, 0.06f, 0.025f, null, gold, DrawList.GOLD);
+            c.wall(Math.min(a, b), fz - 0.25f, Math.max(a, b), fz + 0.25f, y + 1.85f);
+            // the piers either side of the gate, a lantern on each
+            float px = mx + e * (gate + 0.45f);
+            d.box(px, y + 1.4f, fz, 0.45f, 1.4f, 0.45f, null, stone, DrawList.STONE);
+            d.box(px, y + 2.86f, fz, 0.55f, 0.08f, 0.55f, null, Street.scale(stone, 0.85f), DrawList.STONE);
+            small.box(px, y + 3.2f, fz, 0.2f, 0.26f, 0.2f, null, 0xFFE9BE, DrawList.GLOW);
+            small.box(px, y + 3.5f, fz, 0.26f, 0.04f, 0.26f, null, iron, DrawList.PLAIN);
+            c.wall(px - 0.45f, fz - 0.45f, px + 0.45f, fz + 0.45f, y + 2.95f);
+            // the gate's leaf, open inward against the railing
+            float lx = mx + e * (gate - 0.2f) - e * 0.05f, lz = fz - 1.6f;
+            small.box(lx, y + 1.1f, lz, 0.03f, 1f, 1.5f, null, iron, DrawList.PLAIN);
+            for (float t = -1.35f; t <= 1.36f; t += 0.27f) small.box(lx, y + 1.1f, lz + t, 0.04f, 0.95f, 0.012f, null, iron, DrawList.PLAIN);
+            small.box(lx, y + 2.15f, lz, 0.05f, 0.05f, 1.5f, null, gold, DrawList.GOLD);
+            c.wall(lx - 0.1f, lz - 1.5f, lx + 0.1f, lz + 1.5f, y + 2.2f);
+        }
+        // over the gate a band of iron between the piers, the archive's plaque in it
+        small.box(mx, y + 3.6f, fz, gate, 0.05f, 0.05f, null, iron, DrawList.PLAIN);
+        small.box(mx, y + 3.95f, fz, 1.6f, 0.35f, 0.04f, null, 0x2E3A44, DrawList.PAINT);
+        small.box(mx, y + 3.95f, fz - 0.02f, 1.7f, 0.42f, 0.03f, null, gold, DrawList.GOLD);
+        // trees in the lawn either side of the way
+        Random rnd = new Random(0xA2C4L);
+        for (int e = -1; e <= 1; e += 2)
+            for (int k = 0; k < 2; k++) {
+                float tx = mx + e * (9f + k * 8f), tz = (z0 + z1) * 0.5f + (k == 0 ? -1.5f : 1.5f);
+                tree(c, small, rnd, tx, y, tz, 6.5f + rnd.nextFloat() * 2f);
+                c.wall(tx - 0.2f, tz - 0.2f, tx + 0.2f, tz + 0.2f);
+            }
     }
 
     /** A bay painted on the road before a gate: an amber frame, a stripe across it now and then. */

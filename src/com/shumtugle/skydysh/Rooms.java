@@ -1360,6 +1360,177 @@ final class Rooms {
         return in;
     }
 
+    // ---- the archive: in at its door on the garden, a foyer the width of the house, a corridor
+    // straight on with rooms off it either side, and at its end the duty room: a counter across it,
+    // the clerk on duty behind it who takes in what is brought, shelves of boxes to the ceiling ----
+    static final float AR_HALF = 10f, AR_DEEP = 42f, AR_HIGH = 4.4f;
+    // the foyer's depth; the corridor's half width, where it ends; the rooms off it, each so long
+    // along it, its door in the middle, so wide
+    static final float AR_FOYER = 12f, AR_HALL = 2.2f, AR_HALL_END = 34f, AR_ROOM = 5.5f, AR_DOOR = 0.75f;
+    // the duty room: half its width; the counter across it, its half width; where the clerk sits
+    static final float AR_DUTY_HALF = 6f, AR_COUNTER_V = 37.6f, AR_COUNTER_HALF = 3.2f, AR_CLERK_V = 39f;
+    // which rooms have someone at the desk (left side, then right), and which way their doors are
+    private static final boolean[] AR_MANNED = {true, false, true, true, false, true, true, false};
+
+    /**
+     * The archive, in at its back door from the garden: grey stone and dark wood, a floor of grey
+     * and cream stone. The foyer: four square pillars, benches along the walls, a board with the
+     * rooms' numbers, palms in tubs, lamps. Straight on, a corridor with four rooms either side,
+     * each a desk, a chair, a lamp, shelves of folders along its far wall, and in most a clerk at
+     * work. At its end the duty room: a counter across it, the clerk on duty behind it, and behind
+     * him shelves of grey boxes up to the ceiling, a ladder against them.
+     */
+    static Indoors archive(float doorX, float doorZ) {
+        Indoors in = new Indoors(doorX, doorZ, 0f, 1f, AR_HALF, AR_DEEP, 1, 4f, 2);
+        in.backDoor = false;
+        in.hasLift = false;
+        in.archive = true;
+        in.high = AR_HIGH;
+        in.frameColor = 0x3A2A20;
+        in.frameMat = DrawList.WOOD;
+        int wall = 0xD8D4C8, low = 0x5E5A52, wood = 0x4A3226, dark = 0x2E2A26, paper = 0xEFE8D6, stone = 0x9A9890;
+        shell(in, 0x8E8C86, false, wall, low, DrawList.PAINT);
+        DrawList d = in.still();
+        float f = Indoors.FLOOR, w = Indoors.WALL, half = in.half, deep = in.deep, h = in.high, top = f + h + 1f;
+        Random rnd = new Random(0xA2C1L);
+        // the floor: cream stone down the middle from the door to the counter, a grey band each side
+        in.box(d, 0f, f + 0.004f, AR_COUNTER_V * 0.5f, AR_HALL - 0.3f, 0.004f, AR_COUNTER_V * 0.5f - w, 0xE6DFCC, DrawList.STONE);
+        for (int e = -1; e <= 1; e += 2)
+            in.box(d, e * (AR_HALL - 0.15f), f + 0.005f, AR_COUNTER_V * 0.5f, 0.15f, 0.004f, AR_COUNTER_V * 0.5f - w, dark, DrawList.STONE);
+        // the foyer: pillars, benches along the side walls, palms in tubs by the pillars, the board
+        for (int a = -1; a <= 1; a += 2)
+            for (int b = 0; b < 2; b++) {
+                float u = a * 4.6f, v = 4f + b * 4.6f;
+                in.box(d, u, f + h * 0.5f, v, 0.42f, h * 0.5f, 0.42f, stone, DrawList.STONE);
+                in.box(d, u, f + h - 0.2f, v, 0.55f, 0.2f, 0.55f, low, DrawList.STONE);
+                in.box(d, u, f + 0.15f, v, 0.55f, 0.15f, 0.55f, low, DrawList.STONE);
+                in.solid(u - 0.45f, v - 0.45f, u + 0.45f, v + 0.45f, top);
+            }
+        for (int e = -1; e <= 1; e += 2) {
+            float bu = e * (half - 0.45f);
+            for (int k = 0; k < 2; k++) {
+                float bv = 3.4f + k * 5f;
+                in.box(d, bu, f + 0.45f, bv, 0.25f, 0.04f, 1.2f, wood, DrawList.WOOD);
+                in.box(d, bu + e * 0.22f, f + 0.78f, bv, 0.03f, 0.32f, 1.2f, wood, DrawList.WOOD);
+                for (int g = -1; g <= 1; g += 2) in.box(d, bu, f + 0.21f, bv + g * 1.05f, 0.22f, 0.21f, 0.05f, dark, DrawList.PLAIN);
+                in.solid(Math.min(bu - 0.3f, bu + 0.3f), bv - 1.25f, Math.max(bu - 0.3f, bu + 0.3f), bv + 1.25f, f + 0.9f);
+            }
+            plant(in, d, rnd, e * 3.4f, AR_FOYER - 1.2f, 0);
+        }
+        // the board on the wall by the corridor's mouth: dark, rows of white names on it
+        float pv = AR_FOYER - w - 0.05f;
+        in.box(d, -6.5f, f + 2.1f, pv + 0.2f, 1.6f, 1f, 0.04f, dark, DrawList.PAINT);
+        for (int k = 0; k < 6; k++) in.box(d, -6.5f, f + 2.75f - k * 0.26f, pv + 0.16f, 1.2f - (k % 3) * 0.15f, 0.04f, 0.01f, paper, DrawList.PLAIN);
+        // the wall across the foyer's end, the corridor's mouth in it; the corridor's walls with a door to each room
+        partAlongU(in, d, AR_FOYER, -half, half, new float[] {-AR_HALL, AR_HALL}, wall, low);
+        float[] doors = new float[8];
+        for (int k = 0; k < 4; k++) {
+            float m = AR_FOYER + AR_ROOM * (k + 0.5f);
+            doors[k * 2] = m - AR_DOOR;
+            doors[k * 2 + 1] = m + AR_DOOR;
+        }
+        for (int e = -1; e <= 1; e += 2) partAlongV(in, d, e * AR_HALL, AR_FOYER, AR_HALL_END, doors, wall, low);
+        // the rooms: walls between them, and in each a desk, a chair, a lamp, shelves along the far wall
+        for (int e = -1; e <= 1; e += 2) {
+            for (int k = 1; k < 4; k++) partAlongU(in, d, AR_FOYER + AR_ROOM * k, Math.min(e * AR_HALL, e * half), Math.max(e * AR_HALL, e * half), new float[0], wall, low);
+            for (int k = 0; k < 4; k++) {
+                float m = AR_FOYER + AR_ROOM * (k + 0.5f), du = e * 5.6f;
+                // the desk, its top and legs; papers and a lamp on it
+                in.box(d, du, f + 0.76f, m, 0.55f, 0.04f, 1.1f, wood, DrawList.WOOD);
+                in.box(d, du, f + 0.37f, m, 0.5f, 0.37f, 1.0f, Street.scale(wood, 0.85f), DrawList.WOOD);
+                in.solid(du - 0.6f, m - 1.15f, du + 0.6f, m + 1.15f, f + 0.8f);
+                in.box(d, du, f + 0.81f, m - 0.3f, 0.21f, 0.01f, 0.3f, paper, DrawList.PLAIN);
+                in.box(d, du - e * 0.1f, f + 0.84f, m + 0.55f, 0.07f, 0.04f, 0.07f, dark, DrawList.PLAIN);
+                in.box(d, du - e * 0.1f, f + 1.1f, m + 0.55f, 0.02f, 0.22f, 0.02f, dark, DrawList.PLAIN);
+                in.box(d, du - e * 0.1f, f + 1.32f, m + 0.55f, 0.1f, 0.07f, 0.1f, 0xFFE2A8, DrawList.GLOW);
+                // the chair, on the side away from the corridor
+                float cu = du + e * 1.05f;
+                in.box(d, cu, f + 0.47f, m, 0.25f, 0.04f, 0.25f, dark, DrawList.WOOD);
+                in.box(d, cu + e * 0.24f, f + 0.8f, m, 0.03f, 0.32f, 0.25f, dark, DrawList.WOOD);
+                // the shelves along the outer wall: boards, folders in many colours on them
+                float su = e * (half - 0.25f);
+                for (int r = 0; r < 4; r++) {
+                    float sy = f + 0.5f + r * 0.75f;
+                    in.box(d, su, sy, m, 0.22f, 0.02f, AR_ROOM * 0.5f - 0.4f, wood, DrawList.WOOD);
+                    for (int q = 0; q < 9; q++) {
+                        int[] card = {0xB5352C, 0x2D3A57, 0xE9B63A, 0x5E8A44, 0xE6DCC6, 0x6E9DB0};
+                        in.box(d, su, sy + 0.2f, m - AR_ROOM * 0.5f + 0.8f + q * 0.47f, 0.16f, 0.18f, 0.12f, card[(q + r + k) % card.length], DrawList.PAINT);
+                    }
+                }
+                in.solid(Math.min(su - 0.3f, su + 0.3f), m - AR_ROOM * 0.5f, Math.max(su - 0.3f, su + 0.3f), m + AR_ROOM * 0.5f, top);
+            }
+        }
+        // the corridor's lamps, a row of them down the ceiling
+        for (float v = AR_FOYER + 2f; v < AR_HALL_END; v += 5.5f) in.box(d, 0f, f + h - 0.1f, v, 0.35f, 0.06f, 0.35f, 0xFFE9C0, DrawList.GLOW);
+        for (int e = -1; e <= 1; e += 2) in.box(d, e * 4.6f, f + h - 0.1f, 6.3f, 0.5f, 0.06f, 0.5f, 0xFFE9C0, DrawList.GLOW);
+        // the duty room: its side walls in from the house's to its own width, the counter across it
+        partAlongU(in, d, AR_HALL_END, -half, half, new float[] {-AR_HALL, AR_HALL}, wall, low);
+        for (int e = -1; e <= 1; e += 2) {
+            partAlongV(in, d, e * AR_DUTY_HALF, AR_HALL_END, deep, new float[0], wall, low);
+            // in the dead corners behind the duty room's walls: nothing, closed off
+            in.solid(Math.min(e * AR_DUTY_HALF, e * half), AR_HALL_END, Math.max(e * AR_DUTY_HALF, e * half), deep, top);
+        }
+        in.box(d, 0f, f + 0.55f, AR_COUNTER_V, AR_COUNTER_HALF, 0.55f, 0.3f, wood, DrawList.WOOD);
+        in.box(d, 0f, f + 1.13f, AR_COUNTER_V, AR_COUNTER_HALF + 0.08f, 0.04f, 0.4f, Street.scale(wood, 1.2f), DrawList.WOOD);
+        in.solid(-AR_COUNTER_HALF, AR_COUNTER_V - 0.32f, AR_COUNTER_HALF, AR_COUNTER_V + 0.32f, f + 1.2f);
+        // the ends of the counter against the walls: a flap of it shut
+        for (int e = -1; e <= 1; e += 2) {
+            float a = e * AR_COUNTER_HALF, b = e * AR_DUTY_HALF;
+            in.box(d, (a + b) * 0.5f, f + 0.55f, AR_COUNTER_V, Math.abs(b - a) * 0.5f, 0.55f, 0.06f, Street.scale(wood, 0.9f), DrawList.WOOD);
+            in.solid(Math.min(a, b), AR_COUNTER_V - 0.1f, Math.max(a, b), AR_COUNTER_V + 0.1f, f + 1.2f);
+        }
+        // a bell and a ledger on the counter; a lamp over it
+        in.box(d, 1.4f, f + 1.22f, AR_COUNTER_V - 0.1f, 0.09f, 0.05f, 0.09f, 0xC9A15A, DrawList.GOLD);
+        in.box(d, -1.2f, f + 1.19f, AR_COUNTER_V, 0.38f, 0.02f, 0.26f, 0x7A2A24, DrawList.PAINT);
+        in.box(d, 0f, f + h - 0.6f, AR_COUNTER_V + 0.5f, 0.45f, 0.08f, 0.3f, 0xFFE2A8, DrawList.GLOW);
+        in.box(d, 0f, f + h - 0.3f, AR_COUNTER_V + 0.5f, 0.02f, 0.3f, 0.02f, dark, DrawList.PLAIN);
+        // behind the clerk: shelves of grey boxes to the ceiling, the whole back wall; a ladder on them
+        float bv = deep - w - 0.3f;
+        for (int r = 0; r < 5; r++) {
+            float sy = f + 0.3f + r * 0.85f;
+            in.box(d, 0f, sy, bv, AR_DUTY_HALF - 0.2f, 0.02f, 0.3f, wood, DrawList.WOOD);
+            for (float u = -AR_DUTY_HALF + 0.6f; u < AR_DUTY_HALF - 0.4f; u += 0.62f)
+                in.box(d, u, sy + 0.28f, bv, 0.26f, 0.26f, 0.24f, Street.scale(0x8A8C88, 0.9f + 0.1f * ((int) (u * 3f + r) & 1)), DrawList.PAINT);
+        }
+        in.solid(-AR_DUTY_HALF, bv - 0.35f, AR_DUTY_HALF, deep, top);
+        for (int e = -1; e <= 1; e += 2) in.box(d, 3.6f + e * 0.25f, f + 2.1f, bv - 0.45f, 0.03f, 2.1f, 0.03f, wood, DrawList.WOOD);
+        for (int k = 0; k < 8; k++) in.box(d, 3.6f, f + 0.35f + k * 0.5f, bv - 0.45f, 0.25f, 0.02f, 0.02f, wood, DrawList.WOOD);
+        // the clerk's chair behind the counter
+        in.box(d, 0f, f + 0.25f, AR_CLERK_V + 0.15f, 0.26f, 0.25f, 0.26f, dark, DrawList.WOOD);
+        in.box(d, 0f, f + 0.85f, AR_CLERK_V + 0.42f, 0.26f, 0.35f, 0.03f, dark, DrawList.WOOD);
+        in.deskU = 0f;
+        in.deskV = AR_CLERK_V;
+        in.done();
+        return in;
+    }
+
+    /**
+     * The archive's people: a clerk at work at the desk of most rooms, and the clerk on duty behind
+     * the counter: sitting at his ledger, or, once she is at the counter, up on his feet, his hands
+     * out for what she brings, then holding it (where the hands are into hands).
+     */
+    static void archiveFolk(DrawList d, Indoors in, float time, boolean up, float[] hands) {
+        if (FolkPack.town == null || !Frida.ready()) return;
+        int n = FolkPack.town.count;
+        float f = Indoors.FLOOR;
+        for (int e = -1, q = 0; e <= 1; e += 2)
+            for (int k = 0; k < 4; k++, q++) {
+                if (!AR_MANNED[q]) continue;
+                int m = (q * 5 + 3) % n;
+                float m0 = AR_FOYER + AR_ROOM * (k + 0.5f), cu = e * (5.6f + 1.05f);
+                float y = f + 0.5f - Walkers.HIPS * FolkPack.town.size[m];
+                FolkPack.sitter(d, m, in.wx(cu, m0), y, in.wz(cu, m0), in.heading(-e, 0f) + (float) Math.PI, 1f, 0.12f,
+                        0.25f * (float) Math.sin(time * (0.4f + q * 0.07f) + q));
+            }
+        int c = FolkPack.womanFrom(9);
+        float a = in.heading(0f, -1f) + (float) Math.PI;
+        float x = in.wx(0f, AR_CLERK_V), z = in.wz(0f, AR_CLERK_V);
+        if (!up) {
+            float y = f + 0.5f - Walkers.HIPS * FolkPack.town.size[c];
+            FolkPack.sitter(d, c, x, y, z, a, 1f, 0.05f, 0.3f * (float) Math.sin(time * 0.5f));
+        } else FolkPack.holder(d, c, x, f, z, a, 1f, hands);
+    }
+
     /**
      * The collider hall deep under the laboratory (see Collider), as a room: no door but the lift
      * up to the lobby, in its left-hand wall near the front, its doors in a frame of steel; the

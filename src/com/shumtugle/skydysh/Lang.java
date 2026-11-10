@@ -64,6 +64,7 @@ final class Lang {
         EN.put("goal.lift", "TO THE LIFT");
         EN.put("goal.copter", "TO THE HELICOPTER");
         EN.put("goal.archive", "ARCHIVE");
+        EN.put("goal.duty", "DUTY DESK");
         EN.put("story.8", "#Documents to the archive|=What happened|The town hall stands on the main street, north of home: pale stone, a clock over the door, a flag on the roof. The town's archive is far off, in the north-east, at the very end of the town: a low grey house with a garden behind it.||The secretariat has made up a folder of documents, and the archive wants it today. Across the whole town is a long drive, so the town's helicopter waits on the town hall's roof. Its pilot is a brum of black brick.|=The job|Go into the town hall by its middle door. The hall is busy. The secretariat is on the left, through a door in a gilt frame: a clerk waits just inside it with a red folder in her hands. Go up to her and take it.||Across the hall to the lift, on the right. Go up to the roof and get into the helicopter beside the pilot; he does the rest: in an arc over the town, across the whole of it.||Behind the archive is a garden, and in the garden a round pad. When you are down, take the folder to the archive's back door.");
         EN.put("kind.9", "Skid");
         EN.put("brief.mend", "Dispatch \u2014 {kind}||Nothing takes off on one skid.||There is a pickup by the archive.|At the brums' workshop take|a new skid.|Bring it and put it on.||Then take the controls:|the helicopter goes to the town hall's roof.||Touch to begin");

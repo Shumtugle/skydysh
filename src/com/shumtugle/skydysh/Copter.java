@@ -171,6 +171,7 @@ final class Copter {
                         broken = true;
                         breakT = 0f;
                         cracked = true;
+                        dropSkid(groundTo);
                     }
                 }
                 break;
@@ -178,6 +179,7 @@ final class Copter {
             default:
                 break;
         }
+        if (lostT >= 0f && lostT < LOST_FOR) lostT += dt;
         if (broken && breakT >= 0f) {
             // the skid gives way: down onto the right with a jolt, a hop, a rock or two, and still
             breakT += dt;
@@ -194,12 +196,57 @@ final class Copter {
         return a;
     }
 
-    /** How far it leans when a skid has given way. */
-    static final float LEAN = 0.2f;
+    /** How far it leans when a skid has gone. */
+    static final float LEAN = 0.27f;
+
+    // the right skid broken off: where it lies on the ground, turned how, tipped how; how long
+    // since it went (it flies out and down a little while, then lies); -1 for none
+    float lostX, lostY, lostZ, lostYaw;
+    float lostT = -1f;
+    // how far out to the right it is thrown, how long it takes, how far it turns as it goes
+    static final float LOST_OUT = 1.6f, LOST_FOR = 0.7f, LOST_TURN = 0.45f;
+
+    /** The right skid off, at the moment it goes: from under the right side out onto the ground at gy. */
+    private void dropSkid(float gy) {
+        float c = (float) Math.cos(heading), s = (float) Math.sin(heading);
+        // its middle under the right side, a little forward of the mast
+        lostX = x + c * (SKID_X + LOST_OUT) + s * 0.565f;
+        lostZ = z - s * (SKID_X + LOST_OUT) + c * 0.565f;
+        lostY = gy;
+        lostYaw = heading + LOST_TURN;
+        lostT = 0f;
+    }
+
+    /** The skid that broke off, lying where it fell, its two struts snapped short; tumbling out as it goes. */
+    private void drawLost(DrawList d) {
+        if (lostT < 0f) return;
+        float u = Math.min(1f, lostT / LOST_FOR), e = 1f - (1f - u) * (1f - u);
+        float c = (float) Math.cos(heading), s = (float) Math.sin(heading);
+        // from where it was under the side to where it lies, a little up on the way
+        float fx = x + c * SKID_X + s * 0.565f, fz = z - s * SKID_X + c * 0.565f;
+        float px = fx + (lostX - fx) * e, pz = fz + (lostZ - fz) * e;
+        float py = lostY + 0.12f + 0.5f * (float) Math.sin(Math.PI * u);
+        float yaw = heading + (lostYaw - heading) * e;
+        float tip = 0.9f * e;
+        float cy = (float) Math.cos(yaw), sy = (float) Math.sin(yaw), ct = (float) Math.cos(tip), st = (float) Math.sin(tip);
+        // turned about up by yaw, then rolled over onto its side by tip (about its own length)
+        float[] t = {cy * ct, -cy * st, sy, st, ct, 0f, -sy * ct, sy * st, cy};
+        d.box(px, py, pz, 0.1f, 0.12f, 2.7f, t, DARK, DrawList.POLISHED);
+        for (int k = 0; k < 2; k++) {
+            float lz = (k == 0 ? -1.1f : 2.2f) - 0.565f;
+            // the strut's stump, up off the tube in its own frame, short and snapped
+            float ux = 0f, uy = 0.3f;
+            float ox = t[0] * ux + t[1] * uy + t[2] * lz, oy = t[3] * ux + t[4] * uy + t[5] * lz, oz = t[6] * ux + t[7] * uy + t[8] * lz;
+            d.box(px + ox, py + oy, pz + oz, 0.1f, 0.26f, 0.1f, t, DARK, DrawList.POLISHED);
+            float bx = ox * 1.9f, by = oy * 1.9f, bz = oz * 1.9f;
+            d.box(px + bx, py + by, pz + bz, 0.11f, 0.05f, 0.11f, t, 0xD8D2C4, DrawList.POLISHED);
+        }
+    }
 
     /** The helicopter whole again (mended), at rest where it stands: it rights itself with a little hop. */
     void mend() {
         broken = false;
+        lostT = -1f;
         breakT = -1f;
         // the body eased level, the left skid's foot let go of as it comes (see update and point)
         settle = 0f;
@@ -213,6 +260,11 @@ final class Copter {
         this.heading = heading;
         this.broken = broken;
         roll = broken ? LEAN : 0f;
+        lostT = -1f;
+        if (broken) {
+            dropSkid(y);
+            lostT = LOST_FOR;
+        }
         pitch = 0f;
         hop = 0f;
         breakT = -1f;
@@ -442,12 +494,14 @@ final class Copter {
         // the skids, the struts down to them; the right ones pushed up under it if it gave way
         for (int e = -1; e <= 1; e += 2) {
             boolean gone = broken && e > 0;
-            float sy = gone ? 0.74f : 0.12f;
-            skinned(d, e * SKID_X, sy, 0.565f, 0.1f, 0.12f, 2.7f, DARK);
+            if (!gone) skinned(d, e * SKID_X, 0.12f, 0.565f, 0.1f, 0.12f, 2.7f, DARK);
             for (int k = 0; k < 2; k++) {
                 float sz = k == 0 ? -1.1f : 2.2f;
-                if (gone) skinned(d, e * 1.45f, 0.72f, sz, 0.28f, 0.08f, 0.12f, DARK);
-                else skinned(d, e * 1.45f, 0.5f, sz, 0.28f, 0.26f, 0.12f, DARK);
+                // gone: the struts snapped short under the body, their bright ends showing
+                if (gone) {
+                    skinned(d, e * 1.3f, 0.82f, sz, 0.16f, 0.1f, 0.12f, DARK);
+                    plain(d, e * 1.47f, 0.8f, sz, 0.03f, 0.11f, 0.13f, 0xD8D2C4, DrawList.POLISHED);
+                } else skinned(d, e * 1.45f, 0.5f, sz, 0.28f, 0.26f, 0.12f, DARK);
             }
         }
         // the mast, the hub
@@ -467,5 +521,6 @@ final class Copter {
         for (int b = 0; b < 2; b++)
             spun(d, 0.2f, 3.29f, -5f, 0.02f, 0.08f, 0.82f, tr + b * (float) (Math.PI / 2), true, BLADES, DrawList.PLAIN);
         plain(d, 0.16f, 3.29f, -5f, 0.06f, 0.1f, 0.1f, DARK, DrawList.PLAIN);
+        drawLost(d);
     }
 }

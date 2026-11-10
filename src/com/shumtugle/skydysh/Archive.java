@@ -6,13 +6,21 @@ package com.shumtugle.skydysh;
  * up on the roof the town's helicopter waits, a brum of black brick at its controls. She takes
  * the folder, crosses the hall to the lift, goes up, gets in beside the pilot, and they fly across the whole town. Over the archive's garden
  * it comes straight down onto the pad there, and as it touches a skid gives way: it stands
- * leaning. She gets out and takes the folders in at the archive's back door. A story: played once.
+ * leaning, the skid broken off and lying by it. She gets out, takes the folders in at the
+ * archive's door on the garden, through its foyer and down its corridor to the duty room at its
+ * end, and hands them over the counter to the clerk on duty. A story: played once.
  */
 final class Archive {
     // the steps: to the town hall, to the secretariat in its hall, the folder handed over, the
     // folders to the lift and up, on the roof to the helicopter, in the air, down and getting out,
     // the folders to the door, done
     static final int GO = 0, DESK = 1, HAND = 2, LIFT = 3, ROOF = 4, FLY = 5, CARRY = 6, DONE = 7;
+    // and in the archive: down its corridor to the counter, the folders handed over it
+    static final int INSIDE = 8, GIVE = 9;
+    // handing them over: how long in all; they leave her hands, and are in the clerk's
+    static final float GIVE_TIME = 3.2f, PASS_FROM = 0.9f, PASS_TO = 2.0f;
+    /** How near the clerk on duty, across the counter, she has to come. */
+    static final float COUNTER_NEAR = 2.6f;
     // the handing over: how long in all; the folder leaves the clerk's hands, and is in hers
     static final float HAND_TIME = 3.4f, GIVE_FROM = 1.0f, GIVE_TO = 2.2f;
     // how near the desk, the helicopter's door, the archive's door she has to come
@@ -20,7 +28,7 @@ final class Archive {
     /** Down on the pad, a moment before she gets out. */
     static final float OUT_AFTER = 2f;
     // what a step brought: she has got in, she has got out, a skid has given way
-    static final int NONE = 0, IN = 1, OUT = 2, CRACK = 3;
+    static final int NONE = 0, IN = 1, OUT = 2, CRACK = 3, ENTER = 4;
 
     /** Whether mission n is the archive: the eighth kind. */
     static boolean its(int n) {
@@ -45,12 +53,25 @@ final class Archive {
 
     /** Whether she has the folder with her, on foot. */
     boolean carrying() {
-        return step == HAND && handT >= GIVE_TO || step == LIFT || step == ROOF || step == CARRY;
+        return step == HAND && handT >= GIVE_TO || step == LIFT || step == ROOF || step == CARRY || step == INSIDE
+                || step == GIVE && handT < PASS_FROM;
     }
 
     /** Whether the folder is being handed over now: she stands, the eye on the two of them. */
     boolean handing() {
-        return step == HAND;
+        return step == HAND || step == GIVE;
+    }
+
+    /** Whether the clerk on duty is up on his feet: she is at the counter, or has given it. */
+    boolean dutyUp() {
+        return step == GIVE || step == DONE;
+    }
+
+    /** The folders on their way from her hands to the clerk on duty's: so far (0 to 1); -1 before; 1 once his. */
+    float passing() {
+        if (step == DONE) return 1f;
+        if (step != GIVE || handT < PASS_FROM) return -1f;
+        return Math.min(1f, (handT - PASS_FROM) / (PASS_TO - PASS_FROM));
     }
 
     /** Whether the clerk holds it out still (her hands out till it has gone into the other's). */
@@ -130,11 +151,44 @@ final class Archive {
                 }
                 break;
             case CARRY: {
+                // at the door on the garden: in
                 float dx = r.x - City.archiveDoorX(), dz = r.z - City.archiveDoorZ();
-                if (dx * dx + dz * dz < DOOR_NEAR * DOOR_NEAR) {
+                if (in == null && dx * dx + dz * dz < DOOR_NEAR * DOOR_NEAR) {
+                    step = INSIDE;
+                    host.sound(Synth.DOOR, 0.45f, 0.95f);
+                    got = ENTER;
+                }
+                break;
+            }
+            case INSIDE:
+                // still coming in at the door (the dark between); out again before the counter: back to the door
+                if (in == null || !in.archive) {
+                    if (wasIn) {
+                        step = CARRY;
+                        wasIn = false;
+                    }
+                    break;
+                }
+                wasIn = true;
+                {
+                    float du = in.u(r.x, r.z) - in.deskU, dv = in.v(r.x, r.z) - in.deskV;
+                    if (du * du + dv * dv < COUNTER_NEAR * COUNTER_NEAR) {
+                        step = GIVE;
+                        handT = 0f;
+                        host.sound(Synth.CHIME, 0.25f, 1.5f);
+                    }
+                }
+                break;
+            case GIVE: {
+                float was = handT;
+                handT += dt;
+                if (was < PASS_TO && handT >= PASS_TO) {
+                    host.sound(Synth.WOOD, 0.4f, 1.3f);
+                    host.buzz(30);
+                }
+                if (handT >= GIVE_TIME) {
                     step = DONE;
                     doneAt = clock;
-                    host.sound(Synth.DOOR, 0.45f, 0.95f);
                     host.sound(Synth.CHIME, 0.5f, 1.3f);
                 }
                 break;
@@ -149,7 +203,7 @@ final class Archive {
         return got;
     }
 
-    private boolean outPending;
+    private boolean outPending, wasIn;
     private final float[] at = new float[3], hand = new float[3];
 
     /**
@@ -183,6 +237,13 @@ final class Archive {
                 out[1] = City.WALK_TOP + 3.6f;
                 out[2] = City.archiveDoorZ() - 1f;
                 return true;
+            case INSIDE:
+            case GIVE:
+                if (in == null || !in.archive) return false;
+                out[0] = in.wx(in.deskU, in.deskV);
+                out[1] = Indoors.FLOOR + 2.4f;
+                out[2] = in.wz(in.deskU, in.deskV);
+                return true;
             default:
                 return false;
         }
@@ -204,6 +265,8 @@ final class Archive {
             case LIFT: return in != null && in.townHall ? "goal.lift" : "goal.townhall";
             case ROOF: return in == null && r.y > City.townRoof() - 1f ? "goal.copter" : "goal.townhall";
             case CARRY: return "goal.archive";
+            case INSIDE:
+            case GIVE: return "goal.duty";
             default: return null;
         }
     }
@@ -216,6 +279,8 @@ final class Archive {
             case LIFT: return in != null && in.townHall ? Marks.LIFT : Marks.TOWNHALL;
             case ROOF: return in == null && r.y > City.townRoof() - 1f ? Marks.COPTER : Marks.TOWNHALL;
             case CARRY: return Marks.ARCHIVE;
+            case INSIDE:
+            case GIVE: return Marks.DESK;
             default: return Marks.TOWNHALL;
         }
     }
