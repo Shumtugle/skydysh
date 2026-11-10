@@ -249,7 +249,9 @@ behind a low hedge (the pickup's place marked out in it, the pickup there once t
 done), a garden behind it with trees, beds and benches, and on its flat roof the pad for a copter;
 across the street the shop (glass front, an orange band with a basket on it, trolleys), beside it
 the taxis' stand (black taxis in their bays, a shelter, the booth with its chequered roof), east
-of home the park. Home's sign over the door takes her in, to rooms as wide as the house: a
+of home the park. Home's rooms are the house itself: their walls are its walls, its windows are
+open holes in them, the rooms seen through them from the street and the street from the rooms;
+its door (its sign over it) takes her in with no dark between, as a door does, to rooms as wide as the house: a
 hall down the middle from the door to a glass door at the back onto the yard (under home's sign
 there too), a great cold hearth of pale stone on its left wall, the sea in a great frame over it,
 the sofa facing it across a rug, a low table, armchairs, books; through doorways on the left the

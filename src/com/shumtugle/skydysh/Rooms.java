@@ -581,7 +581,93 @@ final class Rooms {
     static final float HOME_HALF = 16f, HOME_DEEP = 24f, HOME_HIGH = 7f, HOME_HALL = 8f, HOME_WARDROBE = 10f, HOME_KITCHEN = 12f;
     static final float HEARTH_V = 13f, HEARTH_HALF = 5f, PART = 0.15f, DOORWAY_HIGH = 3.6f;
     // the four walls round, for a window on one
-    private static final int ON_FRONT = 0, ON_BACK = 1, ON_LEFT = 2, ON_RIGHT = 3;
+    static final int ON_FRONT = 0, ON_BACK = 1, ON_LEFT = 2, ON_RIGHT = 3;
+    /**
+     * Home's windows, open holes in its walls (the town seen through them, and from the town the
+     * rooms): which wall; where along it (across for the front and the back, in from the front for
+     * the sides); half as wide; from how high over the floor to how high. The house outside has
+     * its frames and shutters at the same places (see City).
+     */
+    static final float[][] HOME_WINDOWS = {
+        {ON_FRONT, -4.6f, 1.1f, 1.2f, 4.4f}, {ON_FRONT, 4.6f, 1.1f, 1.2f, 4.4f}, {ON_FRONT, -12f, 1.0f, 1.2f, 4.4f},
+        {ON_FRONT, 10f, 1.0f, 1.2f, 4.4f}, {ON_FRONT, 14f, 1.0f, 1.2f, 4.4f},
+        {ON_BACK, -4.6f, 1.1f, 1.2f, 4.4f}, {ON_BACK, 4.6f, 1.1f, 1.2f, 4.4f}, {ON_BACK, -12f, 1.1f, 1.2f, 4.4f}, {ON_BACK, 12f, 1.0f, 1.5f, 3.7f},
+        {ON_LEFT, 12.4f, 1.0f, 1.2f, 4.4f}, {ON_LEFT, 22.4f, 1.0f, 1.2f, 4.4f},
+        {ON_RIGHT, 3f, 1.0f, 1.2f, 4.4f}, {ON_RIGHT, 9f, 1.0f, 1.2f, 4.4f}, {ON_RIGHT, 21.4f, 0.9f, 1.5f, 3.7f},
+    };
+
+    /**
+     * Home's shell: its ceiling (the roof's underside), and its four walls, which are the house's
+     * own (from the town their outer faces are its front, its back, its sides): each in pieces
+     * round its holes, the doorways in the middle of the front and the back, the windows (see
+     * HOME_WINDOWS); the panelling low on their inner faces; the doorways' stone frames inside.
+     */
+    private static void homeShell(Indoors in, DrawList d, int wall, int low) {
+        float f = Indoors.FLOOR, h = in.high, w = Indoors.WALL, half = in.half, deep = in.deep, dh = Indoors.DOOR_HALF;
+        in.box(d, 0f, f + h + 0.15f, deep * 0.5f, half + w, 0.15f, deep * 0.5f, Street.scale(wall, 1.04f), DrawList.PLAIN);
+        for (int on = ON_FRONT; on <= ON_RIGHT; on++) {
+            boolean across = on == ON_FRONT || on == ON_BACK;
+            // the holes in this wall: along it, half as wide, from and to over the floor (a doorway from the floor)
+            java.util.ArrayList<float[]> holes = new java.util.ArrayList<>();
+            if (across) holes.add(new float[] {0f, dh, 0f, Indoors.DOOR_HIGH});
+            for (float[] k : HOME_WINDOWS) if ((int) k[0] == on) holes.add(new float[] {k[1], k[2], k[3], k[4]});
+            // in order along the wall (a few: picked one by one)
+            for (int x = 0; x < holes.size(); x++)
+                for (int y = x + 1; y < holes.size(); y++)
+                    if (holes.get(y)[0] < holes.get(x)[0]) {
+                        float[] t = holes.get(x);
+                        holes.set(x, holes.get(y));
+                        holes.set(y, t);
+                    }
+            float lo = across ? -(half + w) : 0f, hi = across ? half + w : deep;
+            // where the wall stands across its thickness (v for the front and the back, u for the sides), the inner face
+            float t0 = on == ON_FRONT ? 0f : on == ON_BACK ? deep - w : on == ON_LEFT ? -(half + w) : half;
+            float inner = on == ON_FRONT ? w : on == ON_BACK ? deep - w : on == ON_LEFT ? -half : half, into = on == ON_FRONT || on == ON_LEFT ? 1f : -1f;
+            float from = lo;
+            for (int k = 0; k <= holes.size(); k++) {
+                float to = k < holes.size() ? holes.get(k)[0] - holes.get(k)[1] : hi;
+                if (to > from) piece(in, d, across, t0, w, from, to, f, f + h, wall, true);
+                if (k == holes.size()) break;
+                float[] o = holes.get(k);
+                float a = o[0] - o[1], b = o[0] + o[1];
+                if (o[2] > 0f) piece(in, d, across, t0, w, a, b, f, f + o[2], wall, true);
+                piece(in, d, across, t0, w, a, b, f + o[3], f + h, wall, false);
+                // a window stands shut to her (she cannot climb out of one); a doorway is left to the doors
+                if (o[2] > 0f) piece(in, null, across, t0, w, a, b, f, f + h + 1f, wall, true);
+                from = b;
+            }
+            // the panelling low on the inner face, broken by the doorway
+            float rail = 1.15f, ph = rail * 0.5f, n = inner + into * 0.015f;
+            float[] cuts = across ? new float[] {lo + w, -dh, dh, hi - w} : new float[] {w, deep - w};
+            for (int k = 0; k < cuts.length; k += 2) {
+                float a = cuts[k], b = cuts[k + 1];
+                if (across) in.box(d, (a + b) * 0.5f, f + ph, n, (b - a) * 0.5f, ph, 0.015f, low, DrawList.PAINT);
+                else in.box(d, n, f + ph, (a + b) * 0.5f, 0.015f, ph, (b - a) * 0.5f, low, DrawList.PAINT);
+            }
+        }
+        // the doorways' stone frames, inside
+        for (int k = 0; k < 2; k++) {
+            float iv = k == 0 ? w + 0.03f : deep - w - 0.03f;
+            for (int e = -1; e <= 1; e += 2)
+                in.box(d, e * (dh + 0.07f), f + Indoors.DOOR_HIGH * 0.5f, iv, 0.07f, Indoors.DOOR_HIGH * 0.5f + 0.07f, 0.03f, 0xD8CDB8, DrawList.STONE);
+            in.box(d, 0f, f + Indoors.DOOR_HIGH + 0.07f, iv, dh + 0.14f, 0.07f, 0.03f, 0xD8CDB8, DrawList.STONE);
+        }
+    }
+
+    /**
+     * A piece of one of home's walls: along it from a to b, from y0 to y1, the wall standing at
+     * t0 across, w thick; drawn (unless d is null), and, if solid, a thing in her way.
+     */
+    private static void piece(Indoors in, DrawList d, boolean across, float t0, float w, float a, float b, float y0, float y1, int color, boolean solid) {
+        float m = (a + b) * 0.5f, hl = (b - a) * 0.5f, ym = (y0 + y1) * 0.5f, hy = (y1 - y0) * 0.5f, tm = t0 + w * 0.5f;
+        if (d != null) {
+            if (across) in.box(d, m, ym, tm, hl, hy, w * 0.5f, color, DrawList.PLAIN);
+            else in.box(d, tm, ym, m, w * 0.5f, hy, hl, color, DrawList.PLAIN);
+        }
+        if (!solid || d != null && y0 > Indoors.FLOOR + 0.01f) return;
+        if (across) in.solid(a, t0, b, t0 + w, Indoors.FLOOR + in.high + 1f);
+        else in.solid(t0, a, t0 + w, b, Indoors.FLOOR + in.high + 1f);
+    }
 
     /**
      * Home, behind its front door: wide as the house is not, for her. A hall down the middle from
@@ -604,12 +690,12 @@ final class Rooms {
         in.frameColor = 0xC9A15A;
         in.frameMat = DrawList.GOLD;
         int wall = 0xF1E2C8, low = 0x2F8A86, white = 0xF4EEE2, wood = 0x7A5236, teal = 0x2F8A86, cream = 0xF1E8D4, coral = 0xE0644A;
-        noFloor = true;
-        shell(in, 0xD9B48A, false, wall, low, DrawList.PAINT);
-        noFloor = false;
         DrawList d = in.still();
+        homeShell(in, d, wall, low);
         Random rnd = new Random(0x40AEL);
         float f = Indoors.FLOOR, w = Indoors.WALL, half = in.half, deep = in.deep, hall = HOME_HALL, top = f + in.high;
+        // the windows, open on the town: frames, bars, sills (see homeShell for the holes in the walls)
+        for (float[] k : HOME_WINDOWS) window(in, d, (int) k[0], k[1], k[3], k[4], k[2], white);
         // the floor in parts side by side, none over another (far off they would flicker): boards
         // across the left and the hall, boards in the dining room, tiles in the kitchen
         float fl = 0.15f, kv = HOME_KITCHEN;
@@ -695,8 +781,6 @@ final class Rooms {
         }
         // the hall's windows either side of each door, a plant under each; palms by the doors
         for (int e = -1; e <= 1; e += 2) {
-            window(in, d, ON_FRONT, e * 4.6f, 1.0f, 4.4f, 1.1f, white);
-            window(in, d, ON_BACK, e * 4.6f, 1.0f, 4.4f, 1.1f, white);
             plant(in, d, rnd, e * 4.6f, w + 0.75f, 0);
             plant(in, d, rnd, e * 4.6f, deep - w - 0.75f, 0);
             plant(in, d, rnd, e * 2.0f, deep - w - 0.7f, 1);
@@ -740,7 +824,6 @@ final class Rooms {
                     in.box(d, c0 - 0.75f + k * 0.75f + q * 0.24f, f + 0.7f, w + 0.35f, 0.1f, 0.2f, 0.16f, k == 1 ? 0x8A2E2A : 0x18181A, DrawList.POLISHED);
             in.solid(c0 - 1.1f, w, c0 + 1.1f, w + 0.7f, f + 0.9f);
         }
-        window(in, d, ON_FRONT, -12f, 1.2f, 4.4f, 1.0f, white);
         plant(in, d, rnd, -14.6f, w + 1.6f, 0);
         // the tall mirror on the wall to the bedroom; a round seat in the middle
         float mv = HOME_WARDROBE - PART - 0.04f;
@@ -767,9 +850,6 @@ final class Rooms {
         in.box(d, bu0 + bl + 0.55f, f + 0.25f, bv, 0.3f, 0.25f, bw - 0.1f, teal, DrawList.GRAIN);
         in.solid(bu0 + bl + 0.2f, bv - bw, bu0 + bl + 0.9f, bv + bw, f + 0.5f);
         rug(in, d, bu0 + bl * 0.6f, bv, bl * 0.5f + 1.4f, bw + 1.4f, 0.3f, 0x2F8A86, 0x3A4660);
-        window(in, d, ON_LEFT, 12.4f, 1.0f, 4.4f, 1.0f, white);
-        window(in, d, ON_LEFT, 22.4f, 1.0f, 4.4f, 1.0f, white);
-        window(in, d, ON_BACK, -12f, 1.0f, 4.4f, 1.1f, white);
         plant(in, d, rnd, -half + 0.8f, 14.0f, 0);
         plant(in, d, rnd, -12f, deep - w - 0.75f, 1);
         plant(in, d, rnd, -9.2f, 11.0f, 0);
@@ -795,10 +875,6 @@ final class Rooms {
             float a = k * 1.0472f;
             in.box(d, tu + (float) Math.sin(a) * 0.62f, top - 0.9f, tvv + (float) Math.cos(a) * 0.62f, 0.07f, 0.12f, 0.07f, 0xFFE9BE, DrawList.GLOW);
         }
-        window(in, d, ON_FRONT, 10f, 1.0f, 4.4f, 1.0f, white);
-        window(in, d, ON_FRONT, 14f, 1.0f, 4.4f, 1.0f, white);
-        window(in, d, ON_RIGHT, 3f, 1.0f, 4.4f, 1.0f, white);
-        window(in, d, ON_RIGHT, 9f, 1.0f, 4.4f, 1.0f, white);
         plant(in, d, rnd, 12f, w + 0.75f, 0);
         plant(in, d, rnd, half - 0.75f, 6f, 1);
         plant(in, d, rnd, half - 0.8f, w + 0.8f, 0);
@@ -821,7 +897,6 @@ final class Rooms {
             float uc = 12f + e * 2.6f;
             in.box(d, uc, f + 2.9f, deep - w - 0.22f, 1.3f, 0.5f, 0.22f, cream, DrawList.PAINT);
         }
-        window(in, d, ON_BACK, 12f, 1.5f, 3.7f, 1.0f, white);
         in.box(d, 12f, ct + 0.02f, kb + kd * 0.5f, 0.55f, 0.03f, 0.25f, 0x5A6066, DrawList.POLISHED);
         in.box(d, 12f, ct + 0.3f, deep - w - 0.12f, 0.03f, 0.25f, 0.03f, in.frameColor, DrawList.GOLD);
         in.box(d, 12f, ct + 0.52f, deep - w - 0.25f, 0.03f, 0.03f, 0.14f, in.frameColor, DrawList.GOLD);
@@ -834,7 +909,6 @@ final class Rooms {
         in.box(d, ko - 0.01f, f + 0.5f, sv2, 0.01f, 0.32f, 0.5f, 0x1D2730, DrawList.GLASS);
         in.box(d, ko + 0.3f, f + 3.0f, sv2, 0.4f, 0.4f, 0.7f, steel, DrawList.POLISHED);
         in.box(d, half - 0.15f, f + 4.4f, sv2, 0.15f, 1.0f, 0.3f, steel, DrawList.POLISHED);
-        window(in, d, ON_RIGHT, 21.4f, 1.5f, 3.7f, 0.9f, white);
         sillPot(in, d, rnd, ko + kd * 0.5f, 21.0f, ct + 0.06f);
         sillPot(in, d, rnd, ko + kd * 0.5f, 21.8f, ct + 0.06f);
         // the tall fridge by the kitchen's door
@@ -900,27 +974,34 @@ final class Rooms {
     }
 
     /**
-     * A window on one of the outer walls, its middle so far along the wall, from y0 to y1 over the
-     * floor, half as wide: its white frame, the glass, the bars across, the sill.
+     * A window on one of home's walls, open on the town, its middle so far along the wall, from y0
+     * to y1 over the floor, half as wide: its white frame round the hole on the inner face, the
+     * bars across it in the middle of the wall, the sill.
      */
     private static void window(Indoors in, DrawList d, int on, float at, float y0, float y1, float hw, int frame) {
         float f = Indoors.FLOOR, w = Indoors.WALL, yc = f + (y0 + y1) * 0.5f, hy = (y1 - y0) * 0.5f;
         boolean across = on == ON_FRONT || on == ON_BACK;
-        // where its face is (u or v), and which way the room is from it
         float face = on == ON_FRONT ? w : on == ON_BACK ? in.deep - w : on == ON_LEFT ? -in.half : in.half;
-        float into = on == ON_FRONT || on == ON_LEFT ? 1f : -1f;
+        float into = on == ON_FRONT || on == ON_LEFT ? 1f : -1f, mid = face - into * w * 0.5f;
         float[][] parts = {
-            // offset into the room, half thick, y, half high, half wide, colour, material
-            {0.02f, 0.03f, yc, hy + 0.1f, hw + 0.1f, frame, DrawList.PLAIN},
-            {0.04f, 0.02f, yc, hy, hw, 0x3E5560, DrawList.GLASS},
-            {0.07f, 0.02f, yc, hy, 0.04f, frame, DrawList.PLAIN},
-            {0.07f, 0.02f, yc + hy * 0.2f, 0.04f, hw, frame, DrawList.PLAIN},
-            {0.16f, 0.16f, f + y0 - 0.06f, 0.05f, hw + 0.2f, frame, DrawList.PLAIN},
+            // across the wall (offset into the room from its inner face), half thick, along, half along, y, half high
+            {0.03f, 0.03f, at - hw - 0.06f, 0.06f, yc, hy + 0.12f},
+            {0.03f, 0.03f, at + hw + 0.06f, 0.06f, yc, hy + 0.12f},
+            {0.03f, 0.03f, at, hw + 0.12f, f + y1 + 0.06f, 0.06f},
+            {0.16f, 0.16f, at, hw + 0.2f, f + y0 - 0.04f, 0.04f},
         };
         for (float[] p : parts) {
             float n = face + into * p[0];
-            if (across) in.box(d, at, p[2], n, p[4], p[3], p[1], (int) p[5], p[6]);
-            else in.box(d, n, p[2], at, p[1], p[3], p[4], (int) p[5], p[6]);
+            if (across) in.box(d, p[2], p[4], n, p[3], p[5], p[1], frame, DrawList.PLAIN);
+            else in.box(d, n, p[4], p[2], p[1], p[5], p[3], frame, DrawList.PLAIN);
+        }
+        // the bars: one up the middle, one across a little over it
+        if (across) {
+            in.box(d, at, yc, mid, 0.04f, hy, 0.03f, frame, DrawList.PLAIN);
+            in.box(d, at, yc + hy * 0.2f, mid, hw, 0.04f, 0.03f, frame, DrawList.PLAIN);
+        } else {
+            in.box(d, mid, yc, at, 0.03f, hy, 0.04f, frame, DrawList.PLAIN);
+            in.box(d, mid, yc + hy * 0.2f, at, 0.03f, 0.04f, hw, frame, DrawList.PLAIN);
         }
     }
 

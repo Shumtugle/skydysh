@@ -1,0 +1,36 @@
+# Home a part of the town: from the street its open windows, the rooms behind them; close to one, the room through it; in at the door with no dark between; inside, the garden and the town through the back windows, the street through the front ones, the pickup in the forecourt seen from the dining room; the glass door on the garden.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 14
+keep where 0
+restart
+free
+wait 1.5
+eye 288 3.5 250 0 0.1
+wait 0.1
+shot w0
+eye 296 2.6 266 -0.3 -0.02
+wait 0.1
+shot w1
+eye off
+down 137 420
+wait 0.5
+shot w2
+wait 0.4
+where
+shot w3
+up 137 420
+wait 1
+where
+shot w4
+eye 288 2.4 285 3.1416 0.0
+wait 0.1
+shot w5
+eye 300 2.4 283 3.1416 0.02
+wait 0.1
+shot w6
+eye 288 2.6 288 0 0.0
+wait 0.1
+shot w7
+eye off

@@ -127,7 +127,7 @@ final class City implements Ground {
      * it), as wide and as deep as its rooms are (see Rooms.home), so high, the pad on its roof.
      */
     static final int HOME_I = 4, HOME_J = 4, PARK_I = 5, PARK_J = 4, SHOP_I = 4, SHOP_J = 3, TAXI_I = 5, TAXI_J = 3;
-    static final float HOME_SET_BACK = 6f, HOME_HX = Rooms.HOME_HALF + 0.4f, HOME_HZ = Rooms.HOME_DEEP * 0.5f, HOME_HIGH = 9.5f;
+    static final float HOME_SET_BACK = 6f, HOME_HX = Rooms.HOME_HALF + 0.4f, HOME_HZ = Rooms.HOME_DEEP * 0.5f, HOME_HIGH = Indoors.FLOOR + Rooms.HOME_HIGH + 0.3f;
     /** Home's door, in the middle of its front, on its forecourt; the way out from it is -z, to the shop across the street. */
     static final float HOME_DOOR_X = HOME_I * CELL + CELL * 0.5f, HOME_DOOR_Z = HOME_J * CELL + FRONT + HOME_SET_BACK;
 
@@ -2366,23 +2366,35 @@ final class City implements Ground {
     }
 
     /**
-     * Home: two storeys tall, plain cream stucco on a stone plinth, stone pilasters at its corners,
-     * a teal cornice, a parapet round its flat roof and on the roof the pad (a ring and its letter)
-     * for a copter to come down on; tall windows where its rooms have them (see Rooms.home), white
-     * frames, teal shutters, stone sills; the door in the middle of the front under a coral awning,
-     * pots either side; the glass door at the back on the garden.
+     * Home from the town: its walls are its rooms' own (see Rooms.home; the town draws them from
+     * World, the rooms in them), so here only what dresses them outside: a plinth of stone round
+     * its foot, stone pilasters at its corners, a teal cornice round its top, a parapet round its
+     * flat roof and on the roof the pad (a ring and its letter, lamps round it) for a copter to come
+     * down on; round each window (where the rooms have theirs, open) a white frame, teal shutters,
+     * a stone sill; the doorways' stone frames, a coral awning over the front one, pots either
+     * side, a balcony over it.
      */
     private void villa(Cell c, float x0, float x1, float z0, float z1) {
         DrawList d = c.boxes, small = c.detail;
-        float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f, h = HOME_HIGH, y = WALK_TOP;
-        int cream = 0xF1E6CF, plinth = 0xD9CBB0, coral = 0xE9765B, teal = 0x3FAFA6, rail = 0x2B2A2C;
-        d.box(cx, h * 0.5f, cz, hx, h * 0.5f, hz, null, cream, DrawList.PLAIN);
-        d.box(cx, 0.5f, cz, hx + 0.06f, 0.5f, hz + 0.06f, null, plinth, DrawList.STONE);
+        float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f, h = HOME_HIGH;
+        int plinth = 0xD9CBB0, coral = 0xE9765B, teal = 0x3FAFA6, rail = 0x2B2A2C, white = 0xF4EEE2, stone = 0xD8CDB8;
+        float dh = Indoors.DOOR_HALF + 0.1f;
+        // the plinth round its foot, broken by the doorways; the cornice round its top
+        for (int e = -1; e <= 1; e += 2) {
+            float fz = e < 0 ? z0 : z1;
+            for (int s = -1; s <= 1; s += 2) {
+                float a = cx + s * dh, b = cx + s * (hx + 0.06f);
+                d.box((a + b) * 0.5f, 0.45f, fz + e * 0.04f, Math.abs(b - a) * 0.5f, 0.45f, 0.06f, null, plinth, DrawList.STONE);
+            }
+            d.box(cx + e * (hx + 0.04f), 0.45f, cz, 0.06f, 0.45f, hz + 0.06f, null, plinth, DrawList.STONE);
+            d.box(cx, h - 0.3f, fz + e * 0.1f, hx + 0.16f, 0.3f, 0.12f, null, teal, DrawList.PLAIN);
+            d.box(cx + e * (hx + 0.1f), h - 0.3f, cz, 0.12f, 0.3f, hz + 0.16f, null, teal, DrawList.PLAIN);
+            d.box(cx, 5.25f, fz + e * 0.06f, hx + 0.08f, 0.08f, 0.08f, null, plinth, DrawList.STONE);
+            d.box(cx + e * (hx + 0.06f), 5.25f, cz, 0.08f, 0.08f, hz + 0.08f, null, plinth, DrawList.STONE);
+        }
         for (int a = -1; a <= 1; a += 2)
-            for (int b = -1; b <= 1; b += 2) d.box(cx + a * (hx - 0.3f), h * 0.5f, cz + b * (hz - 0.3f), 0.45f, h * 0.5f, 0.45f, null, plinth, DrawList.STONE);
-        d.box(cx, h - 0.3f, cz, hx + 0.16f, 0.3f, hz + 0.16f, null, teal, DrawList.PLAIN);
-        d.box(cx, 4.95f, cz, hx + 0.08f, 0.1f, hz + 0.08f, null, plinth, DrawList.STONE);
-        // the roof: gravel, the parapet round it, the pad in its middle
+            for (int b = -1; b <= 1; b += 2) d.box(cx + a * (hx - 0.2f), h * 0.5f, cz + b * (hz - 0.2f), 0.32f, h * 0.5f, 0.32f, null, plinth, DrawList.STONE);
+        // the roof: gravel over the rooms' ceiling, the parapet round it, the pad in its middle
         d.box(cx, h + 0.02f, cz, hx - 0.1f, 0.02f, hz - 0.1f, null, 0x8C8A84, DrawList.GRAVEL);
         for (int e = -1; e <= 1; e += 2) {
             d.box(cx, h + 0.45f, cz + e * (hz - 0.1f), hx, 0.45f, 0.12f, null, plinth, DrawList.STONE);
@@ -2396,27 +2408,26 @@ final class City implements Ground {
             float a = k * 0.5236f;
             small.box(cx + (float) Math.sin(a) * 6.9f, h + 0.12f, cz + (float) Math.cos(a) * 6.9f, 0.12f, 0.06f, 0.12f, null, 0xFFB347, DrawList.GLOW);
         }
-        // the windows, where the rooms have theirs (in the rooms' frame across is +x to -x): the
-        // front, the back, the east side (the rooms' left), the west (their right)
-        float lo = y + 1.15f, hi = y + 4.55f, kitchenLo = y + 1.65f, kitchenHi = y + 3.85f;
-        float[] front = {-4.6f, 4.6f, -12f, 10f, 14f}, back = {-4.6f, 4.6f, -12f};
-        for (float u : front) window(d, cx - u, z0, true, -1, lo, hi, 1.1f);
-        for (float u : back) window(d, cx - u, z1, true, 1, lo, hi, 1.1f);
-        window(d, cx - 12f, z1, true, 1, kitchenLo, kitchenHi, 1f);
-        for (float v : new float[] {12.4f, 22.4f}) window(d, z0 + v, x1, false, 1, lo, hi, 1f);
-        for (float v : new float[] {3f, 9f}) window(d, z0 + v, x0, false, -1, lo, hi, 1f);
-        window(d, z0 + 21.4f, x0, false, -1, kitchenLo, kitchenHi, 0.9f);
-        // the upper storey's windows, small, all along the front and the back, a balcony's rail over the door
-        for (float u = -14f; u <= 14.1f; u += 4f) {
-            window(d, cx + u, z0, true, -1, 5.7f, 7.6f, 0.7f);
-            window(d, cx + u, z1, true, 1, 5.7f, 7.6f, 0.7f);
+        // round each window, outside: in the rooms' frame across runs from +x to -x, in runs +z
+        for (float[] k : Rooms.HOME_WINDOWS) {
+            int on = (int) k[0];
+            float y0 = Indoors.FLOOR + k[3], y1 = Indoors.FLOOR + k[4], hw = k[2];
+            if (on == Rooms.ON_FRONT) window(d, cx - k[1], z0, true, -1, y0, y1, hw);
+            else if (on == Rooms.ON_BACK) window(d, cx - k[1], z1, true, 1, y0, y1, hw);
+            else if (on == Rooms.ON_LEFT) window(d, z0 + k[1], x1, false, 1, y0, y1, hw);
+            else window(d, z0 + k[1], x0, false, -1, y0, y1, hw);
         }
-        small.box(cx, 5.15f, z0 - 0.75f, 3.2f, 0.08f, 0.75f, null, plinth, DrawList.STONE);
-        small.box(cx, 6.1f, z0 - 1.45f, 3.2f, 0.03f, 0.03f, null, rail, DrawList.RAIL);
-        for (float u = -3.2f; u <= 3.21f; u += 0.4f) small.box(cx + u, 5.65f, z0 - 1.45f, 0.02f, 0.45f, 0.02f, null, rail, DrawList.RAIL);
-        // the doors: the front one under the awning, pots either side; the glass one on the garden
-        liftDoor(d, cx, z0, true, -1);
-        liftDoor(d, cx, z1, true, 1);
+        // a balcony over the door, its slab and its rail
+        small.box(cx, 5.45f, z0 - 0.75f, 3.2f, 0.08f, 0.75f, null, plinth, DrawList.STONE);
+        small.box(cx, 6.4f, z0 - 1.45f, 3.2f, 0.03f, 0.03f, null, rail, DrawList.RAIL);
+        for (float u = -3.2f; u <= 3.21f; u += 0.4f) small.box(cx + u, 5.95f, z0 - 1.45f, 0.02f, 0.45f, 0.02f, null, rail, DrawList.RAIL);
+        // the doorways' stone frames, outside (the doors are the rooms', glass, that open as she comes)
+        for (int e = -1; e <= 1; e += 2) {
+            float fz = e < 0 ? z0 : z1;
+            for (int s = -1; s <= 1; s += 2)
+                d.box(cx + s * (Indoors.DOOR_HALF + 0.12f), WALK_TOP + DOOR_HIGH * 0.5f + 0.1f, fz + e * 0.07f, 0.12f, DOOR_HIGH * 0.5f + 0.25f, 0.07f, null, stone, DrawList.STONE);
+            d.box(cx, WALK_TOP + DOOR_HIGH + 0.45f, fz + e * 0.07f, Indoors.DOOR_HALF + 0.24f, 0.12f, 0.07f, null, stone, DrawList.STONE);
+        }
         Street.awning(small, true, z0, -1, 3.4f, cx, 1.8f, coral, true);
         c.wall(cx - 1.8f, z0 - 1.05f, cx + 1.8f, z0, 3.4f, 2.75f);
         Random deco = new Random(0x4D1EL);
@@ -2425,24 +2436,24 @@ final class City implements Ground {
             Garden.pot(small, deco, qx, WALK_TOP, qz, 0.42f);
             c.wall(qx - 0.4f, qz - 0.4f, qx + 0.4f, qz + 0.4f, WALK_TOP + 0.9f);
         }
-        // to stand on: the house, its roof
+        // to stand on: the house, its roof; its doors
         c.wall(x0, z0, x1, z1, h + 0.05f);
         c.house(cx, cz, hx, hz, h + 0.05f, 0f, -1f, DOOR);
     }
 
     /**
-     * A tall window in a wall at v (a front if alongX, else a side), its middle at u along the
-     * wall, facing side: dark glass, a white frame and bar, teal shutters either side, a sill.
+     * Round a window in a wall at v (a front if alongX, else a side), its middle at u along the
+     * wall, facing side, open (the glass is the rooms' to have or not): a white frame round the
+     * hole, teal shutters either side, a stone sill.
      */
     private static void window(DrawList d, float u, float v, boolean alongX, int side, float y0, float y1, float hw) {
-        float yc = (y0 + y1) * 0.5f, hy = (y1 - y0) * 0.5f, out = v + side * 0.02f;
-        boxUV(d, u, yc, out, hw + 0.1f, hy + 0.1f, 0.04f, alongX, 0xF4EEE2, DrawList.PLAIN);
-        boxUV(d, u, yc, out + side * 0.03f, hw, hy, 0.03f, alongX, 0x24323A, DrawList.GLASS);
-        boxUV(d, u, yc, out + side * 0.06f, 0.04f, hy, 0.02f, alongX, 0xF4EEE2, DrawList.PLAIN);
-        boxUV(d, u, yc + hy * 0.2f, out + side * 0.06f, hw, 0.04f, 0.02f, alongX, 0xF4EEE2, DrawList.PLAIN);
-        for (int e = -1; e <= 1; e += 2)
-            boxUV(d, u + e * (hw + 0.45f), yc, out + side * 0.03f, 0.32f, hy, 0.03f, alongX, 0x3FAFA6, DrawList.PAINT);
-        boxUV(d, u, y0 - 0.08f, out + side * 0.12f, hw + 0.2f, 0.07f, 0.14f, alongX, 0xD9CBB0, DrawList.STONE);
+        float yc = (y0 + y1) * 0.5f, hy = (y1 - y0) * 0.5f, out = v + side * 0.03f;
+        for (int e = -1; e <= 1; e += 2) {
+            boxUV(d, u + e * (hw + 0.07f), yc, out, 0.07f, hy + 0.14f, 0.04f, alongX, 0xF4EEE2, DrawList.PLAIN);
+            boxUV(d, u + e * (hw + 0.5f), yc, out, 0.3f, hy, 0.03f, alongX, 0x3FAFA6, DrawList.PAINT);
+        }
+        boxUV(d, u, y1 + 0.07f, out, hw + 0.14f, 0.07f, 0.04f, alongX, 0xF4EEE2, DrawList.PLAIN);
+        boxUV(d, u, y0 - 0.07f, v + side * 0.12f, hw + 0.2f, 0.07f, 0.14f, alongX, 0xD9CBB0, DrawList.STONE);
     }
 
     /**

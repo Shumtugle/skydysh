@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.1";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.2";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -355,7 +355,7 @@ final class World {
     void standSofa() {
         if (driving != null) getOut();
         if (indoors != null) leave();
-        indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+        indoors = homeRoom();
         indoors.enter(runner, false);
         runner.recenter();
         runner.update(0f, city, cars, walkers);
@@ -551,7 +551,7 @@ final class World {
         mission.round--;
         if (startHome) {
             if (indoors != null) leave();
-            indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+            indoors = homeRoom();
             indoors.enter(runner, false);
         } else {
             if (indoors != null) leave();
@@ -1787,7 +1787,11 @@ final class World {
         if (indoors != null) {
             int e = indoors.update(dt, r, host);
             if (e == Indoors.UP) go(indoors.lobby ? TO_COLLIDER : indoors.collider ? TO_LOBBY_UP : TO_ROOF);
-            else if (e == Indoors.OUT_FRONT) go(TO_STREET);
+            else if ((e == Indoors.OUT_FRONT || e == Indoors.OUT_BACK) && indoors.home) {
+                // out of home's door: no dark between, she only steps out
+                swapTo = e == Indoors.OUT_FRONT ? TO_STREET : TO_YARD;
+                swap();
+            } else if (e == Indoors.OUT_FRONT) go(TO_STREET);
             else if (e == Indoors.OUT_BACK) go(TO_YARD);
             return;
         }
@@ -1856,7 +1860,9 @@ final class World {
             System.arraycopy(l, 0, liftOf, 0, 11);
             System.arraycopy(houseNow, 0, houseOf, 0, 8);
             host.sound(Synth.DOOR, 0.45f, 1f);
-            go(TO_HOME);
+            // no dark between: home's rooms are there in the town, she only steps in
+            swapTo = TO_HOME;
+            swap();
             return;
         }
         // the old house's doors: into its flat, where a brum lives now
@@ -2726,7 +2732,7 @@ final class World {
                 if (concert == null) stayed = Concert.open(host, 0xC0C0L + (long) (time * 1000f));
                 break;
             case TO_HOME:
-                indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+                indoors = homeRoom();
                 indoors.enter(r, l[10] > 0.5f);
                 break;
             case TO_OLD:
@@ -3153,7 +3159,7 @@ final class World {
         if (craneSolo) {
             craneSolo = false;
             runner.getOut(runner.x, runner.y, runner.z, runner.heading);
-            indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+            indoors = homeRoom();
             indoors.enter(runner, false);
             runner.recenter();
             runner.update(0f, city, cars, walkers);
@@ -3524,7 +3530,7 @@ final class World {
         runner.getOut(runner.x, runner.y, runner.z, runner.heading);
         if (indoors != null) leave();
         swapT = -1f;
-        indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+        indoors = homeRoom();
         indoors.enter(runner, false);
         runner.recenter();
         runner.update(0f, city, cars, walkers);
@@ -4602,6 +4608,26 @@ final class World {
     }
 
     // ---- the black cherry: the hole in the collider hall (see Cherry) ----
+    /**
+     * Home's rooms, built once: they are the house itself, standing in the town (their walls its
+     * walls, its windows open on the street), drawn with the town while she is near, and the room
+     * she is in when she is inside.
+     */
+    private Indoors homeRoom;
+
+    Indoors homeRoom() {
+        if (homeRoom == null) homeRoom = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+        return homeRoom;
+    }
+
+    /** Whether home stands near enough (x, z) to be drawn with the town. */
+    private static boolean nearHome(float x, float z) {
+        float dx = x - City.HOME_DOOR_X, dz = z - City.HOME_DOOR_Z - City.HOME_HZ;
+        return dx * dx + dz * dz < HOME_SEEN * HOME_SEEN;
+    }
+
+    static final float HOME_SEEN = 260f;
+
     /** Where every game begins: so far before home's door, in its forecourt. */
     static final float START_BACK = 4.5f;
 
@@ -5172,6 +5198,15 @@ final class World {
     private void drawIndoors(DrawList d) {
         Runner r = runner;
         indoors.light(d);
+        boolean inHome = indoors.home;
+        if (inHome) {
+            // home stands in the town: the light from overhead over a wider ground, the town through
+            // its windows as far off as it goes, nothing of the room's dark round its lamps
+            d.sun(0.12f, 1f, 0.18f, indoors.wx(0f, indoors.deep * 0.5f), Indoors.FLOOR + 1.6f, indoors.wz(0f, indoors.deep * 0.5f), 48f, 48f, 4.6f);
+            d.fogStart = 40f;
+            d.fogScale = 260f;
+            d.spot[3] = 2000f;
+        }
         java.util.Arrays.fill(d.flat, 0);
         if (flatPx == null || flatPx.a != d.flat) flatPx = new Px(d.w, d.h, d.flat);
         Px f = flatPx;
@@ -5187,9 +5222,25 @@ final class World {
         // (with the dispatcher on, the eye is his, set above; else the lift's shot, or behind her)
         if (scene) setDrawn(d);
         else if (dispatch != null) {
-        } else if (standEye != null) d.camera(standEye[0], standEye[1], standEye[2], standEye[3], standEye[4], W * 1.2f, 0.03f, 80f);
-        else if (indoors.shot(eyeNow)) d.camera(eyeNow[0], eyeNow[1], eyeNow[2], eyeNow[3], eyeNow[4], W * 1.25f, 0.03f, 80f);
-        else d.camera(r.eyeX, r.eyeY, r.eyeZ, r.eyeYaw, r.eyePitch, W * 1.2f, 0.03f, 80f);
+        } else if (standEye != null) camIn(d, standEye, W * 1.2f, inHome);
+        else if (indoors.shot(eyeNow)) camIn(d, eyeNow, W * 1.25f, inHome);
+        else {
+            eyeHere[0] = r.eyeX;
+            eyeHere[1] = r.eyeY;
+            eyeHere[2] = r.eyeZ;
+            eyeHere[3] = r.eyeYaw;
+            eyeHere[4] = r.eyePitch;
+            camIn(d, eyeHere, W * 1.2f, inHome);
+        }
+        // in home, the town round it, seen through its windows and its doors
+        if (inHome && !scene && dispatch == null) {
+            float ex = (float) Math.sin(camAt[3]), ez = (float) Math.cos(camAt[3]);
+            city.draw(d, camAt[0], camAt[2], ex, ez);
+            cars.draw(d, camAt[0], camAt[2], ex, ez);
+            duty.draw(d, camAt[0], camAt[2], ex, ez, time, null);
+            walkers.draw(d, camAt[0], camAt[2], ex, ez);
+            pets.draw(d, camAt[0], camAt[2], ex, ez, walkers);
+        }
         if (!scene) {
         // the room, unless the eye has gone back into her head past its walls (she sits against one)
         if (dispatch == null || indoors.holds(eyeNow[0], eyeNow[2])) {
@@ -5283,6 +5334,14 @@ final class World {
         meter(f);
     }
 
+    private final float[] eyeHere = new float[5], camAt = new float[5];
+
+    /** The eye in a room (in home, far enough to see the town through its windows), kept as camAt. */
+    private void camIn(DrawList d, float[] e, float focal, boolean wide) {
+        System.arraycopy(e, 0, camAt, 0, 5);
+        d.camera(e[0], e[1], e[2], e[3], e[4], focal, wide ? 0.05f : 0.03f, wide ? 600f : 80f);
+    }
+
     /** While the engine is young: how long a frame takes, in milliseconds, and how finely it is drawn. */
     private void meter(Px f) {
         if (frameMs <= 0f) return;
@@ -5373,6 +5432,8 @@ final class World {
         fliers.strokes(d);
         float ex = (float) Math.sin(eyeYaw), ez = (float) Math.cos(eyeYaw);
         city.draw(d, eyeX, eyeZ, ex, ez);
+        // home: its rooms are its walls
+        if (nearHome(eyeX, eyeZ)) homeRoom().draw(d);
         Mountain.cabins(d, time);
         LabTop.deck(d, time, eyeX, eyeZ);
         labDrawn(d, r);

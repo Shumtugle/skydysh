@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.2
+
+- Home a part of the town: its rooms are the house itself, their walls its walls, its windows
+  open: from the street the rooms behind them, from the rooms the street, the garden, the shop,
+  the pickup in the forecourt. In and out at its doors with no dark between.
+
 ## 1.4.1
 
 - The opening's giant before the old house is the green brum who lives there, not her: his door,
