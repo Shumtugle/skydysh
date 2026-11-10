@@ -742,9 +742,9 @@ final class Herd {
             return true;
         }
         if (step == LEAP) {
-            out[0] = City.HOME_DOOR_X;
+            out[0] = City.OLD_DOOR_X;
             out[1] = City.SECRET_Y + 1f;
-            out[2] = City.HOME_DOOR_Z - 0.3f;
+            out[2] = City.OLD_DOOR_Z - 0.3f;
             return true;
         }
         if (step == LEVER) return false;

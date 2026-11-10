@@ -448,6 +448,8 @@ final class Indoors implements Ground {
     boolean lobby, given;
     /** Whether this is the collider hall under the mountain (see Collider), down the lobby's lift; whether the night shift is back on its chargers. */
     boolean collider, shiftBack;
+    /** Whether this is the old house's flat, where a brum lives now, on its sofa. */
+    boolean oldFlat;
     float sofaU, sofaV, sofaFaceU, sofaFaceV = -1f;
     /** Where the eye stands while she sits (across, in). */
     float sofaEyeU, sofaEyeV;

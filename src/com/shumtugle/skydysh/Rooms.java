@@ -959,6 +959,80 @@ final class Rooms {
     }
 
     /**
+     * The old house's flat, home's room before home moved, behind its front door; a brum lives in
+     * it now, on the sofa (drawn as the room goes on, see World). Its room: warm walls over teal panelling, a floor of boards, a
+     * coral rug; a back door of glass on the yard, so the room is a way through from the street
+     * to the yard as the house is from outside; against one side wall, wide enough for her, a
+     * teal sofa with cream cushions, a lamp on a little table at either end, a picture of the sea
+     * over it; a shelf of books on the other side wall; plants in the corners by the back door.
+     */
+    static Indoors oldFlat(float doorX, float doorZ) {
+        Indoors in = new Indoors(doorX, doorZ, 0f, -1f, 4.8f, 8.6f, 1, 4f, 2);
+        in.backDoor = true;
+        in.hasLift = false;
+        in.oldFlat = true;
+        in.frameColor = 0xC9A15A;
+        in.frameMat = DrawList.GOLD;
+        int wall = 0xF1E2C8, low = 0x2F8A86;
+        shell(in, 0xD9B48A, false, wall, low, DrawList.PAINT);
+        DrawList d = in.still();
+        float f = Indoors.FLOOR, w = Indoors.WALL, half = in.half, deep = in.deep;
+        // boards over the tiles, and the rug
+        in.box(d, 0f, f + 0.004f, deep * 0.5f, half, 0.004f, deep * 0.5f - w, 0xA8754A, DrawList.WOOD);
+        in.box(d, 0f, f + 0.01f, deep * 0.5f, 2.4f, 0.006f, 1.9f, 0xE0644A, DrawList.GRAIN);
+        in.box(d, 0f, f + 0.012f, deep * 0.5f, 2.0f, 0.006f, 1.5f, 0xF1C6A0, DrawList.GRAIN);
+        lamps(in, 2);
+        // the sofa, against the side wall across (+u), facing the shelf of books: its base, the
+        // seat cushions, the back, the arms
+        float sv = deep * 0.5f, su = half - 0.62f, sh = Indoors.SOFA_HALF;
+        in.sofaU = su;
+        in.sofaV = sv;
+        in.sofaFaceU = -1f;
+        in.sofaFaceV = 0f;
+        in.sofaEyeU = -(half - 1.3f);
+        in.sofaEyeV = sv - 2.0f;
+        int teal = 0x2F8A86, cream = 0xF1E8D4;
+        in.box(d, su, f + 0.22f, sv, 0.55f, 0.22f, sh, teal, DrawList.GRAIN);
+        for (int k = -1; k <= 1; k++)
+            in.box(d, su - 0.05f, f + 0.5f, sv + k * sh * 0.66f, 0.48f, 0.07f, sh * 0.32f, cream, DrawList.GRAIN);
+        in.box(d, half - 0.14f, f + 0.85f, sv, 0.14f, 0.42f, sh, teal, DrawList.GRAIN);
+        for (int k = -1; k <= 1; k += 2)
+            in.box(d, su, f + 0.4f, sv + k * (sh + 0.14f), 0.6f, 0.4f, 0.14f, Street.scale(teal, 0.85f), DrawList.GRAIN);
+        in.box(d, half - 0.34f, f + 0.82f, sv - sh * 0.6f, 0.07f, 0.22f, 0.28f, 0xE0644A, DrawList.GRAIN);
+        in.box(d, half - 0.34f, f + 0.8f, sv + sh * 0.55f, 0.07f, 0.2f, 0.26f, 0xF6B54A, DrawList.GRAIN);
+        in.solid(half - 1.2f, sv - sh - 0.3f, half, sv + sh + 0.3f, f + 0.62f);
+        // the little tables and their lamps
+        for (int k = -1; k <= 1; k += 2) {
+            float tv = sv + k * (sh + 0.75f);
+            in.box(d, su, f + 0.3f, tv, 0.3f, 0.3f, 0.3f, 0x7A5236, DrawList.WOOD);
+            in.box(d, su, f + 0.72f, tv, 0.04f, 0.12f, 0.04f, 0xC9A15A, DrawList.GOLD);
+            in.box(d, su, f + 0.98f, tv, 0.2f, 0.14f, 0.2f, 0xFFE2B0, DrawList.GLOW);
+            in.solid(su - 0.32f, tv - 0.32f, su + 0.32f, tv + 0.32f, f + 0.62f);
+        }
+        // over the sofa, the sea in a frame: sky, water, a sail
+        float pu = half - 0.03f, py = f + 2.45f;
+        in.box(d, pu, py, sv, 0.02f, 0.6f, 1.1f, 0x4A3220, DrawList.WOOD);
+        in.box(d, pu - 0.02f, py + 0.18f, sv, 0.01f, 0.34f, 1.0f, 0xF2C79A, DrawList.PLAIN);
+        in.box(d, pu - 0.02f, py - 0.3f, sv, 0.01f, 0.2f, 1.0f, 0x3F7F94, DrawList.PLAIN);
+        in.box(d, pu - 0.03f, py - 0.05f, sv - 0.3f, 0.01f, 0.24f, 0.1f, 0xFAF3E6, DrawList.PLAIN);
+        // a shelf of books along the other side wall
+        float bu = -(half - 0.22f), bv = deep * 0.5f;
+        in.box(d, bu, f + 1.1f, bv, 0.2f, 1.1f, 1.1f, 0x6A4A33, DrawList.WOOD);
+        int[] spines = {0xE0644A, 0x2F8A86, 0xF6B54A, 0xF1E8D4, 0x3A4660, 0x8A2E2A};
+        for (int r = 0; r < 3; r++)
+            for (int k = 0; k < 9; k++)
+                in.box(d, bu + 0.05f, f + 0.42f + r * 0.62f, bv - 0.85f + k * 0.21f, 0.15f, 0.2f + (k * 7 + r * 3) % 4 * 0.02f, 0.08f,
+                        spines[(k + r * 2) % spines.length], DrawList.PLAIN);
+        in.solid(-half, bv - 1.15f, -(half - 0.45f), bv + 1.15f, f + 4f);
+        Random rnd = new Random(0x40AEL);
+        // plants in the two corners by the back door
+        piece(in, rnd, PLANT, -1, deep - w - 0.6f, low);
+        piece(in, rnd, PLANT, 1, deep - w - 0.6f, low);
+        in.done();
+        return in;
+    }
+
+    /**
      * The hall no one knows of, behind the door of home's balcony on the fifth storey: dark green
      * walls railed in gold, a dark floor, a red runner to the end wall; on that wall, on a dark
      * board under lamps, the golden mallet; along each side, shelves of golden things won (little

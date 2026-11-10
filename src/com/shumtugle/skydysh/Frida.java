@@ -37,12 +37,24 @@ final class Frida {
     static boolean black;
     static final int BLACK = 0x2A2A2E, BLACK_DARK = 0x1C1C20;
     static final int SLATE = 0x6F8A94, SLATE_DARK = 0x557079;
+    /** Drawn as the brum who lives in the old house's flat: green brick where hers is red. */
+    static boolean green;
+    static final int GREEN = 0x4E9A4A, GREEN_DARK = 0x3A7A38;
     /**
      * Drawn as a hot brum, smouldering: the brick burnt to coal, the white of the dress gone to
      * ash, the face glowing from within like an ember, the eyes and the plate white hot.
      */
     static boolean hot;
     static final int HOT = 0x2E2220, HOT_DARK = 0x221816, ASH = 0x5E5450, EMBER = 0xF2561E, HOT_GLOW = 0xFFB060;
+
+    /** A block's color on the green brum: the brick green, and whatever else of hers is red or rust (its red and green swapped), the rest as it is. */
+    static int greened(int own) {
+        if (own == BRICK) return GREEN;
+        if (own == BRICK_DARK) return GREEN_DARK;
+        int r = (own >> 16) & 0xFF, g = (own >> 8) & 0xFF, b = own & 0xFF;
+        if (r > g + 40 && r > b + 40) return Street.scale((g << 16) | (r << 8) | b, 0.78f);
+        return own;
+    }
 
     /** A block's color as a rival's: the brick violet, the rest as it is. */
     static int rival(int own) {
@@ -430,9 +442,10 @@ final class Frida {
                 col = own == BRICK ? HOT : own == BRICK_DARK ? HOT_DARK : own == EYES || own == SHEM ? HOT_GLOW : own == SIGN ? 0x2A1208
                         : own == WHITE || own == LACE || own == POCKET ? ASH : own == FACE ? EMBER : own;
                 if (own == EYES || own == SHEM || own == FACE) mat = DrawList.GLOW;
-            } else if ((violet || slate || black) && !fire) {
+            } else if ((violet || slate || black || green) && !fire) {
                 int own = COL[i];
                 col = own == EYES ? EYES : slate ? (own == BRICK ? SLATE : own == BRICK_DARK ? SLATE_DARK : own)
+                        : green ? greened(own)
                         : black ? (own == BRICK ? BLACK : own == BRICK_DARK ? BLACK_DARK : own) : rival(own);
                 if (plate) mat = DrawList.PLAIN;
             }

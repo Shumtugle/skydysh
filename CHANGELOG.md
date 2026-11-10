@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.0
+
+- Home moves inland, to a quarter of its own, four blocks up from the shore and east: home alone
+  in its block, built as wide and deep as its rooms, two storeys tall, tall windows where the
+  rooms have theirs, a forecourt before it with the pickup's place (the pickup there once the
+  delivery is done), a garden behind, the pad for a copter on its roof. Across the street the
+  shop, beside it the taxis' stand, east of home the park.
+- The game begins in home's forecourt, before the door.
+- The old house on the shore stays as it was, its balcony and the hall behind it too; in its
+  flat a green brum lives now, on the sofa: the door from the street or the yard takes her in.
+
 ## 1.3.5
 
 - Home wide inside, as she is tall: a hall from the front door to the yard's, with a great cold

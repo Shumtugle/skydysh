@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.3.5";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.0";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -149,8 +149,8 @@ final class World {
         likes = host.loadInt(SAVE_LIKES);
         if (likes == 0) likes = host.loadInt(SAVE_MONEY);
         hearts.start(likes);
-        // every game begins at home: on the promenade across the shore road from its door, facing it
-        runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - City.CURB - 1.2f, 0f);
+        // every game begins at home: in its forecourt, a few steps before the door, facing it
+        runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.HOME_DOOR_Z - START_BACK, 0f);
         // the game begins with the runaways, straight from the dispatch, till that job is won once;
         // after it the town is hers, and the jobs are at home
         if (!passed(1)) {
@@ -292,8 +292,8 @@ final class World {
         errand = NO_ERRAND;
         runner.stopLead();
         host.sound(Synth.DOOR, 0.45f, 1f);
-        // out again, she stands where every game begins: on the promenade across from the door
-        runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.SHORE * City.CELL - City.CURB - 1.2f, 0f);
+        // out again, she stands where every game begins: in the forecourt before the door
+        runner.put(City.HOME_DOOR_X, City.WALK_TOP, City.HOME_DOOR_Z - START_BACK, 0f);
         runner.recenter();
         runner.update(0f, city, cars, walkers);
         int[] picks = nextChoice("home.next", "home.list");
@@ -1751,7 +1751,7 @@ final class World {
     // ---- doors: in from the street (or the yard), or down from a roof, a place indoors; out again ----
     static final float SWAP = 0.3f;          // the dark coming down at a door, and lifting again
     static final int TO_HALL = 1, TO_CABIN = 2, TO_ROOF = 3, TO_STREET = 4, TO_YARD = 5, TO_HOME = 6, TO_CONCERT = 7, TO_SECRET = 8, TO_LOBBY = 9, TO_TOWER = 10,
-            TO_COLLIDER = 11, TO_LOBBY_UP = 12;
+            TO_COLLIDER = 11, TO_LOBBY_UP = 12, TO_OLD = 13;
     /** The place indoors she is in; null out of doors. */
     Indoors indoors;
     private float swapT = -1f;
@@ -1857,6 +1857,16 @@ final class World {
             System.arraycopy(houseNow, 0, houseOf, 0, 8);
             host.sound(Synth.DOOR, 0.45f, 1f);
             go(TO_HOME);
+            return;
+        }
+        // the old house's doors: into its flat, where a brum lives now
+        if (City.oldHome(houseNow[0], houseNow[1])) {
+            liftArmed = false;
+            if (driving != null) getOut();
+            System.arraycopy(l, 0, liftOf, 0, 11);
+            System.arraycopy(houseNow, 0, houseOf, 0, 8);
+            host.sound(Synth.DOOR, 0.45f, 1f);
+            go(TO_OLD);
             return;
         }
         System.arraycopy(l, 0, liftOf, 0, 11);
@@ -2719,6 +2729,10 @@ final class World {
                 indoors = Rooms.home(City.HOME_DOOR_X, City.HOME_DOOR_Z);
                 indoors.enter(r, l[10] > 0.5f);
                 break;
+            case TO_OLD:
+                indoors = Rooms.oldFlat(City.OLD_DOOR_X, City.OLD_DOOR_Z);
+                indoors.enter(r, l[10] > 0.5f);
+                break;
             case TO_LOBBY:
                 indoors = Rooms.lobby(Mountain.MX, Mountain.DOOR_Z, colliderOpen());
                 indoors.enter(r, false);
@@ -2746,7 +2760,7 @@ final class World {
                 }
                 break;
             case TO_SECRET:
-                indoors = Rooms.secret(City.HOME_DOOR_X, City.HOME_DOOR_Z);
+                indoors = Rooms.secret(City.OLD_DOOR_X, City.OLD_DOOR_Z);
                 indoors.enter(r, false);
                 if (herd != null) herd.inHall();
                 // found the first time: the stream goes wild
@@ -2781,7 +2795,7 @@ final class World {
                 if (indoors != null && indoors.secret) {
                     // out of the hall's door onto the balcony, facing the sea
                     leave();
-                    r.put(City.HOME_DOOR_X, City.SECRET_Y, City.HOME_DOOR_Z - City.SECRET_DEEP + 0.6f, (float) Math.PI);
+                    r.put(City.OLD_DOOR_X, City.SECRET_Y, City.OLD_DOOR_Z - City.SECRET_DEEP + 0.6f, (float) Math.PI);
                     host.sound(Synth.DOOR, 0.35f, 0.9f);
                     break;
                 }
@@ -2799,7 +2813,7 @@ final class World {
                     break;
                 }
                 if (indoors != null && indoors.home) {
-                    // out of home's door onto the promenade side of the pavement, facing the sea
+                    // out of home's door onto its forecourt, facing the street and the shop
                     leave();
                     r.put(City.HOME_DOOR_X, City.WALK_TOP, City.HOME_DOOR_Z - OUT_STEP - 0.6f, (float) Math.PI);
                     liftArmed = false;
@@ -4588,6 +4602,12 @@ final class World {
     }
 
     // ---- the black cherry: the hole in the collider hall (see Cherry) ----
+    /** Where every game begins: so far before home's door, in its forecourt. */
+    static final float START_BACK = 4.5f;
+
+    /** Where the old flat's sofa seats its brum (x, y, z). */
+    private final float[] lodger = new float[3];
+
     /** The magnet a blow is on its way to (of Cherry.KNOCKED), or -1. */
     private int cherryAim = -1;
     private float cherryUntil;
@@ -5194,6 +5214,13 @@ final class World {
         }
         // the switch in the secret hall: down once the island is shut, going down as she throws it
         if (indoors.secret) Rooms.lever(d, indoors, Island.shut ? 1f : leverAt >= 0f ? Math.min(1f, leverAt / LEVER_S) : 0f);
+        // the old flat: the brum who lives there, on the sofa, looking at the room
+        if (indoors.oldFlat) {
+            indoors.seat(lodger);
+            Frida.green = true;
+            Frida.draw(d, lodger[0], lodger[1] - Runner.SEAT_DROP, lodger[2], indoors.seatHeading() + (float) Math.PI, Runner.SIZE, Frida.SIT, 0f);
+            Frida.green = false;
+        }
         // the collider hall: its ring, the hole and its jet, the chargers
         if (indoors.collider) Collider.live(d, Indoors.FLOOR, time, cherry, false, indoors.shiftBack);
         if (indoors.lobby && (dispatch == null || indoors.holds(eyeNow[0], eyeNow[2]))) {

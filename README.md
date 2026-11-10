@@ -240,8 +240,16 @@ water. Into the sea she wades, slowly, and where it is
 deep enough she swims high in the water, upright, her head and shoulders out, a slow breast
 stroke at the water's top (still, she settles slowly a little lower, never under), as far out
 as the open sea lets her; back in the shallows
-she stands up and wades out. Home is there, where the game begins: one large house with a tower and a lamp on
-top, the same in every town; its sign over the door takes her in, to a home far wider within than the house is without: a
+she stands up and wades out. The old house is there: one large house with a tower and a lamp on top,
+its balcony over the door; in its flat, through the door from the street or the yard, a green
+brum lives now, on the sofa. Home is inland, in a quarter of its own four blocks up from the
+shore and east, where the game begins: home stands alone in its block, two storeys of cream
+stucco, tall windows with teal shutters, a coral awning over the door, a forecourt before it
+behind a low hedge (the pickup's place marked out in it, the pickup there once the delivery is
+done), a garden behind it with trees, beds and benches, and on its flat roof the pad for a copter;
+across the street the shop (glass front, an orange band with a basket on it, trolleys), beside it
+the taxis' stand (black taxis in their bays, a shelter, the booth with its chequered roof), east
+of home the park. Home's sign over the door takes her in, to rooms as wide as the house: a
 hall down the middle from the door to a glass door at the back onto the yard (under home's sign
 there too), a great cold hearth of pale stone on its left wall, the sea in a great frame over it,
 the sofa facing it across a rug, a low table, armchairs, books; through doorways on the left the

@@ -1,0 +1,51 @@
+# Home's quarter: the start in its forecourt before the door; from above, home with the pad on its roof, its garden, the park; its front; the garden from behind; the shop across the street; the park; the roof; the taxis' stand; in at home's door; the old house's flat, the green brum on its sofa.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 14
+keep where 0
+restart
+free
+wait 1.5
+where
+shot d0
+eye 250 30 215 0.656 -0.35
+wait 0.1
+shot d1
+eye 288 3.5 250 0 0.1
+wait 0.1
+shot d2
+eye 300 8 318 -2.55 -0.27
+wait 0.1
+shot d3
+eye 300 6 266 3.6 -0.2
+wait 0.1
+shot d4
+eye 330 8 250 0.52 -0.18
+wait 0.1
+shot d5
+eye 288 30 255 0 -0.63
+wait 0.1
+shot d6
+eye 345 6 266 3.0 -0.25
+wait 0.1
+shot da
+eye off
+at 288 269.3 0
+wait 1.5
+where
+shot d7
+keep where 0
+restart
+free
+at 32 7.2 0
+wait 1.5
+where
+shot d8
+inroom -3.8 1.2
+face -1.5708
+wait 0.6
+shot d9
+eye 35 2.2 13.25 -1.5708 -0.15
+wait 0.1
+shot db

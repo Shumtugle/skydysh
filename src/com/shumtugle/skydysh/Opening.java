@@ -31,8 +31,8 @@ final class Opening {
     static final float WHITE_AT = HIT + 0.4f, LENGTH = WHITE_AT + 0.25f;
     static final float SIZE = Runner.SIZE * 2.5f, MALLET = Toss.SCALE / Runner.SIZE * SIZE;
     static final float FLOOR = 0f;                    // the shore road
-    // where she stands: in the shore road before home's door, facing the sea
-    static final float OX = City.HOME_DOOR_X, OZ = City.HOME_J * City.CELL;
+    // where she stands: in the shore road before the old house's door, facing the sea
+    static final float OX = City.OLD_DOOR_X, OZ = City.OLD_J * City.CELL;
     static final String WORD = "SKYDYSH";
 
     float t;

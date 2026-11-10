@@ -110,14 +110,33 @@ final class City implements Ground {
         return z < SHORE * CELL + PARAPET - PARAPET_HALF && !overWater(x, z);
     }
 
-    /** Where home is: the south row of the block by the shore road where the game begins. */
-    static final int HOME_I = 0, HOME_J = SHORE;
+    /**
+     * Where home was, and the old house still stands: the south row of the block by the shore
+     * road, where the opening is seen; its balcony over the door, and in its flat now a brum who
+     * lives there. Its storeys, its tower.
+     */
+    static final int OLD_I = 0, OLD_J = SHORE;
     static final int HOME_STOREYS = 8;
     static final float HOME_TOWER = 7f;
-    /** Home's door, in the middle of its front, on the shore road; the way out from it is -z, to the sea. */
-    static final float HOME_DOOR_X = HOME_I * CELL + CELL * 0.5f, HOME_DOOR_Z = HOME_J * CELL + FRONT;
+    /** The old house's door, in the middle of its front, on the shore road; the way out from it is -z, to the sea. */
+    static final float OLD_DOOR_X = OLD_I * CELL + CELL * 0.5f, OLD_DOOR_Z = OLD_J * CELL + FRONT;
     /**
-     * The balcony on home's sea front, over the door on the fifth storey: no way up to it but
+     * Where home is: its own quarter inland, four blocks: home's (see homeBlock), the park east of
+     * it, the shop across the street from its door, the taxis' stand beside the shop. Home stands
+     * alone in its block, back from the street behind a forecourt so deep (the pickup's place in
+     * it), as wide and as deep as its rooms are (see Rooms.home), so high, the pad on its roof.
+     */
+    static final int HOME_I = 4, HOME_J = 4, PARK_I = 5, PARK_J = 4, SHOP_I = 4, SHOP_J = 3, TAXI_I = 5, TAXI_J = 3;
+    static final float HOME_SET_BACK = 6f, HOME_HX = Rooms.HOME_HALF + 0.4f, HOME_HZ = Rooms.HOME_DEEP * 0.5f, HOME_HIGH = 9.5f;
+    /** Home's door, in the middle of its front, on its forecourt; the way out from it is -z, to the shop across the street. */
+    static final float HOME_DOOR_X = HOME_I * CELL + CELL * 0.5f, HOME_DOOR_Z = HOME_J * CELL + FRONT + HOME_SET_BACK;
+
+    /** Whether cell (i, j) is one of home's quarter built by hand: home's block, the shop's, the taxis'. */
+    static boolean quarter(int i, int j) {
+        return i == HOME_I && j == HOME_J || i == SHOP_I && j == SHOP_J || i == TAXI_I && j == TAXI_J;
+    }
+    /**
+     * The balcony on the old house's sea front, over the door on the fifth storey: no way up to it but
      * through the air (a long glide, the island's top the place to leap from), and in at its door,
      * warm light through the gap, the hall no one knows of. Its floor; half across; how deep.
      */
@@ -125,14 +144,15 @@ final class City implements Ground {
 
     /** Whether (x, y, z) is on the secret balcony, near its door. */
     static boolean atSecretDoor(float x, float y, float z) {
-        return Math.abs(x - HOME_DOOR_X) < SECRET_HALF - 0.3f && z > HOME_DOOR_Z - 0.9f && z < HOME_DOOR_Z && Math.abs(y - SECRET_Y) < 0.3f;
+        return Math.abs(x - OLD_DOOR_X) < SECRET_HALF - 0.3f && z > OLD_DOOR_Z - 0.9f && z < OLD_DOOR_Z && Math.abs(y - SECRET_Y) < 0.3f;
     }
 
-    /** Whether (x, z) is kept clear of lamps, parked cars and palms: the way from home's door straight out to the sea, the bays. */
+    /** Whether (x, z) is kept clear of lamps, parked cars and palms: the way from the old house's door straight out to the sea, home's way in, the bays. */
     static boolean keptClear(float x, float z) {
-        if (Math.abs(x - HOME_DOOR_X) < 4.5f && z < HOME_DOOR_Z && z > HOME_J * CELL + PARAPET) return true;
-        // home's own pickup's place at the curb
-        if (Math.abs(x - HOME_PICKUP_X) < 4f && z > HOME_J * CELL + ROAD * 0.5f && z < HOME_J * CELL + CURB) return true;
+        if (Math.abs(x - OLD_DOOR_X) < 4.5f && z < OLD_DOOR_Z && z > OLD_J * CELL + PARAPET) return true;
+        // the way from home's forecourt across the street to the shop, and the pickup's way in
+        if (Math.abs(x - HOME_DOOR_X) < 4.5f && z > HOME_J * CELL - CURB - 0.5f && z < HOME_J * CELL + FRONT) return true;
+        if (Math.abs(x - HOME_PICKUP_X) < 4f && z > HOME_J * CELL - 0.5f && z < HOME_J * CELL + FRONT) return true;
         // and the bays before the factory's and the store's gates, and the vets' door
         for (int k = 0; k < 2; k++)
             if (Math.abs(x - gateX(k == 0)) < 7f && z > SHORE * CELL - 0.5f && z < SHORE * CELL + FRONT) return true;
@@ -148,7 +168,7 @@ final class City implements Ground {
      * factory west of home, the store east of it, each the south row of its block, a gate in its
      * middle and a bay painted on the road before it where a pickup stands to be loaded or unloaded.
      */
-    static final int FACTORY_I = HOME_I - 4, STORE_I = HOME_I + 5;
+    static final int FACTORY_I = OLD_I - 4, STORE_I = OLD_I + 5;
     /** The port: the container yard by the store, its crane over it. */
     static final int PORT_I = STORE_I + 1, PORT_J = SHORE;
     // the bay: half its length along the road, and its middle across it (in the lane by the gate)
@@ -169,7 +189,7 @@ final class City implements Ground {
      * from the shore road, one block east of home's; a bay painted on the street before its door,
      * where a pickup stands to hand in what it brings.
      */
-    static final int CLINIC_I = HOME_I + 1, CLINIC_J = SHORE + 3;
+    static final int CLINIC_I = OLD_I + 1, CLINIC_J = SHORE + 3;
 
     static float clinicDoorX() {
         return CLINIC_I * CELL + CELL * 0.5f;
@@ -296,7 +316,12 @@ final class City implements Ground {
 
     /** Whether (x, z) is within home's walls. */
     static boolean home(float x, float z) {
-        float x0 = HOME_I * CELL + FRONT, z0 = HOME_J * CELL + FRONT;
+        return Math.abs(x - HOME_DOOR_X) < HOME_HX && z > HOME_DOOR_Z && z < HOME_DOOR_Z + 2f * HOME_HZ;
+    }
+
+    /** Whether (x, z) is within the old house's walls. */
+    static boolean oldHome(float x, float z) {
+        float x0 = OLD_I * CELL + FRONT, z0 = OLD_J * CELL + FRONT;
         return x > x0 && x < x0 + CELL - 2f * FRONT && z > z0 && z < z0 + DEPTH;
     }
 
@@ -631,9 +656,12 @@ final class City implements Ground {
         if (sea(j) || oldTown(i, j)) return false;
         // the park with the water tower, a landmark seen from far off
         if (i == TOWER_I && j == TOWER_J) return true;
-        // across the street from home, a square with a fountain; the runner's own block, houses
-        if (i == HOME_I - 1 && j == HOME_J) return true;
+        // across the street from the old house, a square with a fountain; the old house's own block, houses
+        if (i == OLD_I - 1 && j == OLD_J) return true;
         if (i == 0 && j == 0) return false;
+        // home's quarter: the park, and the blocks built by hand
+        if (i == PARK_I && j == PARK_J) return true;
+        if (quarter(i, j)) return false;
         if (j == SHORE && (i == FACTORY_I || i == STORE_I)) return false;
         if (i == TOWNHALL_I && j == TOWNHALL_J || i == ARCHIVE_I && j == ARCHIVE_J) return false;
         return (hash(i, j, 1) & 0xFF) < 30;
@@ -661,6 +689,7 @@ final class City implements Ground {
     boolean seeded(int i, int j) {
         if (sea(j) || country(j)) return false;
         if (Math.abs(i) <= 1 && Math.abs(j) <= 1) return false;
+        if (Math.abs(i - HOME_I) <= 1 && Math.abs(j - HOME_J) <= 1) return false;
         // one always at the curb by the archive
         if (i == ARCHIVE_I && j == ARCHIVE_J) return true;
         return ((hash(i, j, 7) >>> 24) % 5) == 0;
@@ -673,9 +702,9 @@ final class City implements Ground {
     /** Where cell (i, j)'s duty pickup stands: x, z, heading. */
     static void dutyPlace(int i, int j, float[] out) {
         if (i == HOME_I && j == HOME_J) {
-            // home's: on the shore road, on home's side of it, facing west
+            // home's: in its place in the forecourt, beside the door, facing west
             out[0] = HOME_PICKUP_X;
-            out[1] = SHORE * CELL + PARKED;
+            out[1] = HOME_J * CELL + FRONT + HOME_SET_BACK * 0.5f;
             out[2] = (float) (-Math.PI / 2);
             return;
         }
@@ -1314,7 +1343,8 @@ final class City implements Ground {
     /** Whether a square is a garden within an iron fence rather than paving round a fountain. */
     boolean garden(int i, int j) {
         if (i == TOWER_I && j == TOWER_J) return true;
-        if (i == HOME_I - 1 && j == HOME_J) return false;
+        if (i == OLD_I - 1 && j == OLD_J) return false;
+        if (i == PARK_I && j == PARK_J) return true;
         return (hash(i, j, 5) & 1) == 0;
     }
 
@@ -1418,7 +1448,7 @@ final class City implements Ground {
 
     /** Whether the beach of the cell along column i has its rocks and its fisherman. */
     boolean rocky(int i) {
-        return Math.floorMod(hash(i, -1, 23), 3) == 0 && i != HOME_I;
+        return Math.floorMod(hash(i, -1, 23), 3) == 0 && i != OLD_I;
     }
 
     /**
@@ -1536,8 +1566,8 @@ final class City implements Ground {
         float a = FRONT, b = CELL - FRONT;
         // the south and north rows run the whole way; the west and east rows fit between them
         // the yard: open, an arch through a house of the south or the north row, or shut in
-        // home's block has its arch, if any, on the north
-        boolean mine = i == HOME_I && j == HOME_J;
+        // the old house's block has its arch, if any, on the north
+        boolean mine = i == OLD_I && j == OLD_J;
         boolean open = arched(i, j), north = mine || ((hash(i, j, 8) >>> 9) & 1) == 0;
         boolean works = j == SHORE && (i == FACTORY_I || i == STORE_I);
         if (works) north = true;
@@ -1545,13 +1575,20 @@ final class City implements Ground {
             port(c, rnd, x0, z0);
             return;
         }
+        if (i == HOME_I && j == HOME_J) {
+            homeBlock(c, rnd, x0, z0);
+            return;
+        }
+        // the shop and the taxis' stand: their own north row, the yard behind shut in
+        boolean shop = i == SHOP_I && j == SHOP_J, taxis = i == TAXI_I && j == TAXI_J;
+        if (shop || taxis) open = false;
         // the archive's garden: a way in under an arch through the north row
         boolean archive = i == ARCHIVE_I && j == ARCHIVE_J;
         if (archive) {
             open = true;
             north = true;
         }
-        if (mine) home(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
+        if (mine) oldHouse(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else if (works && i == FACTORY_I) factory(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else if (works) store(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else if (i == CLINIC_I && j == CLINIC_J) clinic(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
@@ -1559,7 +1596,9 @@ final class City implements Ground {
         else if (i == TOWNHALL_I && j == TOWNHALL_J) townHall(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else if (archive) archive(c, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH);
         else row(c, rnd, x0 + a, x0 + b, z0 + a, z0 + a + DEPTH, true, -1, open && !north);
-        row(c, rnd, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b, true, 1, open && north);
+        if (shop) shop(c, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b);
+        else if (taxis) taxis(c, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b);
+        else row(c, rnd, x0 + a, x0 + b, z0 + b - DEPTH, z0 + b, true, 1, open && north);
         row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + a, x0 + a + DEPTH, false, -1, false);
         if (i == WORKSHOP_I && j == WORKSHOP_J) workshop(c, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b);
         else row(c, rnd, z0 + a + DEPTH, z0 + b - DEPTH, x0 + b - DEPTH, x0 + b, false, 1, false);
@@ -2182,7 +2221,7 @@ final class City implements Ground {
      * middle, over the door, a tower two storeys higher, a balcony across it, a stepped turquoise cap
      * and an amber lamp on top. A way in at the front under a coral awning, a hall through to the yard.
      */
-    private void home(Cell c, float x0, float x1, float z0, float z1) {
+    private void oldHouse(Cell c, float x0, float x1, float z0, float z1) {
         DrawList d = c.boxes, small = c.detail;
         float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f;
         float height = 3.3f * (HOME_STOREYS + 1) + 0.5f, fz = z0;
@@ -2266,6 +2305,240 @@ final class City implements Ground {
         c.house(cx, cz, hx, hz, height + 0.5f, 0f, -1f, DOOR);
     }
 
+    /**
+     * Home's block: no rows of houses round it; home stands alone, back from the street behind its
+     * forecourt (paving, a low hedge along the pavement with a gap for the way in and a wider one
+     * for the pickup, its place marked out), paths of paving down either side, and behind it a
+     * garden to the next street (a lawn, hedges along its sides, trees, beds, benches, a gap in
+     * its north hedge for the way in from that street).
+     */
+    private void homeBlock(Cell c, Random rnd, float x0, float z0) {
+        DrawList d = c.boxes, small = c.detail;
+        float y = WALK_TOP, bx0 = x0 + FRONT, bx1 = x0 + CELL - FRONT, bz0 = z0 + FRONT, bz1 = z0 + CELL - FRONT;
+        float hx0 = HOME_DOOR_X - HOME_HX, hx1 = HOME_DOOR_X + HOME_HX, hz0 = HOME_DOOR_Z, hz1 = HOME_DOOR_Z + 2f * HOME_HZ;
+        int paving = 0xC9BFAE, grass = 0x5E8A44, white = 0xF4EEE2;
+        // the forecourt and the paths either side of the house
+        d.box((bx0 + bx1) * 0.5f, y + 0.005f, (bz0 + hz0) * 0.5f, (bx1 - bx0) * 0.5f, 0.006f, (hz0 - bz0) * 0.5f, null, paving, DrawList.PAVING);
+        for (int e = -1; e <= 1; e += 2) {
+            float a = e < 0 ? bx0 : hx1, b = e < 0 ? hx0 : bx1;
+            d.box((a + b) * 0.5f, y + 0.005f, (hz0 + hz1) * 0.5f, (b - a) * 0.5f, 0.006f, (hz1 - hz0) * 0.5f, null, paving, DrawList.PAVING);
+        }
+        // the pickup's place: a white frame on the paving
+        float px = HOME_PICKUP_X, pz = HOME_J * CELL + FRONT + HOME_SET_BACK * 0.5f;
+        for (int e = -1; e <= 1; e += 2) {
+            small.box(px + e * 2.9f, y + 0.014f, pz, 0.06f, 0.004f, 1.5f, null, white, DrawList.PAINT);
+            small.box(px, y + 0.014f, pz + e * 1.5f, 2.9f, 0.004f, 0.06f, null, white, DrawList.PAINT);
+        }
+        // the hedge along the pavement: gaps for the door's way and for the pickup
+        float hedgeZ = bz0 + 0.45f, gap = 2.2f, wide = 3.6f;
+        float[] cuts = {bx0, HOME_DOOR_X - gap, HOME_DOOR_X + gap, px - wide, px + wide, bx1};
+        for (int k = 0; k < cuts.length; k += 2) {
+            if (cuts[k + 1] - cuts[k] < 0.3f) continue;
+            Garden.hedge(d, cuts[k], hedgeZ - 0.4f, cuts[k + 1], hedgeZ + 0.4f, y, 0.9f);
+            c.wall(cuts[k], hedgeZ - 0.4f, cuts[k + 1], hedgeZ + 0.4f, y + 0.9f);
+        }
+        // the garden: the lawn; hedges along its sides and its north edge (a gap in the middle)
+        d.box((bx0 + bx1) * 0.5f, y + 0.008f, (hz1 + bz1) * 0.5f, (bx1 - bx0) * 0.5f, 0.008f, (bz1 - hz1) * 0.5f, null, grass, DrawList.GRASS);
+        for (int e = -1; e <= 1; e += 2) {
+            float hx = e < 0 ? bx0 + 0.45f : bx1 - 0.45f;
+            Garden.hedge(d, hx - 0.4f, hz0, hx + 0.4f, bz1, y, 1.1f);
+            c.wall(hx - 0.4f, hz0, hx + 0.4f, bz1, y + 1.1f);
+            float a = HOME_DOOR_X + e * 2.2f, b = e < 0 ? bx0 : bx1;
+            Garden.hedge(d, Math.min(a, b), bz1 - 0.85f, Math.max(a, b), bz1 - 0.05f, y, 1.1f);
+            c.wall(Math.min(a, b), bz1 - 0.85f, Math.max(a, b), bz1 - 0.05f, y + 1.1f);
+        }
+        // a path of paving from the back door to the gap, trees and beds either side, benches
+        d.box(HOME_DOOR_X, y + 0.012f, (hz1 + bz1) * 0.5f, 1.2f, 0.006f, (bz1 - hz1) * 0.5f, null, paving, DrawList.PAVING);
+        Random deco = new Random(0x40EEL);
+        for (int e = -1; e <= 1; e += 2) {
+            for (int k = 0; k < 2; k++) {
+                float tx = HOME_DOOR_X + e * (9f + k * 9f), tz = hz1 + 6f + (k & 1) * 4f;
+                tree(c, small, deco, tx, y, tz, 7.5f + deco.nextFloat() * 2f);
+                c.wall(tx - 0.3f, tz - 0.3f, tx + 0.3f, tz + 0.3f);
+            }
+            float bx = HOME_DOOR_X + e * 5f;
+            Garden.bed(d, deco, bx - 1.8f, hz1 + 2f, bx + 1.8f, hz1 + 3.6f, y);
+            c.wall(bx - 1.8f, hz1 + 2f, bx + 1.8f, hz1 + 3.6f, y + 0.4f);
+            bench(c, HOME_DOOR_X + e * 3.2f, y, bz1 - 4f, e < 0 ? (float) (Math.PI / 2) : (float) (-Math.PI / 2));
+            c.wall(HOME_DOOR_X + e * 3.2f - 0.3f, bz1 - 4.9f, HOME_DOOR_X + e * 3.2f + 0.3f, bz1 - 3.1f, y + 0.48f);
+        }
+        villa(c, hx0, hx1, hz0, hz1);
+    }
+
+    /**
+     * Home: two storeys tall, plain cream stucco on a stone plinth, stone pilasters at its corners,
+     * a teal cornice, a parapet round its flat roof and on the roof the pad (a ring and its letter)
+     * for a copter to come down on; tall windows where its rooms have them (see Rooms.home), white
+     * frames, teal shutters, stone sills; the door in the middle of the front under a coral awning,
+     * pots either side; the glass door at the back on the garden.
+     */
+    private void villa(Cell c, float x0, float x1, float z0, float z1) {
+        DrawList d = c.boxes, small = c.detail;
+        float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f, h = HOME_HIGH, y = WALK_TOP;
+        int cream = 0xF1E6CF, plinth = 0xD9CBB0, coral = 0xE9765B, teal = 0x3FAFA6, rail = 0x2B2A2C;
+        d.box(cx, h * 0.5f, cz, hx, h * 0.5f, hz, null, cream, DrawList.PLAIN);
+        d.box(cx, 0.5f, cz, hx + 0.06f, 0.5f, hz + 0.06f, null, plinth, DrawList.STONE);
+        for (int a = -1; a <= 1; a += 2)
+            for (int b = -1; b <= 1; b += 2) d.box(cx + a * (hx - 0.3f), h * 0.5f, cz + b * (hz - 0.3f), 0.45f, h * 0.5f, 0.45f, null, plinth, DrawList.STONE);
+        d.box(cx, h - 0.3f, cz, hx + 0.16f, 0.3f, hz + 0.16f, null, teal, DrawList.PLAIN);
+        d.box(cx, 4.95f, cz, hx + 0.08f, 0.1f, hz + 0.08f, null, plinth, DrawList.STONE);
+        // the roof: gravel, the parapet round it, the pad in its middle
+        d.box(cx, h + 0.02f, cz, hx - 0.1f, 0.02f, hz - 0.1f, null, 0x8C8A84, DrawList.GRAVEL);
+        for (int e = -1; e <= 1; e += 2) {
+            d.box(cx, h + 0.45f, cz + e * (hz - 0.1f), hx, 0.45f, 0.12f, null, plinth, DrawList.STONE);
+            d.box(cx + e * (hx - 0.1f), h + 0.45f, cz, 0.12f, 0.45f, hz, null, plinth, DrawList.STONE);
+            c.wall(x0, cz + e * (hz - 0.1f) - 0.12f, x1, cz + e * (hz - 0.1f) + 0.12f, h + 0.9f, h);
+            c.wall(cx + e * (hx - 0.1f) - 0.12f, z0, cx + e * (hx - 0.1f) + 0.12f, z1, h + 0.9f, h);
+        }
+        d.box(cx, h + 0.05f, cz, 7.2f, 0.02f, 7.2f, null, 0x3E4246, DrawList.PAINT);
+        pad(small, cx, h + 0.08f, cz, 6f, 0xF2EAD6);
+        for (int k = 0; k < 12; k++) {
+            float a = k * 0.5236f;
+            small.box(cx + (float) Math.sin(a) * 6.9f, h + 0.12f, cz + (float) Math.cos(a) * 6.9f, 0.12f, 0.06f, 0.12f, null, 0xFFB347, DrawList.GLOW);
+        }
+        // the windows, where the rooms have theirs (in the rooms' frame across is +x to -x): the
+        // front, the back, the east side (the rooms' left), the west (their right)
+        float lo = y + 1.15f, hi = y + 4.55f, kitchenLo = y + 1.65f, kitchenHi = y + 3.85f;
+        float[] front = {-4.6f, 4.6f, -12f, 10f, 14f}, back = {-4.6f, 4.6f, -12f};
+        for (float u : front) window(d, cx - u, z0, true, -1, lo, hi, 1.1f);
+        for (float u : back) window(d, cx - u, z1, true, 1, lo, hi, 1.1f);
+        window(d, cx - 12f, z1, true, 1, kitchenLo, kitchenHi, 1f);
+        for (float v : new float[] {12.4f, 22.4f}) window(d, z0 + v, x1, false, 1, lo, hi, 1f);
+        for (float v : new float[] {3f, 9f}) window(d, z0 + v, x0, false, -1, lo, hi, 1f);
+        window(d, z0 + 21.4f, x0, false, -1, kitchenLo, kitchenHi, 0.9f);
+        // the upper storey's windows, small, all along the front and the back, a balcony's rail over the door
+        for (float u = -14f; u <= 14.1f; u += 4f) {
+            window(d, cx + u, z0, true, -1, 5.7f, 7.6f, 0.7f);
+            window(d, cx + u, z1, true, 1, 5.7f, 7.6f, 0.7f);
+        }
+        small.box(cx, 5.15f, z0 - 0.75f, 3.2f, 0.08f, 0.75f, null, plinth, DrawList.STONE);
+        small.box(cx, 6.1f, z0 - 1.45f, 3.2f, 0.03f, 0.03f, null, rail, DrawList.RAIL);
+        for (float u = -3.2f; u <= 3.21f; u += 0.4f) small.box(cx + u, 5.65f, z0 - 1.45f, 0.02f, 0.45f, 0.02f, null, rail, DrawList.RAIL);
+        // the doors: the front one under the awning, pots either side; the glass one on the garden
+        liftDoor(d, cx, z0, true, -1);
+        liftDoor(d, cx, z1, true, 1);
+        Street.awning(small, true, z0, -1, 3.4f, cx, 1.8f, coral, true);
+        c.wall(cx - 1.8f, z0 - 1.05f, cx + 1.8f, z0, 3.4f, 2.75f);
+        Random deco = new Random(0x4D1EL);
+        for (int e = -1; e <= 1; e += 2) {
+            float qx = cx + e * 2.6f, qz = z0 - 0.55f;
+            Garden.pot(small, deco, qx, WALK_TOP, qz, 0.42f);
+            c.wall(qx - 0.4f, qz - 0.4f, qx + 0.4f, qz + 0.4f, WALK_TOP + 0.9f);
+        }
+        // to stand on: the house, its roof
+        c.wall(x0, z0, x1, z1, h + 0.05f);
+        c.house(cx, cz, hx, hz, h + 0.05f, 0f, -1f, DOOR);
+    }
+
+    /**
+     * A tall window in a wall at v (a front if alongX, else a side), its middle at u along the
+     * wall, facing side: dark glass, a white frame and bar, teal shutters either side, a sill.
+     */
+    private static void window(DrawList d, float u, float v, boolean alongX, int side, float y0, float y1, float hw) {
+        float yc = (y0 + y1) * 0.5f, hy = (y1 - y0) * 0.5f, out = v + side * 0.02f;
+        boxUV(d, u, yc, out, hw + 0.1f, hy + 0.1f, 0.04f, alongX, 0xF4EEE2, DrawList.PLAIN);
+        boxUV(d, u, yc, out + side * 0.03f, hw, hy, 0.03f, alongX, 0x24323A, DrawList.GLASS);
+        boxUV(d, u, yc, out + side * 0.06f, 0.04f, hy, 0.02f, alongX, 0xF4EEE2, DrawList.PLAIN);
+        boxUV(d, u, yc + hy * 0.2f, out + side * 0.06f, hw, 0.04f, 0.02f, alongX, 0xF4EEE2, DrawList.PLAIN);
+        for (int e = -1; e <= 1; e += 2)
+            boxUV(d, u + e * (hw + 0.45f), yc, out + side * 0.03f, 0.32f, hy, 0.03f, alongX, 0x3FAFA6, DrawList.PAINT);
+        boxUV(d, u, y0 - 0.08f, out + side * 0.12f, hw + 0.2f, 0.07f, 0.14f, alongX, 0xD9CBB0, DrawList.STONE);
+    }
+
+    /**
+     * The shop: the north row of its block, across the street from home's door: one tall storey of
+     * glass on the street in a frame of white, shelves and their goods seen through it, the doors in
+     * the middle, a deep orange band over the front with a great basket on it in white; trolleys
+     * in a row by the door, a bench, planters.
+     */
+    private void shop(Cell c, float x0, float x1, float z0, float z1) {
+        DrawList d = c.boxes, small = c.detail;
+        float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f, hx = (x1 - x0) * 0.5f, hz = (z1 - z0) * 0.5f, h = 7f, y = WALK_TOP, fz = z1;
+        int white = 0xF2EEE6, orange = 0xF08A2E, glass = 0x2A3A44, steel = 0xB2BAC0;
+        d.box(cx, h * 0.5f, cz, hx, h * 0.5f, hz, null, white, DrawList.PLAIN);
+        roof(c, d, null, cx, h, cz, hx, hz, 0x2F);
+        // the glass front, its posts; the goods on shelves behind it
+        float gh = 4.2f;
+        d.box(cx, y + gh * 0.5f, fz + 0.05f, hx - 1f, gh * 0.5f, 0.04f, null, glass, DrawList.GLASS);
+        for (float u = -hx + 1f; u <= hx - 0.99f; u += 3.5f) d.box(cx + u, y + gh * 0.5f, fz + 0.09f, 0.08f, gh * 0.5f, 0.05f, null, white, DrawList.PLAIN);
+        int[] goods = {0xE0644A, 0xF6B54A, 0x2F8A86, 0xF1E8D4, 0x6E9DB0, 0x9DBB8E, 0xB5352C};
+        for (float u = -hx + 2.5f; u < hx - 2f; u += 3.5f) {
+            if (Math.abs(u) < 3f) continue;
+            for (int r = 0; r < 3; r++) d.box(cx + u, y + 0.8f + r * 1.0f, fz - 1.2f, 1.4f, 0.3f, 0.35f, null, goods[(int) Math.abs(u * 3 + r) % goods.length], DrawList.PLAIN);
+        }
+        // the doors, the band over the front, the basket on it
+        d.box(cx, y + 1.4f, fz + 0.1f, 1.6f, 1.4f, 0.05f, null, 0x1D2730, DrawList.GLASS);
+        d.box(cx, y + gh + 0.9f, fz + 0.25f, hx + 0.1f, 0.9f, 0.25f, null, orange, DrawList.PAINT);
+        float by = y + gh + 0.9f, bz = fz + 0.52f;
+        small.box(cx, by - 0.2f, bz, 1.1f, 0.35f, 0.03f, null, white, DrawList.PAINT);
+        small.box(cx, by + 0.3f, bz, 1.35f, 0.08f, 0.03f, null, white, DrawList.PAINT);
+        for (int e = -1; e <= 1; e += 2) small.box(cx + e * 0.75f, by + 0.5f, bz, 0.06f, 0.25f, 0.03f, yawFrame(0f), white, DrawList.PAINT);
+        small.box(cx, by + 0.72f, bz, 0.8f, 0.06f, 0.03f, null, white, DrawList.PAINT);
+        for (int e = -1; e <= 1; e += 2) small.box(cx + e * 0.6f, by - 0.7f, bz, 0.14f, 0.14f, 0.03f, null, white, DrawList.PAINT);
+        // the trolleys in a row by the door, nested
+        for (int k = 0; k < 5; k++) {
+            float tx = cx + 3.4f + k * 0.35f, tz = fz + 1.4f;
+            small.box(tx, y + 0.75f, tz, 0.3f, 0.3f, 0.45f, null, steel, DrawList.RAIL);
+            small.box(tx, y + 1.1f, tz + 0.5f, 0.3f, 0.03f, 0.03f, null, 0xE0644A, DrawList.PAINT);
+            small.box(tx, y + 0.2f, tz, 0.25f, 0.06f, 0.4f, null, 0x3A3B40, DrawList.PLAIN);
+        }
+        c.wall(cx + 3.0f, fz + 0.8f, cx + 5.2f, fz + 2.1f, y + 1.2f);
+        bench(c, cx - 5f, y, fz + 1.5f, 0f);
+        c.wall(cx - 5.9f, fz + 1.2f, cx - 4.1f, fz + 1.8f, y + 0.48f);
+        Random deco = new Random(0x5409L);
+        for (int e = -1; e <= 1; e += 2) {
+            float qx = cx + e * (hx - 2f), qz = fz + 1.1f;
+            Garden.pot(small, deco, qx, y, qz, 0.5f);
+            c.wall(qx - 0.5f, qz - 0.5f, qx + 0.5f, qz + 0.5f, y + 1f);
+        }
+        c.wall(x0, z0, x1, z1, h + 0.5f);
+        c.house(cx, cz, hx, hz, h + 0.5f, 0f, 1f, 0f);
+    }
+
+    /**
+     * The taxis' stand: the north row of its block left open, a lot on the street, paved, its
+     * bays painted, the taxis waiting in them, a long shelter of glass on posts along its back,
+     * the dispatcher's booth at its end, its roof a sign in black and yellow squares, a bench.
+     */
+    private void taxis(Cell c, float x0, float x1, float z0, float z1) {
+        DrawList d = c.boxes, small = c.detail;
+        float cx = (x0 + x1) * 0.5f, hx = (x1 - x0) * 0.5f, y = WALK_TOP;
+        int white = 0xF4EEE2, yellow = Cars.TAXI_YELLOW, black = 0x1E1E22, steel = 0xB2BAC0;
+        // the lot paved as the pavement is, a wall along its back shutting the yard in
+        d.box(cx, 1.4f, z0 + 0.2f, hx, 1.4f, 0.2f, null, 0xD9CBB0, DrawList.STONE);
+        c.wall(x0, z0, x1, z0 + 0.4f, 2.8f);
+        // the bays, the taxis in them facing the street
+        for (int k = 0; k < 7; k++) {
+            float bx = x0 + 4f + k * 5.4f;
+            small.box(bx - 2.7f, y + 0.012f, z0 + 7f, 0.06f, 0.004f, 3f, null, white, DrawList.PAINT);
+            if (k == 6) small.box(bx + 2.7f, y + 0.012f, z0 + 7f, 0.06f, 0.004f, 3f, null, white, DrawList.PAINT);
+            if (k == 2 || k == 5) continue;
+            Cars.car(c.parked, bx, z0 + 7f, 0f, black, true, Cars.TAXI);
+            c.wall(bx - 0.95f, z0 + 7f - Cars.half(Cars.TAXI) - 0.1f, bx + 0.95f, z0 + 7f + Cars.half(Cars.TAXI) + 0.1f, Cars.top(Cars.TAXI));
+        }
+        // the shelter: posts, a glass roof, a bench under it
+        float sz = z0 + 1.6f, sh = 2.8f;
+        for (float u = -hx + 3f; u <= 0.01f; u += 4f) {
+            small.box(cx + u, sh * 0.5f, sz + 0.8f, 0.06f, sh * 0.5f, 0.06f, null, steel, DrawList.POLISHED);
+            c.wall(cx + u - 0.1f, sz + 0.7f, cx + u + 0.1f, sz + 0.9f, sh);
+        }
+        small.box(cx - hx * 0.5f + 1.5f, sh, sz, hx * 0.5f + 1.6f, 0.04f, 1.1f, null, 0x9FD8E0, DrawList.GLASS);
+        bench(c, cx - 8f, y - 0.14f, sz - 0.3f, 0f);
+        c.wall(cx - 8.9f, sz - 0.6f, cx - 7.1f, sz, 0.48f);
+        // the booth at the lot's east end: white, a window on the lot, its roof a chequered sign
+        float kx = x1 - 3f, kz = z0 + 2.4f;
+        d.box(kx, 1.4f, kz, 1.6f, 1.4f, 1.4f, null, white, DrawList.PLAIN);
+        d.box(kx - 0.4f, 1.6f, kz + 1.42f, 0.8f, 0.6f, 0.03f, null, 0x24323A, DrawList.GLASS);
+        d.box(kx, 2.95f, kz, 1.8f, 0.15f, 1.6f, null, black, DrawList.PLAIN);
+        for (int a = -2; a < 2; a++)
+            for (int e = -1; e <= 1; e += 2) {
+                small.box(kx + (a + 0.5f) * 0.9f, 3.35f, kz + e * 1.62f, 0.45f, 0.25f, 0.02f, null, ((a + e) & 1) == 0 ? yellow : black, DrawList.PAINT);
+                small.box(kx + (a + 0.5f) * 0.9f, 3.85f, kz + e * 1.62f, 0.45f, 0.25f, 0.02f, null, ((a + e) & 1) == 0 ? black : yellow, DrawList.PAINT);
+            }
+        d.box(kx, 3.6f, kz, 1.8f, 0.5f, 1.6f, null, yellow, DrawList.PAINT);
+        c.wall(kx - 1.6f, kz - 1.4f, kx + 1.6f, kz + 1.4f, 3.1f);
+    }
+
     /** Whether the yard of cell (i, j)'s block is open to the street by an arch: one in two. */
     boolean arched(int i, int j) {
         return ((hash(i, j, 8) >>> 17) & 1) == 0;
@@ -2283,10 +2556,12 @@ final class City implements Ground {
         int n = 0;
         float x0 = i * CELL, z0 = j * CELL, mid = CELL * 0.5f, a = FRONT, b = CELL - FRONT;
         // the arch, as block makes it: through the north row, or the south one
-        boolean mine = i == HOME_I && j == HOME_J, archive = i == ARCHIVE_I && j == ARCHIVE_J;
+        boolean mine = i == OLD_I && j == OLD_J, archive = i == ARCHIVE_I && j == ARCHIVE_J, home = i == HOME_I && j == HOME_J;
         boolean works = j == SHORE && (i == FACTORY_I || i == STORE_I);
-        boolean open = arched(i, j) || archive, north = mine || works || archive || ((hash(i, j, 8) >>> 9) & 1) == 0;
-        boolean ownSouth = mine || works || i == CLINIC_I && j == CLINIC_J || i == CONCERT_I && j == CONCERT_J
+        boolean open = arched(i, j) || archive || home, north = mine || works || archive || home || ((hash(i, j, 8) >>> 9) & 1) == 0;
+        // the shop's and the taxis' yards shut in; home's garden open to the street north of it
+        if (i == SHOP_I && j == SHOP_J || i == TAXI_I && j == TAXI_J) open = false;
+        boolean ownSouth = mine || works || home || i == CLINIC_I && j == CLINIC_J || i == CONCERT_I && j == CONCERT_J
                 || i == TOWNHALL_I && j == TOWNHALL_J || archive;
         if (open && (north || !ownSouth) && n < max) {
             float s = north ? 1f : -1f, front = north ? z0 + b : z0 + a, back = north ? z0 + b - DEPTH : z0 + a + DEPTH;

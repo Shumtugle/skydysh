@@ -110,6 +110,7 @@ release, each seen on the stand before the phone.
 - 1.3.3 Black Cherry: down the lobby's lift into the collider hall, the knocked magnets set with the mallet under the jet; the hole taken by the ring; the island opened again.
 - 1.3.4 The dispatcher at home in his room again; the hearts a thin red column.
 - 1.3.5 Home wide inside: hall and hearth, wardrobe, bedroom, dining room, kitchen, windows with plants.
+- 1.4.0 Home's quarter inland: home as wide as its rooms, the shop, the taxis' stand, the park; a green brum in the old flat.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -151,6 +152,11 @@ release, each seen on the stand before the phone.
 
 ## Next
 
+- Home a part of the town: in at its door without a cut, the town drawn round its rooms, the
+  street seen through its windows as it is.
+- A bathroom in home, a mirror over its basin that shows her (the room behind it built again,
+  turned about, as games of old did it).
+- The taxis' stand: a job of its own, some day.
 - The yachts: a boat to take out from the island's pier (the boat in the game's four ways to go).
 - The cable car: a cabin stuck, she comes down along the cable.
 - Likes for finding places worth seeing in the town (fine yards, palaces: to be drawn first).
