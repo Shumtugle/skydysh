@@ -5,7 +5,7 @@ import java.util.Random;
 /**
  * The box of a set of lights opened up: a board of sockets, and on it three pairs of terminals, red,
  * amber and green. Each pair is to be joined by a wire of its colour, drawn with a finger from one
- * terminal through the sockets to the other; no two wires through one socket, and every socket used.
+ * terminal through the sockets to the other; no two wires through one socket (the sockets need not all be used).
  * Joined, a wire lights its lamp at the top of the box; all three, and the lights work again.
  *
  * Drawing: down on a terminal starts its wire afresh from there; down on a wire goes on from that
@@ -82,12 +82,10 @@ final class Wires {
 
     /** Whether every wire is joined and every socket used. */
     boolean whole() {
-        int used = 0;
-        for (int k = 0; k < COLOURS; k++) {
+        // every colour joined to its pair: that is all it asks, the sockets left empty or not
+        for (int k = 0; k < COLOURS; k++)
             if (!joined[k]) return false;
-            used += len[k];
-        }
-        return used == N * N;
+        return true;
     }
 
     /** Whether the lights have come on long enough for the box to be shut. */

@@ -31,7 +31,7 @@ blow, small, up in the corner, in the name's gold and cream, an old film's count
 two, one, that nothing waits for; a touch skips it. The game
 begins with the first job, the runaways, straight from the dispatcher's room, which is her head:
 walls of her own brick round the street seen through her eyes, what is to be done typed over it;
-a touch, her mallet knocks a key, the walls draw back and the street goes on. That one done, she
+a touch, her mallet knocks a key, and the street goes on, a cut each way. That one done, she
 goes home, and the town is hers: the jobs are at home, on the sofa, and none is urged on her.
 
 A mission lost (the time run out, the folder taken by another): back into her head at once for

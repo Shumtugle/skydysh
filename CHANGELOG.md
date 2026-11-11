@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.26
+
+- The dispatcher comes on and goes off as a cut: the room with its screen at once, the street at
+  once after the key. The walls no longer close in from far out, passing through the eye on the way
+  (a moment of red wall over the whole frame).
+- The wires in a light's box are done once every colour is joined to its pair; the sockets need
+  not all be used. Before, a board with all three joined and a few sockets empty stayed open, and
+  nothing said why.
+
 ## 1.4.25
 
 - A bed's button shows from far off (some thirty meters) while the job wants a thing out of it:

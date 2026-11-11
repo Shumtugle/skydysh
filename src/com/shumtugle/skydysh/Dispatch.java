@@ -10,8 +10,9 @@ import java.util.Calendar;
  * is in here; her eyes, two lamps over the screen, lit. Under the screen a shelf of planks with a
  * row of keys, a red one, and a clock with the real time and the date.
  *
- * Coming in, the walls close round the street from every side until it is left only on the
- * screen; going out, they draw back past the edges of the frame and the eye is behind her again.
+ * Coming in, a cut: the room is round her at once, the street only on the screen; going out, a
+ * cut again, and the eye is behind her. (The walls used to close in from far out, and on the way
+ * they passed through the eye: a moment of nothing but wall over the whole frame.)
  * On the screen, over what she sees, the dispatch is typed out: before a mission what happened and
  * what is to be done, after it what was done and in what time. At a touch (when all is typed;
  * the first touch types the rest at once) her mallet comes up from below on the right, the same
@@ -22,7 +23,7 @@ import java.util.Calendar;
  */
 final class Dispatch {
     static final float TYPE = 38f;                      // letters a second
-    static final float CLOSE = 0.55f, OPEN = 0.55f;     // the walls closing round the street; drawing back
+    static final float CLOSE = 0.25f, OPEN = 0f;        // a moment in the room before it types; out at once
     static final float KNOCK = 0.34f, KNOCKED = 0.16f;  // the mallet up and onto the key; resting on it
     static final float WIDE = 4.5f;                     // how far out the walls start, and end, times their size
     static final float HEAD = 2.2f;                     // the room's middle above her feet
@@ -461,6 +462,7 @@ final class Dispatch {
             host.sound(Synth.WHOOSH, 0.45f, 1.2f);
         }
         if (openAt >= 0f && t - openAt >= OPEN) done = true;
+
     }
 
     private static float ease(float u) {
@@ -489,9 +491,8 @@ final class Dispatch {
     }
 
     void eye(Runner r, float[] eye) {
+        // in the room from the first moment to the last: a cut each way, no walls through the eye
         float k = 1f;
-        if (t < CLOSE) k = ease(t / CLOSE);
-        if (openAt >= 0f) k = 1f - ease((t - openAt) / OPEN);
         // the scene only while the room is all round her: a cut, as a set changes its channel
         inScene = sceneAt != null && k >= 0.999f;
         if (inScene) placeAt(sceneAt);
