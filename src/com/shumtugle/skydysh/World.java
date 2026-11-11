@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.13";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.14";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -842,6 +842,15 @@ final class World {
         doorArmed = false;
         runner.recenter();
         buttonHeld = true;
+    }
+
+    /** For the desktop stand: the island's yacht put at (x, z), headed so, her at its helm. */
+    boolean standBoatAt(float x, float z, float heading) {
+        Pickup b = duty.boat();
+        if (b == null) return false;
+        if (driving == b) getOut();
+        b.putAt(x, z, heading);
+        return standBoat();
     }
 
     /** For the desktop stand: her at the helm of the island's yacht, wherever it is. */

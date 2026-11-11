@@ -431,6 +431,14 @@ public final class Stand implements World.Host {
             if (world.standPick(Integer.parseInt(p[1]))) System.out.println(String.format("%7.2fs  picked %s", time, p[1]));
             else System.out.println(String.format("%7.2fs  no such line on the screen", time));
             step();
+        } else if (c.equals("boatat")) {
+            // boatat X Z RADIANS: the island's yacht put there, her at its helm
+            boolean ok = world.standBoatAt(f(p[1]), f(p[2]), f(p[3]));
+            step();
+            Pickup q = world.driving;
+            System.out.println(String.format("%7.2fs  %s", time, ok && q != null
+                    ? String.format("at the helm at %.1f %.1f, heading %.2f, afloat %b", q.x, q.z, q.heading, Pickup.floats(q.x, q.z, q.heading, world.city))
+                    : "no yacht out"));
         } else if (c.equals("boat")) {
             // boat: her at the helm of the island's yacht, wherever it lies
             boolean ok = world.standBoat();

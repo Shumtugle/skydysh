@@ -706,7 +706,7 @@ final class Runner {
         }
         x = p[0];
         z = p[1];
-        float bed = room == null ? city.ground(x, z) : 0f;
+        float bed = room == null ? city.bed(x, z) : 0f;
         boolean deep = room == null && City.overWater(x, z) && bed < City.WATER - SWIM_DEEP;
         if (state == SWIM) {
             // up to the water's top, gently; where it shallows, she stands up and wades out

@@ -413,8 +413,8 @@ final class Nav {
     private void relaxFrom(int u) {
         if (u < cols * rows) {
             int i = lo + u / rows, j = u % rows;
-            if (i > lo) relax(u, town(i - 1, j), City.CELL);
-            if (i < lo + cols - 1) relax(u, town(i + 1, j), City.CELL);
+            if (i > lo && City.road(i, j, -1, 0)) relax(u, town(i - 1, j), City.CELL);
+            if (i < lo + cols - 1 && City.road(i, j, 1, 0)) relax(u, town(i + 1, j), City.CELL);
             if (j > 0) relax(u, town(i, j - 1), City.CELL);
             if (j < rows - 1) relax(u, town(i, j + 1), City.CELL);
             if (roadN > 0 && u == roadStart()) relax(u, cols * rows, 0f);

@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.4.14
+
+- The canal: a loop of water out of the sea and back into it. From the beach west of the town's
+  middle it goes up a column of the town in place of its blocks (x = -288), between the two
+  streets either side, its quays paved, plane trees and benches along them; past the town's last
+  street it bends east through the fields behind the town, under a high bridge on the road out;
+  at the east woods it bends down through them to the wild shore. Stone walls the whole way, a
+  coping along their top, a railing; piers out into the sea at both mouths; its bends rounded.
+- In the town, cars cross it only on the shore road's bridge and the one five rows up (they will
+  lift for a yacht; for now they stand); the other streets come to the quay and stop at a red and
+  white barrier. The navigator, the chases and the people know it.
+- The road out goes up a ramp, over the canal on a high bridge (a yacht's mast clears it), and
+  down again into the fields.
+- The yacht goes on the canal: round its bends, under the high bridge, into the town as far as
+  the bridge in the middle. Against a bank the hull swings off it and eases sideways onto the
+  water, the way that frees it. She swims in it, and climbs out onto its quays.
+
 ## 1.4.13
 
 - The town has ends along the shore: its blocks from x = -512 to 640, its last street on each

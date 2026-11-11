@@ -69,6 +69,15 @@ final class Pickup {
         if (boat) y = City.WATER;
     }
 
+    /** Put down at (x, z), headed so, at rest (the way it goes with it). */
+    void putAt(float px, float pz, float h) {
+        x = px;
+        z = pz;
+        heading = course = h;
+        speed = 0f;
+        if (boat) y = City.WATER;
+    }
+
     /** Half its length, half its width; how far along its two round ends are, and how round. */
     float halfLong() {
         return boat ? Island.HULL_HALF : HALF_LONG;
@@ -97,7 +106,7 @@ final class Pickup {
     // way follows the bow; how deep its keel goes; its ends
     static final float SEA_TOP = 15f, SEA_ACCEL = 3.4f, SEA_BACK = 4.5f, SEA_BRAKE = 5f, SEA_DRAG = 0.35f;
     static final float SEA_TIGHT = 8f, SEA_YAW = 0.75f, SEA_STEER_RATE = 3.5f, SLIP = 1.8f, DRAFT = 0.9f;
-    static final float B_ENDS = 3.3f, B_END_R = 1.5f, SLOW_TURN = 0.3f, SLOW_TURN_UNDER = 2f;
+    static final float B_ENDS = 3.3f, B_END_R = 1.5f, SLOW_TURN = 0.3f, SLOW_TURN_UNDER = 2f, FEND = 0.6f, FEND_FEEL = 0.3f, EASE_OFF = 2f;
     // where she sits at the helm, behind the cabin: across, over the water, along
     static final float HELM_Y = 1.25f, HELM_Z = -3.2f;
 
@@ -142,8 +151,31 @@ final class Pickup {
         float cx = (float) Math.sin(course), cz = (float) Math.cos(course);
         float nx = x + cx * speed * dt, nz = z + cz * speed * dt;
         // not aground, nor out past the open sea: along the shore if it can, else it stops, a jolt
-        float now = aground(x, z, heading, city);
-        if (aground(nx, nz, heading, city) <= now) {
+        float now = aground(x, z, heading, city), ahead = aground(nx, nz, heading, city);
+        // against a bank, the hull swings off it a little, the way that frees it (a wall is a
+        // step, not a slope: felt for a good way round, not a hair)
+        if (ahead > now || now > 0f) {
+            float l = aground(nx, nz, heading + FEND_FEEL, city), r = aground(nx, nz, heading - FEND_FEEL, city);
+            if (Math.min(l, r) < Math.max(ahead, now) && Math.abs(speed) > 0.3f) {
+                heading += (l < r ? FEND : -FEND) * dt;
+                course += (l < r ? FEND : -FEND) * dt;
+            }
+        }
+        if (now > 0f || ahead > now) {
+            // a side on the bank, or the way on into it: eased off it, sideways, onto the water
+            float rx = (float) Math.cos(heading), rz = -(float) Math.sin(heading), step = EASE_OFF * dt;
+            float r = aground(nx + rx * step, nz + rz * step, heading, city), l = aground(nx - rx * step, nz - rz * step, heading, city);
+            if (Math.min(l, r) < Math.max(now, ahead)) {
+                float side = r < l ? 1f : -1f;
+                x += rx * step * side;
+                z += rz * step * side;
+                nx += rx * step * side;
+                nz += rz * step * side;
+                now = Math.min(l, r);
+                ahead = aground(nx, nz, heading, city);
+            }
+        }
+        if (ahead <= now) {
             x = nx;
             z = nz;
         } else if (aground(nx, z, heading, city) <= now) {
@@ -156,6 +188,7 @@ final class Pickup {
             bumped = Math.abs(speed) > 2f;
             speed *= -0.2f;
         }
+
         // the pier and the yachts moored: its round ends off them, as a pickup's off a wall
         float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading), mx = 0f, mz = 0f;
         boolean hit = false;
@@ -197,7 +230,10 @@ final class Pickup {
             float across = k == 2 ? Island.BEAM : k == 3 ? -Island.BEAM : 0f;
             float px = x + fx * along + fz * across, pz = z + fz * along - fx * across;
             if (!City.reachable(px, pz)) sum += 1f;
-            sum += Math.max(0f, city.ground(px, pz) - (City.WATER - DRAFT));
+            float over = Math.max(0f, city.bed(px, pz) - (City.WATER - DRAFT));
+            sum += over;
+            // by the canal, how far past its edge as well: a slope to feel the way off it by
+            if (over > 0f && Canal.near(px, pz, Canal.COPING + 3f)) sum += Canal.dist(px, pz) - Canal.HALF;
         }
         return sum;
     }
@@ -315,8 +351,8 @@ final class Pickup {
                 heading += d * Math.min(1f, dt * 8f);
             } else speed = 0f;
         }
-        // not into the sea: it stops at the water's edge
-        if (City.overWater(x, z)) {
+        // not into the sea, nor the canal: it stops at the water's edge (a bridge over it is no water)
+        if (City.overWater(x, z) && city.ground(x, z) < City.WATER + 0.5f) {
             x -= fx * speed * dt;
             z -= fz * speed * dt;
             speed = 0f;

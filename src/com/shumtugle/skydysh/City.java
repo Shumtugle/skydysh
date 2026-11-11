@@ -54,7 +54,9 @@ final class City implements Ground {
      */
     static boolean road(int i, int j, int di, int dj) {
         return j >= SHORE && j + dj >= SHORE && j <= EDGE_J && j + dj <= EDGE_J
-                && i >= WEST_I && i + di >= WEST_I && i <= EAST_I + 1 && i + di <= EAST_I + 1;
+                && i >= WEST_I && i + di >= WEST_I && i <= EAST_I + 1 && i + di <= EAST_I + 1
+                // over the canal only where a bridge for cars crosses it
+                && !(dj == 0 && Canal.over(i, di) && !Canal.drawRow(j));
     }
 
     // ---- the town's ends along the shore, west and east, and the woods past them ----
@@ -77,7 +79,7 @@ final class City implements Ground {
 
     /** Whether cell (i, j) is a block of the town: not the sea, not past its end inland, not in the woods. */
     static boolean block(int i, int j) {
-        return !sea(j) && !country(j) && !woods(i);
+        return !sea(j) && !country(j) && !woods(i) && i != Canal.COLUMN;
     }
 
     // the wild shore by the woods: grass to here, a bank of sand down to the beach's level by here
@@ -138,6 +140,7 @@ final class City implements Ground {
 
     /** Whether (x, z) is over the water, past the beach. */
     static boolean overWater(float x, float z) {
+        if (Canal.water(x, z) && !Canal.deck(x, z)) return true;
         return z < SHORE * CELL + WATERLINE && Island.height(x, z) < WATER;
     }
 
@@ -530,6 +533,11 @@ final class City implements Ground {
 
     /** How high the ground is here: the road, or the pavement a step up. */
     float ground(float x, float z) {
+        // the road out up over the canal on its bridge, and its ramps
+        float up = Canal.onRoad(x, z);
+        if (!Float.isNaN(up)) return up;
+        // the canal: its bed, but for the decks of the bridges for cars over it
+        if (Canal.water(x, z)) return Canal.deck(x, z) ? 0f : bed(x, z);
         if (z < SHORE * CELL - CURB) {
             if (z < SHORE * CELL + WATERLINE) {
                 // the sea's bed, shelving from the wet sand down; the spit and the island over it
@@ -547,6 +555,17 @@ final class City implements Ground {
         if (woodsX(x)) return 0f;
         float ox = x - Math.round(x / CELL) * CELL, oz = z - Math.round(z / CELL) * CELL;
         return Math.abs(ox) < CURB || Math.abs(oz) < CURB ? 0f : WALK_TOP;
+    }
+
+    /**
+     * The bottom under the water at (x, z): the canal's bed (or the sea's, if deeper, at its
+     * mouths) whatever bridge goes over it; elsewhere the ground. For what swims and floats.
+     */
+    float bed(float x, float z) {
+        if (!Canal.water(x, z)) return ground(x, z);
+        if (z >= SHORE * CELL + WATERLINE) return Canal.BED;
+        float out = Math.min(1f, (SHORE * CELL + WATERLINE - z) / SHELF);
+        return Math.min(Canal.BED, WET + (WATER - BED - WET) * out);
     }
 
     /**
@@ -976,15 +995,31 @@ final class City implements Ground {
             for (float z = from; z < to; z += 4f) {
                 float za = z, zb = Math.min(to, z + 4f), xa = routeX(za), xb = routeX(zb);
                 if (Math.abs((xa + xb) * 0.5f - x0 - half) > half + ROUTE_HALF + 4f) continue;
-                float dx = xb - xa, dz = zb - za, len = (float) Math.sqrt(dx * dx + dz * dz);
-                float[] f = yawFrame((float) Math.atan2(dx, dz));
-                d.box((xa + xb) * 0.5f, -0.12f, (za + zb) * 0.5f, ROUTE_HALF, 0.12f, len * 0.5f + 0.06f, f, asphalt, DrawList.ASPHALT);
+                // up over the canal on its ramps and bridge (see Canal), banked up on stone under it
+                float ya = Canal.rise(za), yb = Canal.rise(zb), ym = (ya + yb) * 0.5f;
+                float dx = xb - xa, dz = zb - za, dy = yb - ya, len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+                float[] flat = yawFrame((float) Math.atan2(dx, dz));
+                float[] f = ym > 0f ? Canal.along(dx, dy, dz) : flat;
+                float mx = (xa + xb) * 0.5f, mz = (za + zb) * 0.5f;
+                d.box(mx, ym - 0.12f, mz, ROUTE_HALF, 0.12f, len * 0.5f + 0.06f, f, asphalt, DrawList.ASPHALT);
                 if (((int) (z / 4f)) % 2 == 0)
-                    c.detail.box((xa + xb) * 0.5f, 0.005f, (za + zb) * 0.5f, 0.07f, 0.01f, len * 0.3f, f, 0xF2EEDF, DrawList.PAINT);
-                // the verges: pale gravel either side
-                for (int e = -1; e <= 1; e += 2) {
-                    float ox = (float) Math.cos(Math.atan2(dx, dz)) * e * (ROUTE_HALF + 0.6f), oz = -(float) Math.sin(Math.atan2(dx, dz)) * e * (ROUTE_HALF + 0.6f);
-                    d.box((xa + xb) * 0.5f + ox, -0.1f, (za + zb) * 0.5f + oz, 0.6f, 0.1f, len * 0.5f + 0.06f, f, 0xCDBB98, DrawList.GRAVEL);
+                    c.detail.box(mx, ym + 0.005f, mz, 0.07f, 0.01f, len * 0.3f, f, 0xF2EEDF, DrawList.PAINT);
+                float ax = (float) Math.cos(Math.atan2(dx, dz)), az = -(float) Math.sin(Math.atan2(dx, dz));
+                if (ym > 0.3f) {
+                    // the bank under it, its stone sides; a parapet along each edge, kept as a wall
+                    d.box(mx, ym * 0.5f - 0.2f, mz, ROUTE_HALF + 0.7f, ym * 0.5f, len * 0.5f + 0.06f, flat, 0x9A8E7C, DrawList.STONE);
+                    for (int e = -1; e <= 1; e += 2) {
+                        float ox = ax * e * (ROUTE_HALF + 0.45f), oz = az * e * (ROUTE_HALF + 0.45f);
+                        d.box(mx + ox, ym + 0.4f, mz + oz, 0.25f, 0.45f, len * 0.5f + 0.06f, f, 0xB9AC94, DrawList.STONE);
+                        float ex0 = Math.min(xa, xb) + ox, ex1 = Math.max(xa, xb) + ox;
+                        c.wall(ex0 - 0.3f, za, ex1 + 0.3f, zb, Math.max(ya, yb) + 0.85f, Math.min(ya, yb) - 0.6f);
+                    }
+                } else {
+                    // the verges: pale gravel either side
+                    for (int e = -1; e <= 1; e += 2) {
+                        float ox = ax * e * (ROUTE_HALF + 0.6f), oz = az * e * (ROUTE_HALF + 0.6f);
+                        d.box(mx + ox, ym - 0.1f, mz + oz, 0.6f, 0.1f, len * 0.5f + 0.06f, f, 0xCDBB98, DrawList.GRAVEL);
+                    }
                 }
             }
         }
@@ -1425,6 +1460,26 @@ final class City implements Ground {
     }
 
     /** A tree in the pavement at (x, z), in a grating of iron. */
+    /**
+     * A block of the canal's column: the water down its middle (see Canal), and either side of it
+     * a quay paved as the pavement, plane trees along it, a bench here and there looking at the
+     * water.
+     */
+    private void quays(Cell c, Random deco, float x0, float z0) {
+        for (int e = -1; e <= 1; e += 2) {
+            float tx = Canal.X_W + e * (Canal.HALF + Canal.COPING + 4.2f);
+            for (float t = 12f; t < CELL - 8f; t += 14f) street(c, deco, tx, z0 + t);
+            for (float t = 19f; t < CELL - 12f; t += 28f) {
+                float bx = Canal.X_W + e * (Canal.HALF + Canal.COPING + 1.4f), bz = z0 + t;
+                c.detail.box(bx, WALK_TOP + 0.42f, bz, 0.28f, 0.05f, 0.9f, null, 0x7A5638, DrawList.PLAIN);
+                c.detail.box(bx + e * 0.26f, WALK_TOP + 0.72f, bz, 0.04f, 0.28f, 0.9f, null, 0x7A5638, DrawList.PLAIN);
+                for (int q = -1; q <= 1; q += 2)
+                    c.detail.box(bx, WALK_TOP + 0.2f, bz + q * 0.75f, 0.24f, 0.2f, 0.04f, null, 0x2C2B2E, DrawList.PAINT);
+                c.wall(bx - 0.3f, bz - 0.9f, bx + 0.3f, bz + 0.9f, WALK_TOP + 0.47f);
+            }
+        }
+    }
+
     private static void street(Cell c, Random rnd, float x, float z) {
         c.detail.box(x, WALK_TOP + 0.005f, z, 0.6f, 0.01f, 0.6f, null, 0x3A3530, DrawList.RAIL);
         tree(c, c.detail, rnd, x, WALK_TOP, z, 7f + rnd.nextFloat() * 2.5f);
@@ -1447,6 +1502,11 @@ final class City implements Ground {
         // what the mountain and its cable way stand solid with, wherever it falls
         Mountain.solids(c, i, j);
         Island.solids(c, i, j);
+        // the canal: what stands where it goes taken away, and it in its place
+        if (Canal.crosses(i, j)) {
+            Canal.carve(c);
+            Canal.build(this, c, i, j);
+        }
         return c;
     }
 
@@ -1486,14 +1546,16 @@ final class City implements Ground {
                 (p1z - p0z) * 0.5f, null, sq ? 0xDCCDB2 : 0xCDBFA6, sq ? DrawList.PROMENADE : DrawList.PAVING);
         // what furnishes the streets and squares has its own seed, so the houses stay as they were
         Random deco = new Random(hash(i, j, 6));
-        if (oldTown(i, j)) oldTown(c, rnd, x0, z0, i, j);
+        boolean quays = i == Canal.COLUMN;
+        if (quays) quays(c, deco, x0, z0);
+        else if (oldTown(i, j)) oldTown(c, rnd, x0, z0, i, j);
         else if (sq) plaza(c, rnd, deco, x0, z0, garden(i, j));
         else block(c, rnd, x0, z0, i, j);
         // in the park's north-east quarter, off its fountain
         if (i == TOWER_I && j == TOWER_J) waterTower(c, x0 + CELL * 0.5f + 12f, z0 + CELL * 0.5f + 12f);
         lamps(c, x0, z0);
         benches(c, x0, z0);
-        parked(c, rnd, x0, z0, seeded(i, j));
+        if (!quays) parked(c, rnd, x0, z0, seeded(i, j));
         if (!palmy(i, j) && leafy(i, j, 3)) {
             // plane trees down the street along the west edge, on both its pavements
             for (float t = 20f; t < CELL - 10f; t += 26f)

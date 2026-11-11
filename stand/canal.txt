@@ -1,0 +1,43 @@
+# The canal: the west mouth from above, the shore road's bridge over it; on the quay in the town; the road out's high bridge from above; the east arm in the woods; the yacht in the north arm under the high bridge, round the bend and into the town between its quays, up to the bridge in the middle; a pickup up the ramp and over the high bridge; a street stopping at the quay, its barrier. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+eye -235 45 -75 -0.48 -0.45
+wait 1.2
+shot k0
+eye off
+at -306 150 0
+wait 1.5
+shot k1
+eye 45 40 690 -0.5 -0.35
+wait 0.3
+shot k2
+eye 705 35 300 0.29 -0.35
+wait 0.3
+shot k3
+eye off
+boatat 120 770 -1.5708
+pedal 7 0 0 0
+shot k4
+pedal 13 0 0 0
+pedal 4 -22 0 0
+pedal 3 0 0 0
+pedal 3 -20 0 0
+pedal 2 0 0 0
+pedal 10 0 0 0
+shot k5
+pedal 15 0 0 0
+where
+shot k6
+getout
+drivein 0 600 0
+pedal 9 0 0 0
+shot k7
+getout
+at -318 192 1.5708
+wait 1.5
+shot k8
