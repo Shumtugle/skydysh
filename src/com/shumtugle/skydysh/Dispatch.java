@@ -205,6 +205,13 @@ final class Dispatch {
     /** A pick that takes the containers in the port, no way to go: the crane over the field. */
     static final int YARD = 97;
 
+    /** A pick that asks whether to start the game over from scratch. */
+    static final int AFRESH = 96;
+    /** A pick that starts the game over from scratch, once asked. */
+    static final int AFRESH_YES = 95;
+    /** A pick that goes back to the list from the question. */
+    static final int TO_LIST = 94;
+
     /** A pick that takes no mission: she stays as she is (on the sofa, free). */
     static final int REST = 99;
 

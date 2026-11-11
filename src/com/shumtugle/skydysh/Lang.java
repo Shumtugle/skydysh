@@ -169,6 +169,10 @@ final class Lang {
         EN.put("rescue.open", "The road is open.");
         EN.put("report.skip", "Dispatch \u2014 {kind}||The job is put by.|It waits on home's list,|not done.||Touch to go on");
         EN.put("list.undone", "{job} \u2014 not done");
+        EN.put("list.afresh", "Start over");
+        EN.put("afresh.ask", "Dispatch \u2014 home||Start the game from scratch?||Jobs, stories, the helicopter|and likes all begin again.|Best times and settings stay.");
+        EN.put("afresh.yes", "Yes, from scratch");
+        EN.put("afresh.no", "No, back to the list");
         EN.put("best.first", "Best time.|");
         EN.put("best.new", "New record. Was: {time}|");
         EN.put("best", "Best time: {time}|");

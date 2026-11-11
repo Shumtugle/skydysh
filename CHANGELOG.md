@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.10
+
+- Start over: at the bottom of home's list of jobs, under a gap, "start over" (once anything
+  has been played). Picked, a question first: yes, or back to the list. Yes: the game begins
+  again as on its first day, the opening and the hunt: the jobs won and put by, the stories, the
+  helicopter, the likes, the island and where she was all let go. The best times, the language
+  and the ways to play stay.
+
 ## 1.4.9
 
 - A pickup's bed: standing on foot by the back of a pickup, a button floats over its bed; held,

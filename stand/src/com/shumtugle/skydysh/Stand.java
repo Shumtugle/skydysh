@@ -160,6 +160,12 @@ public final class Stand implements World.Host {
 
     private void step() {
         world.update(DT);
+        if (world.afresh) {
+            // the game from scratch: a new world, as the phone makes one
+            world = new World(this);
+            world.resize(1096, 2560);
+            System.out.println(String.format("%7.2fs  from scratch: mission %d, likes %d", time, world.mission.round, world.likes));
+        }
         // drawn every step, as the phone does: the world learns from it where things are on screen
         world.draw(list);
         time += DT;
@@ -262,6 +268,11 @@ public final class Stand implements World.Host {
         } else if (c.equals("keep")) {
             // keep KEY VALUE: as if a game before had kept it
             saveInt(p[1], Integer.parseInt(p[2]));
+        } else if (c.equals("kept")) {
+            // kept KEY...: what the game keeps under these names now
+            StringBuilder b = new StringBuilder();
+            for (int k = 1; k < p.length; k++) b.append(' ').append(p[k]).append('=').append(loadInt(p[k]));
+            System.out.println(String.format("%7.2fs  kept%s", time, b));
         } else if (c.equals("restart")) {
             // the game started again, with what it kept
             world = new World(this);

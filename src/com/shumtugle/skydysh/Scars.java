@@ -38,6 +38,13 @@ final class Scars {
         for (int k = 0; k < m; k++) put(host.loadInt(SAVE_AT + k));
     }
 
+    /** All the spots let go, from the save too. */
+    void wipe(World.Host host) {
+        for (int k = 0; k < MOST; k++) host.saveInt(SAVE_AT + k, 0);
+        host.saveInt(SAVE, 0);
+        n = 0;
+    }
+
     /** A new spot at (sx, sz), kept; the oldest dropped if there are too many. */
     void add(World.Host host, float sx, float sz) {
         if (Island.off(sx, sz)) return;

@@ -1,0 +1,34 @@
+# Starting over from home's list: a game well on (the jobs to the containers done, likes, a best
+# time, the island shut), the list asked for; at its bottom, under a gap, "start over"; picked:
+# the question with yes and back to the list; back: the list again; yes: the game made anew, as
+# on the first day (the opening), the jobs, the likes and the island let go, the best time, the
+# language and the controls kept. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep mission 11
+keep likes 640000
+keep best.2 41000
+keep isleShut 1
+keep copter 2
+restart
+free
+sofa
+wait 7
+listsign
+wait 3.5
+shot a0
+pick 96
+wait 7
+shot a1
+pick 94
+wait 3.5
+shot a2
+pick 96
+wait 3.5
+pick 95
+wait 1.5
+kept mission kinds likes isleShut copter best.2 lang foot
+wait 2
+shot a3

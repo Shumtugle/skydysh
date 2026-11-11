@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.9";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.10";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -910,7 +910,26 @@ final class World {
             }
             if (type == DOWN && dispatch.choosing()) {
                 int c = dispatch.pickAt(x, y);
-                if (c == Dispatch.SOLO) {
+                if (c == Dispatch.AFRESH) {
+                    // asked first: the question, yes or back to the list
+                    String[] q = Lang.lines("afresh.ask", 0, null);
+                    String[] lines = new String[q.length + 3];
+                    System.arraycopy(q, 0, lines, 0, q.length);
+                    lines[q.length] = "";
+                    lines[q.length + 1] = Lang.lines("afresh.yes", 0, null)[0];
+                    lines[q.length + 2] = Lang.lines("afresh.no", 0, null)[0];
+                    int[] p = new int[lines.length];
+                    java.util.Arrays.fill(p, -1);
+                    p[q.length + 1] = Dispatch.AFRESH_YES;
+                    p[q.length + 2] = Dispatch.TO_LIST;
+                    dispatch.then(lines, p);
+                } else if (c == Dispatch.TO_LIST) {
+                    int[] p = listChoice("list");
+                    dispatch.then(keptLines, p);
+                } else if (c == Dispatch.AFRESH_YES) {
+                    // the key comes down, then the game begins again
+                    afreshIn = AFRESH_AFTER;
+                } else if (c == Dispatch.SOLO) {
                     // the panel on its own: it opens once the walls have drawn back
                     soloNext = true;
                 } else if (c == Dispatch.YARD) {
@@ -1639,6 +1658,11 @@ final class World {
     boolean paused;
 
     void update(float dt) {
+        if (afresh) return;
+        if (afreshIn > 0f && (afreshIn -= dt) <= 0f) {
+            wipe();
+            return;
+        }
         hearts.update(dt, W, h);
         if (opening == null && (whereKeptAgo += dt) > WHERE_KEPT_EVERY) keepWhere();
         if (likesDirty && (likesKeptAgo += dt) > LIKES_KEPT_EVERY) saveLikes();
@@ -4284,10 +4308,44 @@ final class World {
             // the containers once done: at the crane from here, no way to go
             p.add(k == 10 && (kindsWon & (1 << 10)) != 0 ? Dispatch.YARD : k);
         }
+        // the game from scratch, at the very bottom, once anything has been played
+        if (kindsWon != 0 || kindsSkipped != 0 || likes > 0) {
+            l.add("");
+            p.add(-1);
+            l.add(Lang.lines("list.afresh", 0, null)[0]);
+            p.add(Dispatch.AFRESH);
+        }
         keptLines = l.toArray(new String[0]);
         int[] out = new int[p.size()];
         for (int k = 0; k < out.length; k++) out[k] = p.get(k);
         return out;
+    }
+
+    // ---- the game from scratch ----
+    /** Set once all that was played is let go: the shell then makes the world anew. */
+    boolean afresh;
+    private float afreshIn;
+    /** From the yes to the game begun again: the key's knock heard first. */
+    static final float AFRESH_AFTER = 0.7f;
+
+    /**
+     * Everything played let go: the jobs won and put by, the stories, the helicopter, the likes,
+     * the island, where she was. The best times and the ways to play are kept.
+     */
+    private void wipe() {
+        String[] gone = { SAVE_MISSION, SAVE_KINDS, SAVE_SKIPPED, SAVE_TOLD, SAVE_PAID, SAVE_COPTER,
+                SAVE_COPTER + ".x", SAVE_COPTER + ".y", SAVE_COPTER + ".z", SAVE_COPTER + ".h", SAVE_FIELDS,
+                SAVE_PLATES, SAVE_LIKES, SAVE_MONEY, SAVE_PANELS, SAVE_SECRET, SAVE_SHUT,
+                SAVE_WHERE, SAVE_WX, SAVE_WY, SAVE_WZ, SAVE_WH };
+        for (String k : gone) host.saveInt(k, 0);
+        scars.wipe(host);
+        likesDirty = false;
+        Dispatch.paidKinds = 0;
+        Crossings.mended();
+        Island.shut = false;
+        kit.putBack(city);
+        host.music(null);
+        afresh = true;
     }
 
     /** For the desktop stand: a touch on the sign of the list over home's choice; false if it is not shown. */

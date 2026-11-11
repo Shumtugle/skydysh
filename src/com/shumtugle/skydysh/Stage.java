@@ -13,7 +13,8 @@ import javax.microedition.khronos.opengles.GL10;
  * frame. The world never sees a GL call.
  */
 final class Stage extends GLSurfaceView implements GLSurfaceView.Renderer {
-    private final World world;
+    private World world;
+    private final World.Host host;
     private final DrawList list = new DrawList();
     private final Gfx gfx = new Gfx();
     private int screenW = 1, screenH = 1;
@@ -30,6 +31,7 @@ final class Stage extends GLSurfaceView implements GLSurfaceView.Renderer {
 
     Stage(Context context, World.Host host) {
         super(context);
+        this.host = host;
         world = new World(host);
         setEGLContextClientVersion(3);
         setEGLConfigChooser(8, 8, 8, 8, 16, 0);
@@ -124,6 +126,11 @@ final class Stage extends GLSurfaceView implements GLSurfaceView.Renderer {
         // the world goes on in steps no longer than a sixtieth of a second, however slow the frame
         int steps = (int) Math.ceil(dt * 60f - 1e-3f);
         for (int s = 0; s < Math.max(1, steps); s++) world.update(dt / Math.max(1, steps));
+        if (world.afresh) {
+            // the game from scratch: a new world, as on the first day
+            world = new World(host);
+            world.resize(screenW, screenH);
+        }
         world.drawScale = q;
         world.draw(list);
         gfx.draw(list, screenW, screenH, q);

@@ -120,6 +120,7 @@ release, each seen on the stand before the phone.
 - 1.4.7 Lights gone wrong: a story after the tow, and now and then between jobs, mended at a panel; likes not told in words.
 - 1.4.8 The ring of her tools over her mallet: the mallet and the screwdriver; the lights' box mended by joining its wires.
 - 1.4.9 A pickup's bed and its ring: the ladder between jobs, the rope tied by hand in the tow.
+- 1.4.10 Start over from home's list: progress and likes let go, best times and settings kept.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
