@@ -15,12 +15,36 @@ final class Duty {
     private final java.util.HashSet<Long> moved = new java.util.HashSet<Long>();
     private final float[] at = new float[3];
 
-    /** The ones within reach of (x, z) put out, the ones left far behind taken in. */
-    void update(float x, float z, City city, Pickup driving) {
+    /** The island's yacht, if it is out: hers to take while the yachts are whole. */
+    Pickup boat() {
+        for (int k = 0; k < all.size(); k++) if (all.get(k).boat) return all.get(k);
+        return null;
+    }
+
+    /** All taken in, the yacht as well (it is back at its pier when they are put out again). */
+    void clear() {
+        all.clear();
+        Island.boatOut = false;
+    }
+
+    /**
+     * The ones within reach of (x, z) put out, the ones left far behind taken in; the yacht too,
+     * if it may be out now (not in the job that ends at its pier).
+     */
+    void update(float x, float z, City city, Pickup driving, boolean yacht) {
+        // the yacht: at its pier while the yachts are whole, wherever she left it; gone with them
+        Pickup b = boat();
+        if (Island.wrecked || !yacht) {
+            if (b != null && b != driving) all.remove(b);
+        } else if (b == null) {
+            Island.mooring(at);
+            all.add(new Pickup(at[0], at[1], at[2], BOAT, true));
+        }
+        Island.boatOut = boat() != null;
         for (int k = all.size() - 1; k >= 0; k--) {
             Pickup p = all.get(k);
-            // the one she drives, and one with a load on it, wherever it was left, stay out
-            if (p == driving || p.load > 0 || p.kept) continue;
+            // the one she drives, and one with a load on it, wherever it was left, stay out; the yacht too
+            if (p == driving || p.load > 0 || p.kept || p.boat) continue;
             float dx = p.x - x, dz = p.z - z;
             if (dx * dx + dz * dz > FAR * FAR) {
                 all.remove(k);
@@ -50,6 +74,8 @@ final class Duty {
 
     /** So near another pickup at its own curb that two would stand there, meters. */
     static final float CLOSE = 20f;
+    /** The yacht's own place: none at a curb. */
+    static final long BOAT = 0xB0A7L;
 
     /**
      * She has got out of p here: one standing at its own curb close by (home's, as a rule) is
@@ -57,10 +83,10 @@ final class Duty {
      * gets its pickup back when she comes to it again.
      */
     void settle(Pickup p) {
-        if (p.kept || p.load > 0) return;
+        if (p.kept || p.load > 0 || p.boat) return;
         for (int k = all.size() - 1; k >= 0; k--) {
             Pickup q = all.get(k);
-            if (q == p || q.kept || q.load > 0 || moved.contains(q.home)) continue;
+            if (q == p || q.kept || q.load > 0 || q.boat || moved.contains(q.home)) continue;
             float dx = q.x - p.x, dz = q.z - p.z;
             if (dx * dx + dz * dz > CLOSE * CLOSE) continue;
             all.remove(k);
@@ -91,7 +117,8 @@ final class Duty {
             Pickup p = all.get(k);
             if (p == but) continue;
             float dx = p.x - ex, dz = p.z - ez;
-            if (dx * fx + dz * fz < -6f || dx * dx + dz * dz > 200f * 200f) continue;
+            float far = p.boat ? 700f : 200f;
+            if (dx * fx + dz * fz < -12f || dx * dx + dz * dz > far * far) continue;
             p.draw(d, time);
         }
     }

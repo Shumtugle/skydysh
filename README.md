@@ -383,7 +383,16 @@ Out to sea south of home a spit of sand winds from the water's edge to an island
 island it is cut by a channel, a drawbridge over it, hinged on the island's bank, down till the
 island is shut), tall and green
 in ledges, trees on them and a path winding up to a lighthouse on the top; off its north-east
-shore a pier with yachts moored to it. By the pier's foot a portal of dressed stone in the rock:
+shore a pier with yachts moored to it, the one at its far end, teal-banded, hers to take (once
+the pickups are about, while the yachts are whole, and not in Hotheads): its wheel touched, or
+stood by from the pier, she steps aboard at its helm behind the cabin. It is driven as a pickup
+is, the same wheel under the thumb, but on the water: slower to come up to speed, slower to
+answer the wheel, sliding a little through a turn, a wake of foam behind it. It goes wherever the
+water is deep enough for its keel and the open sea lets her: run onto a bank it stops with a
+jolt, and may go off it or along it, never further on; the throttle held, slow, the wheel still
+swings its stern a little, off the bank. Out of it by the pier, she is on the pier; by the
+shore, on the sand; anywhere else, over the side, and she swims. It stays where she left it.
+By the pier's foot a portal of dressed stone in the rock:
 a tunnel, lamps along its roof and walls, straight through under the lighthouse and rising evenly,
 out through a like portal onto the middle ledge on the far side; from there stone stairs go right
 and left, round the island and up, rails both sides, to the top. The top is clear of trees: grass round the lighthouse,

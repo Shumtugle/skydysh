@@ -122,6 +122,7 @@ release, each seen on the stand before the phone.
 - 1.4.9 A pickup's bed and its ring: the ladder between jobs, the rope tied by hand in the tow.
 - 1.4.10 Start over from home's list: progress and likes let go, best times and settings kept.
 - 1.4.11 A sign over home's sofa to sit and keep the game; the green brum lounges.
+- 1.4.12 The island's yacht: a fourth way about, driven on the water from its pier.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -165,9 +166,9 @@ release, each seen on the stand before the phone.
 
 - More for the beds, each with its job: blasting charges (the heap in the pass, the quarry), a wrench and a battery (a car stalled in the street, a jam behind it); her ring as an arsenal: things kept, saved.
 - The town's ends along the shore, west and east, and a forest past them (a steppe later, past the forest).
+- The yacht where she left it kept with the game; the open sea wider for it.
 - Canals: a loop from the sea through the town and back to it, past the last houses through a park in a wood; high bridges over it and two that lift, for a yacht to go through.
 - The taxis' stand: a job of its own, some day.
-- The yachts: a boat to take out from the island's pier (the boat in the game's four ways to go).
 - The cable car: a cabin stuck, she comes down along the cable.
 - Likes for finding places worth seeing in the town (fine yards, palaces: to be drawn first).
 - The panel skipped in the concert: the light comes on for her, the panel stays on the list

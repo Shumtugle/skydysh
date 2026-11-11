@@ -893,9 +893,9 @@ final class Runner {
         }
         if (riding) {
             // farther back and higher the faster it goes, so what comes is seen in time
-            float fast = Math.min(1f, Math.abs(speed) / Pickup.VMAX);
-            back = RIDE_BACK + 5f * fast;
-            high = RIDE_HIGH + 1.5f * fast;
+            float fast = Math.min(1f, Math.abs(speed) / (aboard ? Pickup.SEA_TOP : Pickup.VMAX));
+            back = aboard ? BOAT_BACK + 3f * fast : RIDE_BACK + 5f * fast;
+            high = aboard ? BOAT_HIGH + 1f * fast : RIDE_HIGH + 1.5f * fast;
         }
         // on a chase, out of doors: up high over her
         chase += ((in ? 0f : chaseWant) - chase) * Math.min(1f, dt * (in ? CHASE_DOWN_IN : CHASE_RATE));
@@ -980,6 +980,9 @@ final class Runner {
     boolean riding;
     private float seatX, seatY, seatZ, wheel;
     static final float RIDE_BACK = 10f, RIDE_HIGH = 4.4f, RIDE_AHEAD = 20f;
+    /** At the helm of the yacht, not the wheel of a pickup: the eye farther back and higher, over its wake. */
+    boolean aboard;
+    static final float BOAT_BACK = 12f, BOAT_HIGH = 6f;
     // the eye kept out of the leaves: how much of its height and of its way back it keeps now; never nearer than this
     private float dodgeHigh = 1f, dodgeBack = 1f;
     private final float[] leafLow = new float[1];

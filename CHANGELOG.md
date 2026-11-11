@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.12
+
+- The island's yacht: the one moored at the far end of the pier, teal-banded, is hers to take
+  while the yachts are whole (not in Hotheads, whose yachts it is). Its wheel sign touched, or
+  stood by from the pier, she goes to the pier's edge and is at its helm behind the cabin. The
+  same wheel as a pickup's, on the water: slower to speed (fifteen meters a second at most),
+  slower to answer, sliding a little through a turn, a wake of foam behind it, a curl at its bow.
+  Not where it is too shallow for its keel, nor past the open sea: run aground it stops with a
+  jolt, and may go off the bank or along it; slow under throttle, the wheel swings its stern off.
+  Out of it by the pier, she is on the pier; by the sand, on the sand; else into the water, and
+  she swims. It stays where she left it till the pickups are next taken in.
+- The other yachts stand where they stood; the one that goes out lies at the pier's end, with
+  nothing moored behind it, so the eye at its helm is clear.
+
 ## 1.4.11
 
 - The sofa's sign: at home with no job on, a glass sign floats over the sofa, a disc of the game

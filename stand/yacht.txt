@@ -1,0 +1,32 @@
+# The island's yacht: on the pier by it, its wheel sign touched, she goes to the pier's edge and is at its helm; out again, onto the pier; at the helm, out from the pier's end at full throttle, seen from aside with its wake; hard over, toward the spit; aground there, off it again, and away. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+wait 0.3
+at 134.8 -301.5 1.10
+wait 1.0
+shot y0
+tapsign wheel
+wait 4
+wheel
+shot y1
+getout
+wait 1.2
+where
+shot y2
+boat
+pedal 5 0 0 0
+eye 186.9 7 -307.3 -0.47 -0.22
+wait 0.05
+shot y3
+eye off
+pedal 3 -90 0 0
+shot y4
+pedal 30 0 0 0
+pedal 8 120 0 0
+pedal 6 0 0 0
+wheel

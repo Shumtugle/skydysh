@@ -134,6 +134,7 @@ final class Tow {
                 Pickup best = null;
                 float bd = 1e18f;
                 for (Pickup p : duty.all) {
+                    if (p.boat) continue;
                     float dd = (p.x - r.x) * (p.x - r.x) + (p.z - r.z) * (p.z - r.z);
                     if (dd < bd) {
                         bd = dd;

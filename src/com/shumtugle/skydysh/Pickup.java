@@ -13,6 +13,9 @@ package com.shumtugle.skydysh;
  * into a wall, it runs along it, losing only what went into it.
  *
  * Its own frame: x to its right, y up, its nose along +z; the road at y = 0.
+ *
+ * A boat is the island's yacht, got into and driven as a pickup is, the same wheel in the hand;
+ * but it goes on the water (see sail), slower to answer, and slides a little through a turn.
  */
 final class Pickup {
     static final float VMAX = 36f;                     // top speed, meters a second
@@ -45,11 +48,167 @@ final class Pickup {
     /** The cell whose place at the curb it stands for: where it was first parked, or one it took over (see Duty). */
     long home;
 
+    /** The island's yacht, not a pickup: on the water, not the road. */
+    final boolean boat;
+    // a boat: the way it goes (the bow swings first, the way follows), and the swell under it
+    private float course, swell;
+    /** A boat: run aground or into the pier hard, this frame. */
+    boolean bumped;
+
     Pickup(float x, float z, float heading, long home) {
+        this(x, z, heading, home, false);
+    }
+
+    Pickup(float x, float z, float heading, long home, boolean boat) {
         this.x = x;
         this.z = z;
         this.heading = heading;
         this.home = home;
+        this.boat = boat;
+        course = heading;
+        if (boat) y = City.WATER;
+    }
+
+    /** Half its length, half its width; how far along its two round ends are, and how round. */
+    float halfLong() {
+        return boat ? Island.HULL_HALF : HALF_LONG;
+    }
+
+    float halfWide() {
+        return boat ? Island.BEAM : HALF_WIDE;
+    }
+
+    float ends() {
+        return boat ? B_ENDS : ENDS;
+    }
+
+    float endR() {
+        return boat ? B_END_R : END_R;
+    }
+
+    /** So near its sides or ends she stands to get in: from a pier, a boat is a step further off. */
+    float reach(float near) {
+        return boat ? near + 0.9f : near;
+    }
+
+    // ---- a boat ----
+    // the top, how hard the screw drives it and backs it, how the water holds it back; the rudder:
+    // the tightest turn's radius, the fastest it swings, how fast it follows the hand; how fast the
+    // way follows the bow; how deep its keel goes; its ends
+    static final float SEA_TOP = 15f, SEA_ACCEL = 3.4f, SEA_BACK = 4.5f, SEA_BRAKE = 5f, SEA_DRAG = 0.35f;
+    static final float SEA_TIGHT = 8f, SEA_YAW = 0.75f, SEA_STEER_RATE = 3.5f, SLIP = 1.8f, DRAFT = 0.9f;
+    static final float B_ENDS = 3.3f, B_END_R = 1.5f, SLOW_TURN = 0.3f, SLOW_TURN_UNDER = 2f;
+    // where she sits at the helm, behind the cabin: across, over the water, along
+    static final float HELM_Y = 1.25f, HELM_Z = -3.2f;
+
+    /** A frame of a boat on the water: the throttle, the wheel, the brake (astern, held). */
+    private void sail(float dt, boolean throttle, float wheel, float brake, City city) {
+        bumped = false;
+        steer += (wheel - steer) * Math.min(1f, dt * SEA_STEER_RATE);
+        swell += dt;
+        float want = cap >= 0f ? Math.min(cap, SEA_TOP) : SEA_TOP;
+        if (brake > 0.05f) {
+            if (speed > 0.3f) {
+                speed = Math.max(0f, speed - SEA_BRAKE * brake * dt);
+                still = 0f;
+            } else {
+                // the screw astern: held, it backs
+                still += dt;
+                if (still > BACK_AFTER) speed = Math.max(-SEA_BACK * Math.max(0.35f, brake), speed - SEA_ACCEL * 0.6f * dt);
+            }
+        } else if (throttle) {
+            still = 0f;
+            if (speed < 0f) speed = Math.min(0f, speed + SEA_BRAKE * dt);
+            else if (speed < want) speed = Math.min(want, speed + SEA_ACCEL * (1.1f - 0.6f * speed / SEA_TOP) * dt);
+            else speed = Math.max(want, speed - SEA_DRAG * 4f * dt);
+        } else {
+            // let go: the water takes the way off it, slowly
+            still = 0f;
+            float off = (SEA_DRAG + 0.02f * speed * speed) * dt;
+            speed -= Math.signum(speed) * Math.min(Math.abs(speed), off);
+        }
+        gear = 1 + Math.min(4, (int) (Math.abs(speed) / SEA_TOP * 5f));
+        // the rudder bites as it goes: tight when slow, wider fast; never round on the spot
+        float yaw = steer * Math.min(Math.abs(speed) / SEA_TIGHT, SEA_YAW) * Math.signum(speed);
+        // but the screw turning, slow, the wash over the rudder swings the stern a little: off a bank
+        if (throttle && Math.abs(speed) < SLOW_TURN_UNDER) yaw += steer * SLOW_TURN * (1f - Math.abs(speed) / SLOW_TURN_UNDER);
+        heading += yaw * dt;
+        if (aground(x, z, heading, city) > aground(x, z, heading - yaw * dt, city)) heading -= yaw * dt;
+        // the way follows the bow, late: it slides a little through a turn
+        float e = heading - course;
+        while (e > Math.PI) e -= 2f * (float) Math.PI;
+        while (e < -Math.PI) e += 2f * (float) Math.PI;
+        course += e * Math.min(1f, dt * SLIP);
+        float cx = (float) Math.sin(course), cz = (float) Math.cos(course);
+        float nx = x + cx * speed * dt, nz = z + cz * speed * dt;
+        // not aground, nor out past the open sea: along the shore if it can, else it stops, a jolt
+        float now = aground(x, z, heading, city);
+        if (aground(nx, nz, heading, city) <= now) {
+            x = nx;
+            z = nz;
+        } else if (aground(nx, z, heading, city) <= now) {
+            x = nx;
+            speed *= 1f - Math.min(1f, dt * 2f);
+        } else if (aground(x, nz, heading, city) <= now) {
+            z = nz;
+            speed *= 1f - Math.min(1f, dt * 2f);
+        } else {
+            bumped = Math.abs(speed) > 2f;
+            speed *= -0.2f;
+        }
+        // the pier and the yachts moored: its round ends off them, as a pickup's off a wall
+        float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading), mx = 0f, mz = 0f;
+        boolean hit = false;
+        for (int s = -1; s <= 1; s += 2) {
+            float[] p = {x + fx * s * B_ENDS, z + fz * s * B_ENDS};
+            float ox = p[0], oz = p[1];
+            if (city.push(p, B_END_R, City.WATER - 0.3f)) {
+                mx += p[0] - ox;
+                mz += p[1] - oz;
+                hit = true;
+            }
+        }
+        if (hit) {
+            float m = (float) Math.sqrt(mx * mx + mz * mz);
+            if (aground(x + mx * 0.5f, z + mz * 0.5f, heading, city) <= aground(x, z, heading, city)) {
+                x += mx * 0.5f;
+                z += mz * 0.5f;
+            }
+            if (m > 1e-4f) {
+                float into = -(cx * mx + cz * mz) / m * Math.signum(speed);
+                if (into > 0.05f) {
+                    if (into > 0.5f && Math.abs(speed) > 2f) bumped = true;
+                    speed *= 1f - into * 0.8f;
+                }
+            }
+        }
+        y = City.WATER + 0.09f * (float) Math.sin(swell * 1.1f);
+    }
+
+    /**
+     * How far aground a boat headed so with its middle at (x, z) would be: how much too shallow
+     * under its ends and its sides, added (past the open sea counts as a meter each); 0 afloat.
+     * Run onto a bank, it may go along it or off it, never further on.
+     */
+    private static float aground(float x, float z, float heading, City city) {
+        float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading), sum = 0f;
+        for (int k = 0; k < 4; k++) {
+            float along = k == 0 ? Island.HULL_HALF : k == 1 ? -Island.HULL_HALF : 0f;
+            float across = k == 2 ? Island.BEAM : k == 3 ? -Island.BEAM : 0f;
+            float px = x + fx * along + fz * across, pz = z + fz * along - fx * across;
+            if (!City.reachable(px, pz)) sum += 1f;
+            sum += Math.max(0f, city.ground(px, pz) - (City.WATER - DRAFT));
+        }
+        return sum;
+    }
+
+    private static boolean afloat(float x, float z, float heading, City city) {
+        return aground(x, z, heading, city) <= 0f;
+    }
+
+    /** Whether a boat floats at (x, z), headed so: for the stand. */
+    static boolean floats(float x, float z, float heading, City city) {
+        return afloat(x, z, heading, city);
     }
 
     /**
@@ -58,6 +217,10 @@ final class Pickup {
      * the traffic and the people in its way.
      */
     void drive(float dt, boolean throttle, float wheel, float brake, boolean flat, City city, Cars cars, Walkers walkers) {
+        if (boat) {
+            sail(dt, throttle, wheel, brake, city);
+            return;
+        }
         steer += (wheel - steer) * Math.min(1f, dt * STEER_RATE);
         float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
         if (brake > 0.05f) {
@@ -202,11 +365,11 @@ final class Pickup {
 
     /** Pushes a round body of radius rr at (p[0], p[1]) out of it; true if it touched it. */
     boolean push(float[] p, float rr) {
-        float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
+        float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading), ends = ends(), endR = endR();
         boolean hit = false;
         for (int e = -1; e <= 1; e += 2) {
-            float cx = x + fx * e * ENDS, cz = z + fz * e * ENDS;
-            float dx = p[0] - cx, dz = p[1] - cz, dd = dx * dx + dz * dz, m = rr + END_R;
+            float cx = x + fx * e * ends, cz = z + fz * e * ends;
+            float dx = p[0] - cx, dz = p[1] - cz, dd = dx * dx + dz * dz, m = rr + endR;
             if (dd >= m * m || dd < 1e-8f) continue;
             float l = (float) Math.sqrt(dd);
             p[0] = cx + dx / l * m;
@@ -222,15 +385,16 @@ final class Pickup {
     /** Where the seat is in the world, into out (x, y, z). */
     void seat(float[] out) {
         float c = (float) Math.cos(heading), s = (float) Math.sin(heading);
-        out[0] = x + c * SEAT_X + s * SEAT_Z;
-        out[1] = y + SEAT_Y;
-        out[2] = z - s * SEAT_X + c * SEAT_Z;
+        float sx = boat ? 0f : SEAT_X, sz = boat ? HELM_Z : SEAT_Z;
+        out[0] = x + c * sx + s * sz;
+        out[1] = y + (boat ? HELM_Y : SEAT_Y);
+        out[2] = z - s * sx + c * sz;
     }
 
     /** How far (x, z) is from the pickup's body: past its sides, or its ends; 0 within it. */
     float apart(float px, float pz) {
         float c = (float) Math.cos(heading), s = (float) Math.sin(heading), dx = px - x, dz = pz - z;
-        float across = Math.max(0f, Math.abs(dx * c - dz * s) - HALF_WIDE), along = Math.max(0f, Math.abs(dx * s + dz * c) - HALF_LONG);
+        float across = Math.max(0f, Math.abs(dx * c - dz * s) - halfWide()), along = Math.max(0f, Math.abs(dx * s + dz * c) - halfLong());
         return (float) Math.sqrt(across * across + along * along);
     }
 
@@ -240,6 +404,7 @@ final class Pickup {
      */
     void beside(float px, float pz, float off, float[] out) {
         float c = (float) Math.cos(heading), s = (float) Math.sin(heading), dx = px - x, dz = pz - z;
+        final float HALF_WIDE = halfWide(), HALF_LONG = halfLong();
         float across = dx * c - dz * s, along = dx * s + dz * c;
         float a = Math.max(-HALF_WIDE, Math.min(HALF_WIDE, across)), b = Math.max(-HALF_LONG, Math.min(HALF_LONG, along));
         if (a == across && b == along) {
@@ -261,7 +426,7 @@ final class Pickup {
     /** Where she gets in and out: beside the driver's door, so far off it (x, z into out). */
     void door(float off, float[] out) {
         float c = (float) Math.cos(heading), s = (float) Math.sin(heading);
-        float ax = -(HALF_WIDE + off), az = SEAT_Z;
+        float ax = -(halfWide() + off), az = boat ? HELM_Z : SEAT_Z;
         out[0] = x + c * ax + s * az;
         out[1] = z - s * ax + c * az;
     }
@@ -272,6 +437,10 @@ final class Pickup {
     private static final float[] frame = new float[9], t = new float[9];
 
     void draw(DrawList d, float time) {
+        if (boat) {
+            sea(d, time);
+            return;
+        }
         float cy = (float) Math.cos(heading), sy = (float) Math.sin(heading);
         px = x;
         py = y;
@@ -326,6 +495,49 @@ final class Pickup {
     }
 
     /** A crate of pale planks, banded, in its own frame (no skin on it: it is not the pickup's). */
+    // the wake: so many dashes of foam behind along each arm of it, so far apart, the arms
+    // spreading so, from this fast
+    static final int WAKE = 8;
+    static final float WAKE_STEP = 1.7f, WAKE_SPREAD = 0.4f, WAKE_FROM = 1.2f;
+    static final int FOAM = 0xD6EAEC;
+
+    /** A boat: the yacht, and its wake on the water as it goes; the foam at its bow. */
+    private void sea(DrawList d, float time) {
+        Island.yacht(d, x, z, heading, y - City.WATER, Island.freeStripe());
+        float v = Math.abs(speed);
+        if (v < WAKE_FROM) return;
+        float k = Math.min(1f, (v - WAKE_FROM) / 8f);
+        float bx = (float) Math.sin(course), bz = (float) Math.cos(course), sgn = Math.signum(speed);
+        float fx = (float) Math.sin(heading), fz = (float) Math.cos(heading);
+        float[] t = {bz, 0f, bx, 0f, 1f, 0f, -bx, 0f, bz};
+        float sx = x - fx * sgn * (Island.HULL_HALF - 0.4f), sz = z - fz * sgn * (Island.HULL_HALF - 0.4f);
+        // the dashes drift back as it goes, so the wake runs
+        float run = (time * v * 0.5f) % WAKE_STEP;
+        for (int i = 0; i < WAKE; i++) {
+            float back = i * WAKE_STEP + run, wide = Island.BEAM * 0.8f + back * WAKE_SPREAD;
+            float fade = k * (1f - back / (WAKE * WAKE_STEP));
+            if (fade <= 0.02f) continue;
+            for (int e = -1; e <= 1; e += 2) {
+                float jit = 0.25f * (float) Math.sin(i * 2.3f + e);
+                float px = sx - bx * sgn * back + bz * e * (wide + jit), pz = sz - bz * sgn * back - bx * e * (wide + jit);
+                d.box(px, City.WATER + 0.03f, pz, 0.04f + 0.08f * fade, 0.012f, 0.25f + 0.2f * fade, t, FOAM, DrawList.MATTE);
+            }
+            // the churned water straight behind it, narrowing out
+            if (i < WAKE / 2) {
+                float px = sx - bx * sgn * back, pz = sz - bz * sgn * back;
+                d.box(px, City.WATER + 0.025f, pz, 0.14f * fade + 0.04f, 0.01f, 0.22f, t, FOAM, DrawList.MATTE);
+            }
+        }
+        if (speed > 4f) {
+            // a curl of white at the bow
+            for (int e = -1; e <= 1; e += 2) {
+                float px = x + fx * (Island.HULL_HALF - 1.4f) + fz * e * (Island.BEAM + 0.1f);
+                float pz = z + fz * (Island.HULL_HALF - 1.4f) - fx * e * (Island.BEAM + 0.1f);
+                d.box(px, City.WATER + 0.05f, pz, 0.1f, 0.05f, 0.9f * k, t, FOAM, DrawList.MATTE);
+            }
+        }
+    }
+
     private static void crate(DrawList d, float lx, float ly, float lz, int k) {
         float[] f = frame;
         float wx = px + f[0] * lx + f[1] * ly + f[2] * lz, wy = py + ly, wz = pz + f[6] * lx + f[7] * ly + f[8] * lz;

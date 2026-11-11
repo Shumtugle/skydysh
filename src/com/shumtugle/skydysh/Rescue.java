@@ -89,6 +89,7 @@ final class Rescue implements City.Extra {
                 Pickup best = null;
                 float bd = 1e18f;
                 for (Pickup p : duty.all) {
+                    if (p.boat) continue;
                     float dd = (p.x - rn.x) * (p.x - rn.x) + (p.z - rn.z) * (p.z - rn.z);
                     if (dd < bd) {
                         bd = dd;

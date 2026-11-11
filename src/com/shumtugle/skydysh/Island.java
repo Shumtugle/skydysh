@@ -283,10 +283,50 @@ final class Island {
     /** Whether the yachts are wrecked: burnt out and sunk at the pier, no deck to stand on. */
     static boolean wrecked;
 
+    /** The yacht that goes out: hers to take while the yachts are whole (see Pickup's boat). */
+    static final int FREE = 2;
+    /** Whether that yacht is out as hers to take (then drawn as hers, not moored here). */
+    static boolean boatOut;
+
+    /**
+     * How far out along the pier yacht k lies: in pairs, one either side; the one that goes out
+     * at the pier's end, with nothing moored behind it, so that the eye at its helm is clear.
+     */
+    private static float moored(int k) {
+        return k == FREE ? PIER_LONG - HULL_HALF - 3f : 12f + (k / 2) * 2.4f * HULL_HALF + 2f;
+    }
+
+    /** Where the yacht that goes out is moored: its middle (x, z), its heading, into out. */
+    static void mooring(float[] out) {
+        yachtAt(FREE, out);
+    }
+
+    /**
+     * The nearest place on the pier to (x, z), near its edge on that side, into out (x, z); how far
+     * that is from (x, z). For getting into the yacht from the pier, not off it into the water.
+     */
+    static float toPier(float x, float z, float[] out) {
+        float[] p = pier();
+        float dx = x - p[0], dz = z - p[1];
+        float along = Math.max(0f, Math.min(PIER_LONG, dx * p[2] + dz * p[3]));
+        float across = Math.max(-PIER_HALF * 0.6f, Math.min(PIER_HALF * 0.6f, dx * p[4] + dz * p[5]));
+        out[0] = p[0] + p[2] * along + p[4] * across;
+        out[1] = p[1] + p[3] * along + p[5] * across;
+        float ox = x - out[0], oz = z - out[1];
+        return (float) Math.sqrt(ox * ox + oz * oz);
+    }
+
+    /** Whether (x, z) is on the pier's deck, so far in from its edges. */
+    static boolean onDeck(float x, float z, float in) {
+        float[] p = pier();
+        float dx = x - p[0], dz = z - p[1], along = dx * p[2] + dz * p[3], across = dx * p[4] + dz * p[5];
+        return along > 0.5f && along < PIER_LONG && Math.abs(across) < PIER_HALF - in;
+    }
+
     /** Where yacht k lies: its middle (x, z), its heading. */
     private static void yachtAt(int k, float[] out) {
         float[] p = pier();
-        float along = 12f + (k / 2) * 2.4f * HULL_HALF + 2f, side = k % 2 == 0 ? 1f : -1f;
+        float along = moored(k), side = k % 2 == 0 ? 1f : -1f;
         out[0] = p[0] + p[2] * along + p[4] * side * OFF;
         out[1] = p[1] + p[3] * along + p[5] * side * OFF;
         out[2] = (float) Math.atan2(p[2], p[3]);
@@ -320,6 +360,7 @@ final class Island {
         float[] at = new float[3];
         if (wrecked) return;
         for (int k = 0; k < YACHTS; k++) {
+            if (k == FREE) continue;
             yachtAt(k, at);
             float fx = (float) Math.sin(at[2]), fz = (float) Math.cos(at[2]);
             for (float s = -HULL_HALF + 1f; s <= HULL_HALF - 1f; s += 1f)
@@ -881,7 +922,7 @@ final class Island {
             }
         // bollards along it, where the yachts are tied
         for (int k = 0; k < YACHTS; k++) {
-            float along = 12f + (k / 2) * 2.4f * HULL_HALF + 2f, e = k % 2 == 0 ? 1f : -1f;
+            float along = moored(k), e = k % 2 == 0 ? 1f : -1f;
             float x = p[0] + p[2] * along + p[4] * e * (PIER_HALF - 0.3f), z = p[1] + p[3] * along + p[5] * e * (PIER_HALF - 0.3f);
             d.box(x, DECK + 0.25f, z, 0.18f, 0.25f, 0.18f, null, 0x2B2E33, DrawList.POLISHED);
         }
@@ -896,8 +937,22 @@ final class Island {
             return;
         }
         for (int k = 0; k < YACHTS; k++) {
+            if (k == FREE && boatOut) continue;
             yachtAt(k, YACHT);
-            float x = YACHT[0], z = YACHT[1], h = YACHT[2], bob = 0.09f * (float) Math.sin(time * 1.1f + k * 1.7f);
+            yacht(d, YACHT[0], YACHT[1], YACHT[2], 0.09f * (float) Math.sin(time * 1.1f + k * 1.7f), STRIPES[k]);
+        }
+    }
+
+    /** The stripe of the yacht that goes out. */
+    static int freeStripe() {
+        return STRIPES[FREE];
+    }
+
+    /**
+     * One yacht, its middle at (x, z), headed so; risen so far by the swell; its band of colour so.
+     */
+    static void yacht(DrawList d, float x, float z, float h, float bob, int stripe) {
+        {
             float fx = (float) Math.sin(h), fz = (float) Math.cos(h);
             float[] t = yaw(h);
             float deck = YACHT_DECK + bob, keel = City.WATER - 0.7f + bob;
@@ -906,7 +961,7 @@ final class Island {
             float[] bow = yaw(h + 0.785f);
             d.box(x + fx * (HULL_HALF - 1.65f), (deck + keel) * 0.5f, z + fz * (HULL_HALF - 1.65f), 1.06f, (deck - keel) * 0.5f, 1.06f, bow, 0xF2F0EA,
                     DrawList.PAINT);
-            d.box(x - fx * 0.6f, deck - 0.32f, z - fz * 0.6f, BEAM + 0.02f, 0.08f, HULL_HALF - 0.6f + 0.02f, t, STRIPES[k], DrawList.PAINT);
+            d.box(x - fx * 0.6f, deck - 0.32f, z - fz * 0.6f, BEAM + 0.02f, 0.08f, HULL_HALF - 0.6f + 0.02f, t, stripe, DrawList.PAINT);
             // the deck of teak, the cabin with its windows, the mast and its boom
             d.box(x - fx * 0.6f, deck + 0.03f, z - fz * 0.6f, BEAM - 0.15f, 0.03f, HULL_HALF - 0.8f, t, 0xB07A4A, DrawList.WOOD);
             d.box(x - fx * 0.4f, deck + 0.45f, z - fz * 0.4f, BEAM * 0.65f, 0.42f, 1.6f, t, 0xF7F5F0, DrawList.PAINT);
@@ -915,7 +970,7 @@ final class Island {
             d.box(mx, deck + MAST * 0.5f, mz, 0.08f, MAST * 0.5f, 0.08f, null, 0xD9DCDF, DrawList.POLISHED);
             d.box(mx - fx * 1.8f, deck + 1.5f, mz - fz * 1.8f, 0.07f, 0.07f, 1.8f, t, 0xD9DCDF, DrawList.POLISHED);
             // the sail furled on the boom, under its cover
-            d.box(mx - fx * 1.8f, deck + 1.7f, mz - fz * 1.8f, 0.16f, 0.14f, 1.7f, t, STRIPES[k], DrawList.MATTE);
+            d.box(mx - fx * 1.8f, deck + 1.7f, mz - fz * 1.8f, 0.16f, 0.14f, 1.7f, t, stripe, DrawList.MATTE);
         }
     }
 

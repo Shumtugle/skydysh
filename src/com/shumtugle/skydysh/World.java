@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.11";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.12";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -793,6 +793,70 @@ final class World {
     }
 
     /** For the desktop stand: her at the wheel at (x, z), facing so: the pickup she drives moved there, or a duty pickup put there. */
+    // ---- the island's yacht: at the helm ----
+
+    /** A frame at the helm: the yacht as the thumb on the wheel has it; aground, a jolt in the hand. */
+    private void sail(float dt, Pickup p, boolean go, float wheel) {
+        p.drive(dt, go, wheel, brakeIn, false, city, cars, walkers);
+        if (p.bumped) {
+            host.sound(Synth.WOOD, 0.7f, 0.6f);
+            host.buzz(50);
+        }
+        p.seat(seatAt);
+        runner.aboard = true;
+        runner.ride(dt, city, p.x, p.y, p.z, p.heading, p.speed, seatAt[0], seatAt[1], seatAt[2], p.steer);
+    }
+
+    /**
+     * Out of the yacht: onto the pier, if it lies by it; onto the sand, if it is by the shore;
+     * else over the side into the water, and she swims. It stays where it is.
+     */
+    private void ashore(Pickup p) {
+        float c = (float) Math.cos(p.heading), s = (float) Math.sin(p.heading);
+        float bx = 0f, bz = 0f, by = City.WATER;
+        boolean found = false;
+        for (int e = -1; e <= 1 && !found; e += 2)
+            for (float off = 0.6f; off <= 2.8f && !found; off += 0.55f) {
+                float ax = e * (Island.BEAM + off);
+                float qx = p.x + c * ax + s * Pickup.HELM_Z, qz = p.z - s * ax + c * Pickup.HELM_Z;
+                if (Island.onDeck(qx, qz, 0.35f)) {
+                    bx = qx;
+                    bz = qz;
+                    by = Island.DECK;
+                    found = true;
+                } else if (city.ground(qx, qz) > City.WATER + 0.05f) {
+                    bx = qx;
+                    bz = qz;
+                    by = city.ground(qx, qz);
+                    found = true;
+                }
+            }
+        if (!found) {
+            // over the side, the left, into the water
+            float ax = -(Island.BEAM + 0.9f);
+            bx = p.x + c * ax + s * Pickup.HELM_Z;
+            bz = p.z - s * ax + c * Pickup.HELM_Z;
+        }
+        runner.getOut(bx, by, bz, p.heading);
+        host.sound(found ? Synth.WOOD : Synth.SPLASH, 0.4f, found ? 1.2f : 0.9f);
+        doorArmed = false;
+        runner.recenter();
+        buttonHeld = true;
+    }
+
+    /** For the desktop stand: her at the helm of the island's yacht, wherever it is. */
+    boolean standBoat() {
+        Pickup b = duty.boat();
+        if (b == null) return false;
+        if (driving != b) {
+            getOut();
+            getIn(b);
+        }
+        drive(0f);
+        runner.recenter();
+        return true;
+    }
+
     void standDrive(float x, float z, float heading) {
         Pickup p = driving;
         if (p == null) {
@@ -1314,7 +1378,7 @@ final class World {
         Pickup best = null;
         float bd = Kit.BED_NEAR * Kit.BED_NEAR;
         for (Pickup p : duty.all) {
-            if (p.driven || Math.abs(p.speed) > 0.5f) continue;
+            if (p.boat || p.driven || Math.abs(p.speed) > 0.5f) continue;
             float bx = p.x - (float) Math.sin(p.heading) * 2.4f, bz = p.z - (float) Math.cos(p.heading) * 2.4f;
             float dd = (bx - runner.x) * (bx - runner.x) + (bz - runner.z) * (bz - runner.z);
             if (dd < bd) {
@@ -1856,8 +1920,8 @@ final class World {
         if (indoors != null && indoors.concert) indoors.dark = concert != null && !concert.lit();
         // home's own pickup at its curb, once the delivery is won
         city.homePickup = passed(3);
-        if (dutyOut()) duty.update(runner.x, runner.z, city, driving);
-        else duty.all.clear();
+        if (dutyOut()) duty.update(runner.x, runner.z, city, driving, herd == null);
+        else duty.clear();
         if (driving != null && roadT < 0f) roadCue();
         if (roadT >= 0f) roadStep(dt);
         else if (driving != null) drive(dt);
@@ -2431,6 +2495,10 @@ final class World {
     static final float BY_IT = 1f, GET_IN_STAND = 0.5f;
     /** So near it, walking at it: she gets in at once. */
     static final float BY_TOUCH = 0.55f;
+    // the yacht: so much higher or lower than its deck she may be to get in (from the pier, or
+    // swimming); so near the pier the place by it may be to go to the pier's edge instead
+    static final float BOARD_UP = 1.6f, BOARD_FROM_PIER = 4f;
+    private final float[] pierAt = new float[2];
     private float wheelIn, brakeIn, doorWait;
     private boolean doorArmed = true;         // not got in again until she has been away from the door
     private final Rail rail = new Rail();
@@ -2471,7 +2539,7 @@ final class World {
             return;
         }
         for (Pickup p : duty.all) {
-            if (p.apart(r.x, r.z) < BY_IT && Math.abs(r.y - p.y) < 1f) {
+            if (p.apart(r.x, r.z) < p.reach(BY_IT) && Math.abs(r.y - p.y) < (p.boat ? BOARD_UP : 1f)) {
                 // walked up against it, from any side or end: in at once; standing by it a moment: in
                 float tx = p.x - r.x, tz = p.z - r.z, tm = (float) Math.sqrt(tx * tx + tz * tz);
                 boolean into = r.speed > 0.4f && p.apart(r.x, r.z) < BY_TOUCH
@@ -2518,6 +2586,10 @@ final class World {
         if (roll) rolling = p;
         else p.speed = 0f;
         p.steer = 0f;
+        if (p.boat) {
+            ashore(p);
+            return;
+        }
         float[] q = {0f, 0f};
         p.door(0.9f, q);
         float ox = q[0], oz = q[1];
@@ -2550,9 +2622,14 @@ final class World {
         boolean go = pull > 0f;
         // in the town no faster than its streets take; out on the road, all it has
         boolean town = p.z < City.EDGE_J * City.CELL + City.CURB;
-        float top = town ? TOWN_TOP : Pickup.VMAX;
+        float top = p.boat ? Pickup.SEA_TOP : town ? TOWN_TOP : Pickup.VMAX;
         p.cap = go ? top * (CAR_CRAWL + (1f - CAR_CRAWL) * pull) : top;
         wheelIn = wheel;
+        runner.aboard = false;
+        if (p.boat) {
+            sail(dt, p, go, wheel);
+            return;
+        }
         // a street lamp in the way, going fast enough: down it goes, the pickup hardly slowed
         if (Math.abs(p.speed) > Cars.RAM_FROM) {
             float fx = (float) Math.sin(p.heading), fz = (float) Math.cos(p.heading), sg = Math.signum(p.speed);
@@ -2967,6 +3044,11 @@ final class World {
             if (p == null) return;
             // to the nearest of it, whichever side or corner: she gets in wherever she comes up to it
             p.beside(r.x, r.z, 0.7f, way);
+            // the yacht from the pier: to the pier's edge by it, not off it into the water
+            if (p.boat && !r.swimming() && Island.toPier(way[0], way[1], pierAt) < BOARD_FROM_PIER) {
+                way[0] = pierAt[0];
+                way[1] = pierAt[1];
+            }
             r.lead(way[0], way[1], (float) Math.atan2(p.x - way[0], p.z - way[1]));
             errandPickup = p;
             errand = ERRAND_DRIVE;
@@ -3019,7 +3101,7 @@ final class World {
                 } else if (!r.led() && !arrived) errand = NO_ERRAND;
                 break;
             case ERRAND_DRIVE:
-                if (arrived || errandPickup != null && errandPickup.apart(r.x, r.z) < BY_IT && !r.inAir()) {
+                if (arrived || errandPickup != null && errandPickup.apart(r.x, r.z) < errandPickup.reach(BY_IT) && !r.inAir()) {
                     getIn(errandPickup);
                     errand = NO_ERRAND;
                 } else if (!r.led()) errand = NO_ERRAND;
@@ -6071,7 +6153,7 @@ final class World {
         // what the beds of the pickups near her hold
         if (duty != null) for (Pickup p : duty.all) {
             float dx = p.x - runner.x, dz = p.z - runner.z;
-            if (dx * dx + dz * dz < 45f * 45f) kit.inBed(d, p, tow != null);
+            if (!p.boat && dx * dx + dz * dz < 45f * 45f) kit.inBed(d, p, tow != null);
         }
         shore.draw(d, city, eyeX, eyeZ, time);
         if (archive != null) archive.draw(d, r);
