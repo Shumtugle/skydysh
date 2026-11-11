@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.29
+
+- The crowd at the water's edge for the puppy is bigger and alive: people shift where they stand
+  and step a little this way and that, walk up and down along the water, stand in twos talking and
+  turn now and then to look out, call out to it with their hands cupped at the mouth; a few wade
+  in to the knee, stand there calling, and come out again.
+- At the vets' she gets out of the pickup with the puppy and goes in: led to the door, the glass
+  doors slide apart, in she goes into the dark of the hall, and they shut behind her. Then the
+  dispatcher: the job is done, home now. She is out on the pavement again, turned the way home is;
+  the way there is hers, the next jobs on the sofa.
+- The puppy's page says so.
+
 ## 1.4.28
 
 - The ring is over the thing now, not on her or on the pickup. Where a job wants something used

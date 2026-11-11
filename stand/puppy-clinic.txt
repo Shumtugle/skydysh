@@ -1,0 +1,53 @@
+# The puppy at sea (1.4.29): the crowd at the water's edge alive about it, shifting, walking,
+# talking in twos, calling out with cupped hands, wading in to the knee; seen a while. Then at the
+# vets' with the puppy: driven into the bay, out of the pickup, led to the door, the glass doors
+# sliding open, in through them, shut behind her; the dispatcher: done, home now. Out on the
+# pavement after, the way home hers. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 5
+close
+at 540 -24 2.9
+wait 3
+shot c0
+wait 2.5
+shot c1
+wait 2.5
+shot c2
+at 552 -27 3.6
+wait 6
+shot c3
+at 527 -34.5 1.5708
+wait 2
+shot c4
+wait 3
+shot c5
+wait 4
+shot c6
+at 538 -38.5 0
+wait 1.5
+shot c7
+wait 2
+shot c8
+at 543.6 -55.6 3.1416
+wait 1
+where
+drivein 96 195.4 1.5708
+shot k0
+wait 0.3
+shot k1
+wait 0.4
+shot k2
+wait 0.4
+shot k3
+wait 0.4
+shot k4
+wait 0.5
+shot k5
+wait 2.5
+shot k6
+close
+wait 0.5
+shot k7
+where

@@ -140,6 +140,20 @@ final class Runner {
         led = false;
     }
 
+    // walking in at a door by herself: straight to (inX, inZ) at a walk, the wall about it no hindrance
+    static final float WALK_IN = 1.25f;
+    private boolean goingIn;
+    private float inX, inZ;
+
+    /** In at a door by herself: straight to (tx, tz) at a walk, through what stands there. */
+    void walkIn(float tx, float tz) {
+        goingIn = true;
+        inX = tx;
+        inZ = tz;
+        led = false;
+        holding = false;
+    }
+
     /** Whether she is on her way somewhere by herself. */
     boolean led() {
         return led;
@@ -514,6 +528,7 @@ final class Runner {
         placed = false;
         auto = false;
         led = false;
+        goingIn = false;
         riding = false;
         tapped = false;
         beats = 0;
@@ -615,6 +630,23 @@ final class Runner {
         if (held) {
             holding = false;
             speed = 0f;
+        }
+        if (goingIn) {
+            // in at the door: turned to it, a walk straight on, the stride with it
+            float dx = inX - x, dz = inZ - z, l = (float) Math.sqrt(dx * dx + dz * dz);
+            speed = l > 0.05f ? WALK_IN : 0f;
+            if (l > 1e-4f) {
+                float d = (float) Math.atan2(dx, dz) - heading;
+                while (d > Math.PI) d -= 2f * (float) Math.PI;
+                while (d < -Math.PI) d += 2f * (float) Math.PI;
+                heading += Math.max(-6f * dt, Math.min(6f * dt, d));
+                float step = Math.min(l, speed * dt);
+                x += dx / l * step;
+                z += dz / l * step;
+            }
+            stride += dt * Math.max(0.3f, speed) / strideSpeed();
+            eye(dt, g);
+            return;
         }
         if (state == CLIMB) {
             // up the ladder, hand over hand; at the top, over the edge onto the roof

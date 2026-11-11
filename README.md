@@ -358,7 +358,10 @@ stands at the water's edge looking out at a puppy too tired to swim back. No clo
 it but the time it takes. Along the shore road in a duty pickup, down to the beach, out
 into the water, right up to it, and she takes it; back to the pickup and to the vets', a white
 house with a turquoise band and a paw over its door, three streets up and a block east of home,
-the bay painted on the street before it.
+the bay painted on the street before it. There she gets out and goes in at the glass doors with
+it, and the dispatcher says the job is done: the way home is hers, the next jobs on the sofa.
+The crowd on the sand is not a row of posts: people shift where they stand, walk up and down,
+talk in twos, call out to it with cupped hands, and a few wade in to the knee.
 
 The sixth, the tow, straight after the call out: past the pass, in the fields east of the road
 to the village, an old quarry, gravel at its bottom and steps of rock round it; a brum's pickup has

@@ -400,7 +400,8 @@ public final class Stand implements World.Host {
             world.standDrive(f(p[1]), f(p[2]), f(p[3]));
             step();
             Pickup q = world.driving;
-            System.out.println(String.format("%7.2fs  at the wheel at %.1f %.1f, %d crates on", time, q.x, q.z, q.load));
+            if (q == null) System.out.println(String.format("%7.2fs  out of the wheel at once, at %.1f %.1f", time, world.runner.x, world.runner.z));
+            else System.out.println(String.format("%7.2fs  at the wheel at %.1f %.1f, %d crates on", time, q.x, q.z, q.load));
         } else if (c.equals("inroom")) {
             // inroom U V: her put down in the room she is in, at (u, v) of its frame (across, in from its door)
             world.standInRoom(f(p[1]), f(p[2]));

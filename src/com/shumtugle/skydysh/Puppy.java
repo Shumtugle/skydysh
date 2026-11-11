@@ -6,11 +6,12 @@ package com.shumtugle.skydysh;
  * out at it. She gets there (a duty pickup is the quick way, along the shore road), swims out to
  * it and takes it; then to the vets' on the street north of home's row, three streets up, where it
  * is handed in at the door, in the bay painted on the road before it. No pay and no clock on the
- * puppy's strength: only the time it took is kept.
+ * puppy's strength: only the time it took is kept. At the vets' she gets out with it and goes in
+ * at their door; the job is done there, and the way home is her own.
  */
 final class Puppy {
-    // the steps: to the puppy, to the vets', done
-    static final int REACH = 0, CLINIC = 1, DONE = 2;
+    // the steps: to the puppy, to the vets', in at their door with it (the world walks her in), done
+    static final int REACH = 0, CLINIC = 1, ENTER = 2, DONE = 3;
     // where it is: so far east of home, so far out from the water's edge; how near she takes it
     static final float AT_X = 8 * City.CELL + 32f, AT_Z = City.SHORE * City.CELL + City.WATERLINE - 22f, TAKE = 2.6f;
     // how near the vets' door is the vets', on foot
@@ -32,12 +33,18 @@ final class Puppy {
 
     /** Whether she carries it. */
     boolean held() {
-        return step == CLINIC;
+        return step == CLINIC || step == ENTER;
+    }
+
+    /** Whether she is being walked in at the vets' door with it. */
+    boolean entering() {
+        return step == ENTER;
     }
 
     void update(float dt, Pickup driving, Runner r, World.Host host) {
         if (over()) return;
         clock += dt;
+        if (step == ENTER) return;
         paddle += dt * (step == REACH ? 2.6f : 0f);
         if (step == REACH) {
             // paddling where it is, turning a little, drifting a little out and back
@@ -56,7 +63,7 @@ final class Puppy {
             boolean in = driving != null ? Math.abs(driving.speed) < 0.6f && City.inClinicBay(driving.x, driving.z)
                     : near(r.x, r.z, City.clinicDoorX(), City.clinicDoorZ(), DOOR_NEAR) || City.inClinicBay(r.x, r.z);
             if (in) {
-                step = DONE;
+                step = ENTER;
                 doneAt = clock;
                 host.sound(Synth.CHIME, 0.5f, 1.3f);
             }
@@ -76,7 +83,7 @@ final class Puppy {
             out[2] = z;
             return true;
         }
-        if (step == CLINIC) {
+        if (step == CLINIC || step == ENTER) {
             out[0] = City.clinicDoorX();
             out[1] = 1.2f;
             out[2] = City.clinicBayZ();
@@ -101,7 +108,7 @@ final class Puppy {
      * wheel, on the seat beside her.
      */
     void draw(DrawList d, Runner r, Pickup driving) {
-        if (step == DONE) return;
+        if (step == DONE || r.hidden) return;
         if (step == REACH) {
             float bob = 0.05f * (float) Math.sin(paddle * 1.7f);
             begin(x, City.WATER - 0.12f + bob, z, yaw, 1f);

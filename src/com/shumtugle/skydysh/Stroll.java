@@ -299,6 +299,36 @@ final class Stroll {
         }
     }
 
+    // calling out, hands cupped at the mouth: the hands so far over the head's root and before it,
+    // so far apart; the head tipped up so much
+    static final float CALL_UP = -0.05f, CALL_FORE = 0.13f, CALL_APART = 0.075f, CALL_TIP = 0.18f;
+
+    /**
+     * Standing, calling out over the water, the hands cupped at the mouth, the head up and leaning
+     * a little into it (lean, 0 to 1): as hold() gives it.
+     */
+    static void call(Moves mv, float lean, float[] q, float[] p) {
+        int n = mv.bone.length;
+        if (turn == null || turn.length != n * 4) {
+            turn = new float[n * 4];
+            g = new float[n * 4];
+            pos = new float[n * 3];
+        }
+        for (int b = 0; b < n; b++) set(b, 0f, 0f, 0f, 1f);
+        axis(SPINE1, 1f, 0f, 0f, 0.08f * lean);
+        axis(HEAD, 1f, 0f, 0f, -CALL_TIP);
+        chain(mv, 0f);
+        float ty = pos[HEAD * 3 + 1] + CALL_UP, tz = pos[HEAD * 3 + 2] - CALL_FORE;
+        reach(mv, ARM_L, FORE_L, HAND_L, -1f, -CALL_APART, ty, tz);
+        reach(mv, ARM_R, FORE_R, HAND_R, 1f, CALL_APART, ty, tz);
+        for (int b = 0; b < n; b++) {
+            mul(g, b, mv.restQ, b, q, b);
+            p[b * 3] = pos[b * 3];
+            p[b * 3 + 1] = pos[b * 3 + 1];
+            p[b * 3 + 2] = pos[b * 3 + 2];
+        }
+    }
+
     /** Where the hands hold in hold(), in the figure (x, y, z into out): the shoulders' height known only after a pose, so it is asked of the last. */
     static void held(float[] out) {
         out[0] = 0f;

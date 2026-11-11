@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.28";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.29";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -968,6 +968,8 @@ final class World {
     }
 
     private void fingered(int type, int id, float x, float y) {
+        // walked in at the vets' door with the puppy: hers again once the job is done
+        if (puppy != null && puppy.entering() && type != LEFT && type != BACK) return;
         // the torch seen close: a touch lets it go
         if (torchShowT >= 0f && opening == null && dispatch == null && story == null) {
             if (type == DOWN) torchShown();
@@ -1559,7 +1561,8 @@ final class World {
         Runner r = runner;
         return driving == null && !paused && !aboard() && !piloting() && !seated() && !inChair() && dispatch == null && story == null
                 && opening == null && !r.climbing() && !r.swimming() && !r.hidden && !craning && solo == null && faultWires() == null
-                && !(concert != null && concert.panelOpen) && toss.state == Toss.HELD && torchShowT < 0f;
+                && !(concert != null && concert.panelOpen) && toss.state == Toss.HELD && torchShowT < 0f
+                && !(puppy != null && puppy.entering());
     }
 
     /** Whether she stands at the back of pickup p, near enough to take a thing out of its bed. */
@@ -2352,9 +2355,11 @@ final class World {
         } else if (tow != null) {
             tow.update(dt, duty, driving, runner, city, host);
         } else if (puppy != null) {
-            boolean had = puppy.held();
+            boolean had = puppy.held(), was = puppy.entering();
             puppy.update(dt, driving, runner, host);
             if (puppy.held() && !had) host.sound(Synth.SPLASH, 0.5f, 1.6f);
+            if (puppy.entering()) clinicStep(dt, !was);
+            if (crowd != null) crowd.update(dt, runner.x, runner.z);
         } else if (rescue != null) {
             rescueStep(dt);
         } else if (delivery != null) {
@@ -2436,6 +2441,7 @@ final class World {
         reparkFar();
         // the mend's scenes are shown from an eye of their own, whatever else has set one
         if (mend != null && mend.scene()) mendEye();
+        if (puppy != null && puppy.entering()) clinicEye();
     }
 
     /**
@@ -3831,6 +3837,90 @@ final class World {
      * The eye of the mend's scenes: the skid put in the bed, from across the road, the gate and the
      * pickup both in sight; the mending, from beside the helicopter, the skid and her in sight.
      */
+    // ---- in at the vets' door with the puppy ----
+    // out on the pavement before the door, where she is led; so far in past it, where she goes;
+    // how long she is led before she is walked in straight whatever is in the way; how long the
+    // doors stand shut behind her before the job is done; how quick they slide
+    static final float CLINIC_BEFORE = 1.3f, CLINIC_IN = 1.2f, CLINIC_LED_FOR = 6f, CLINIC_SHUT_FOR = 0.6f, CLINIC_SLIDE = 2.2f;
+    // out again after: so far out on the pavement, clear of the awning
+    static final float CLINIC_OUT = 2.3f;
+    // the eye on it: so far across, out into the street, so high
+    static final float CLINIC_EYE_ACROSS = 4.5f, CLINIC_EYE_OUT = 9.5f, CLINIC_EYE_UP = 2.8f;
+    private int clinicPart;
+    private float clinicT, clinicOpen;
+    private final float[] clinicEyeNow = new float[5];
+
+    /**
+     * A frame at the vets' with the puppy: out of the pickup, led to the door, the doors sliding
+     * open, in through them, and shut behind her; then the dispatcher: the job done, home now. Out
+     * on the pavement again as the screen comes on: the way home is hers.
+     */
+    private void clinicStep(float dt, boolean begun) {
+        Runner r = runner;
+        float doorX = City.clinicDoorX(), doorZ = City.clinicDoorZ();
+        if (begun) {
+            letGo();
+            errand = NO_ERRAND;
+            if (driving != null) getOut();
+            clinicPart = 0;
+            clinicT = 0f;
+            clinicOpen = 0f;
+            r.lead(doorX, doorZ - CLINIC_BEFORE, 0f);
+        }
+        clinicT += dt;
+        float dx = r.x - doorX, dz = r.z - (doorZ - CLINIC_BEFORE);
+        if (clinicPart == 0 && (r.arrived() || dx * dx + dz * dz < 0.3f * 0.3f || clinicT > CLINIC_LED_FOR)) {
+            // at the door: in through it, straight
+            clinicPart = 1;
+            clinicT = 0f;
+            r.stopLead();
+            r.walkIn(doorX, doorZ + CLINIC_IN);
+        }
+        // the doors open as she comes up, and shut once she is in
+        boolean open = clinicPart == 1 || clinicPart == 0 && dx * dx + dz * dz < 2.5f * 2.5f;
+        clinicOpen = Math.max(0f, Math.min(1f, clinicOpen + (open ? dt : -dt) * CLINIC_SLIDE));
+        if (clinicPart == 1 && r.z > doorZ + 0.45f) {
+            clinicPart = 2;
+            clinicT = 0f;
+            r.hidden = true;
+        }
+        if (clinicPart == 2 && clinicOpen <= 0f && clinicT > CLINIC_SHUT_FOR) {
+            // in: the job done. She is out on the pavement again, turned along it the way home is
+            puppy.step = Puppy.DONE;
+            r.hidden = false;
+            float home = City.HOME_DOOR_X < doorX ? -1f : 1f, outZ = doorZ - CLINIC_OUT;
+            r.put(doorX + home * 1.5f, city.ground(doorX, outZ), outZ, home * (float) Math.PI * 0.5f);
+            r.recenter();
+            host.sound(Synth.CHIME, 0.6f, 1f);
+            dispatch = new Dispatch(host, Lang.lines("puppy.done", mission.round, null));
+        }
+    }
+
+    /** The vets' glass doors, slid apart so far, the dark of the hall between them. */
+    private void clinicDoors(DrawList d) {
+        float cx = City.clinicDoorX(), fz = City.clinicDoorZ(), o = clinicOpen;
+        float leaf = 0.875f, slide = 0.85f * o;
+        if (o > 0.01f) d.box(cx, 1.4f, fz - 0.115f, slide, 1.3f, 0.01f, null, 0x0E1418, DrawList.PLAIN);
+        for (int e = -1; e <= 1; e += 2) {
+            float lx = cx + e * (leaf * 0.5f + slide);
+            d.box(lx, 1.4f, fz - 0.135f, leaf * 0.5f, 1.3f, 0.012f, null, 0x2A3E48, DrawList.GLASS);
+            d.box(lx - e * leaf * 0.5f, 1.4f, fz - 0.15f, 0.035f, 1.3f, 0.015f, null, 0x1E2428, DrawList.PLAIN);
+        }
+    }
+
+    /** The eye on the vets' door from across the pavement, a little aside, out toward the street. */
+    private void clinicEye() {
+        float tx = City.clinicDoorX(), tz = City.clinicDoorZ() - 0.8f, ty = 1.2f;
+        float ex = tx + CLINIC_EYE_ACROSS, ez = tz - CLINIC_EYE_OUT, ey = CLINIC_EYE_UP;
+        float dx = tx - ex, dz = tz - ez;
+        clinicEyeNow[0] = ex;
+        clinicEyeNow[1] = ey;
+        clinicEyeNow[2] = ez;
+        clinicEyeNow[3] = (float) Math.atan2(dx, dz);
+        clinicEyeNow[4] = (float) Math.atan2(ty - ey, Math.sqrt(dx * dx + dz * dz));
+        runner.eyeAt(clinicEyeNow);
+    }
+
     private void mendEye() {
         Mend m = mend;
         float tx, ty, tz, ex, ey, ez;
@@ -6778,6 +6868,7 @@ final class World {
             else towed.draw(d, time);
         }
         if (puppy != null) {
+            if (puppy.entering()) clinicDoors(d);
             puppy.draw(d, r, driving);
             // the crowd at the water's edge, as long as the job goes on
             if (!puppy.over()) {

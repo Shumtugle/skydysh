@@ -128,6 +128,15 @@ final class FolkPack {
         out[2] = z - s * px + c * pz;
     }
 
+    /** Person m standing, calling out over the water, the hands cupped at the mouth, leaning into it so much (0 to 1). */
+    static void caller(DrawList d, int m, float x, float y, float z, float yaw, float scale, float lean) {
+        Moves mv = Frida.moves();
+        if (town == null || mv == null || mv.bone.length != BONES) return;
+        ready();
+        Stroll.call(mv, lean, pq, pp);
+        put(d, m, x, y, z, yaw, scale, mv);
+    }
+
     /** The first model at or past m that is a woman in her own clothes, not in a uniform (m itself if none is). */
     static int womanFrom(int m) {
         if (town == null) return m;
