@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.22
+
+- The delivery has the dispatcher on the way. At the wheel for the first time in a game, how a
+  pickup is driven: the thumb is the wheel, aside it turns, up the throttle, down the brake, held
+  down standing it backs; the button on the right gets her out. Near the factory's gate, the pickup
+  to be put where it is loaded and stood there; near the store's, where it is unloaded. The last
+  crate off: the job is done, and home now.
+- The delivery ends at the store, its clock with it; the report waits at home as ever. Its best
+  time begins anew.
+
 ## 1.4.21
 
 - A torch in her ring, hers from the first. In a dark room its light goes out of her hand ahead

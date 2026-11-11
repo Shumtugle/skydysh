@@ -323,8 +323,9 @@ mission and what it asks; the same from under the pause while it is played.
 
 The third mission, the delivery: a load waits at the factory with the chimney, west along the
 shore road, and is wanted at the store, east along it. A duty pickup to the factory's gate,
-stood in the bay painted before it while the crates go on; to the store's, while they come off;
-then home.
+stood in the bay painted before it while the crates go on; to the store's, while they come off:
+the job is done there, and home after. The dispatcher speaks on the way: at the wheel the first
+time, how a pickup is driven; near each gate, its bay to be stood in; at the end, home now.
 
 The fourth, the call out: the road to the village over the hills is blocked in the pass, the
 slope coming down onto it. The town ends inland, ten streets up from the shore: past its last

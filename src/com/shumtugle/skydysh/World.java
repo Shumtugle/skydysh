@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.21";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.22";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -469,7 +469,7 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 4, 2, 2, 1, 2, 2, 1, 1};
+    static final int[] REVISION = {0, 4, 4, 3, 3, 2, 1, 4, 2, 2, 1, 2, 2, 1, 1};
     /** How many kinds of mission there are; they come in turn, round and round. */
     static final int KINDS = 14;
 
@@ -2249,7 +2249,7 @@ final class World {
         } else if (rescue != null) {
             rescueStep(dt);
         } else if (delivery != null) {
-            delivery.update(dt, duty, driving, runner, host);
+            deliveryStep(dt);
         } else if (folder != null) {
             boolean had = folder.hers;
             folder.update(dt, runner, city, cars);
@@ -5100,6 +5100,25 @@ final class World {
      * stand in, its sign (a crate taken up at the factory, put down at the store); the pay and the
      * clock in the corner, and the crates on the pickup she drives. Done, the pay large.
      */
+    /** Whether the dispatcher has told how a pickup is driven: once in a game, the first time she is at a wheel. */
+    static final String SAVE_TOLD_CAR = "told.car";
+
+    /** A frame of the delivery: the dispatcher at the wheel the first time, near each gate, and once it is done. */
+    private void deliveryStep(float dt) {
+        int got = delivery.update(dt, duty, driving, runner, host);
+        String say = null;
+        if (got == Delivery.IN && host.loadInt(SAVE_TOLD_CAR) == 0) {
+            host.saveInt(SAVE_TOLD_CAR, 1);
+            say = "delivery.car";
+        } else if (got == Delivery.AT_FACTORY) say = "delivery.factory";
+        else if (got == Delivery.AT_STORE) say = "delivery.store";
+        else if (got == Delivery.DELIVERED) say = "delivery.done";
+        if (say == null) return;
+        if (got == Delivery.DELIVERED) host.sound(Synth.CHIME, 0.6f, 1f);
+        letGo();
+        dispatch = new Dispatch(host, Lang.lines(say, mission.round, null));
+    }
+
     private void deliveryFlat(DrawList d, Px f) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
         Delivery dv = delivery;

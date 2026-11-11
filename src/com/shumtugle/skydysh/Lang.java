@@ -27,6 +27,13 @@ final class Lang {
         EN.put("brief.again", "Dispatch \u2014 {kind}||Replay job.||Find the folder on the roofs|before the others.||Touch to go");
         EN.put("report.folder", "Dispatch \u2014 {kind}||The folder is at the town hall, in good hands."
                 + "||Time: {time}||Touch to go on");
+        EN.put("delivery.car", "Dispatch \u2014 {kind}||You are at the wheel.|A thumb on the glass is the wheel:"
+                + "|aside it turns, up is the throttle,|down the brake.|Stopped, hold it down,|and the pickup backs.||The button on the right gets you out.||Touch to go on");
+        EN.put("delivery.factory", "Dispatch \u2014 {kind}||The factory is near.|Put the pickup where it is loaded,"
+                + "|in the yellow bay at the gate,|and stand: the crates go on the bed.||Touch to go on");
+        EN.put("delivery.store", "Dispatch \u2014 {kind}||The warehouse is near.|Put the pickup where it is unloaded,"
+                + "|in the bay at the gate,|and stand: the crates come off.||Touch to go on");
+        EN.put("delivery.done", "Dispatch \u2014 {kind}||The job is done.|The crates are at the warehouse.||Head home.||Touch to go on");
         EN.put("folder.done", "Dispatch \u2014 {kind}||The job is done.|What was lost is back at the town hall."
                 + "||Head home.||Touch to go on");
         EN.put("folder.safe", "Dispatch \u2014 {kind}||The folder is yours. It is safe now.||Jump down off the roof"

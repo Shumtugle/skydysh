@@ -4,16 +4,20 @@ package com.shumtugle.skydysh;
  * The delivery: a load waits at the factory on the shore road, west of home, and is wanted at the
  * store, east of it. She finds a duty pickup and drives it to the factory; stood in the bay before
  * its gate, the crates are put on its bed one by one; then to the store, where they are taken off
- * the same way; then home. Got out of the pickup with the load on it, it waits where it was left,
- * and the way is to it. The clock runs until she is home.
+ * the same way. Got out of the pickup with the load on it, it waits where it was left, and the way
+ * is to it. The clock runs until the last crate is off: the job is done there, and home is after.
+ * The dispatcher speaks on the way: in at the wheel, near the factory's gate, near the store's,
+ * and once it is done (the World hears each as the step's result).
  */
 final class Delivery {
-    // the steps: a pickup to be found, the factory, the store, home, done
-    static final int PICKUP = 0, FACTORY = 1, STORE = 2, HOME = 3, DONE = 4;
+    // the steps: a pickup to be found, the factory, the store, done
+    static final int PICKUP = 0, FACTORY = 1, STORE = 2, DONE = 4;
+    // what a step brought: nothing, in at the wheel, near the factory's gate, near the store's, the load off
+    static final int NONE = 0, IN = 1, AT_FACTORY = 2, AT_STORE = 3, DELIVERED = 4;
+    /** How near a gate the pickup she drives is when the dispatcher speaks of its bay, meters. */
+    static final float NEAR_GATE = 45f;
     // how long the pickup must stand in a bay before the first crate, and between crates
     static final float SETTLE = 0.6f, EACH = 0.45f;
-    // how near home's door is home: on foot or at the wheel
-    static final float HOME_NEAR = 7f;
 
     /** Whether mission n is a delivery: the third, and every fifth after it. */
     static boolean its(int n) {
@@ -25,17 +29,31 @@ final class Delivery {
     /** The pickup with the load on it, once there is one. */
     Pickup carrying;
     private float stood;
+    private boolean factorySaid, storeSaid;
 
     boolean over() {
         return step == DONE;
     }
 
-    /** A step on: the duty pickups about, the one she drives (or none), where she is. */
-    void update(float dt, Duty duty, Pickup driving, Runner r, World.Host host) {
-        if (step == DONE) return;
+    /** A step on: the duty pickups about, the one she drives (or none), where she is; what it brought. */
+    int update(float dt, Duty duty, Pickup driving, Runner r, World.Host host) {
+        if (step == DONE) return NONE;
         clock += dt;
         for (Pickup p : duty.all) p.loadedAgo += dt;
-        if (step == PICKUP && driving != null) step = FACTORY;
+        if (step == PICKUP && driving != null) {
+            step = FACTORY;
+            return IN;
+        }
+        // at the wheel near a gate, the first time: its bay to be stood in
+        if (driving != null && (step == FACTORY && !factorySaid || step == STORE && !storeSaid && driving == carrying)) {
+            boolean factory = step == FACTORY;
+            float dx = driving.x - City.gateX(factory), dz = driving.z - (City.SHORE * City.CELL + City.BAY_Z);
+            if (dx * dx + dz * dz < NEAR_GATE * NEAR_GATE) {
+                if (factory) factorySaid = true;
+                else storeSaid = true;
+                return factory ? AT_FACTORY : AT_STORE;
+            }
+        }
         if (step == FACTORY || step == STORE) {
             boolean factory = step == FACTORY;
             Pickup p = factory ? driving : carrying;
@@ -55,21 +73,17 @@ final class Delivery {
                     stood = 0f;
                     host.sound(Synth.CHIME, 0.5f, 1.3f);
                 } else if (!factory && p.load <= 0) {
+                    // the last crate off: the job done
                     carrying = null;
-                    step = HOME;
+                    step = DONE;
+                    doneAt = clock;
                     stood = 0f;
                     host.sound(Synth.CHIME, 0.5f, 1.3f);
+                    return DELIVERED;
                 }
             }
         }
-        if (step == HOME) {
-            float x = driving != null ? driving.x : r.x, z = driving != null ? driving.z : r.z;
-            float dx = x - City.HOME_DOOR_X, dz = z - (City.HOME_DOOR_Z - 4f);
-            if (dx * dx + dz * dz < HOME_NEAR * HOME_NEAR) {
-                step = DONE;
-                doneAt = clock;
-            }
-        }
+        return NONE;
     }
 
     /**
@@ -101,9 +115,6 @@ final class Delivery {
                     return true;
                 }
                 set(out, City.gateX(step == FACTORY), 1.2f, City.SHORE * City.CELL + City.BAY_Z);
-                return true;
-            case HOME:
-                set(out, City.HOME_DOOR_X, City.WALK_TOP + 3.5f, City.HOME_DOOR_Z);
                 return true;
             default:
                 return false;
