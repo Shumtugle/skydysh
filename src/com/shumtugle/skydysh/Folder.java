@@ -11,8 +11,9 @@ import java.util.Random;
  * The house it lies on has no way up, nor have the houses next to it, and there is no lift in its
  * row; a house of its row two off or more has a fire escape up its back, in the yard. Up there,
  * then along the roofs: up the ladders where the next roof stands higher, leaping, down onto
- * the lower ones, gliding, beating the air to rise. Taken, she carries it, and goes down to the
- * street gliding.
+ * the lower ones, gliding, beating the air to rise. Taken, the dispatcher says it is safe now:
+ * down off the roof with it, to the town hall, where the clerk in the secretariat takes it from
+ * her hands; then home.
  */
 final class Folder {
     static final int RIVALS = 3;
@@ -24,6 +25,13 @@ final class Folder {
     static final float RIVAL_RUN = 8.6f;
     // she has it when this near; the helicopter, over where it fell
     static final float TAKE = 1.4f, HELI_UP = 14f, HELI_ROUND = 30f, HELI_TURN = 0.22f;
+
+    // after it is hers: the race, then to the town hall with it, to the secretariat's desk, handed over, done
+    static final int RACE = 0, BACK = 1, DESK = 2, HAND = 3, DONE = 4;
+    // handing it over: how long in all; it leaves her hands, and is in the clerk's; how near the desk
+    static final float HAND_TIME = 3.2f, PASS_FROM = 0.9f, PASS_TO = 2.0f, DESK_NEAR = 1.9f;
+    int step = RACE;
+    float handT;
 
     final Chase[] rivals = new Chase[RIVALS];
     float x, y, z;                       // where it lies
@@ -256,7 +264,91 @@ final class Folder {
         if (dx * dx + dz * dz < TAKE * TAKE && Math.abs(r.y - y) < 1.5f) {
             hers = true;
             doneAt = clock;
+            step = BACK;
         }
+    }
+
+    /** Hers, a step on with it: into the town hall, up to the secretariat's desk, handed over. */
+    void back(float dt, Runner r, Indoors in, World.Host host) {
+        switch (step) {
+            case BACK:
+                if (in != null && in.townHall) step = DESK;
+                break;
+            case DESK:
+                if (in == null || !in.townHall) {
+                    step = BACK;
+                    break;
+                }
+                float du = in.u(r.x, r.z) - in.deskU, dv = in.v(r.x, r.z) - in.deskV;
+                if (du * du + dv * dv < DESK_NEAR * DESK_NEAR) {
+                    step = HAND;
+                    handT = 0f;
+                    host.sound(Synth.CHIME, 0.25f, 1.8f);
+                }
+                break;
+            case HAND: {
+                float was = handT;
+                handT += dt;
+                if (was < PASS_TO && handT >= PASS_TO) {
+                    host.sound(Synth.LEATHER, 0.5f, 1.2f);
+                    host.sound(Synth.CHIME, 0.35f, 1.4f);
+                    host.buzz(30);
+                }
+                if (handT >= HAND_TIME) step = DONE;
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    /** Whether it is in the clerk's hands now: the job done. */
+    boolean delivered() {
+        return step == DONE;
+    }
+
+    /** Whether it is being handed over now: she stands, the eye on the two of them. */
+    boolean handing() {
+        return step == HAND;
+    }
+
+    /** Whether she carries it still. */
+    boolean carried() {
+        return hers && (step == RACE || step == BACK || step == DESK || step == HAND && handT < PASS_FROM);
+    }
+
+    /** Whether the clerk reaches for it, or holds it: from the moment she is at the desk. */
+    boolean clerkHas() {
+        return step == HAND || step == DONE;
+    }
+
+    /** It on its way from her hands to the clerk's: so far (0 to 1); -1 before; 1 once the clerk's. */
+    float passing() {
+        if (step == DONE) return 1f;
+        if (step != HAND || handT < PASS_FROM) return -1f;
+        return Math.min(1f, (handT - PASS_FROM) / (PASS_TO - PASS_FROM));
+    }
+
+    /** Where she takes it now, into out (x, y, z): the town hall's door, the desk in its hall; false once given. */
+    boolean goal(Indoors in, float[] out) {
+        if (step == BACK || step == DESK && (in == null || !in.townHall)) return Archive.townDoor(out);
+        if (step == DESK) {
+            out[0] = in.wx(in.deskU, in.deskV);
+            out[1] = Indoors.FLOOR + 2.4f;
+            out[2] = in.wz(in.deskU, in.deskV);
+            return true;
+        }
+        return false;
+    }
+
+    /** The word for where it goes now, as Lang keeps it. */
+    String goalWord(Indoors in) {
+        return in != null && in.townHall ? "goal.desk" : "goal.townhall";
+    }
+
+    /** The mark for where it goes now. */
+    int mark(Indoors in) {
+        return in != null && in.townHall ? Marks.DESK : Marks.TOWNHALL;
     }
 
     boolean over() {
@@ -295,9 +387,7 @@ final class Folder {
     void draw(DrawList d, Runner r) {
         // the folder: lying where it fell, or under her arm, or in the rival's hands
         if (hers) {
-            r.bone("hand_l", hand);
-            yaw(r.heading + (float) Math.PI * 0.5f);
-            folder(d, hand[0], hand[1] - 0.05f, hand[2], true);
+            if (carried()) inHand(d, r);
         } else if (theirs && taker != null && !taker.done()) {
             taker.bone("hand_r", hand);
             yaw(taker.heading);
@@ -308,6 +398,13 @@ final class Folder {
             papers(d);
         }
         heliDraw(d);
+    }
+
+    /** It in her hand as she carries it (indoors as well). */
+    void inHand(DrawList d, Runner r) {
+        r.bone("hand_l", hand);
+        yaw(r.heading + (float) Math.PI * 0.5f);
+        folder(d, hand[0], hand[1] - 0.05f, hand[2], true);
     }
 
     private void yaw(float a) {

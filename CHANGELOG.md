@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.17
+
+- The folder found is taken back: as soon as it is in her hands, the dispatcher comes on to say
+  it is safe now, and to jump down off the roof and take the papers back to the town hall's
+  secretariat. She is no longer run down to the street by herself. On the way the town hall's
+  word and mark at the top, inside the secretariat's; at the desk the folder goes from her hands
+  into the clerk's, as the papers to the archive go the other way, and the clerk thanks her.
+  Then the dispatcher again: the job done, home now; the report waits on the sofa as ever.
+- With the folder in her hands she goes in at doors and up ladders as at any time.
+
 ## 1.4.16
 
 - High footbridges over the canal in the town, where its streets stop at the quays: a steel deck

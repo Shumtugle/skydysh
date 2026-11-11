@@ -300,8 +300,11 @@ fire escape, and along the roofs. The mallet stops a seeker as it stops a
 runaway: broken, it is out of the race.
 Up by a lift or a fire escape in a house of the row, then roof to roof: up the iron ladders
 where the next roof stands higher, down onto the lower ones, leaping, gliding, beating the air
-to rise; taken, she goes down to the street with it by herself. If a brum gets there first,
-the mission is played again.
+to rise. Taken, the dispatcher comes on: it is safe now; down off the roof, and to the town
+hall with it, to the secretariat. She jumps down herself, carries it in under her arm (the town
+hall's word and mark, then the secretariat's), and at the desk it goes from her hands into the
+clerk's ("Found it! Thank you."), the eye on the two of them; the dispatcher again: the job
+done, home now. If a brum gets there first, the mission is played again.
 
 Likes, not money. Every job brings likes: a story the first time it is done, a game (the hunt,
 the folder, the containers, the panel on its own) every time it is won. They pour up the right

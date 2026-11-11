@@ -25,8 +25,13 @@ final class Lang {
         EN.put("brief.folder", "Dispatch \u2014 {kind}||Find the folder on the roofs.|The helicopter circles over the place."
                 + "||Three brums are after it too.|Get there first.||Up a fire escape,|then over the roofs.||Touch to go");
         EN.put("brief.again", "Dispatch \u2014 {kind}||Replay job.||Find the folder on the roofs|before the others.||Touch to go");
-        EN.put("report.folder", "Dispatch \u2014 {kind}||The folder is ours.||Time: {time}"
-                + "||Touch to go on");
+        EN.put("report.folder", "Dispatch \u2014 {kind}||The folder is at the town hall, in good hands."
+                + "||Time: {time}||Touch to go on");
+        EN.put("folder.done", "Dispatch \u2014 {kind}||The job is done.|What was lost is back at the town hall."
+                + "||Head home.||Touch to go on");
+        EN.put("folder.safe", "Dispatch \u2014 {kind}||The folder is yours. It is safe now.||Jump down off the roof"
+                + "|and take the papers back to the town hall,|to the secretariat: they are waiting.||Touch to go on");
+        EN.put("folder.hand", "Found it! Thank you.|It goes back to work at once.");
         EN.put("report.lost", "Dispatch \u2014 {kind}||Another brum took the folder.||Touch to go on");
         EN.put("lost.short", "TOO LATE");
         EN.put("brief.delivery", "Dispatch \u2014 {kind}||Carry four crates|from the factory to the warehouse."

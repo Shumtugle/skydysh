@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.16";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.17";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -625,7 +625,7 @@ final class World {
         if (rescue != null) return rescue.over();
         if (delivery != null) return delivery.over();
         if (folder == null) return mission.over();
-        return folder.theirs || folder.hers && runner.landed;
+        return folder.theirs || folder.delivered();
     }
 
     /** The briefing for the mission now. */
@@ -2058,6 +2058,17 @@ final class World {
             boolean had = folder.hers;
             folder.update(dt, runner, city, cars);
             if (folder.hers && !had) took();
+            if (folder.hers && had) {
+                // to the town hall with it, and in the secretariat from her hands into the clerk's
+                boolean wasHanding = folder.handing(), wasGiven = folder.delivered();
+                folder.back(dt, runner, indoors, host);
+                if (folder.handing()) handOver(wasHanding);
+                // in the clerk's hands: the dispatcher comes on, the job done, and home now
+                if (folder.delivered() && !wasGiven) {
+                    host.sound(Synth.CHIME, 0.6f, 1f);
+                    dispatch = new Dispatch(host, Lang.lines("folder.done", mission.round, null));
+                }
+            }
             Chase n = folder.nearest();
             chase = n != null ? n : chase;
         } else {
@@ -2117,23 +2128,15 @@ final class World {
         if (mend != null && mend.scene()) mendEye();
     }
 
-    /** The folder in her hands: over the edge of the roof to the street, down along it, gliding. */
+    /**
+     * The folder in her hands: the dispatcher comes on to say it is safe now, and where it goes:
+     * down off the roof, and to the town hall's secretariat.
+     */
     private void took() {
         host.buzz(120);
         host.sound(Synth.LEATHER, 0.7f, 1.1f);
-        Folder f = folder;
-        float half = Math.abs(f.frontX) * f.houseHX + Math.abs(f.frontZ) * f.houseHZ;
-        float ex = f.houseX + f.frontX * (half + 0.6f), ez = f.houseZ + f.frontZ * (half + 0.6f);
-        // the edge straight out from where she is along the front, and then round along the street
-        float along = (runner.x - f.houseX) * f.frontZ - (runner.z - f.houseZ) * f.frontX;
-        ex += f.frontZ * along * 0.6f;
-        ez -= f.frontX * along * 0.6f;
-        float ax = f.frontZ, az = -f.frontX;
-        if (ax * (float) Math.sin(runner.heading) + az * (float) Math.cos(runner.heading) < 0f) {
-            ax = -ax;
-            az = -az;
-        }
-        runner.auto(ex, ez, (float) Math.atan2(ax, az));
+        host.sound(Synth.CHIME, 0.6f, 1f);
+        dispatch = new Dispatch(host, Lang.lines("folder.safe", mission.round, null));
     }
 
     // ---- doors: in from the street (or the yard), or down from a roof, a place indoors; out again ----
@@ -2183,7 +2186,7 @@ final class World {
             else if (e == Indoors.OUT_BACK) go(TO_YARD);
             return;
         }
-        if (r.inAir() || r.climbing() || r.throwing() >= 0f || (folder != null && folder.hers)) return;
+        if (r.inAir() || r.climbing() || r.throwing() >= 0f) return;
         float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading);
         // on home's balcony up on the fifth storey, at its door, going to it: into the hall no one knows of
         if (driving == null && City.atSecretDoor(r.x, r.y, r.z) && fz > 0.3f) {
@@ -3163,7 +3166,7 @@ final class World {
      */
     private void ladders(float dt) {
         Runner r = runner;
-        if (indoors != null || swapT >= 0f || r.climbing() || r.throwing() >= 0f || (folder != null && folder.hers)) return;
+        if (indoors != null || swapT >= 0f || r.climbing() || r.throwing() >= 0f) return;
         float[] l = ladderNow;
         if (r.inAir()) {
             if (r.sinceLetGo() < 0.8f || !city.ladderAt(r.x, r.z, r.y, LADDER_GRAB, l)) return;
@@ -4676,8 +4679,8 @@ final class World {
         Folder fo = folder;
         String clock = clock(fo.over() ? fo.doneAt : fo.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
-        // the rivals: a mark each, alight while it is about, and what it has still to go
-        for (int k = 0; k < Folder.RIVALS; k++) {
+        // the rivals: a mark each, alight while it is about, and what it has still to go (till it is hers)
+        for (int k = 0; k < Folder.RIVALS && !fo.hers; k++) {
             Chase g = fo.rivals[k];
             int y = 12 + k * 13;
             boolean about = !g.done();
@@ -4687,7 +4690,15 @@ final class World {
             String m = Math.round(fo.toGo(g)) + "";
             shadowed(f, m, 22, y, 1, g.y > 1f ? gold : cream, ink);
         }
-        if (fo.over() && fo.hers) {
+        if (fo.hers) {
+            // the clerk's words as she takes it; else where it goes now
+            if (fo.handing()) {
+                caption(f, "folder.hand");
+                return;
+            }
+            if (fo.delivered() || !fo.goal(indoors, goal)) return;
+            wordAtTop(f, Lang.lines(fo.goalWord(indoors), mission.round, null)[0], green, ink);
+            placeMark(d, f, goal[0], goal[1], goal[2], fo.mark(indoors), Marks.OPEN);
             return;
         }
         if (fo.theirs) {
@@ -5902,10 +5913,18 @@ final class World {
             if (indoors.townHall) {
                 // the hall's people, and the clerk with the red folder in her hands till she gives it;
                 // handed over, it goes from her hands to the other's, up a little on the way
-                boolean holding = archive != null && archive.giverHolds();
+                boolean holding = archive != null && archive.giverHolds() || folder != null && folder.clerkHas();
                 Rooms.townHallFolk(d, indoors, time, holding, handsAt);
                 float face = indoors.heading(indoors.side, 0f) + (float) Math.PI;
                 if (archive != null && archive.waiting()) Archive.folder(d, handsAt[0], handsAt[1], handsAt[2], face);
+                else if (folder != null && folder.passing() >= 0f) {
+                    // the folder found on the roofs: from her hands into the clerk's, up a little on the way
+                    float a = folder.passing(), e = a * a * (3f - 2f * a);
+                    r.bone("hand_l", handTo);
+                    float x = handTo[0] + (handsAt[0] - handTo[0]) * e, z = handTo[2] + (handsAt[2] - handTo[2]) * e;
+                    float y = handTo[1] - 0.05f + (handsAt[1] - handTo[1] + 0.05f) * e + 0.35f * (float) Math.sin(Math.PI * a);
+                    Archive.folder(d, x, y, z, r.heading + (float) Math.PI * 0.5f + (face - r.heading - (float) Math.PI * 0.5f) * e);
+                }
                 else if (archive != null && archive.giving() >= 0f) {
                     float a = archive.giving(), e = a * a * (3f - 2f * a);
                     r.bone("hand_l", handTo);
@@ -5980,6 +5999,7 @@ final class World {
                 r.heading = oh;
             }
             if (archive != null && archive.carrying()) archive.carried(d, r);
+            if (folder != null && folder.carried()) folder.inHand(d, r);
             if (lab != null && lab.carrying()) {
                 r.bone("hand_l", handTo);
                 LabTop.box(d, handTo[0], handTo[1] - LabTop.BOX_Y - 0.03f, handTo[2], r.heading, 0f);

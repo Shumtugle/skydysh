@@ -251,6 +251,11 @@ final class Archive {
 
     /** The town hall's door from the street. */
     private static boolean door(float[] out) {
+        return townDoor(out);
+    }
+
+    /** The town hall's door from the street, into out (x, y, z). */
+    static boolean townDoor(float[] out) {
         out[0] = City.TOWNHALL_I * City.CELL + City.CELL * 0.5f;
         out[1] = City.WALK_TOP + 3.6f;
         out[2] = City.TOWNHALL_J * City.CELL + City.FRONT - 0.5f;
