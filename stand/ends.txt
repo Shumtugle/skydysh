@@ -1,0 +1,24 @@
+# The town's ends: on its last street in the east, looking out at the woods past its last crossing; the east end from above; the wild shore past the promenade's end, looking back along it at the town; the west end from above; the north-east corner, the fields past the town's last street. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+at 610 192 1.5708
+wait 1.5
+shot e0
+eye 590 70 140 1.5708 -0.6
+wait 0.2
+shot e1
+eye off
+at 705 -12 -1.5708
+wait 1.5
+shot e2
+eye -470 70 140 -1.5708 -0.6
+wait 0.2
+shot e3
+eye 560 45 700 2.4 -0.45
+wait 0.2
+shot e4

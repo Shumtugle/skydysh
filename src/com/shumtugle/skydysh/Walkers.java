@@ -271,8 +271,8 @@ final class Walkers {
     }
 
     /** Whether block row j is one people go round: in the town, not the sea, not past its end. */
-    private static boolean block(int j) {
-        return !City.sea(j) && !City.country(j);
+    private static boolean block(int i, int j) {
+        return City.block(i, j);
     }
 
     /**
@@ -290,7 +290,7 @@ final class Walkers {
             if (rnd.nextFloat() > CROSS_CORNER) return false;
             int e = e0, over = dir[i] > 0f ? (e + 1) % 4 : (e + 3) % 4;
             int ni = acrossI(bi[i], over), nj = acrossJ(bj[i], over);
-            if (!block(nj)) return false;
+            if (!block(ni, nj)) return false;
             // the corner they are at: the start of the side going on (or of their own, going back)
             int q = dir[i] > 0f ? (e + 1) % 4 : e;
             float x0 = bi[i] * City.CELL + RING, z0 = bj[i] * City.CELL + RING;
@@ -310,7 +310,7 @@ final class Walkers {
         float m = Crossings.mid(city, sideI(bi[i], e), sideJ(bj[i], e), sideNorth(e));
         if (m < 0f || (t0 - m) * (t1 - m) > 0f || rnd.nextFloat() > CROSS_MID) return false;
         int ni = acrossI(bi[i], e), nj = acrossJ(bj[i], e);
-        if (!block(nj)) return false;
+        if (!block(ni, nj)) return false;
         float x0 = bi[i] * City.CELL, z0 = bj[i] * City.CELL;
         float cx = e == 0 || e == 2 ? x0 + m : e == 1 ? x0 + City.CELL - RING : x0 + RING;
         float cz = e == 1 || e == 3 ? z0 + m : e == 2 ? z0 + City.CELL - RING : z0 + RING;
@@ -778,7 +778,7 @@ final class Walkers {
         for (int tries = 0; tries < 20; tries++) {
             bi[i] = City.index(r.x) + rnd.nextInt(5) - 2;
             bj[i] = City.index(r.z) + rnd.nextInt(5) - 2;
-            if (City.sea(bj[i]) || City.country(bj[i])) continue;
+            if (!City.block(bi[i], bj[i])) continue;
             u[i] = rnd.nextFloat() * side() * 4f;
             dir[i] = rnd.nextBoolean() ? 1f : -1f;
             aside[i] = 0f;

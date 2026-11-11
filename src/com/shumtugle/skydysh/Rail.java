@@ -78,9 +78,9 @@ final class Rail {
         if (!onStreet(p)) return hand;
         if (h > TURN_WHEEL && toCrossing(p) < TURN_NEAR + TURN_PER * sp) {
             // a hard turn near a crossing, into a street that way, if there is one: slowed for the corner
-            float tz = -ax * Math.signum(hand);
-            int cj = Math.round(crossingZ(p) / City.CELL);
-            if (City.road(cj, Math.round(tz))) {
+            float tz = -ax * Math.signum(hand), tx = az * Math.signum(hand);
+            int ci = Math.round(crossingX(p) / City.CELL), cj = Math.round(crossingZ(p) / City.CELL);
+            if (City.road(ci, cj, Math.round(tx), Math.round(tz))) {
                 cornerFor = 0f;
                 lane = LANE;
                 slowFor(sp);

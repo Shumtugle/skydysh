@@ -2,7 +2,9 @@
 
 A game for Android: races through an open town, a southern seaside town on a summer evening
 seen as town games were drawn early in the century,
-its streets grown from a seed without end as they are come to, cars going about them (stopping
+its streets grown from a seed as they are come to, along the shore from x = -512 to 640, and
+past its ends, west and east, woods of firs and broad trees down to a wild shore (the world goes
+on, by water, through the woods; the town does not), cars going about them (stopping
 at the lights some crossings have, nimble out of a pickup's way, round what stands in theirs),
 people out on the pavements with their dogs and over the streets at the zebras, cats by the walls (who mind what she does: a mallet
 thrown near them and they are off); squares with fountains or

@@ -47,7 +47,9 @@ final class Mission {
             if (cj < City.SHORE) cj = 2 * City.SHORE - cj;
             // nor out past the town's end: back in from it
             if (cj >= City.EDGE_J) cj = Math.max(City.SHORE, 2 * (City.EDGE_J - 1) - cj);
-            brums[k] = new Chase(rnd.nextLong(), ci, cj, City.way(cj, rnd.nextInt(4)));
+            // nor in the woods past its ends along the shore
+            ci = Math.max(City.WEST_I, Math.min(City.EAST_I, ci));
+            brums[k] = new Chase(rnd.nextLong(), ci, cj, City.way(ci, cj, rnd.nextInt(4)));
         }
     }
 

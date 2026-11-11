@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.13
+
+- The town has ends along the shore: its blocks from x = -512 to 640, its last street on each
+  side its own. Past them, woods: firs and broad trees close together, bushes under them, a
+  boulder now and then, kept back from the last street by its curb; and by the sea, no quay and
+  no promenade, the grass running out to a bank of sand down to the beach, a washed-up log, a few
+  rocks at the water. The world goes on past them, by water and through the woods; the fields
+  past the town's end inland go on as they did.
+- Cars turn back at the ends, at the last crossings (as at the shore road and the last street
+  inland); people, pets and the rivals in a hunt keep to the town's blocks; the navigator's
+  streets end there; the lights and zebras too.
+
 ## 1.4.12
 
 - The island's yacht: the one moored at the far end of the pier, teal-banded, is hers to take

@@ -328,6 +328,9 @@ final class Nav {
             i0 = (int) Math.floor(x / City.CELL) - COLUMNS / 2;
             i1 = i0 + COLUMNS - 1;
         }
+        // the town's streets end at its ends along the shore
+        i0 = Math.max(City.WEST_I, Math.min(City.EAST_I + 1, i0));
+        i1 = Math.min(City.EAST_I + 1, Math.max(i0, i1));
         lo = i0;
         cols = i1 - i0 + 1;
         rows = City.EDGE_J + 1;

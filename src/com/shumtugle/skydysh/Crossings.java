@@ -90,7 +90,7 @@ final class Crossings {
 
     /** Whether the crossing at (i * CELL, j * CELL) has lights: about one in three, in the town's rows. */
     static boolean lit(int i, int j) {
-        if (j < City.SHORE || j >= City.EDGE_J) return false;
+        if (j < City.SHORE || j >= City.EDGE_J || i < City.WEST_I || i > City.EAST_I + 1) return false;
         return ((mix(i, j, 3) >>> 8) % 8) < 3;
     }
 
@@ -106,13 +106,12 @@ final class Crossings {
 
     /** Whether the street owned by cell (i, j) is in the town: north (along its west edge) or east. */
     static boolean street(int i, int j, boolean north) {
-        if (j < City.SHORE) return false;
-        return north ? j + 1 <= City.EDGE_J : j < City.EDGE_J;
+        return north ? City.road(i, j, 0, 1) : City.road(i, j, 1, 0) && j < City.EDGE_J;
     }
 
     /** Whether cell (i, j) is a block of the town at all (not the sea, not past its end). */
-    private static boolean town(int j) {
-        return !City.sea(j) && !City.country(j);
+    private static boolean town(int i, int j) {
+        return City.block(i, j);
     }
 
     /**
@@ -138,7 +137,7 @@ final class Crossings {
 
     /** Whether people go into cell (i, j) on every side: a square or a garden, the old town's lanes. */
     private static boolean open(City city, int i, int j) {
-        if (!town(j)) return false;
+        if (!town(i, j)) return false;
         return city.square(i, j) || City.oldTown(i, j);
     }
 
@@ -222,9 +221,10 @@ final class Crossings {
 
     // the ways into a crossing: 0 the cars coming north (from the south), 1 south, 2 east (from the west), 3 west
     private static boolean comes(int i, int j, int w) {
-        if (w == 0) return City.road(j, -1);
-        if (w == 1) return City.road(j, 1);
-        return true;
+        if (w == 0) return City.road(i, j, 0, -1);
+        if (w == 1) return City.road(i, j, 0, 1);
+        if (w == 2) return City.road(i, j, -1, 0);
+        return City.road(i, j, 1, 0);
     }
 
     // a post stands on the right of the cars coming in that way, before their stop

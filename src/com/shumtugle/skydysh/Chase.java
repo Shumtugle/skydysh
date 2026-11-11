@@ -213,7 +213,7 @@ final class Chase {
         } else {
             int[][] ways = {{di, dj}, {-dj, di}, {dj, -di}, {-di, -dj}};
             for (int[] w : ways) {
-                if (!City.road(tj, w[1])) continue;
+                if (!City.road(ti, tj, w[0], w[1])) continue;
                 int ci = ti + w[0], cj = tj + w[1];
                 int far = Math.min(Math.abs(ci - ai) + Math.abs(cj - aj), Math.abs(ci - bi) + Math.abs(cj - bj));
                 // turning back only if nothing else will do
@@ -733,7 +733,7 @@ final class Chase {
         float best = -1f;
         for (int k = 0; k < 3; k++) {
             int[] w = ways[k];
-            if (!City.road(tj, w[1])) continue;
+            if (!City.road(ti, tj, w[0], w[1])) continue;
             float cx = (ti + w[0]) * City.CELL - runnerX, cz = (tj + w[1]) * City.CELL - runnerZ;
             float there = (float) Math.sqrt(cx * cx + cz * cz);
             if (there > here - SLACK) ok[n++] = k;
