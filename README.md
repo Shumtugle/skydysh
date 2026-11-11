@@ -43,6 +43,9 @@ kept on the phone); then the screen offers every kind of job, the newest at the 
 on her: no next in turn, no round of them. A sign of the way back floats over the screen:
 touched, it lets the screen go and she gets up, the town hers as long as she likes. A job is
 called by its kind, not by a number.
+Some jobs have points on the way that need not be played again: the folder found, for one. Come to,
+a point is kept (a disk shows a moment by the pause); a game closed in the job opens there, and
+under the pause the job can be taken up there again, its clock as it was then.
 
 Meters to where the way goes are shown only where they are the game itself: in the hunt, to the
 nearest runaway, and on the roofs, to the folder and for each seeker. Elsewhere a word at the top

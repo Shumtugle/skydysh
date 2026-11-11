@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.20
+
+- Points in a job: where it has come to that need not be played again. Each job says its own;
+  come to one, the game keeps it, and a disk shows a moment by the pause (once a screen over the
+  frame has gone). A game closed in the job opens at its last point, not on the sofa with the job
+  from its start; under the pause a row takes the job up again there, its clock as it was then.
+- The folder's point: found. Taken up there, she stands in the street before the house it lay on,
+  the folder hers, on her way to the town hall.
+
 ## 1.4.19
 
 - The folder handed over in the secretariat no longer leaves her standing there for good: she

@@ -175,6 +175,7 @@ final class Lang {
         EN.put("pause.story", "About the job");
         EN.put("pause.skip", "Put the job by");
         EN.put("pause.leave", "Leave the replay");
+        EN.put("pause.point", "From the last point");
         EN.put("report.leave", "Dispatch \u2014 {kind}||Replay left.|Everything stays as it was.||Touch to go on");
         EN.put("rescue.open", "The road is open.");
         EN.put("report.skip", "Dispatch \u2014 {kind}||The job is put by.|It waits on home's list,|not done.||Touch to go on");

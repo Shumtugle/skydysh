@@ -1,0 +1,47 @@
+# The points of a job, the folder's: found on its roof, the point kept (the disk by the pause once the dispatcher's screen goes); the game closed and opened again: she in the street before the house it lay on, the folder hers, the town hall's word at the top; off along the street, then under the pause the row to take it up again at its point; taken up there again; to the town hall and the desk, the folder handed over, the job done, and she walks on. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2
+keep where 0
+restart
+mission 2
+close
+wait 0.5
+onfolder 3 0
+finger down 0 137 450
+wait 1.5
+finger up 0 137 450
+close
+wait 0.3
+shot p0
+wait 2.5
+where
+restart
+wait 0.5
+where
+shot p1
+finger down 0 137 450
+wait 2
+finger up 0 137 450
+where
+tap 24 67
+wait 0.3
+shot p2
+tap 137 462
+wait 0.5
+where
+shot p3
+at 32 135.6 0
+wait 2.5
+inroom 3.5 6.4
+face -1.57
+wait 4.5
+shot p4
+close
+wait 3.5
+finger down 0 137 450
+wait 1.5
+finger up 0 137 450
+where
+shot p5

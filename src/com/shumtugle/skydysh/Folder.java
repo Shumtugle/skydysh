@@ -302,6 +302,36 @@ final class Folder {
         }
     }
 
+    // the points the job may be taken up again from: it found, hers
+    static final int FOUND = 1;
+    // taken up again: so far out from the front of the house it lay on, in the street
+    static final float POINT_OUT = 2.2f;
+
+    /** The point the job has come to: found (1) once it is hers; none (0) before. */
+    int point() {
+        return hers ? FOUND : 0;
+    }
+
+    /** Where it is taken up again from, into out (x, z, heading): before the house it lay on, facing the street. */
+    void pointAt(float[] out) {
+        float d = Math.abs(frontX) > 0.5f ? houseHX : houseHZ;
+        out[0] = houseX + frontX * (d + POINT_OUT);
+        out[1] = houseZ + frontZ * (d + POINT_OUT);
+        out[2] = (float) Math.atan2(frontX, frontZ);
+    }
+
+    /** Taken up again at point p, found so far into the job: hers, on the way to the town hall; false if p is not its own. */
+    boolean fromPoint(int p, float foundAt) {
+        if (p != FOUND) return false;
+        hers = true;
+        theirs = false;
+        taker = null;
+        step = BACK;
+        clock = foundAt;
+        doneAt = foundAt;
+        return true;
+    }
+
     /** Whether it is in the clerk's hands now: the job done. */
     boolean delivered() {
         return step == DONE;

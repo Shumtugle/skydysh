@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.19";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.20";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -181,6 +181,7 @@ final class World {
         if (driving != null) getOut();
         free = false;
         lost = false;
+        forgetPoint();
         // where it began, for a try again to begin there too
         startX = x;
         startZ = z;
@@ -509,6 +510,16 @@ final class World {
         return storyRowY() + 26f;
     }
 
+    /** The row for the job taken up again at its last point: under the one to put it by, if that is shown. */
+    float pointRowY() {
+        return canSkip() ? skipRowY() + 26f : skipRowY();
+    }
+
+    /** Whether the job now may be taken up again at its last point from under the pause. */
+    boolean canGoBack() {
+        return !free && !over() && pointSeen > 0 && !aboard() && !piloting() && pointKept();
+    }
+
     /** For the desktop stand: the job now put by, as from under the pause, if it may be. */
     String standSkip() {
         if (!canSkip()) return "not to be put by";
@@ -539,6 +550,11 @@ final class World {
             skip();
             return true;
         }
+        if (canGoBack() && Math.abs(y - pointRowY()) < 11f) {
+            fromPoint();
+            host.buzz(20);
+            return true;
+        }
         return false;
     }
 
@@ -553,9 +569,14 @@ final class World {
         if (free) return;
         String st = Lang.lines("pause.story", 0, null)[0];
         shadowed(f, st, Math.round(W * 0.5f - PixelFont.width(st, 1) * 0.5f), Math.round(storyRowY() - 4f), 1, cream, ink);
-        if (!canSkip()) return;
-        String sk = Lang.lines(replaying() ? "pause.leave" : "pause.skip", 0, null)[0];
-        shadowed(f, sk, Math.round(W * 0.5f - PixelFont.width(sk, 1) * 0.5f), Math.round(skipRowY() - 4f), 1, 0xFFFFB48A, ink);
+        if (canSkip()) {
+            String sk = Lang.lines(replaying() ? "pause.leave" : "pause.skip", 0, null)[0];
+            shadowed(f, sk, Math.round(W * 0.5f - PixelFont.width(sk, 1) * 0.5f), Math.round(skipRowY() - 4f), 1, 0xFFFFB48A, ink);
+        }
+        if (canGoBack()) {
+            String pt = Lang.lines("pause.point", 0, null)[0];
+            shadowed(f, pt, Math.round(W * 0.5f - PixelFont.width(pt, 1) * 0.5f), Math.round(pointRowY() - 4f), 1, teal, ink);
+        }
     }
 
     /** The best times kept, mission by mission, the latest last (as many as the screen holds). */
@@ -1782,6 +1803,8 @@ final class World {
         }
         if (paused && opening == null && dispatch == null) return;
         time += dt;
+        // a point kept as a screen came on: its disk waits for the screen to go
+        if (dispatch != null && pointKeptAt > time - POINT_SHOWN) pointKeptAt = time;
         if (opening != null) {
             opening.update(dt);
             if (opening.done) {
@@ -1827,6 +1850,7 @@ final class World {
             return;
         }
         if (!free && over() && (overFor += dt) > (concert != null ? AFTER_DUSK : BACK_TO_ROOM)) {
+            forgetPoint();
             save();
             String[] said = report();
             boolean failed = failed();
@@ -2089,6 +2113,7 @@ final class World {
             mission.update(dt, runner, city, cars);
             chase = mission.target(chase);
         }
+        points();
         // in the collider hall the mallet is swung at the magnets there, never thrown
         toss.lent = indoors != null && indoors.collider;
         // a thing out of a pickup's bed in her hands: the tap is its, not the mallet's
@@ -2365,6 +2390,7 @@ final class World {
             return;
         }
         d.badge(pauseX(), pauseY(), PAUSE_HALF, Badges.PAUSE, 0.75f, 0f);
+        pointBadge(d);
         compassButton(d);
         pieButton(d);
         if (piloting()) {
@@ -4184,6 +4210,133 @@ final class World {
         return ((kindsWon | kindsSkipped) & (1 << k)) != 0;
     }
 
+    // ---- the points of a job: where it has come to that need not be played again. Each job says
+    // which it has come to; on a new one the game keeps it (the job, the point, its clock, where to
+    // stand, a number of the job's own), and the disk shows a moment by the pause. A game closed in
+    // the job opens there; under the pause the job can be taken up there again ----
+    static final String SAVE_POINT = "point", SAVE_POINT_ROUND = "point.round", SAVE_POINT_CLOCK = "point.clock",
+            SAVE_POINT_X = "point.x", SAVE_POINT_Y = "point.y", SAVE_POINT_Z = "point.z", SAVE_POINT_H = "point.h",
+            SAVE_POINT_DATA = "point.data";
+    /** How long the disk shows by the pause once a point is kept, seconds; how far right of the pause. */
+    static final float POINT_SHOWN = 1.8f, POINT_RIGHT = 36f;
+    /** The point of the job now kept last (0: none yet), and when. */
+    private int pointSeen;
+    private float pointKeptAt = -9f;
+    private final float[] pointPlace = new float[3];
+
+    /** The point the job now has come to (0: none); each job with points says its own. */
+    private int pointNow() {
+        if (free || over()) return 0;
+        if (folder != null) return folder.point();
+        return 0;
+    }
+
+    /** Where the job is taken up again from at its point now, into out (x, z, heading): the job's own place, or where she stands. */
+    private void pointWhere(float[] out) {
+        if (folder != null) {
+            folder.pointAt(out);
+            return;
+        }
+        out[0] = runner.x;
+        out[1] = runner.z;
+        out[2] = runner.heading;
+    }
+
+    /** The job's clock at its point now: what its time is taken up again from. */
+    private float pointClock() {
+        if (folder != null) return folder.doneAt;
+        return 0f;
+    }
+
+    /** A number of the job's own, kept with its point: whatever else it needs to be taken up again. */
+    private int pointData() {
+        return 0;
+    }
+
+    /** A new point come to: kept. */
+    private void points() {
+        int p = pointNow();
+        if (p <= pointSeen) return;
+        pointSeen = p;
+        pointKeptAt = time;
+        pointWhere(pointPlace);
+        host.saveInt(SAVE_POINT, p);
+        host.saveInt(SAVE_POINT_ROUND, mission.round);
+        host.saveInt(SAVE_MISSION, mission.round);
+        host.saveInt(SAVE_POINT_CLOCK, Float.floatToIntBits(pointClock()));
+        host.saveInt(SAVE_POINT_X, Float.floatToIntBits(pointPlace[0]));
+        host.saveInt(SAVE_POINT_Y, Float.floatToIntBits(City.WALK_TOP));
+        host.saveInt(SAVE_POINT_Z, Float.floatToIntBits(pointPlace[1]));
+        host.saveInt(SAVE_POINT_H, Float.floatToIntBits(pointPlace[2]));
+        host.saveInt(SAVE_POINT_DATA, pointData());
+    }
+
+    /** No point kept for the job now: it begun, done with or put by. */
+    private void forgetPoint() {
+        pointSeen = 0;
+        pointKeptAt = -9f;
+        if (host.loadInt(SAVE_POINT) != 0) host.saveInt(SAVE_POINT, 0);
+    }
+
+    /** Whether the job now (or, between jobs, the one to play next) has a point kept. */
+    boolean pointKept() {
+        int n = free ? mission.round + 1 : mission.round;
+        return host.loadInt(SAVE_POINT) > 0 && host.loadInt(SAVE_POINT_ROUND) == n;
+    }
+
+    /** The game opened again in a job with a point kept: taken up there; false if it has none. */
+    private boolean fromKept() {
+        if (!pointKept()) return false;
+        fromPoint();
+        return true;
+    }
+
+    /** The job now (or the one to play next) begun again at its point kept: she where it is, its clock as it was. */
+    private void fromPoint() {
+        int n = free ? mission.round + 1 : mission.round;
+        int p = host.loadInt(SAVE_POINT);
+        float clock = Float.intBitsToFloat(host.loadInt(SAVE_POINT_CLOCK));
+        float x = Float.intBitsToFloat(host.loadInt(SAVE_POINT_X)), y = Float.intBitsToFloat(host.loadInt(SAVE_POINT_Y));
+        float z = Float.intBitsToFloat(host.loadInt(SAVE_POINT_Z)), hd = Float.intBitsToFloat(host.loadInt(SAVE_POINT_H));
+        if (!sane(x) || !sane(y) || !sane(z) || !sane(hd) || !sane(clock)) {
+            forgetPoint();
+            return;
+        }
+        paused = false;
+        if (driving != null) getOut();
+        if (indoors != null) leave();
+        errand = NO_ERRAND;
+        runner.stopLead();
+        letGo();
+        for (Pickup q : duty.all) q.load = 0;
+        mission.round = n - 1;
+        again = false;
+        begin(x, z);
+        overFor = 0f;
+        caughtSeen = 0;
+        nextSlot = 0;
+        struckSeen = 0;
+        host.saveInt(SAVE_MISSION, n);
+        boolean taken = folder != null && folder.fromPoint(p, clock);
+        if (!taken) return;
+        runner.put(x, Math.max(y, city.ground(x, z, y + 0.5f, 0f)), z, hd);
+        runner.recenter();
+        runner.update(0f, city, cars, walkers);
+        // kept still: shown again, as it was when it was come to
+        pointSeen = p;
+        pointKeptAt = time;
+        host.saveInt(SAVE_POINT, p);
+        host.saveInt(SAVE_POINT_ROUND, n);
+    }
+
+    /** The disk by the pause a moment, a point just kept. */
+    private void pointBadge(DrawList d) {
+        float t = time - pointKeptAt;
+        if (t < 0f || t > POINT_SHOWN) return;
+        float shown = Math.min(1f, Math.min(t / 0.2f, (POINT_SHOWN - t) / 0.5f));
+        d.badge(pauseX() + POINT_RIGHT, pauseY(), PAUSE_HALF, Badges.SAVE, 0.85f * shown, 0.5f + 0.5f * (float) Math.sin(t * 9f));
+    }
+
     // ---- where she was: kept now and then, so that a game the system closed opens there again.
     // Between jobs on foot or at the wheel, just there; in a job, indoors, in the air or at the
     // crane, at home on the sofa, the job's screen to come (a job is not taken up halfway) ----
@@ -4209,6 +4362,7 @@ final class World {
     /** The game opened again: where she was kept, if she was anywhere but at home's door. */
     private void resume() {
         int how = host.loadInt(SAVE_WHERE);
+        if (how == WHERE_SOFA && fromKept()) return;
         if (how == WHERE_SOFA) {
             standSofa();
             return;
@@ -4409,6 +4563,7 @@ final class World {
             host.saveInt(SAVE_SKIPPED, kindsSkipped);
         }
         host.saveInt(SAVE_MISSION, mission.round + 1);
+        forgetPoint();
         String[] said = Lang.lines(replay ? "report.leave" : "report.skip", mission.round, null);
         lost = false;
         free = true;

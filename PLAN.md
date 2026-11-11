@@ -130,6 +130,7 @@ release, each seen on the stand before the phone.
 - 1.4.17 The folder found taken back to the town hall's secretariat, the dispatcher before and after.
 - 1.4.18 Stories done played again from home's list; start over gone, nothing let go.
 - 1.4.19 Free again after handing the folder over; a finger lifted under a screen let go.
+- 1.4.20 Points in a job, kept: opened there again, taken up there from the pause; the folder's first.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -171,6 +172,8 @@ release, each seen on the stand before the phone.
 
 ## Next
 
+- Points for the other jobs, one a release: the black cherry (each magnet), the archive, the landing gear, the call out, the light in the hall, the navigator; the hot heads last.
+- The concert hall wholly dark, the torch in her ring, taught by the finger (to be agreed).
 - More for the beds, each with its job: blasting charges (the heap in the pass, the quarry), a wrench and a battery (a car stalled in the street, a jam behind it); her ring as an arsenal: things kept, saved.
 - Past the woods, west and east, other country some day: a steppe; roads out to it when wanted.
 - The yacht where she left it kept with the game; the open sea wider for it.
