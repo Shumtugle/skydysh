@@ -25,7 +25,9 @@ final class Badges {
     static final int NEEDLE = 26;
     // a screwdriver: a fat handle low on the left, the shaft up to the right, its blade at the end
     static final int SCREWDRIVER = 27;
-    static final int COUNT = 28, CELLS = 6, SIZE = 160;
+    // a coil of rope, its end hanging; a pickup's bed seen from behind with an arrow down into it
+    static final int ROPE = 28, BED = 29;
+    static final int COUNT = 30, CELLS = 6, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -174,6 +176,20 @@ final class Badges {
                 return arrow(y, x);
             case RIGHT:
                 return arrow(y, -x);
+            case ROPE: {
+                // three turns of a coil, one in another, and its end hanging down on the right
+                float d0 = (float) Math.sqrt(x * x + (y - 0.08f) * (y - 0.08f));
+                float coil = Math.min(Math.abs(d0 - 0.56f), Math.min(Math.abs(d0 - 0.38f), Math.abs(d0 - 0.2f))) - 0.07f;
+                float end = box(x, y, 0.56f, -0.55f, 0.07f, 0.3f);
+                return Math.min(coil, end);
+            }
+            case BED: {
+                // the bed: a tray, open on top; the arrow down into it
+                float tray = Math.max(box(x, y, 0f, -0.42f, 0.78f, 0.36f), -box(x, y, 0f, -0.3f, 0.62f, 0.36f));
+                float shaft = box(x, y, 0f, 0.6f, 0.11f, 0.26f);
+                float head = poly(x, y, -0.42f, 0.36f, 0f, -0.06f, 0.42f, 0.36f);
+                return Math.min(tray, Math.min(shaft, head));
+            }
             case SCREWDRIVER: {
                 // the handle, rounded, ridged; the shaft; the flat blade at its tip
                 float c = 0.7071f, lx = (x + y) * c, ly = (y - x) * c;

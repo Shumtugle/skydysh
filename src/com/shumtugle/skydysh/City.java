@@ -2891,9 +2891,44 @@ final class City implements Ground {
      * into out where to stand to climb it (x, z), its bottom and top, the way its wall faces (x,
      * z); false if none is.
      */
+    // the ladder off a pickup set up against a wall (see Kit), if one is: its foot, bottom, top, the wall's way out
+    private boolean setOn;
+    private final float[] setLadder = new float[6];
+
+    void setLadder(float x, float z, float bottom, float top, float nx, float nz) {
+        setLadder[0] = x;
+        setLadder[1] = z;
+        setLadder[2] = bottom;
+        setLadder[3] = top;
+        setLadder[4] = nx;
+        setLadder[5] = nz;
+        setOn = true;
+    }
+
+    void unsetLadder() {
+        setOn = false;
+    }
+
+    /** The ladder set up off a pickup, as ladderNear and ladderAt find the town's: nearer than best? into out. */
+    private boolean setLadderNear(float x, float z, float feet, float best, boolean high, float[] out) {
+        if (!setOn) return false;
+        float[] l = setLadder;
+        if (feet < l[2] - 0.6f || feet > (high ? l[3] - 0.6f : l[2] + 1.2f)) return false;
+        float fx = l[0] + l[4] * 0.55f, fz = l[1] + l[5] * 0.55f;
+        if ((fx - x) * (fx - x) + (fz - z) * (fz - z) >= best) return false;
+        out[0] = fx;
+        out[1] = fz;
+        out[2] = l[2];
+        out[3] = l[3];
+        out[4] = l[4];
+        out[5] = l[5];
+        return true;
+    }
+
     boolean ladderNear(float x, float z, float feet, float reach, float[] out) {
         float best = reach * reach;
-        boolean found = false;
+        boolean found = setLadderNear(x, z, feet, best, false, out);
+        if (found) best = (out[0] - x) * (out[0] - x) + (out[1] - z) * (out[1] - z);
         int ci = index(x), cj = index(z);
         for (int j = cj - 1; j <= cj + 1; j++)
             for (int i = ci - 1; i <= ci + 1; i++) {
@@ -2927,7 +2962,8 @@ final class City implements Ground {
      */
     boolean ladderAt(float x, float z, float feet, float reach, float[] out) {
         float best = reach * reach;
-        boolean found = false;
+        boolean found = setLadderNear(x, z, feet, best, true, out);
+        if (found) best = (out[0] - x) * (out[0] - x) + (out[1] - z) * (out[1] - z);
         int ci = index(x), cj = index(z);
         for (int j = cj - 1; j <= cj + 1; j++)
             for (int i = ci - 1; i <= ci + 1; i++) {

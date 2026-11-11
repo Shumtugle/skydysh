@@ -26,6 +26,8 @@ final class Toss {
     /** What she holds: the mallet, or the screwdriver (the mallet then at her hip, and nothing thrown). */
     static final int MALLET = 0, SCREWDRIVER = 1, TOOLS = 2;
     int tool = MALLET;
+    /** A thing of a pickup's bed in her hands: the mallet at her hip, nothing thrown. */
+    boolean carrying;
     /** Blows struck at arm's length, so far. */
     int struck;
 
@@ -83,7 +85,7 @@ final class Toss {
         clock += dt;
         if (lent) return;
         if (state == HELD) {
-            if (tool != MALLET) return;
+            if (tool != MALLET || carrying) return;
             if (r.inAir() || r.hidden || r.room != null || r.held || r.climbing() || r.riding) return;
             Chase run = hunt && !tap ? reached(r, brums) : null;
             if (run != null) {
@@ -203,6 +205,10 @@ final class Toss {
         // swimming, it is slung at her hip under the water, out of sight
         if (state == HELD && r.swimming()) return;
         if (state == HELD && r.climbing()) {
+            slung(d, r);
+            return;
+        }
+        if (state == HELD && carrying) {
             slung(d, r);
             return;
         }

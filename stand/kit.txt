@@ -1,0 +1,48 @@
+# A pickup's bed (1.4.9): out of a duty pickup in the street by home's quarter, at its bed the
+# bed's button, its ring held open (the ladder); the ladder taken, carried on her shoulder to a
+# house's front, set up against it, climbed to the roof; then back in its bed from her own ring.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 32766
+keep where 0
+restart
+free
+drivein 300 316.5 1.5708
+wait 1
+getout
+at 296.4 316.5 1.5708
+wait 0.6
+pie bed
+wait 0.4
+shot k0
+pie move 0 -48
+pie up 0 -48
+wait 0.4
+shot k1
+at 310 327.6 0
+face 0
+wait 1
+pie down
+pie up
+eye 316 4 321 -0.7 0.15
+wait 0.1
+shot k2
+eye off
+down 137 420
+wait 4
+where
+shot k3
+wait 3
+up 137 420
+wait 1
+where
+shot k4
+pie down
+pie move -42 24
+pie up -42 24
+wait 0.4
+pie down
+pie up
+wait 0.5
+shot k5

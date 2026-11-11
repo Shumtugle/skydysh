@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.9
+
+- A pickup's bed: standing on foot by the back of a pickup, a button floats over its bed; held,
+  what the bed holds opens in a ring as her tools do. A thing taken is in her hands in place of
+  her tool, the mallet at her hip. A thing belongs to its pickup: she puts it back from her own
+  ring (a third place in it, back to the bed, while a thing is out); not put back, it goes back
+  of itself when she takes the wheel, takes up a tool of her own, or a job begins or is won. What
+  a bed holds is the job's to say, for the job only: between jobs, the ladder.
+- The ladder: carried on her shoulder; held to a wall a moment (or a tap), it is set up from her
+  feet to the roof's edge, up to twenty-six meters, and she climbs it as any.
+- The tow: the rope is hers to tie now. At the quarry she gets out, takes the rope from her
+  pickup's bed, carries it coiled to the brum's pickup and ties it on at its front or back (held
+  there a moment, or a tap); then back at the wheel. The words over the frame say each step.
+
 ## 1.4.8
 
 - Her tools: a small button floats over her mallet. Hold it, and her tools open in a ring round

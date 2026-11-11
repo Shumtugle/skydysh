@@ -15,8 +15,9 @@ final class Tow {
     static final int PICKUP = 0, QUARRY = 1, TOWING = 2, DONE = 3;
     // the pickup in the quarry: where it sits, the way it faces (in, to the rock face)
     static final float STUCK_X = City.QUARRY_X, STUCK_Z = City.QUARRY_Z + 4f, STUCK_HEADING = 0f;
-    // how deep it sits in the mud; how near her pickup's end must stand to its own, and how long
-    static final float SUNK = 0.32f, REACH = 10f, TIE = 0.8f;
+    // how deep it sits in the mud; how near the pickup the rope comes off must stand to it; how
+    // near its end she must be to tie the rope on
+    static final float SUNK = 0.32f, REACH = 10f, TIE_NEAR = 3.2f;
     // the rope's length, end to end
     static final float ROPE = 5f;
 
@@ -44,29 +45,7 @@ final class Tow {
         if (step == DONE) return;
         clock += dt;
         if (step == PICKUP && driving != null) step = QUARRY;
-        if (step == QUARRY) {
-            // stood near it, at the wheel and still a moment: the rope goes on, the nearer ends tied
-            boolean near = false;
-            if (driving != null && Math.abs(driving.speed) < 0.6f) {
-                int te = nearerEnd(driving, stuck.x, stuck.z), se = nearerEnd(stuck, driving.x, driving.z);
-                end(driving, te, a);
-                end(stuck, se, b);
-                float dx = a[0] - b[0], dz = a[1] - b[1];
-                if (dx * dx + dz * dz < REACH * REACH) {
-                    near = true;
-                    stood += dt;
-                    if (stood > TIE) {
-                        tug = driving;
-                        tugEnd = te;
-                        stuckEnd = se;
-                        step = TOWING;
-                        host.sound(Synth.LEATHER, 0.7f, 0.8f);
-                        host.buzz(80);
-                    }
-                }
-            }
-            if (!near) stood = 0f;
-        }
+        // at the quarry the rope is hers to tie: out of the bed of the pickup she came in, by hand (see tie)
         if (step == TOWING) {
             follow(dt, city);
             boolean in = driving == tug && Math.abs(tug.speed) < 0.6f && City.inWorkshopBay(tug.x, tug.z);
@@ -76,6 +55,42 @@ final class Tow {
                 host.sound(Synth.CHIME, 0.5f, 1.3f);
             }
         }
+    }
+
+    /**
+     * The rope in her hands, out of pickup from's bed, tied on: she on foot by the brum's pickup,
+     * from near enough it; the nearer ends tied. True if it is.
+     */
+    boolean tie(Pickup from, Runner r, World.Host host) {
+        if (step != QUARRY || from == null) return false;
+        int se = nearerEnd(stuck, r.x, r.z);
+        end(stuck, se, b);
+        float hx = r.x - b[0], hz = r.z - b[1];
+        if (hx * hx + hz * hz > TIE_NEAR * TIE_NEAR) return false;
+        int te = nearerEnd(from, stuck.x, stuck.z);
+        end(from, te, a);
+        float dx = a[0] - b[0], dz = a[1] - b[1];
+        if (dx * dx + dz * dz > REACH * REACH) return false;
+        tug = from;
+        tugEnd = te;
+        stuckEnd = nearerEnd(stuck, from.x, from.z);
+        step = TOWING;
+        host.sound(Synth.LEATHER, 0.7f, 0.8f);
+        host.buzz(80);
+        return true;
+    }
+
+    /** Whether she is near enough an end of the brum's pickup to tie the rope on. */
+    boolean nearTie(Runner r) {
+        if (step != QUARRY) return false;
+        end(stuck, nearerEnd(stuck, r.x, r.z), b);
+        float hx = r.x - b[0], hz = r.z - b[1];
+        return hx * hx + hz * hz < TIE_NEAR * TIE_NEAR;
+    }
+
+    /** Whether the rope wants tying now: at the quarry, the brum's pickup waiting. */
+    boolean wantsRope() {
+        return step == QUARRY;
     }
 
     /** Which end of p (+1 the front, -1 the back) is nearer (x, z). */
@@ -151,9 +166,15 @@ final class Tow {
     }
 
     /** The word for where the way goes now, as Lang keeps it. */
-    String goalWord(Pickup driving) {
+    String goalWord(Pickup driving, Runner r, boolean rope) {
         if (step == PICKUP || step == TOWING && driving != tug) return "goal.pickup";
-        return step == QUARRY ? "goal.quarry" : "goal.workshop";
+        if (step == QUARRY) {
+            // there, out of the pickup: the rope out of its bed, then to the brum's pickup with it
+            float dx = r.x - stuck.x, dz = r.z - stuck.z;
+            if (driving == null && dx * dx + dz * dz < 30f * 30f) return rope ? "goal.tie" : "goal.rope";
+            return "goal.quarry";
+        }
+        return "goal.workshop";
     }
 
     /** The mark of where the way goes now (see Marks). */

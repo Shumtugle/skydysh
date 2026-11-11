@@ -962,14 +962,18 @@ public final class Stand implements World.Host {
                     Crossings.lit(li, lj) ? "lights" : "no lights", says[Crossings.light(li, lj, true)], says[Crossings.light(li, lj, false)]));
         } else if (c.equals("pie")) {
             // pie down|move DX DY|up: a finger (number 5) on the ring's button, slid so far from it, lifted
-            if (p[1].equals("down")) {
-                pieFrom[0] = world.pieX;
-                pieFrom[1] = world.pieY;
+            if (p[1].equals("down") || p[1].equals("bed")) {
+                // down on her button, or on the bed's
+                boolean bed = p[1].equals("bed");
+                pieFrom[0] = bed ? world.bedX : world.pieX;
+                pieFrom[1] = bed ? world.bedY : world.pieY;
                 world.touch(World.DOWN, 5, pieFrom[0], pieFrom[1]);
             } else if (p[1].equals("move")) world.touch(World.MOVE, 5, pieFrom[0] + f(p[2]), pieFrom[1] + f(p[3]));
             else world.touch(World.UP, 5, pieFrom[0] + (p.length > 3 ? f(p[2]) : 0f), pieFrom[1] + (p.length > 3 ? f(p[3]) : 0f));
             step();
-            System.out.println(String.format("%7.2fs  ring button at %.0f %.0f, tool %d", time, world.pieX, world.pieY, world.toss.tool));
+            System.out.println(String.format("%7.2fs  ring button at %.0f %.0f, bed's %s, tool %d, in hand %d, ladder up %b, rope tied %b", time,
+                    world.pieX, world.pieY, world.bedNow != null ? String.format("at %.0f %.0f", world.bedX, world.bedY) : "none", world.toss.tool,
+                    world.kit.held, world.kit.set, world.kit.tied));
         } else if (c.equals("tool")) {
             // tool N: in her hand the mallet (0) or the screwdriver (1)
             world.toss.tool = Math.round(f(p[1]));
@@ -1008,7 +1012,7 @@ public final class Stand implements World.Host {
             // where2: on foot, at the wheel, or at home, and the mission
             System.out.println(String.format("%7.2fs  %s, free %b, mission %d", time,
                     world.indoors != null ? "indoors" + (world.indoors.home ? " at home" : "") : world.driving != null ? "at the wheel" : "on foot",
-                    world.free, world.mission.round) + (world.archive != null ? ", archive step " + world.archive.step : "") + (world.mend != null ? ", mend step " + world.mend.step : ""));
+                    world.free, world.mission.round) + (world.archive != null ? ", archive step " + world.archive.step : "") + (world.mend != null ? ", mend step " + world.mend.step : "") + (world.tow != null ? ", tow step " + world.tow.step : ""));
         } else if (c.equals("likes")) {
             // likes: how many in all, and whether hearts are in the air
             System.out.println(String.format("%7.2fs  likes %d%s", time, world.likes, world.hearts.busy() ? ", hearts up" : ""));

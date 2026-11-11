@@ -1,5 +1,7 @@
 # The tow: the quarry at the foot of the ridge, the brum's pickup sunk in its mud, the brum (slate
-# grey) at its wheel; a pickup stopped by it, the rope on; towed out, the brum's pickup following
+# grey) at its wheel; a pickup stopped by it; out of it, at its bed, the bed's ring held open (the
+# rope at the top, the ladder below), the rope taken, carried coiled to the brum's pickup and tied
+# on with a tap (1.4.9); back at the wheel, towed out, the brum's pickup following
 # on the rope; at the workshop by the road out, in the bay before its gates; done. In Russian.
 screen 1096 2560
 wait 0.4
@@ -15,6 +17,27 @@ shot w1
 drivein -100 860 3.1416
 wait 1.5
 shot w2
+getout
+at -100 862.9 0
+wait 0.6
+pie bed
+wait 0.4
+shot w2a
+pie move 0 -48
+pie up 0 -48
+wait 0.3
+shot w2b
+at -100 865.6 0
+wait 0.3
+wait 0.2
+wait 0.4
+where2
+pie down
+pie up
+shot w2c
+drivein -100 860 3.1416
+wait 0.5
+where2
 pedal 3 0 0 0.25 wa
 wait 0.3
 shot w3

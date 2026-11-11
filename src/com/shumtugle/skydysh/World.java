@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.8";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.9";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -99,6 +99,7 @@ final class World {
     private int beatsWere = Runner.BEATS;    // her beats left, as the last frame left them
     private boolean again;                   // the folder's mission once more, the rivals were first
     final Toss toss = new Toss();            // her hammer
+    final Kit kit = new Kit();               // the thing out of a pickup's bed, in her hands or set up
     private Opening opening;                 // what the game opens with, while it plays
     private Dispatch dispatch;               // the dispatcher's room, while she is in it
     private float overFor;                   // how long since the last of the five was caught
@@ -198,6 +199,7 @@ final class World {
         herd = null;
         cherry = null;
         dropFault();
+        kit.putBack(city);
         flying = false;
         if (concert != null) concert.stop();
         concert = null;
@@ -1248,26 +1250,40 @@ final class World {
         shadowed(f, at, compassX() + PAUSE_HALF - PixelFont.width(at, 1), pauseY() + PAUSE_HALF + 8, 1, Nav.TEXT, Nav.INK);
     }
 
-    // ---- the ring of her tools: a small button floating over her mallet; held, the tools open in a
-    // ring round it, the first straight up and the rest on round clockwise; slid onto one, it is
-    // lit; lifted there, she holds it. Lifted in the middle, nothing. A hand that knows the way
-    // slides and lifts before the ring is drawn at all ----
+    // ---- the rings: a small button floating over her mallet, and one over the bed of a pickup she
+    // stands by. Held, what it holds opens in a ring round it, the first straight up and the rest
+    // on round clockwise; slid onto one, it is lit; lifted there, it is chosen. Lifted in the middle,
+    // nothing. A hand that knows the way slides and lifts before the ring is drawn at all.
+    // Her ring: her mallet, her screwdriver, and, while a thing of a bed is out, back to its bed.
+    // A bed's ring: what the bed holds, as the job has it (see Kit) ----
     static final String SAVE_TOOL = "tool";
-    // the button: half its size; the ring: how far out its tools are, how big; the middle that means
-    // no; how long the finger stays before the ring is drawn
+    // the buttons: half their size; the ring: how far out its things are, how big; the middle that
+    // means no; how long the finger stays before the ring is drawn
     static final float PIE_HALF = 13f, PIE_R = 48f, PIE_ITEM = 17f, PIE_DEAD = 16f, PIE_REVEAL = 0.26f;
-    private int pieFinger = -1, pieHot = -1;
+    // what a ring holds: her tools, back to the bed, a bed's things (KIT + the thing)
+    static final int PIE_MALLET = 0, PIE_SCREWDRIVER = 1, PIE_BACK = 2, PIE_KIT = 10;
+    private int pieFinger = -1, pieHot = -1, pieN;
     float pieX, pieY;
     private float pieCx, pieCy, pieAt;
-    private boolean pieSeen;
+    float bedX, bedY;
+    private boolean pieSeen, bedSeen, pieBed;
+    private final int[] pieItems = new int[8], bedThings = new int[4];
     private final float[] pieAnchor = new float[3];
+    /** The pickup whose bed's button is up now (she stands by its back), if any. */
+    Pickup bedNow;
 
-    /** The sign of each tool in the ring. */
-    private static int toolSign(int tool) {
-        return tool == Toss.SCREWDRIVER ? Badges.SCREWDRIVER : Badges.MALLET;
+    /** The sign of each thing in a ring. */
+    private static int pieSign(int k) {
+        if (k >= PIE_KIT) return Kit.sign(k - PIE_KIT);
+        return k == PIE_SCREWDRIVER ? Badges.SCREWDRIVER : k == PIE_BACK ? Badges.BED : Badges.MALLET;
     }
 
-    /** Whether the ring's button is there: on foot, her hands free to choose (not at a wheel, a seat, a ladder, the water, a screen). */
+    /** The sign on her button: what is in her hands. */
+    private int handSign() {
+        return kit.held != Kit.NONE ? Kit.sign(kit.held) : pieSign(toss.tool == Toss.SCREWDRIVER ? PIE_SCREWDRIVER : PIE_MALLET);
+    }
+
+    /** Whether the buttons are there: on foot, her hands free to choose (not at a wheel, a seat, a ladder, the water, a screen). */
     private boolean pieOffered() {
         Runner r = runner;
         return driving == null && !paused && !aboard() && !piloting() && !seated() && !inChair() && dispatch == null && story == null
@@ -1275,41 +1291,125 @@ final class World {
                 && !(concert != null && concert.panelOpen) && toss.state == Toss.HELD;
     }
 
-    /** The ring's button over her mallet, and the ring itself while it is held. */
+    /** The pickup she stands by the back of, on foot, standing, its bed's button to be up: null if none. */
+    private Pickup bedBy() {
+        if (indoors != null || duty == null) return null;
+        Pickup best = null;
+        float bd = Kit.BED_NEAR * Kit.BED_NEAR;
+        for (Pickup p : duty.all) {
+            if (p.driven || Math.abs(p.speed) > 0.5f) continue;
+            float bx = p.x - (float) Math.sin(p.heading) * 2.4f, bz = p.z - (float) Math.cos(p.heading) * 2.4f;
+            float dd = (bx - runner.x) * (bx - runner.x) + (bz - runner.z) * (bz - runner.z);
+            if (dd < bd) {
+                bd = dd;
+                best = p;
+            }
+        }
+        return best;
+    }
+
+    /** The two buttons, over her mallet and over the bed she stands by; the ring while one is held. */
     private void pieButton(DrawList d) {
         pieSeen = false;
+        bedSeen = false;
         if (!pieOffered() && pieFinger < 0) return;
         Runner r = runner;
         float rx = (float) Math.cos(r.heading), rz = -(float) Math.sin(r.heading);
         // beside her right hip, where the mallet hangs, and up over it
-        if (!d.project(r.x + rx * 0.75f, r.y + 1.85f, r.z + rz * 0.75f, pieAnchor)) return;
-        float tx = Math.max(PIE_HALF + 4f, Math.min(W - PIE_HALF - 4f, pieAnchor[0]));
-        float ty = Math.max(pauseY() + PAUSE_HALF + PIE_HALF + 8f, Math.min(h - PIE_HALF - 40f, pieAnchor[1]));
-        // eased after her, so that it does not shake with her stride
-        pieX += (tx - pieX) * 0.35f;
-        pieY += (ty - pieY) * 0.35f;
-        if (Math.abs(pieX - tx) > 80f || Math.abs(pieY - ty) > 80f) {
-            pieX = tx;
-            pieY = ty;
+        if (d.project(r.x + rx * 0.75f, r.y + 1.85f, r.z + rz * 0.75f, pieAnchor)) {
+            float tx = Math.max(PIE_HALF + 4f, Math.min(W - PIE_HALF - 4f, pieAnchor[0]));
+            float ty = Math.max(pauseY() + PAUSE_HALF + PIE_HALF + 8f, Math.min(h - PIE_HALF - 40f, pieAnchor[1]));
+            // eased after her, so that it does not shake with her stride
+            pieX += (tx - pieX) * 0.35f;
+            pieY += (ty - pieY) * 0.35f;
+            if (Math.abs(pieX - tx) > 80f || Math.abs(pieY - ty) > 80f) {
+                pieX = tx;
+                pieY = ty;
+            }
+            pieSeen = true;
         }
-        pieSeen = true;
+        // the bed she stands by: its button over the bed
+        bedNow = pieFinger >= 0 && pieBed ? bedNow : bedBy();
+        if (bedNow != null && pieFinger < 0) {
+            Pickup p = bedNow;
+            float bx = p.x - (float) Math.sin(p.heading) * 1.55f, bz = p.z - (float) Math.cos(p.heading) * 1.55f;
+            if (d.project(bx, p.y + 2.3f, bz, pieAnchor)) {
+                bedX = Math.max(PIE_HALF + 4f, Math.min(W - PIE_HALF - 4f, pieAnchor[0]));
+                bedY = Math.max(pauseY() + PAUSE_HALF + PIE_HALF + 8f, Math.min(h - PIE_HALF - 40f, pieAnchor[1]));
+                // not on top of hers
+                if (pieSeen && Math.abs(bedX - pieX) < PIE_HALF * 2.4f && Math.abs(bedY - pieY) < PIE_HALF * 2.4f) bedY = pieY - PIE_HALF * 2.6f;
+                bedSeen = true;
+            }
+        }
         if (pieFinger < 0) {
-            d.badge(pieX, pieY, PIE_HALF, toolSign(toss.tool), 0.7f, 0f);
+            if (pieSeen) d.badge(pieX, pieY, PIE_HALF, handSign(), 0.7f, 0f);
+            if (bedSeen) d.badge(bedX, bedY, PIE_HALF, Badges.BED, 0.7f, 0f);
             return;
         }
         // held: the ring, once the finger has stayed or gone out of the middle
         boolean shown = time - pieAt > PIE_REVEAL || pieHot >= 0;
-        d.badge(pieCx, pieCy, PIE_HALF, toolSign(toss.tool), 0.5f, 0f);
+        d.badge(pieCx, pieCy, PIE_HALF, pieBed ? Badges.BED : handSign(), 0.5f, 0f);
         if (!shown) return;
-        for (int k = 0; k < Toss.TOOLS; k++) {
-            float a = k * 2f * (float) Math.PI / Toss.TOOLS;
+        for (int k = 0; k < pieN; k++) {
+            float a = k * 2f * (float) Math.PI / pieN;
             float sx = pieCx + (float) Math.sin(a) * PIE_R, sy = pieCy - (float) Math.cos(a) * PIE_R;
-            boolean hot = k == pieHot;
-            d.badge(sx, sy, hot ? PIE_ITEM * 1.25f : PIE_ITEM, toolSign(k), hot ? 1f : 0.7f, hot ? 0.45f : k == toss.tool ? 0.15f : 0f);
+            boolean hot = k == pieHot, now = pieNow(pieItems[k]);
+            d.badge(sx, sy, hot ? PIE_ITEM * 1.25f : PIE_ITEM, pieSign(pieItems[k]), hot ? 1f : 0.7f, hot ? 0.45f : now ? 0.15f : 0f);
         }
     }
 
-    /** A finger on the ring's button, or the finger holding the ring: true if it is the ring's. */
+    /** Whether ring thing k is what she holds now (lit a little in the ring). */
+    private boolean pieNow(int k) {
+        if (k >= PIE_KIT) return kit.held == k - PIE_KIT;
+        if (kit.held != Kit.NONE) return false;
+        return k == PIE_MALLET && toss.tool == Toss.MALLET || k == PIE_SCREWDRIVER && toss.tool == Toss.SCREWDRIVER;
+    }
+
+    /** What her ring holds now: her tools, and back to the bed while a thing of one is out. */
+    private void herRing() {
+        pieN = 0;
+        pieItems[pieN++] = PIE_MALLET;
+        pieItems[pieN++] = PIE_SCREWDRIVER;
+        if (kit.held != Kit.NONE || kit.set) pieItems[pieN++] = PIE_BACK;
+    }
+
+    /** What the bed of pickup p holds, as the job has it. */
+    private void bedRing(Pickup p) {
+        int n = Kit.bed(tow != null, bedThings);
+        pieN = 0;
+        for (int k = 0; k < n; k++) pieItems[pieN++] = PIE_KIT + bedThings[k];
+    }
+
+    /** Ring thing k chosen. */
+    private void pieChoose(int k) {
+        if (k >= PIE_KIT) {
+            int thing = k - PIE_KIT;
+            if (kit.held == thing && kit.from == bedNow) return;
+            // the ladder still up somewhere, of this bed: taken down first
+            if (thing == Kit.LADDER && kit.set && kit.setFrom == bedNow) {
+                city.unsetLadder();
+                kit.set = false;
+                kit.setFrom = null;
+            }
+            if (thing == Kit.ROPE && kit.tied) return;
+            kit.take(thing, bedNow);
+            host.sound(Synth.WOOD, 0.4f, thing == Kit.ROPE ? 0.8f : 1.2f);
+        } else if (k == PIE_BACK) {
+            kit.putBackHands(city);
+            host.sound(Synth.WOOD, 0.35f, 0.9f);
+        } else {
+            // a tool of her own: anything of a bed in her hands goes back of itself
+            kit.held = Kit.NONE;
+            kit.from = null;
+            int tool = k == PIE_SCREWDRIVER ? Toss.SCREWDRIVER : Toss.MALLET;
+            toss.tool = tool;
+            host.saveInt(SAVE_TOOL, tool);
+            host.sound(Synth.TOCK, 0.4f, tool == Toss.SCREWDRIVER ? 1.6f : 1.1f);
+        }
+        host.buzz(15);
+    }
+
+    /** A finger on a ring's button, or the finger holding a ring: true if it is a ring's. */
     private boolean pieTouch(int type, int id, float x, float y) {
         if (pieFinger >= 0) {
             if (id != pieFinger) return false;
@@ -1318,32 +1418,61 @@ final class World {
             else {
                 float a = (float) Math.atan2(dx, -dy);
                 if (a < 0f) a += 2f * (float) Math.PI;
-                float each = 2f * (float) Math.PI / Toss.TOOLS;
-                pieHot = ((int) Math.floor((a + each * 0.5f) / each)) % Toss.TOOLS;
+                float each = 2f * (float) Math.PI / pieN;
+                pieHot = ((int) Math.floor((a + each * 0.5f) / each)) % pieN;
             }
             if (type == UP) {
-                if (pieHot >= 0 && pieHot != toss.tool) {
-                    toss.tool = pieHot;
-                    host.saveInt(SAVE_TOOL, pieHot);
-                    host.sound(Synth.TOCK, 0.4f, pieHot == Toss.SCREWDRIVER ? 1.6f : 1.1f);
-                    host.buzz(15);
-                }
+                if (pieHot >= 0) pieChoose(pieItems[pieHot]);
                 pieFinger = -1;
                 pieHot = -1;
             }
             return true;
         }
-        if (type != DOWN || !pieSeen || !pieOffered()) return false;
-        if (Math.abs(x - pieX) > PIE_HALF + 7f || Math.abs(y - pieY) > PIE_HALF + 7f) return false;
+        if (type != DOWN || !pieOffered()) return false;
+        boolean onHer = pieSeen && Math.abs(x - pieX) <= PIE_HALF + 7f && Math.abs(y - pieY) <= PIE_HALF + 7f;
+        boolean onBed = bedSeen && bedNow != null && Math.abs(x - bedX) <= PIE_HALF + 7f && Math.abs(y - bedY) <= PIE_HALF + 7f;
+        if (!onHer && !onBed) return false;
+        pieBed = onBed && !onHer;
+        if (pieBed) bedRing(bedNow);
+        else herRing();
         pieFinger = id;
         pieHot = -1;
         pieAt = time;
+        float bx = pieBed ? bedX : pieX, by = pieBed ? bedY : pieY;
         // the ring's middle where the button is, kept in from the frame's edges
-        pieCx = Math.max(PIE_R + PIE_ITEM + 4f, Math.min(W - PIE_R - PIE_ITEM - 4f, pieX));
-        pieCy = Math.max(PIE_R + PIE_ITEM + 60f, Math.min(h - PIE_R - PIE_ITEM - 10f, pieY));
+        pieCx = Math.max(PIE_R + PIE_ITEM + 4f, Math.min(W - PIE_R - PIE_ITEM - 4f, bx));
+        pieCy = Math.max(PIE_R + PIE_ITEM + 60f, Math.min(h - PIE_R - PIE_ITEM - 10f, by));
         letGo();
         host.buzz(10);
         return true;
+    }
+
+    // a thing of a bed brought up to where it goes: held there so long, it is used as a tap would
+    static final float KIT_STAND = 0.5f;
+    private float kitStood;
+
+    /** Whether the thing in her hands is where it goes: the ladder at a wall before her, the rope by the brum's pickup. */
+    private boolean kitReady() {
+        if (kit.held == Kit.LADDER) return kit.wallBefore(runner, city);
+        if (kit.held == Kit.ROPE) return tow != null && tow.nearTie(runner);
+        return false;
+    }
+
+    /** A tap with a thing of a bed in her hands: the ladder set up against the wall before her, the rope tied on. */
+    private void kitUse() {
+        if (kit.held == Kit.LADDER) {
+            if (kit.setLadder(runner, city)) {
+                host.sound(Synth.CLANG, 0.45f, 1.2f);
+                host.buzz(30);
+            } else host.sound(Synth.TOCK, 0.3f, 0.6f);
+        } else if (kit.held == Kit.ROPE) {
+            if (tow != null && tow.tie(kit.from, runner, host)) {
+                kit.tied = true;
+                kit.tiedFrom = kit.from;
+                kit.held = Kit.NONE;
+                kit.from = null;
+            } else host.sound(Synth.TOCK, 0.3f, 0.6f);
+        }
     }
 
     /** The compass, a button as the pause is, across from it on the right. */
@@ -1643,6 +1772,7 @@ final class World {
             herd = null;
             cherry = null;
             fault = null;
+            kit.putBack(city);
             saveCopter();
             // after the concert the dark has come down: she wakes at home, on her sofa, in the morning
             boolean slept = concert != null;
@@ -1842,7 +1972,22 @@ final class World {
         }
         // in the collider hall the mallet is swung at the magnets there, never thrown
         toss.lent = indoors != null && indoors.collider;
-        toss.update(dt, runner, brums(), city, runner.tapped(), hunt());
+        // a thing out of a pickup's bed in her hands: the tap is its, not the mallet's
+        boolean tap = runner.tapped();
+        if (kit.held != Kit.NONE && driving != null) kit.held = Kit.NONE;
+        if (kit.held != Kit.NONE && tap) {
+            kitUse();
+            tap = false;
+        }
+        // or brought right up to where it goes and held there a moment: the same
+        if (kit.held != Kit.NONE && driving == null && !runner.inAir() && runner.speed < 1.5f && kitReady()) {
+            if ((kitStood += dt) > KIT_STAND) {
+                kitStood = 0f;
+                kitUse();
+            }
+        } else kitStood = 0f;
+        toss.carrying = kit.held != Kit.NONE;
+        toss.update(dt, runner, brums(), city, tap, hunt());
         frighten();
         int rode = riding();
         float rx0 = rode >= 0 ? cars.x[rode] : 0f, rz0 = rode >= 0 ? cars.z[rode] : 0f, rh0 = rode >= 0 ? cars.heading[rode] : 0f;
@@ -5325,7 +5470,7 @@ final class World {
         String clock = clock(tw.over() ? tw.doneAt : tw.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
         if (tw.over() || !tw.goal(duty, driving, runner, goal)) return;
-        String w = Lang.lines(tw.goalWord(driving), mission.round, null)[0];
+        String w = Lang.lines(tw.goalWord(driving, runner, kit.held == Kit.ROPE), mission.round, null)[0];
         wordAtTop(f, w, green, ink);
         placeMark(d, f, goal[0], goal[1], goal[2], tw.mark(driving), Marks.OPEN);
     }
@@ -5602,6 +5747,7 @@ final class World {
             r.draw(d);
             if (glows) Frida.hot = false;
             toss.draw(d, r);
+            kit.draw(d, r);
             if (mirror) {
                 // and in the mirror: she as the glass shows her, turned about its plane
                 Rooms.reflected(indoors, r.x, r.z, mirrorAt);
@@ -5611,6 +5757,7 @@ final class World {
                 r.heading = mirrorHeading(oh);
                 r.draw(d);
                 toss.draw(d, r);
+            kit.draw(d, r);
                 r.x = ox;
                 r.z = oz;
                 r.heading = oh;
@@ -5793,6 +5940,11 @@ final class World {
             rescue.draw(d, r, eyeX, eyeZ);
         }
         if (tow != null) tow.draw(d, time);
+        // what the beds of the pickups near her hold
+        if (duty != null) for (Pickup p : duty.all) {
+            float dx = p.x - runner.x, dz = p.z - runner.z;
+            if (dx * dx + dz * dz < 45f * 45f) kit.inBed(d, p, tow != null);
+        }
         shore.draw(d, city, eyeX, eyeZ, time);
         if (archive != null) archive.draw(d, r);
         else if (mend != null) mend.draw(d, r, time);
@@ -5819,6 +5971,7 @@ final class World {
         if ((dispatch == null || dispatch.showsHer()) && !r.hidden) {
             r.draw(d);
             toss.draw(d, r);
+            kit.draw(d, r);
         }
         if (folder != null) folder.draw(d, r);
         // the one nearest that still burns gives off light and glow; the others only burn
