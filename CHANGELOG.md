@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.4.18
+
+- Start over is gone from home's list, with its question; nothing played is let go any more.
+- Home's list has a line for the stories done: on its own screen every story won, by name, the
+  newest at the top, and a way back to the list. Picked, a story plays again from its start: the
+  island shut again for the black cherry as the hot heads left it, open for the hot heads; the
+  archive's helicopter on the town hall's roof, the broken one in the garden for the landing gear.
+  Won again, it leads on to nothing (the archive no longer runs into the landing gear), pays no
+  likes a second time and keeps its best time; the world is left as the stories won left it, her
+  own helicopter given back. A replay can be left from under the pause: nothing is put by, all
+  stays as it was.
+- The island's state is no longer kept on its own: it follows from the stories won.
+
 ## 1.4.17
 
 - The folder found is taken back: as soon as it is in her hands, the dispatcher comes on to say

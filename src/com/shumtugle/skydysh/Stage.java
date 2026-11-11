@@ -126,11 +126,6 @@ final class Stage extends GLSurfaceView implements GLSurfaceView.Renderer {
         // the world goes on in steps no longer than a sixtieth of a second, however slow the frame
         int steps = (int) Math.ceil(dt * 60f - 1e-3f);
         for (int s = 0; s < Math.max(1, steps); s++) world.update(dt / Math.max(1, steps));
-        if (world.afresh) {
-            // the game from scratch: a new world, as on the first day
-            world = new World(host);
-            world.resize(screenW, screenH);
-        }
         world.drawScale = q;
         world.draw(list);
         gfx.draw(list, screenW, screenH, q);

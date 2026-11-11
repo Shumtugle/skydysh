@@ -416,7 +416,10 @@ can be told by its numbers; with the navigator, the numbers stand under its map 
 A game the system closed opens where she was: between jobs on foot or at the wheel, just there;
 in a job (or indoors, in the air, at the crane), at home on the sofa with the job to come.
 
-The jobs come in turn: home's screen offers the next one, and a list of her own (the games played, the panel) to play again.
+The jobs come in turn: home's screen offers the next one, and a list of her own (the games played, the panel,
+the stories done) to play again. A story done plays again from its start and leaves the world as it
+was: the island, the helicopter and the likes stay as the stories won left them; a replay can be
+left from under the pause. Nothing on the list tells of a job still to come.
 Any job not yet won can be put by, from its first moment (but not in the air): a row under the
 pause offers it; put by, it brings no likes and waits on home's list, not done, to be
 played when she likes, and the next job comes on. The duty pickups are in the streets only from

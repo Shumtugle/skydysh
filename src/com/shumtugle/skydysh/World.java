@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.17";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.18";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -218,12 +218,16 @@ final class World {
         } else if (Cherry.its(n)) {
             mission.round = n;
             folder = null;
+            // played again: the island shut as the hot heads left it, the bridge going up behind the screen
+            if ((kindsWon & (1 << 12)) != 0) Island.shut = true;
             cherry = new Cherry();
             cherryAim = -1;
             chase = nobody;
         } else if (Herd.its(n)) {
             mission.round = n;
             folder = null;
+            // played again: the island open as it was then
+            Island.shut = false;
             herd = new Herd(city);
             chase = nobody;
         } else if (Lab.its(n)) {
@@ -240,12 +244,22 @@ final class World {
         } else if (Mend.its(n)) {
             mission.round = n;
             folder = null;
+            // played again: her own helicopter put aside, the broken one in the garden as it was then
+            if ((kindsWon & (1 << 9)) != 0 && aside == null) {
+                aside = parked;
+                parked = brokenAtArchive();
+            }
             if (parked == null) parked = brokenAtArchive();
             mend = new Mend(parked);
             chase = nobody;
         } else if (Archive.its(n)) {
             mission.round = n;
             folder = null;
+            // played again: whatever helicopter she has put aside; the job's own waits on the roof
+            if (parked != null && aside == null) {
+                aside = parked;
+                parked = null;
+            }
             archive = new Archive();
             chase = nobody;
         } else if (Concert.its(n)) {
@@ -540,7 +554,7 @@ final class World {
         String st = Lang.lines("pause.story", 0, null)[0];
         shadowed(f, st, Math.round(W * 0.5f - PixelFont.width(st, 1) * 0.5f), Math.round(storyRowY() - 4f), 1, cream, ink);
         if (!canSkip()) return;
-        String sk = Lang.lines("pause.skip", 0, null)[0];
+        String sk = Lang.lines(replaying() ? "pause.leave" : "pause.skip", 0, null)[0];
         shadowed(f, sk, Math.round(W * 0.5f - PixelFont.width(sk, 1) * 0.5f), Math.round(skipRowY() - 4f), 1, 0xFFFFB48A, ink);
     }
 
@@ -983,25 +997,11 @@ final class World {
             }
             if (type == DOWN && dispatch.choosing()) {
                 int c = dispatch.pickAt(x, y);
-                if (c == Dispatch.AFRESH) {
-                    // asked first: the question, yes or back to the list
-                    String[] q = Lang.lines("afresh.ask", 0, null);
-                    String[] lines = new String[q.length + 3];
-                    System.arraycopy(q, 0, lines, 0, q.length);
-                    lines[q.length] = "";
-                    lines[q.length + 1] = Lang.lines("afresh.yes", 0, null)[0];
-                    lines[q.length + 2] = Lang.lines("afresh.no", 0, null)[0];
-                    int[] p = new int[lines.length];
-                    java.util.Arrays.fill(p, -1);
-                    p[q.length + 1] = Dispatch.AFRESH_YES;
-                    p[q.length + 2] = Dispatch.TO_LIST;
-                    dispatch.then(lines, p);
+                if (c == Dispatch.STORIES) {
+                    dispatch.then(storiesChoice(), storyPicks);
                 } else if (c == Dispatch.TO_LIST) {
                     int[] p = listChoice("list");
                     dispatch.then(keptLines, p);
-                } else if (c == Dispatch.AFRESH_YES) {
-                    // the key comes down, then the game begins again
-                    afreshIn = AFRESH_AFTER;
                 } else if (c == Dispatch.SOLO) {
                     // the panel on its own: it opens once the walls have drawn back
                     soloNext = true;
@@ -1727,11 +1727,6 @@ final class World {
     boolean paused;
 
     void update(float dt) {
-        if (afresh) return;
-        if (afreshIn > 0f && (afreshIn -= dt) <= 0f) {
-            wipe();
-            return;
-        }
         hearts.update(dt, W, h);
         if (opening == null && (whereKeptAgo += dt) > WHERE_KEPT_EVERY) keepWhere();
         if (likesDirty && (likesKeptAgo += dt) > LIKES_KEPT_EVERY) saveLikes();
@@ -1838,6 +1833,8 @@ final class World {
             // won: its time kept against the best; the report waits at home, on the sofa, and the
             // town is hers on the way there
             said = Dispatch.timed(said, record(mission.round, doneTime()), doneTime());
+            // a story won before: played again, it leads on to nothing and leaves the world as it was
+            boolean replay = replaying();
             kindsWon |= 1 << kindOf(mission.round);
             host.saveInt(SAVE_KINDS, kindsWon);
             kindsSkipped &= ~(1 << kindOf(mission.round));
@@ -1855,10 +1852,11 @@ final class World {
             tow = null;
             // the helicopter stays where the archive job left it; its second half begins at once,
             // at the archive's door, the report and the next on one screen
-            boolean chain = archive != null;
+            boolean chain = archive != null && !replay;
             if (archive != null) parked = archive.copter;
             archive = null;
             if (mend != null) parked = mend.copter;
+            putBackAside(mend != null);
             mend = null;
             port = null;
             lab = null;
@@ -1866,6 +1864,7 @@ final class World {
             cherry = null;
             fault = null;
             kit.putBack(city);
+            settleIsland();
             saveCopter();
             // after the concert the dark has come down: she wakes at home, on her sofa, in the morning
             boolean slept = concert != null;
@@ -1898,7 +1897,7 @@ final class World {
         shake = Math.max(0f, shake - dt * SHAKE_DIES);
         if (!shutRead) {
             shutRead = true;
-            Island.shut = host.loadInt(SAVE_SHUT) == 1;
+            Island.shut = shutByJobs();
             scars.load(host);
             Island.bridgeUp = Island.bridgeTo = Island.shut ? 1f : 0f;
             Island.bridgeStep(0f);
@@ -4345,7 +4344,31 @@ final class World {
     boolean canSkip() {
         if (free || aboard() || piloting()) return false;
         int k = kindOf(mission.round);
-        return (kindsWon & (1 << k)) == 0 && !over();
+        return ((kindsWon & (1 << k)) == 0 || !game(k)) && !over();
+    }
+
+    /** Whether the job now is a story won before, played again from home's list. */
+    boolean replaying() {
+        int k = kindOf(mission.round);
+        return !free && !game(k) && (kindsWon & (1 << k)) != 0;
+    }
+
+    /** The helicopter she had before a story played again, kept aside while it lasts (null: none). */
+    private Copter aside;
+
+    /** The helicopter put aside given back (unless the one just flown home is to stay hers). */
+    private void putBackAside(boolean keepNew) {
+        if (aside == null) return;
+        if (!keepNew) parked = aside;
+        aside = null;
+    }
+
+    /** The island as the jobs won leave it, once a story played again is over. */
+    private void settleIsland() {
+        boolean s = shutByJobs();
+        if (s == Island.shut) return;
+        if (s) shutIsland();
+        else openIsland();
     }
 
     /** The job now put by: on home's list as not done, no pay; the town hers where she is. */
@@ -4364,10 +4387,14 @@ final class World {
             swap();
             swapT = -1f;
         }
-        kindsSkipped |= 1 << k;
-        host.saveInt(SAVE_SKIPPED, kindsSkipped);
+        // a story played again and left: nothing put by, the world as it was
+        boolean replay = replaying();
+        if (!replay) {
+            kindsSkipped |= 1 << k;
+            host.saveInt(SAVE_SKIPPED, kindsSkipped);
+        }
         host.saveInt(SAVE_MISSION, mission.round + 1);
-        String[] said = Lang.lines("report.skip", mission.round, null);
+        String[] said = Lang.lines(replay ? "report.leave" : "report.skip", mission.round, null);
         lost = false;
         free = true;
         folder = null;
@@ -4383,6 +4410,9 @@ final class World {
         lab = null;
         herd = null;
         cherry = null;
+        putBackAside(false);
+        settleIsland();
+        saveCopter();
         dropFault();
         if (concert != null) concert.stop();
         concert = null;
@@ -4457,6 +4487,13 @@ final class World {
             l.add(Lang.lines("list.undone", 0, null)[0].replace("{job}", Lang.lines("kind." + k, 0, null)[0]));
             p.add(k);
         }
+        // the stories won: on a screen of their own, each to be played again from its beginning
+        for (int k = 1; k <= KINDS; k++)
+            if (!game(k) && (kindsWon & (1 << k)) != 0) {
+                l.add(Lang.lines("list.stories", 0, null)[0]);
+                p.add(Dispatch.STORIES);
+                break;
+            }
         if ((kindsWon & (1 << 7)) != 0) {
             l.add(Lang.lines("kind.panel", 0, null)[0]);
             p.add(Dispatch.SOLO);
@@ -4469,44 +4506,38 @@ final class World {
             // the containers once done: at the crane from here, no way to go
             p.add(k == 10 && (kindsWon & (1 << 10)) != 0 ? Dispatch.YARD : k);
         }
-        // the game from scratch, at the very bottom, once anything has been played
-        if (kindsWon != 0 || kindsSkipped != 0 || likes > 0) {
-            l.add("");
-            p.add(-1);
-            l.add(Lang.lines("list.afresh", 0, null)[0]);
-            p.add(Dispatch.AFRESH);
-        }
         keptLines = l.toArray(new String[0]);
         int[] out = new int[p.size()];
         for (int k = 0; k < out.length; k++) out[k] = p.get(k);
         return out;
     }
 
-    // ---- the game from scratch ----
-    /** Set once all that was played is let go: the shell then makes the world anew. */
-    boolean afresh;
-    private float afreshIn;
-    /** From the yes to the game begun again: the key's knock heard first. */
-    static final float AFRESH_AFTER = 0.7f;
+    /** What each line of the stories done picks, as the screen was last made. */
+    private int[] storyPicks;
 
     /**
-     * Everything played let go: the jobs won and put by, the stories, the helicopter, the likes,
-     * the island, where she was. The best times and the ways to play are kept.
+     * The stories won, the newest at the top, each to be played again from its beginning (the world
+     * left as it is after it); under them the way back to the list. Its picks left in storyPicks.
      */
-    private void wipe() {
-        String[] gone = { SAVE_MISSION, SAVE_KINDS, SAVE_SKIPPED, SAVE_TOLD, SAVE_PAID, SAVE_COPTER,
-                SAVE_COPTER + ".x", SAVE_COPTER + ".y", SAVE_COPTER + ".z", SAVE_COPTER + ".h", SAVE_FIELDS,
-                SAVE_PLATES, SAVE_LIKES, SAVE_MONEY, SAVE_PANELS, SAVE_SECRET, SAVE_SHUT,
-                SAVE_WHERE, SAVE_WX, SAVE_WY, SAVE_WZ, SAVE_WH };
-        for (String k : gone) host.saveInt(k, 0);
-        scars.wipe(host);
-        likesDirty = false;
-        Dispatch.paidKinds = 0;
-        Crossings.mended();
-        Island.shut = false;
-        kit.putBack(city);
-        host.music(null);
-        afresh = true;
+    private String[] storiesChoice() {
+        String[] h = Lang.lines("stories.head", 0, null);
+        java.util.ArrayList<String> l = new java.util.ArrayList<String>(java.util.Arrays.asList(h));
+        java.util.ArrayList<Integer> p = new java.util.ArrayList<Integer>();
+        for (int k = 0; k < h.length; k++) p.add(-1);
+        l.add("");
+        p.add(-1);
+        for (int k = KINDS; k >= 1; k--) {
+            if (game(k) || (kindsWon & (1 << k)) == 0) continue;
+            l.add(Lang.lines("kind." + k, 0, null)[0]);
+            p.add(k);
+        }
+        l.add("");
+        p.add(-1);
+        l.add(Lang.lines("list.back", 0, null)[0]);
+        p.add(Dispatch.TO_LIST);
+        storyPicks = new int[p.size()];
+        for (int k = 0; k < storyPicks.length; k++) storyPicks[k] = p.get(k);
+        return l.toArray(new String[0]);
     }
 
     /** For the desktop stand: a touch on the sign of the list over home's choice; false if it is not shown. */
@@ -5142,13 +5173,15 @@ final class World {
     static final float LEVER_S = 0.7f;
     private float leverAt = -1f;
     private boolean towerSay, shutRead;
-    static final String SAVE_SHUT = "isleShut";
-
-    /** The island shut: the bridge goes up, the yachts stay wrecked, the brums stay on it; kept. */
+    /** The island shut: the bridge goes up, the yachts stay wrecked, the brums stay on it. */
     private void shutIsland() {
         Island.shut = true;
-        host.saveInt(SAVE_SHUT, 1);
         wrecked(true);
+    }
+
+    /** Whether the jobs won leave the island shut: the hot heads done, the black cherry not yet. */
+    private boolean shutByJobs() {
+        return (kindsWon & (1 << 12)) != 0 && (kindsWon & (1 << 13)) == 0;
     }
 
     /** The yachts wrecked or whole, as the job says; the pier's cells built again when that changes. */
@@ -5336,10 +5369,9 @@ final class World {
         }
     }
 
-    /** The island opened: the bridge down, the yachts whole again, the brums on it taken off to be mended; kept. */
+    /** The island opened: the bridge down, the yachts whole again, the brums on it taken off to be mended. */
     private void openIsland() {
         Island.shut = false;
-        host.saveInt(SAVE_SHUT, 2);
         wrecked(false);
     }
 
@@ -5418,7 +5450,7 @@ final class World {
     String standCherryState() {
         if (cherry == null) return "no black cherry now; island shut " + Island.shut;
         return String.format(java.util.Locale.ROOT, "step %d set %d heat %.2f jet %.2f reach %.1f clock %.1f", cherry.step, cherry.setCount(), cherry.heat,
-                cherry.jet, cherry.reach, cherry.clock);
+                cherry.jet, cherry.reach, cherry.clock) + ", island shut " + Island.shut;
     }
 
     // ---- the navigator's trial ----

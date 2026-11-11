@@ -3,9 +3,8 @@
 screen 1096 2560
 wait 0.4
 lang ru
-keep kinds 4094
+keep kinds 8190
 keep where 0
-keep isleShut 1
 restart
 free
 wait 6

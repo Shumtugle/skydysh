@@ -1,0 +1,82 @@
+# Stories played again from home's list: every job done, the helicopter hers on the town hall,
+# the island open. The list asked for: every story reached, by name, the newest at the top, then
+# the panel and the games, and a line to the stories done; no "start over". The stories done: each
+# by name, the newest at the top, a way back to the list. The black cherry picked: the island shut again behind
+# the screen, as the hot heads left it; won, open again, the job paid no likes a second time. The
+# archive picked: her helicopter put aside, the job's own on the roof; left from the pause, the
+# report says all stays as it was and her helicopter is back. The landing gear picked: the broken
+# one in the garden; left, hers again. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 32766
+keep paid 32766
+keep likes 500000
+keep where 0
+restart
+free
+sofa
+wait 7
+listsign
+wait 4
+shot r0
+pick 96
+wait 7
+shot r2
+pick 13
+wait 2.5
+cherry
+close
+wait 3
+cherry
+cherry in
+wait 1
+cherry
+cherry set 6
+wait 1
+cherry
+close
+wait 8
+cherry
+close
+wait 3
+cherry
+likes
+kept kinds skipped likes
+close
+copter
+sofa
+wait 7
+shot r3
+tap 548 1280
+wait 4
+shot r4
+pick 96
+wait 3
+pick 8
+wait 2.5
+copter
+close
+putby
+wait 3.5
+shot r1
+copter
+close
+sofa
+wait 7
+listsign
+wait 4
+pick 96
+wait 3
+pick 94
+wait 3
+pick 96
+wait 3
+pick 9
+wait 2.5
+copter
+close
+putby
+wait 1
+copter
+kept kinds skipped copter

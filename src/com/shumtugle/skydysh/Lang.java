@@ -57,6 +57,9 @@ final class Lang {
         EN.put("home.list", "Dispatch \u2014 home||Your jobs:");
         EN.put("home.sum", "Likes: {sum}");
         EN.put("list", "Your jobs:");
+        EN.put("list.stories", "Stories done");
+        EN.put("list.back", "Back to the list");
+        EN.put("stories.head", "Dispatch \u2014 home||Stories done:");
         EN.put("kind.panel", "Panel");
         EN.put("kind.8", "Documents to the archive");
         EN.put("brief.archive", "Dispatch \u2014 {kind}||A call from the town hall.|The town hall is north of home,|on the main street.||At the secretariat take the folder|for the archive.|Then up in the lift to the roof:|a helicopter is waiting.||Touch to go");
@@ -171,13 +174,11 @@ final class Lang {
         EN.put("story.back", "Touch to go back");
         EN.put("pause.story", "About the job");
         EN.put("pause.skip", "Put the job by");
+        EN.put("pause.leave", "Leave the replay");
+        EN.put("report.leave", "Dispatch \u2014 {kind}||Replay left.|Everything stays as it was.||Touch to go on");
         EN.put("rescue.open", "The road is open.");
         EN.put("report.skip", "Dispatch \u2014 {kind}||The job is put by.|It waits on home's list,|not done.||Touch to go on");
         EN.put("list.undone", "{job} \u2014 not done");
-        EN.put("list.afresh", "Start over");
-        EN.put("afresh.ask", "Dispatch \u2014 home||Start the game from scratch?||Jobs, stories, the helicopter|and likes all begin again.|Best times and settings stay.");
-        EN.put("afresh.yes", "Yes, from scratch");
-        EN.put("afresh.no", "No, back to the list");
         EN.put("best.first", "Best time.|");
         EN.put("best.new", "New record. Was: {time}|");
         EN.put("best", "Best time: {time}|");

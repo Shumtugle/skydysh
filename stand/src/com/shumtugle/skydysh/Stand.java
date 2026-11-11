@@ -160,12 +160,6 @@ public final class Stand implements World.Host {
 
     private void step() {
         world.update(DT);
-        if (world.afresh) {
-            // the game from scratch: a new world, as the phone makes one
-            world = new World(this);
-            world.resize(1096, 2560);
-            System.out.println(String.format("%7.2fs  from scratch: mission %d, likes %d", time, world.mission.round, world.likes));
-        }
         // drawn every step, as the phone does: the world learns from it where things are on screen
         world.draw(list);
         time += DT;

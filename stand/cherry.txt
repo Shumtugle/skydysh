@@ -8,7 +8,6 @@ wait 0.4
 lang ru
 keep kinds 8190
 keep where 0
-keep isleShut 1
 restart
 mission 13
 dispatch
