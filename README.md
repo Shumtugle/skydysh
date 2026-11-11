@@ -243,7 +243,7 @@ stroke at the water's top (still, she settles slowly a little lower, never under
 as the open sea lets her; back in the shallows
 she stands up and wades out. The old house is there: one large house with a tower and a lamp on top,
 its balcony over the door; in its flat, through the door from the street or the yard, a green
-brum lives now, on the sofa. Home is inland, in a quarter of its own four blocks up from the
+brum lives now, lounging on the sofa, his legs out, an arm along its back. Home is inland, in a quarter of its own four blocks up from the
 shore and east, where the game begins: home stands alone in its block, two storeys of cream
 stucco, tall windows with teal shutters, a coral awning over the door, a forecourt before it
 behind a low hedge (the pickup's place marked out in it, the pickup there once the delivery is
@@ -262,7 +262,8 @@ does: the room behind the glass is built again, turned about); on the right,
 open to the hall, the dining room (a long table, a chandelier) and the kitchen (counters, the
 stove, the sink under a window, a tall fridge, an island); windows all round, plants under them,
 herbs on the sills. Come up to
-the sofa and she sits; the game is kept, and the screen in her head asks which mission now (or
+the sofa and she sits (or, with no job on, touch the glass sign of the game kept that floats over
+it, and she walks up to it and sits); the game is kept, and the screen in her head asks which mission now (or
 the next one, or just a rest). A touch, and she gets up.
 
 Duty pickups stand at the curbs here and there (not in a hunt), and once the delivery is done,

@@ -1,0 +1,33 @@
+# The sign over home's sofa: in the hall, the glass sign of the game kept over the sofa; touched, she walks up to it, sits, and the screen comes on. Then the old house's flat: the green brum lounging on his sofa, legs out, an arm along its back.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 14
+keep where 0
+restart
+free
+at 288 269.3 0
+wait 1.5
+where
+inroom -2 6
+face -0.64
+wait 0.8
+shot k0
+sofasign
+wait 0.8
+shot k1
+wait 3.2
+shot k2
+keep where 0
+restart
+free
+at 32 7.2 0
+wait 1.5
+where
+inroom -3.8 1.2
+face -1.5708
+wait 0.6
+shot k3
+eye 35 2.2 13.25 -1.5708 -0.15
+wait 0.1
+shot k4

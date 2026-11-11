@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.10";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.11";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1036,12 +1036,10 @@ final class World {
             return;
         }
         // a sign: she goes where it says by herself
-        if (indoors == null) {
-            int sgn = signAt(x, y);
-            if (sgn >= 0) {
-                errand(sgn);
-                return;
-            }
+        int sgn = signHere(x, y);
+        if (sgn >= 0) {
+            errand(sgn);
+            return;
         }
         errand = NO_ERRAND;
         if (liftOffer && onLiftButton(x, y)) {
@@ -1602,12 +1600,10 @@ final class World {
             liftPressed = true;
             return;
         }
-        if (indoors == null) {
-            int sgn = signAt(x, y);
-            if (sgn >= 0) {
-                errand(sgn);
-                return;
-            }
+        int sgn = signHere(x, y);
+        if (sgn >= 0) {
+            errand(sgn);
+            return;
         }
         runner.tap();
     }
@@ -1632,8 +1628,8 @@ final class World {
             return;
         }
         // a sign: she goes where it says by herself
-        if (type == DOWN && indoors == null) {
-            int sgn = signAt(x, y);
+        if (type == DOWN) {
+            int sgn = signHere(x, y);
             if (sgn >= 0) {
                 errand(sgn);
                 buttonHeld = true;
@@ -2849,9 +2845,10 @@ final class World {
     }
 
     // ---- errands: a sign touched, she goes where it says by herself ----
-    static final int NO_ERRAND = 0, ERRAND_CLIMB = 1, ERRAND_UP = 2, ERRAND_DOWN = 3, ERRAND_DRIVE = 4, ERRAND_THROUGH = 5;
+    static final int NO_ERRAND = 0, ERRAND_CLIMB = 1, ERRAND_UP = 2, ERRAND_DOWN = 3, ERRAND_DRIVE = 4, ERRAND_THROUGH = 5, ERRAND_SOFA = 6;
     private boolean errandIn;                  // through a house: she has been inside
     static final int MARK_PICKUP = 4;          // a sign's kind beside the town's (see City.marks)
+    static final int MARK_SOFA = 7;            // the sign over home's sofa
     private Pickup errandPickup;
     private int errand;
     private float errandX, errandZ, errandFor;
@@ -2871,6 +2868,62 @@ final class World {
     /** Whether she is on an errand a sign sent her on. */
     boolean onErrand() {
         return errand != NO_ERRAND;
+    }
+
+    // ---- the sign over home's sofa ----
+    static final float SOFA_SIGN_Y = 2.4f;   // over the floor
+
+    /**
+     * The sign over home's sofa, the game kept, drawn and kept for the finger (the only sign
+     * indoors), while nothing is going on that sitting down would cut short.
+     */
+    private void sofaSign(DrawList d) {
+        shownN = 0;
+        if (!sofaOffered() || d.badgeN >= DrawList.BADGE_MAX - 3) return;
+        Indoors in = indoors;
+        float sx = in.wx(in.sofaU, in.sofaV), sz = in.wz(in.sofaU, in.sofaV);
+        float bob = 0.08f * (float) Math.sin(time * 2.2f);
+        if (!d.project(sx, Indoors.FLOOR + SOFA_SIGN_Y + bob, sz, markAt) || markAt[2] < 0.5f) return;
+        if (markAt[0] < -20f || markAt[0] > W + 20f || markAt[1] < -20f || markAt[1] > h + 20f) return;
+        float size = Math.max(9f, Math.min(18f, W * 1.6f * 0.75f / markAt[2]));
+        boolean mine = errand == ERRAND_SOFA;
+        d.badge(markAt[0], markAt[1], size, Badges.SAVE, 0.9f, mine ? 0.6f + 0.4f * (float) Math.sin(time * 8f) : 0f);
+        float[] o = shown;
+        o[0] = markAt[0];
+        o[1] = markAt[1];
+        o[2] = size;
+        o[3] = Badges.SAVE;
+        o[4] = 1f;
+        o[5] = sx;
+        o[6] = sz;
+        o[7] = 0f;
+        o[8] = 0f;
+        o[9] = MARK_SOFA;
+        shownN = 1;
+    }
+
+    /** Whether the sign over home's sofa is shown: at home, up, no mission on, nothing on the screen. */
+    private boolean sofaOffered() {
+        Indoors in = indoors;
+        return in != null && in.home && !in.seated && free && dispatch == null && swapT < 0f && !paused;
+    }
+
+    /** The sign under a finger that can be touched where she is: any out of doors, indoors only the sofa's. */
+    private int signHere(float x, float y) {
+        int sgn = signAt(x, y);
+        if (sgn < 0 || indoors == null) return sgn;
+        return (int) shown[sgn * 10 + 9] == MARK_SOFA ? sgn : -1;
+    }
+
+    /** For the desktop stand: a touch on the sign over home's sofa, if it is there. */
+    boolean standSofaSign() {
+        for (int i = 0; i < shownN; i++) if ((int) shown[i * 10 + 9] == MARK_SOFA) {
+            float x = shown[i * 10], y = shown[i * 10 + 1];
+            touch(DOWN, 0, x, y);
+            touch(UP, 0, x, y);
+            return true;
+        }
+        return false;
     }
 
     /** The sign drawn last frame under a finger at (x, y), as its place in shown; -1 if none. */
@@ -2902,7 +2955,14 @@ final class World {
         errandX = mx;
         errandZ = mz;
         errandFor = 0f;
-        if (kind == MARK_PICKUP) {
+        if (kind == MARK_SOFA) {
+            if (indoors == null || !indoors.home) return;
+            // up to it, as from the door: she sits once she is there
+            indoors.sofaArmed = true;
+            indoors.goal(r, way);
+            r.lead(way[0], way[1], (float) Math.atan2(mx - way[0], mz - way[1]));
+            errand = ERRAND_SOFA;
+        } else if (kind == MARK_PICKUP) {
             Pickup p = pickupAt(mx, mz);
             if (p == null) return;
             // to the nearest of it, whichever side or corner: she gets in wherever she comes up to it
@@ -2951,6 +3011,12 @@ final class World {
                     host.sound(Synth.CLANG, 0.25f, 1.5f);
                     errand = NO_ERRAND;
                 } else if (!r.led()) errand = NO_ERRAND;
+                break;
+            case ERRAND_SOFA:
+                if (indoors == null || !indoors.home || indoors.seated) {
+                    errand = NO_ERRAND;
+                    r.stopLead();
+                } else if (!r.led() && !arrived) errand = NO_ERRAND;
                 break;
             case ERRAND_DRIVE:
                 if (arrived || errandPickup != null && errandPickup.apart(r.x, r.z) < BY_IT && !r.inAir()) {
@@ -3197,7 +3263,7 @@ final class World {
         if (!in.seated) {
             // up from it, she sits again only once she has gone from it
             if (!in.atSofa(r)) in.sofaArmed = true;
-            if (!in.sofaArmed || r.inAir() || r.led() && errand != ERRAND_THROUGH || !in.atSofa(r)) return false;
+            if (!in.sofaArmed || r.inAir() || r.led() && errand != ERRAND_THROUGH && errand != ERRAND_SOFA || !in.atSofa(r)) return false;
             sitDown();
         }
         seatedFor += dt;
@@ -5055,6 +5121,7 @@ final class World {
 
     /** Where the old flat's sofa seats its brum (x, y, z). */
     private final float[] lodger = new float[3];
+    static final float LODGER_LATE = 3.7f;   // his breath out of step with hers
 
     /** The magnet a blow is on its way to (of Cherry.KNOCKED), or -1. */
     private int cherryAim = -1;
@@ -5778,7 +5845,7 @@ final class World {
         if (indoors.oldFlat) {
             indoors.seat(lodger);
             Frida.green = true;
-            Frida.draw(d, lodger[0], lodger[1] - Runner.SEAT_DROP, lodger[2], indoors.seatHeading() + (float) Math.PI, Runner.SIZE, Frida.SIT, 0f);
+            Frida.draw(d, lodger[0], lodger[1] - Runner.SEAT_DROP, lodger[2], indoors.seatHeading() + (float) Math.PI, Runner.SIZE, Frida.LOUNGE, time + LODGER_LATE);
             Frida.green = false;
         }
         // the collider hall: its ring, the hole and its jet, the chargers
@@ -5847,7 +5914,10 @@ final class World {
         beatsFlat(f);
         speedFlat(f);
         hearts.draw(f, W, h, free && dispatch == null);
-        if (dispatch == null) buttons(d);
+        if (dispatch == null) {
+            sofaSign(d);
+            buttons(d);
+        }
         if (dispatch == null && paused) pauseFlat(f);
         swapFlat(f);
         nightFlat(f);

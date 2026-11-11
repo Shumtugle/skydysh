@@ -431,6 +431,10 @@ public final class Stand implements World.Host {
             if (world.standPick(Integer.parseInt(p[1]))) System.out.println(String.format("%7.2fs  picked %s", time, p[1]));
             else System.out.println(String.format("%7.2fs  no such line on the screen", time));
             step();
+        } else if (c.equals("sofasign")) {
+            // sofasign: a touch on the sign over home's sofa, if it is there
+            System.out.println(String.format("%7.2fs  %s", time, world.standSofaSign() ? "the sofa's sign touched" : "no sign over the sofa"));
+            step();
         } else if (c.equals("listsign")) {
             // listsign: a touch on the sign of the list over home's choice
             System.out.println(String.format("%7.2fs  %s", time, world.standList() ? "the list asked for" : "no sign of the list"));

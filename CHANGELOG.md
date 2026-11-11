@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.11
+
+- The sofa's sign: at home with no job on, a glass sign floats over the sofa, a disc of the game
+  kept. Touched anywhere in the rooms, she walks up to the sofa and sits: the game is kept and the
+  screen in her head comes on, as when she comes up to it herself. In a job it is not there; the
+  sofa is sat on as before, by coming up to it.
+- The green brum in the old house's flat lounges on his sofa now, as she does on hers: a leg out,
+  slumped back, an arm along the sofa's back, breathing slowly.
+
 ## 1.4.10
 
 - Start over: at the bottom of home's list of jobs, under a gap, "start over" (once anything

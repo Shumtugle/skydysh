@@ -27,7 +27,9 @@ final class Badges {
     static final int SCREWDRIVER = 27;
     // a coil of rope, its end hanging; a pickup's bed seen from behind with an arrow down into it
     static final int ROPE = 28, BED = 29;
-    static final int COUNT = 30, CELLS = 6, SIZE = 160;
+    // the game kept: a disc in its square case, the corner cut, the shutter and the label
+    static final int SAVE = 30;
+    static final int COUNT = 31, CELLS = 6, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -182,6 +184,14 @@ final class Badges {
                 float coil = Math.min(Math.abs(d0 - 0.56f), Math.min(Math.abs(d0 - 0.38f), Math.abs(d0 - 0.2f))) - 0.07f;
                 float end = box(x, y, 0.56f, -0.55f, 0.07f, 0.3f);
                 return Math.min(coil, end);
+            }
+            case SAVE: {
+                float body = rbox(x, y, 0f, 0f, 0.78f, 0.8f, 0.1f);
+                body = Math.max(body, -poly(x, y, 0.42f, 0.96f, 0.96f, 0.96f, 0.96f, 0.42f));
+                float shutter = box(x, y, -0.06f, 0.54f, 0.36f, 0.22f);
+                float slot = box(x, y, 0.12f, 0.54f, 0.09f, 0.15f);
+                float label = box(x, y, 0f, -0.36f, 0.54f, 0.34f);
+                return Math.min(Math.max(body, -Math.min(shutter, label)), slot);
             }
             case BED: {
                 // the bed: a tray, open on top; the arrow down into it
