@@ -361,7 +361,8 @@ The seventh, the lights in the hall: the concert hall north of the old town, a p
 columns on broad steps, three tall doors. In by any of them, up the steps anywhere along the
 portico: a long hall under a high ceiling,
 rows of red seats full of people in three blocks with two aisles between, a stage with red curtains and a black grand piano, a pianist at
-it; and dark, but for one lamp on the right wall. The door to the wings is in that wall by the
+it; and wholly dark, not a lamp burning. Her torch goes ahead of her there: a cone of light from
+her hand, the way she looks. The door to the wings is in the right wall by the
 stage, and behind it the panel: a grid of wiring pieces, the feed in the middle. A touch turns a
 piece; the power runs from the feed wherever wires meet, and glows where it gets to. When it
 gets everywhere (and to the three lamps among the ends) the main switch goes green; thrown, it

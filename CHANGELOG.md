@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.4.21
+
+- A torch in her ring, hers from the first. In a dark room its light goes out of her hand ahead
+  of her, a cone, the way she looks, and a little light round the hand; without it there is
+  nothing but a glimmer round her.
+- The concert hall on the job is wholly dark: the one lamp on its wall is gone.
+- There, while the torch is not in her hand, her ring's button pulses, and a finger shows the
+  way: down on the button, the ring out, slid onto the torch, lifted, round again. Taken up in the
+  dark for the first time, it is seen close, once: the eye before her, the click, the light. A
+  touch lets it go.
+- Her ring keeps its things in their places: the mallet up, the screwdriver down, the torch to the
+  left, back to the bed to the right. A bed's ring is as it was.
+- The briefing and the story's page tell of the dark and how to take up the torch; her chair is
+  where it is, in the back row by the left wall.
+- The lights in the hall's best time begins anew: the job is played otherwise now.
+
 ## 1.4.20
 
 - Points in a job: where it has come to that need not be played again. Each job says its own;

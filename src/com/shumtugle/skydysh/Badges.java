@@ -29,7 +29,9 @@ final class Badges {
     static final int ROPE = 28, BED = 29;
     // the game kept: a disc in its square case, the corner cut, the shutter and the label
     static final int SAVE = 30;
-    static final int COUNT = 31, CELLS = 6, SIZE = 160;
+    // a torch: its body low on the left, the wider head up to the right, three rays out of it
+    static final int TORCH = 31;
+    static final int COUNT = 32, CELLS = 6, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -199,6 +201,17 @@ final class Badges {
                 float shaft = box(x, y, 0f, 0.6f, 0.11f, 0.26f);
                 float head = poly(x, y, -0.42f, 0.36f, 0f, -0.06f, 0.42f, 0.36f);
                 return Math.min(tray, Math.min(shaft, head));
+            }
+            case TORCH: {
+                // along the diagonal: the body, ridged for the grip; the head wider; the light out of its glass
+                float c = 0.7071f, lx = (x + y) * c, ly = (y - x) * c;
+                float body = rbox(lx, ly, -0.34f, 0f, 0.34f, 0.15f, 0.06f);
+                float ridges = Math.min(box(lx, ly, -0.42f, 0.15f, 0.2f, 0.035f), box(lx, ly, -0.42f, -0.15f, 0.2f, 0.035f));
+                body = Math.max(body, -ridges);
+                float head = rbox(lx, ly, 0.12f, 0f, 0.14f, 0.26f, 0.04f);
+                // the rays, laid along the diagonal (lx, ly) and turned back into the cell
+                float rays = min(ray(x, y, 0.36f, 0f, 0.76f, 0f), ray(x, y, 0.34f, 0.2f, 0.64f, 0.44f), ray(x, y, 0.34f, -0.2f, 0.64f, -0.44f));
+                return min(body, head, rays);
             }
             case SCREWDRIVER: {
                 // the handle, rounded, ridged; the shaft; the flat blade at its tip
@@ -388,6 +401,12 @@ final class Badges {
     }
 
     /** A rod of radius r from (ax, ay) to (bx, by), round at its ends. */
+    /** A torch's ray from (la, wa) to (lb, wb) along and across the cell's diagonal. */
+    private static float ray(float x, float y, float la, float wa, float lb, float wb) {
+        float c = 0.7071f;
+        return seg(x, y, c * (la - wa), c * (la + wa), c * (lb - wb), c * (lb + wb), 0.05f);
+    }
+
     private static float seg(float x, float y, float ax, float ay, float bx, float by, float r) {
         float px = x - ax, py = y - ay, dx = bx - ax, dy = by - ay;
         float h = Math.max(0f, Math.min(1f, (px * dx + py * dy) / (dx * dx + dy * dy)));

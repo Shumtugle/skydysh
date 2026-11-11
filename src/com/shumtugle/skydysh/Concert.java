@@ -4,8 +4,8 @@ import java.util.Random;
 
 /**
  * A call out to the concert hall, north of the old town: the hall is full, the
- * pianist at the grand piano on the stage, and the lights have not come on; one lamp on a wall
- * burns, on a line of its own, and the rest is dark. She goes in by the middle door, through the
+ * pianist at the grand piano on the stage, and the lights have not come on: not a lamp burns, the
+ * hall wholly dark. She goes in by the middle door and, her torch in her hand, through the
  * dark to the door to the wings beside the stage, and there is the panel: its wiring come apart
  * (see Panel). Mended and its main switch thrown, the lights come on; her own chair waits in the
  * back row, at its left end by the wall, among the people, a chair her size. With the light the
@@ -41,9 +41,8 @@ final class Concert {
         return u;
     }
     static final float STAGE = 19.5f, STAGE_HIGH = 1f, PIANO_U = -1.5f, PIANO_V = 22.8f;
-    // the door to the wings, in the right wall before the stage; the one lamp burning, on the same wall
+    // the door to the wings, in the right wall before the stage
     static final float WINGS_V = 18f, WINGS_HALF = 0.55f, WINGS_HIGH = 2.2f;
-    static final float SCONCE_V = 12f, SCONCE_Y = 2.8f;
     /** The lamps hung from the ceiling: how many, the first one's depth, between them. */
     static final int LAMPS = 3;
     static final float LAMP0 = ROW0 + 2f, LAMP_STEP = 4.5f;

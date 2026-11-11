@@ -66,7 +66,9 @@ final class DrawList {
     final float[] fire = new float[4], halo = new float[5];
     // the dark: a light on one place only (its middle, x y z, and its reach in meters), and how
     // far the rest has gone into the dark, 0 to 1; whatever glows of itself keeps glowing
-    final float[] spot = new float[5];
+    // the one light in the dark: where (x, y, z), how far it reaches, how dark the rest is; a torch's
+    // way (x, y, z) and the cosine of half its cone (0: no torch, the light all round)
+    final float[] spot = new float[9];
     // a tube's glass over the frame (frame pixels: x0, y0, x1, y1), whose rows of the flat layer
     // are drawn as a tube draws them, a dark line under each; none when x1 is not past x0
     final float[] tube = new float[4];
@@ -175,6 +177,7 @@ final class DrawList {
         fire[3] = 0f;
         halo[3] = 0f;
         spot[4] = 0f;
+        spot[8] = 0f;
         tube[0] = tube[2] = 0f;
     }
 

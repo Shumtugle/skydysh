@@ -32,6 +32,7 @@ uniform float uNight;         // how far into the night: windows lit
 uniform float uClear;         // the see-through pass: only clear plastic is drawn, over what is there
 uniform vec4 uSpot;           // the one light left in the dark: where, and how far it reaches
 uniform float uDark;          // how far the rest has gone into the dark (0, not at all)
+uniform vec4 uBeam;           // a torch's light: its way, and the cosine of half its cone (0: none, the light all round)
 uniform sampler2D uCars;      // the cars' painted skins, side by side (see DrawList.skin)
 uniform vec4 uCarMap[42];     // for each of the seven skins and its five views, where it lies; then each one's own paint
 uniform vec4 uFire;           // something burning: where, and how bright its light on what is near (0, none)
@@ -109,8 +110,15 @@ vec3 toon(vec3 base, vec3 n, float light) {
 /** In the dark, only what the light left on falls on keeps its light. */
 vec3 darken(vec3 c, vec3 world) {
     if (uDark <= 0.0) return c;
-    float r = length(world - uSpot.xyz) / max(uSpot.w, 1e-3);
-    float lit = 1.0 - smoothstep(0.55, 1.0, r);
+    vec3 v = world - uSpot.xyz;
+    float dist = length(v);
+    float lit = 1.0 - smoothstep(0.55, 1.0, dist / max(uSpot.w, 1e-3));
+    if (uBeam.w > 0.0) {
+        // a torch: a cone of light along its way, softer at its rim; a little light round the hand that holds it
+        float k = dot(v, uBeam.xyz) / max(dist, 1e-3);
+        float cone = smoothstep(uBeam.w, uBeam.w + (1.0 - uBeam.w) * 0.45, k);
+        lit = max(lit * cone * 1.25, 0.6 * (1.0 - smoothstep(0.6, 4.2, dist)));
+    }
     return c * mix(1.0, lit * 1.15, uDark);
 }
 

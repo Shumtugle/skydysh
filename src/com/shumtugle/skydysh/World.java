@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.20";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.21";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -469,7 +469,7 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 3, 2, 2, 1, 2, 2, 1, 1};
+    static final int[] REVISION = {0, 4, 4, 2, 3, 2, 1, 4, 2, 2, 1, 2, 2, 1, 1};
     /** How many kinds of mission there are; they come in turn, round and round. */
     static final int KINDS = 14;
 
@@ -964,6 +964,11 @@ final class World {
     }
 
     private void fingered(int type, int id, float x, float y) {
+        // the torch seen close: a touch lets it go
+        if (torchShowT >= 0f && opening == null && dispatch == null && story == null) {
+            if (type == DOWN) torchShown();
+            return;
+        }
         // the ring of her tools, out of its button over her mallet: the finger is its own till lifted
         if (pieTouch(type, id, x, y)) return;
         // the navigator touched: folded or opened, wherever she is
@@ -1379,14 +1384,137 @@ final class World {
     // stands by. Held, what it holds opens in a ring round it, the first straight up and the rest
     // on round clockwise; slid onto one, it is lit; lifted there, it is chosen. Lifted in the middle,
     // nothing. A hand that knows the way slides and lifts before the ring is drawn at all.
-    // Her ring: her mallet, her screwdriver, and, while a thing of a bed is out, back to its bed.
+    // Her ring: her mallet, her screwdriver, her torch, and, while a thing of a bed is out, back to its bed.
     // A bed's ring: what the bed holds, as the job has it (see Kit) ----
     static final String SAVE_TOOL = "tool";
+
+    // ---- the torch: in her ring from the first. In a dark room its light goes out ahead of her
+    // hand, a cone; without it, all but a glimmer round her is gone. There, while it is not in her
+    // hand, her button pulses and a finger shows the way to it in the ring. The first time she
+    // takes it up in the dark it is seen close, once: the eye beside her, the click, the light ----
+    static final String SAVE_TORCH = "torch.seen";
+    // the light: how far it reaches, the cosine of half its cone, how dark the rest; without it, how far her glimmer goes
+    static final float TORCH_REACH = 26f, TORCH_CONE = 0.9f, TORCH_DARK = 0.93f, GLIMMER = 2.6f, GLIMMER_DARK = 0.95f;
+    // the lesson: how long it goes round; when the finger is down, the ring out, the finger slid, lifted
+    static final float LESSON = 3.2f, LESSON_DOWN = 0.35f, LESSON_RING = 0.6f, LESSON_SLID = 1.5f, LESSON_UP = 2f;
+    // seen close: how long; when the click comes; the eye before her: so far ahead, so far to her right, so high; what it
+    // looks at, her hand: so far ahead of her, so far to her right, so high
+    static final float TORCH_SHOW = 2.4f, TORCH_CLICK = 0.75f, SHOW_AHEAD = 2.1f, SHOW_SIDE = 0.9f, SHOW_UP = 3f,
+            SHOW_LOOK = 0.5f, SHOW_LOOK_SIDE = 0.3f, SHOW_LOOK_UP = 1.35f;
+    private float torchShowT = -1f;
+    private final float[] beam = new float[6], torchEye = new float[5], lessonAt = new float[2];
+
+    /** Whether the torch's light is on: in her hand, nothing of a bed instead, and (seen close) clicked on. */
+    private boolean torchOn() {
+        return toss.tool == Toss.TORCH && kit.held == Kit.NONE && toss.state == Toss.HELD && driving == null
+                && (torchShowT < 0f || torchShowT >= TORCH_CLICK);
+    }
+
+    /** The dark room's one light: her torch's cone, or the glimmer round her. */
+    private void torchLight(DrawList d) {
+        Runner r = runner;
+        if (torchOn()) {
+            toss.torchAt(r, beam);
+            d.spot[0] = beam[0];
+            d.spot[1] = beam[1];
+            d.spot[2] = beam[2];
+            d.spot[3] = TORCH_REACH;
+            d.spot[4] = TORCH_DARK;
+            d.spot[5] = beam[3];
+            d.spot[6] = beam[4];
+            d.spot[7] = beam[5];
+            d.spot[8] = TORCH_CONE;
+        } else {
+            d.spot[0] = r.x;
+            d.spot[1] = r.y + 1.6f;
+            d.spot[2] = r.z;
+            d.spot[3] = GLIMMER;
+            d.spot[4] = GLIMMER_DARK;
+            d.spot[8] = 0f;
+        }
+    }
+
+    /** Whether the way to the torch is shown: in the dark, on foot, nothing else in her hands, the torch not taken up. */
+    private boolean torchTaught() {
+        return indoors != null && indoors.dark && toss.tool != Toss.TORCH && kit.held == Kit.NONE && torchShowT < 0f;
+    }
+
+    /** Her button pulsing; a finger down on it, the ring out faint, the finger slid onto the torch and lifted, round again. */
+    private void torchLesson(DrawList d) {
+        float t = time % LESSON;
+        d.badge(pieX, pieY, PIE_HALF, handSign(), 0.85f, 0.4f + 0.4f * (float) Math.sin(time * 6f));
+        herRing();
+        float cx = Math.max(PIE_R + PIE_ITEM + 4f, Math.min(W - PIE_R - PIE_ITEM - 4f, pieX));
+        float cy = Math.max(PIE_R + PIE_ITEM + 60f, Math.min(h - PIE_R - PIE_ITEM - 10f, pieY));
+        int aim = 0;
+        for (int k = 0; k < pieN; k++) if (pieItems[k] == PIE_TORCH) aim = k;
+        float ring = t < LESSON_DOWN ? 0f : t < LESSON_RING ? (t - LESSON_DOWN) / (LESSON_RING - LESSON_DOWN) : t < LESSON_UP ? 1f : Math.max(0f, 1f - (t - LESSON_UP) / 0.3f);
+        boolean there = t >= LESSON_SLID && t < LESSON_UP + 0.3f;
+        pieBed = false;
+        for (int k = 0; k < pieN && ring > 0f; k++) {
+            float a = pieAngle(k);
+            float sx = cx + (float) Math.sin(a) * PIE_R, sy = cy - (float) Math.cos(a) * PIE_R;
+            boolean hot = k == aim && there;
+            d.badge(sx, sy, hot ? PIE_ITEM * 1.25f : PIE_ITEM, pieSign(pieItems[k]), (hot ? 0.95f : 0.5f) * ring, hot ? 0.45f : 0f);
+        }
+        // the finger: from the button to the torch, eased; there a moment, then gone
+        if (t >= LESSON_UP + 0.3f) return;
+        float a = pieAngle(aim);
+        float tx = cx + (float) Math.sin(a) * PIE_R, ty = cy - (float) Math.cos(a) * PIE_R;
+        float go = t < LESSON_RING ? 0f : Math.min(1f, (t - LESSON_RING) / (LESSON_SLID - LESSON_RING));
+        go = go * go * (3f - 2f * go);
+        float shown = Math.min(1f, t / 0.2f) * (t < LESSON_UP ? 1f : Math.max(0f, 1f - (t - LESSON_UP) / 0.3f));
+        lessonAt[0] = pieX + (tx - pieX) * go;
+        lessonAt[1] = pieY + (ty - pieY) * go;
+        d.badge(lessonAt[0] + 5f, lessonAt[1] + 12f, 15f, Badges.ONE_FINGER, 0.95f * shown, t >= LESSON_DOWN && t < LESSON_UP ? 0.35f : 0f);
+    }
+
+    /** The torch taken up for the first time in the dark: she stands, seen close from beside her. */
+    private void torchShow() {
+        host.saveInt(SAVE_TORCH, 1);
+        torchShowT = 0f;
+        errand = NO_ERRAND;
+        runner.stopLead();
+        letGo();
+    }
+
+    /** Seen close a frame on: she still, the eye beside her on her hand and the dark ahead; the click; then hers again. */
+    private void torchStep(float dt) {
+        if (torchShowT < 0f) return;
+        float was = torchShowT;
+        torchShowT += dt;
+        if (was < TORCH_CLICK && torchShowT >= TORCH_CLICK) {
+            host.sound(Synth.LATCH, 0.45f, 1.7f);
+            host.buzz(25);
+        }
+        if (torchShowT >= TORCH_SHOW || indoors == null) {
+            torchShown();
+            return;
+        }
+        Runner r = runner;
+        r.held = true;
+        r.speed = 0f;
+        float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading), sx = fz, sz = -fx;
+        torchEye[0] = r.x + fx * SHOW_AHEAD + sx * SHOW_SIDE;
+        torchEye[1] = r.y + SHOW_UP;
+        torchEye[2] = r.z + fz * SHOW_AHEAD + sz * SHOW_SIDE;
+        float lx = r.x + fx * SHOW_LOOK + sx * SHOW_LOOK_SIDE - torchEye[0], lz = r.z + fz * SHOW_LOOK + sz * SHOW_LOOK_SIDE - torchEye[2];
+        torchEye[3] = (float) Math.atan2(lx, lz);
+        torchEye[4] = (float) Math.atan2(r.y + SHOW_LOOK_UP - torchEye[1], Math.sqrt(lx * lx + lz * lz));
+        r.eyeAt(torchEye);
+    }
+
+    /** Seen close no more: hers again, the eye behind her. */
+    private void torchShown() {
+        torchShowT = -1f;
+        runner.held = false;
+        runner.recenter();
+    }
     // the buttons: half their size; the ring: how far out its things are, how big; the middle that
     // means no; how long the finger stays before the ring is drawn
     static final float PIE_HALF = 13f, PIE_R = 48f, PIE_ITEM = 17f, PIE_DEAD = 16f, PIE_REVEAL = 0.26f;
     // what a ring holds: her tools, back to the bed, a bed's things (KIT + the thing)
-    static final int PIE_MALLET = 0, PIE_SCREWDRIVER = 1, PIE_BACK = 2, PIE_KIT = 10;
+    static final int PIE_MALLET = 0, PIE_SCREWDRIVER = 1, PIE_BACK = 2, PIE_TORCH = 3, PIE_KIT = 10;
     private int pieFinger = -1, pieHot = -1, pieN;
     float pieX, pieY;
     private float pieCx, pieCy, pieAt;
@@ -1400,12 +1528,30 @@ final class World {
     /** The sign of each thing in a ring. */
     private static int pieSign(int k) {
         if (k >= PIE_KIT) return Kit.sign(k - PIE_KIT);
-        return k == PIE_SCREWDRIVER ? Badges.SCREWDRIVER : k == PIE_BACK ? Badges.BED : Badges.MALLET;
+        return k == PIE_SCREWDRIVER ? Badges.SCREWDRIVER : k == PIE_TORCH ? Badges.TORCH : k == PIE_BACK ? Badges.BED : Badges.MALLET;
+    }
+
+    /**
+     * Where ring thing k (its place in the ring now) stands, as an angle clockwise from up: her own
+     * ring keeps each in its place (the mallet up, the screwdriver down, the torch left, back to the
+     * bed right); a bed's ring, its things evenly round.
+     */
+    private float pieAngle(int k) {
+        if (!pieBed && pieItems[k] < PIE_KIT) {
+            int t = pieItems[k];
+            return (float) Math.PI * (t == PIE_SCREWDRIVER ? 1f : t == PIE_TORCH ? 1.5f : t == PIE_BACK ? 0.5f : 0f);
+        }
+        return k * 2f * (float) Math.PI / pieN;
     }
 
     /** The sign on her button: what is in her hands. */
     private int handSign() {
-        return kit.held != Kit.NONE ? Kit.sign(kit.held) : pieSign(toss.tool == Toss.SCREWDRIVER ? PIE_SCREWDRIVER : PIE_MALLET);
+        return kit.held != Kit.NONE ? Kit.sign(kit.held) : pieSign(pieOf(toss.tool));
+    }
+
+    /** The ring's thing for a tool of hers. */
+    private static int pieOf(int tool) {
+        return tool == Toss.SCREWDRIVER ? PIE_SCREWDRIVER : tool == Toss.TORCH ? PIE_TORCH : PIE_MALLET;
     }
 
     /** Whether the buttons are there: on foot, her hands free to choose (not at a wheel, a seat, a ladder, the water, a screen). */
@@ -1413,7 +1559,7 @@ final class World {
         Runner r = runner;
         return driving == null && !paused && !aboard() && !piloting() && !seated() && !inChair() && dispatch == null && story == null
                 && opening == null && !r.climbing() && !r.swimming() && !r.hidden && !craning && solo == null && faultWires() == null
-                && !(concert != null && concert.panelOpen) && toss.state == Toss.HELD;
+                && !(concert != null && concert.panelOpen) && toss.state == Toss.HELD && torchShowT < 0f;
     }
 
     /** The pickup she stands by the back of, on foot, standing, its bed's button to be up: null if none. */
@@ -1467,6 +1613,10 @@ final class World {
             }
         }
         if (pieFinger < 0) {
+            if (pieSeen && torchTaught()) {
+                torchLesson(d);
+                return;
+            }
             if (pieSeen) d.badge(pieX, pieY, PIE_HALF, handSign(), 0.7f, 0f);
             if (bedSeen) d.badge(bedX, bedY, PIE_HALF, Badges.BED, 0.7f, 0f);
             return;
@@ -1476,7 +1626,7 @@ final class World {
         d.badge(pieCx, pieCy, PIE_HALF, pieBed ? Badges.BED : handSign(), 0.5f, 0f);
         if (!shown) return;
         for (int k = 0; k < pieN; k++) {
-            float a = k * 2f * (float) Math.PI / pieN;
+            float a = pieAngle(k);
             float sx = pieCx + (float) Math.sin(a) * PIE_R, sy = pieCy - (float) Math.cos(a) * PIE_R;
             boolean hot = k == pieHot, now = pieNow(pieItems[k]);
             d.badge(sx, sy, hot ? PIE_ITEM * 1.25f : PIE_ITEM, pieSign(pieItems[k]), hot ? 1f : 0.7f, hot ? 0.45f : now ? 0.15f : 0f);
@@ -1487,7 +1637,7 @@ final class World {
     private boolean pieNow(int k) {
         if (k >= PIE_KIT) return kit.held == k - PIE_KIT;
         if (kit.held != Kit.NONE) return false;
-        return k == PIE_MALLET && toss.tool == Toss.MALLET || k == PIE_SCREWDRIVER && toss.tool == Toss.SCREWDRIVER;
+        return k == pieOf(toss.tool);
     }
 
     /** What her ring holds now: her tools, and back to the bed while a thing of one is out. */
@@ -1495,6 +1645,7 @@ final class World {
         pieN = 0;
         pieItems[pieN++] = PIE_MALLET;
         pieItems[pieN++] = PIE_SCREWDRIVER;
+        pieItems[pieN++] = PIE_TORCH;
         if (kit.held != Kit.NONE || kit.set) pieItems[pieN++] = PIE_BACK;
     }
 
@@ -1526,10 +1677,12 @@ final class World {
             // a tool of her own: anything of a bed in her hands goes back of itself
             kit.held = Kit.NONE;
             kit.from = null;
-            int tool = k == PIE_SCREWDRIVER ? Toss.SCREWDRIVER : Toss.MALLET;
+            int tool = k == PIE_SCREWDRIVER ? Toss.SCREWDRIVER : k == PIE_TORCH ? Toss.TORCH : Toss.MALLET;
             toss.tool = tool;
             host.saveInt(SAVE_TOOL, tool);
-            host.sound(Synth.TOCK, 0.4f, tool == Toss.SCREWDRIVER ? 1.6f : 1.1f);
+            host.sound(Synth.TOCK, 0.4f, tool == Toss.SCREWDRIVER ? 1.6f : tool == Toss.TORCH ? 1.35f : 1.1f);
+            // the torch first taken up in the dark: seen close, once
+            if (tool == Toss.TORCH && indoors != null && indoors.dark && host.loadInt(SAVE_TORCH) == 0) torchShow();
         }
         host.buzz(15);
     }
@@ -1541,10 +1694,16 @@ final class World {
             float dx = x - pieCx, dy = y - pieCy;
             if (Math.sqrt(dx * dx + dy * dy) < PIE_DEAD) pieHot = -1;
             else {
-                float a = (float) Math.atan2(dx, -dy);
-                if (a < 0f) a += 2f * (float) Math.PI;
-                float each = 2f * (float) Math.PI / pieN;
-                pieHot = ((int) Math.floor((a + each * 0.5f) / each)) % pieN;
+                float a = (float) Math.atan2(dx, -dy), best = 9f;
+                pieHot = -1;
+                for (int k = 0; k < pieN; k++) {
+                    float off = Math.abs(a - pieAngle(k)) % (2f * (float) Math.PI);
+                    off = Math.min(off, 2f * (float) Math.PI - off);
+                    if (off < best) {
+                        best = off;
+                        pieHot = k;
+                    }
+                }
             }
             if (type == UP) {
                 if (pieHot >= 0) pieChoose(pieItems[pieHot]);
@@ -2114,6 +2273,7 @@ final class World {
             chase = mission.target(chase);
         }
         points();
+        torchStep(dt);
         // in the collider hall the mallet is swung at the magnets there, never thrown
         toss.lent = indoors != null && indoors.collider;
         // a thing out of a pickup's bed in her hands: the tap is its, not the mallet's
@@ -6058,6 +6218,7 @@ final class World {
     private void drawIndoors(DrawList d) {
         Runner r = runner;
         indoors.light(d);
+        if (indoors.dark) torchLight(d);
         boolean inHome = indoors.home;
         if (inHome) {
             // home stands in the town: the light from overhead over a wider ground, the town through

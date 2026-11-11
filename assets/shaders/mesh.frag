@@ -23,6 +23,7 @@ uniform float uFogStart;
 uniform float uFogScale;
 uniform vec4 uSpot;
 uniform float uDark;
+uniform vec4 uBeam;
 uniform float uIdent;         // which person, as the alpha (never 0, which is the sky)
 
 out vec4 outColor;
@@ -51,8 +52,15 @@ void main() {
     float dist = length(vWorld - uEye);
     c = mix(c, uFog, 1.0 - exp(-max(dist - uFogStart, 0.0) / uFogScale));
     if (uDark > 0.0) {
-        float r = length(vWorld - uSpot.xyz) / max(uSpot.w, 1e-3);
-        c *= mix(1.0, (1.0 - smoothstep(0.55, 1.0, r)) * 1.15, uDark);
+        vec3 v = vWorld - uSpot.xyz;
+        float dist = length(v);
+        float lit = 1.0 - smoothstep(0.55, 1.0, dist / max(uSpot.w, 1e-3));
+        if (uBeam.w > 0.0) {
+            float k = dot(v, uBeam.xyz) / max(dist, 1e-3);
+            float cone = smoothstep(uBeam.w, uBeam.w + (1.0 - uBeam.w) * 0.45, k);
+            lit = max(lit * cone * 1.25, 0.6 * (1.0 - smoothstep(0.6, 4.2, dist)));
+        }
+        c *= mix(1.0, lit * 1.15, uDark);
     }
     outColor = vec4(c, uIdent);
 }

@@ -601,6 +601,7 @@ final class Gfx {
         GLES30.glUniform1f(u(p, "uNight"), d.night);
         GLES30.glUniform4fv(u(p, "uFire"), 1, d.fire, 0);
         GLES30.glUniform4fv(u(p, "uSpot"), 1, d.spot, 0);
+        GLES30.glUniform4fv(u(p, "uBeam"), 1, d.spot, 5);
         GLES30.glUniform1f(u(p, "uDark"), d.spot[4]);
         // the cars' skins (only the boxes read them)
         GLES30.glActiveTexture(GLES30.GL_TEXTURE4);

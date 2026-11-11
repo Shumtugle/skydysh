@@ -437,9 +437,8 @@ final class Indoors implements Ground {
     float deskU, deskV;
     /** The town hall's people walking about: so far along each one's way, and how much each walks now (see Rooms.townHallStep). */
     float[] folkAt, folkGo;
-    /** The lights out but one lamp on a wall: where it is (across, in, up from the floor), how far it reaches. */
+    /** The lights out: dark but for what a light she carries shows (see World). */
     boolean dark;
-    float lampU, lampV, lampY, lampReach;
 
     // ---- home: a room of her own behind the front door (and the back one, on the yard), the sofa against a wall ----
     /** Whether this is home's room; where the sofa's seat is (across, in) and the way it faces; whether she sits on it now. */
@@ -510,12 +509,9 @@ final class Indoors implements Ground {
         d.spot[3] = deep * 0.85f;
         d.spot[4] = 0.32f;
         if (dark) {
-            // only round the one lamp; the rest, all but gone
-            d.spot[0] = wx(lampU, lampV);
-            d.spot[1] = FLOOR + lampY;
-            d.spot[2] = wz(lampU, lampV);
-            d.spot[3] = lampReach;
-            d.spot[4] = 0.84f;
+            // all but gone: the light she carries is laid over this (see World)
+            d.spot[3] = 0f;
+            d.spot[4] = 0.95f;
         }
     }
 

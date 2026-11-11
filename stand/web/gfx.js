@@ -321,6 +321,7 @@ async function render(canvas, frame, flatImage, scale, shaderDir, hudImage, q, b
     gl.uniform4fv(u(p, 'uFire'), frame.fire || [0, 0, 0, 0]);
     const spot = frame.spot || [0, 0, 0, 0, 0];
     gl.uniform4fv(u(p, 'uSpot'), spot.slice(0, 4));
+    gl.uniform4fv(u(p, 'uBeam'), spot.length >= 9 ? spot.slice(5, 9) : [0, 0, 0, 0]);
     gl.uniform1f(u(p, 'uDark'), spot[4]);
     // the cars' skins (only the boxes read them)
     gl.activeTexture(gl.TEXTURE4);

@@ -514,16 +514,9 @@ final class Rooms {
             in.box(d, 0f, top - 2.3f, v, 0.75f, 0.12f, 0.75f, 0xC9A15A, DrawList.GOLD);
             in.box(d, 0f, top - 2.16f, v, 0.6f, 0.1f, 0.6f, 0x6E6A60, DrawList.PLAIN);
         }
-        // the one lamp that burns, on its own line: a gilt arm off the right wall, a shade alight
-        float lv = Concert.SCONCE_V, ly = f + Concert.SCONCE_Y, rs = Concert.RIGHT, wallU = rs * (half - 0.06f);
-        in.box(d, wallU - rs * 0.1f, ly - 0.25f, lv, 0.1f, 0.18f, 0.1f, 0xC9A15A, DrawList.GOLD);
-        in.box(d, wallU - rs * 0.3f, ly - 0.1f, lv, 0.22f, 0.03f, 0.03f, 0xC9A15A, DrawList.GOLD);
-        in.box(d, wallU - rs * 0.45f, ly + 0.12f, lv, 0.16f, 0.2f, 0.16f, 0xFFE2B0, DrawList.GLOW);
+        // the lights out, every one: the hall wholly dark till they come on
+        float rs = Concert.RIGHT, wallU = rs * (half - 0.06f);
         in.dark = true;
-        in.lampU = wallU - rs * 0.45f;
-        in.lampV = lv;
-        in.lampY = Concert.SCONCE_Y;
-        in.lampReach = 9f;
         // the door to the wings, in the same wall before the stage: plain boards, a steel handle, a plate
         float wv = Concert.WINGS_V, wh = Concert.WINGS_HIGH;
         in.box(d, wallU - rs * 0.02f, f + wh * 0.5f + 0.06f, wv, 0.04f, wh * 0.5f + 0.06f, Concert.WINGS_HALF + 0.08f, 0x2A1E18, DrawList.WOOD);

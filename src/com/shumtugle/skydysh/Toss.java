@@ -23,8 +23,24 @@ final class Toss {
     int thrown;
     /** Lent out: something else throws it (it is still drawn swung while she throws); away, out of her hand and drawn by that. */
     boolean lent, away;
-    /** What she holds: the mallet, or the screwdriver (the mallet then at her hip, and nothing thrown). */
-    static final int MALLET = 0, SCREWDRIVER = 1, TOOLS = 2;
+    /** What she holds: the mallet, the screwdriver or the torch (the mallet then at her hip, and nothing thrown). */
+    static final int MALLET = 0, SCREWDRIVER = 1, TORCH = 2, TOOLS = 3;
+    // the torch in her fist: how far its glass is out from the fist; how far down it points from level
+    static final float TORCH_OUT = 0.42f, TORCH_DOWN = 0.2f;
+
+    /** The torch's glass and the way its light goes, into out (x, y, z, then the way: x, y, z, of length one). */
+    void torchAt(Runner r, float[] out) {
+        grip(r);
+        float fx = (float) Math.sin(r.heading), fz = (float) Math.cos(r.heading);
+        float l = (float) Math.sqrt(1f + TORCH_DOWN * TORCH_DOWN);
+        out[3] = fx / l;
+        out[4] = -TORCH_DOWN / l;
+        out[5] = fz / l;
+        out[0] = hand[0] + out[3] * TORCH_OUT;
+        out[1] = hand[1] + out[4] * TORCH_OUT;
+        out[2] = hand[2] + out[5] * TORCH_OUT;
+    }
+    private final float[] lens = new float[6];
     int tool = MALLET;
     /** A thing of a pickup's bed in her hands: the mallet at her hip, nothing thrown. */
     boolean carrying;
@@ -210,6 +226,20 @@ final class Toss {
         }
         if (state == HELD && carrying) {
             slung(d, r);
+            return;
+        }
+        if (state == HELD && tool == TORCH) {
+            // the mallet at her hip; the torch in her fist, pointing ahead and a little down: a black
+            // body, a wider steel head, the glass alight
+            slung(d, r);
+            torchAt(r, lens);
+            float ax = lens[3], ay = lens[4], az = lens[5];
+            for (int k = 0; k <= 4; k++) {
+                float t = -0.12f + k * 0.08f;
+                d.box(hand[0] + ax * t, hand[1] + ay * t, hand[2] + az * t, 0.06f, 0.06f, 0.06f, null, 0x24262B, DrawList.RUBBER);
+            }
+            d.box(hand[0] + ax * 0.3f, hand[1] + ay * 0.3f, hand[2] + az * 0.3f, 0.09f, 0.09f, 0.09f, null, 0xB9BEC4, DrawList.POLISHED);
+            d.box(lens[0] - ax * 0.07f, lens[1] - ay * 0.07f, lens[2] - az * 0.07f, 0.075f, 0.075f, 0.075f, null, 0xFFF1C8, DrawList.GLOW);
             return;
         }
         if (state == HELD && tool == SCREWDRIVER) {

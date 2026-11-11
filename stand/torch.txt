@@ -1,0 +1,31 @@
+# The torch: in at the concert hall's middle door on the job, the hall wholly dark but for a glimmer round her; her ring's button pulsing, a finger showing the way to the torch in the ring (two frames); the ring held, slid onto the torch; taken up, seen close from beside her (before the click, after it); hers again, its light going ahead of her over the seats, then toward the stage. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 7
+close
+at -96 265.6 0
+wait 2
+where
+shot t0
+wait 0.9
+shot t1
+pie down
+wait 0.35
+pie move -48 0
+wait 0.3
+shot t2
+pie up -48 0
+wait 0.4
+shot t3
+wait 0.7
+shot t4
+wait 1.6
+where
+shot t5
+inroom -6.5 12
+wait 0.6
+shot t6
+inroom 0 9
+wait 0.6
+shot t7
