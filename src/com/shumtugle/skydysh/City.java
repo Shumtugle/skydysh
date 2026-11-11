@@ -140,7 +140,7 @@ final class City implements Ground {
 
     /** Whether (x, z) is over the water, past the beach. */
     static boolean overWater(float x, float z) {
-        if (Canal.water(x, z) && !Canal.deck(x, z)) return true;
+        if (Canal.water(x, z) && !Canal.down(x, z)) return true;
         return z < SHORE * CELL + WATERLINE && Island.height(x, z) < WATER;
     }
 
@@ -537,7 +537,7 @@ final class City implements Ground {
         float up = Canal.onRoad(x, z);
         if (!Float.isNaN(up)) return up;
         // the canal: its bed, but for the decks of the bridges for cars over it
-        if (Canal.water(x, z)) return Canal.deck(x, z) ? 0f : bed(x, z);
+        if (Canal.water(x, z)) return Canal.down(x, z) ? 0f : bed(x, z);
         if (z < SHORE * CELL - CURB) {
             if (z < SHORE * CELL + WATERLINE) {
                 // the sea's bed, shelving from the wet sand down; the spit and the island over it

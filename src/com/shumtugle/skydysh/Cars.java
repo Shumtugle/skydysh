@@ -257,6 +257,14 @@ final class Cars {
                     whyNow = WAIT;
                 }
             }
+            // a bridge over the canal lifting, or up: it stops before the barrier
+            {
+                float lim = Canal.barrierAhead(x[c], z[c], fx, fz, speed[c]);
+                if (lim < want) {
+                    want = lim;
+                    whyNow = WAIT;
+                }
+            }
             // someone in the road ahead: stop short of them (the runner, a brum down, a pickup left)
             float others = r.y > OVER_ROAD ? CRUISE : clear(c, fx, fz, r.x, r.z);
             if (others < hold) {
@@ -810,6 +818,13 @@ final class Cars {
                     break;
                 }
         }
+    }
+
+    /** Whether any car is within the box from (x0, z0) to (x1, z1). */
+    boolean anyWithin(float x0, float z0, float x1, float z1) {
+        for (int c = 0; c < MOST; c++)
+            if (live[c] && x[c] > x0 && x[c] < x1 && z[c] > z0 && z[c] < z1) return true;
+        return false;
     }
 
     /** How many pickups are on the move about the town this frame, and each. */

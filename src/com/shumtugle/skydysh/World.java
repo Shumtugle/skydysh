@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.14";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.15";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1904,6 +1904,7 @@ final class World {
             Island.bridgeStep(0f);
         }
         if (herd == null) wrecked(Island.shut);
+        Canal.step(dt, duty.boat(), cars);
         Island.bridgeTo = Island.shut ? 1f : 0f;
         if (Island.bridgeStep(dt)) {
             float gx = Island.spitX(Island.GAP_Z);
@@ -6136,6 +6137,7 @@ final class World {
         labDrawn(d, r);
         Island.yachts(d, time);
         Island.bridge(d);
+        Canal.lifts(d, time, eyeX, eyeZ);
         // the way the pickup went on the drive, lit
         if (roadT >= 0f && driving != null) {
             float ru = Math.min(1f, roadT / ROAD_S), re = ru * ru * (3f - 2f * ru), len = Mountain.wayLength();

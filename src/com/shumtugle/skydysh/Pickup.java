@@ -69,6 +69,11 @@ final class Pickup {
         if (boat) y = City.WATER;
     }
 
+    /** The way a boat goes (its bow swings first, the way follows); a pickup's heading. */
+    float course() {
+        return boat ? course : heading;
+    }
+
     /** Put down at (x, z), headed so, at rest (the way it goes with it). */
     void putAt(float px, float pz, float h) {
         x = px;
@@ -234,6 +239,8 @@ final class Pickup {
             sum += over;
             // by the canal, how far past its edge as well: a slope to feel the way off it by
             if (over > 0f && Canal.near(px, pz, Canal.COPING + 3f)) sum += Canal.dist(px, pz) - Canal.HALF;
+            // a bridge over the canal not yet lifted out of its way
+            if (Canal.blocks(px, pz)) sum += 1f;
         }
         return sum;
     }

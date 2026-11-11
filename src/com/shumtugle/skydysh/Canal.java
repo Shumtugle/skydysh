@@ -109,11 +109,133 @@ final class Canal {
         return false;
     }
 
-    /** Whether (x, z) is on the deck of a bridge for cars over the canal in the town. */
+    /** Whether (x, z) is where a bridge for cars over the canal in the town lies, down or not. */
     static boolean deck(float x, float z) {
-        if (Math.abs(x - X_W) > HALF + COPING) return false;
+        return lift(x, z) >= 0;
+    }
+
+    /** Which of the bridges for cars lies over (x, z): its place in DRAW_J, or -1. */
+    static int lift(float x, float z) {
+        if (Math.abs(x - X_W) > HALF + COPING) return -1;
         int j = Math.round(z / City.CELL);
-        return drawRow(j) && Math.abs(z - j * City.CELL) < City.ROAD;
+        if (Math.abs(z - j * City.CELL) >= City.ROAD + 0.5f) return -1;
+        for (int k = 0; k < DRAW_J.length; k++) if (DRAW_J[k] == j) return k;
+        return -1;
+    }
+
+    /** Whether the bridge for cars over (x, z) is there and down: a road to drive and walk on. */
+    static boolean down(float x, float z) {
+        int k = lift(x, z);
+        return k >= 0 && up[k] == 0f;
+    }
+
+    // ---- the two bridges for cars: they lift for the yacht ----
+    // each bridge's two leaves, how far up (0 down, 1 up), its barriers, how far down (0 up, 1
+    // across the road); a little while the barriers are down before the leaves go
+    static final float[] up = new float[DRAW_J.length], bars = new float[DRAW_J.length], held = new float[DRAW_J.length];
+    // how long the leaves take, the barriers; how near the yacht comes along the canal before it
+    // lifts, and how far past it is let down again; how far up the leaves go; the wait
+    static final float LIFT_S = 5f, BARS_S = 1.2f, OPEN_NEAR = 130f, CLOSE_PAST = 30f, LEAF_UP = 1.36f, CLEAR_S = 1.5f;
+    /** Where the barriers stand across the street, either side of the bridge. */
+    static final float BAR_X = HALF + COPING + 1.6f;
+
+    /**
+     * A step of the bridges: one lifts as the yacht comes up the canal toward it (barriers down
+     * first, the cars stopped at them, and none left on it), and is let down once it has gone past.
+     */
+    static void step(float dt, Pickup boat, Cars cars) {
+        for (int k = 0; k < DRAW_J.length; k++) {
+            float bz = DRAW_J[k] * City.CELL;
+            boolean want = false;
+            if (boat != null && Math.abs(boat.x - X_W) < HALF + 3f) {
+                float off = boat.z - bz, fz = (float) Math.cos(boat.course());
+                // coming toward it, or under it, or not yet far enough past
+                if (Math.abs(off) < City.ROAD + Island.HULL_HALF + 2f) want = true;
+                else if (Math.abs(off) < OPEN_NEAR && off * fz < 0f) want = true;
+                else if (Math.abs(off) < CLOSE_PAST && up[k] > 0f) want = true;
+            }
+            if (want) {
+                bars[k] = Math.min(1f, bars[k] + dt / BARS_S);
+                if (bars[k] >= 1f) held[k] += dt;
+                boolean clear = cars == null || !cars.anyWithin(X_W - BAR_X, bz - City.ROAD, X_W + BAR_X, bz + City.ROAD);
+                if (held[k] >= CLEAR_S && (clear || up[k] > 0f)) up[k] = Math.min(1f, up[k] + dt / LIFT_S);
+            } else {
+                held[k] = 0f;
+                if (up[k] > 0f) up[k] = Math.max(0f, up[k] - dt / LIFT_S);
+                else bars[k] = Math.max(0f, bars[k] - dt / BARS_S);
+            }
+        }
+    }
+
+    /** Whether the bridge over (x, z) stands in a yacht's way: there and not all the way up. */
+    static boolean blocks(float x, float z) {
+        int k = lift(x, z);
+        return k >= 0 && up[k] < 0.92f;
+    }
+
+    /**
+     * For a car at (x, z) going along (fx, fz) at speed: how fast it may go, to stop before a
+     * barrier down ahead of it (none if it is already past one, on the bridge, going off it).
+     */
+    static float barrierAhead(float x, float z, float fx, float fz, float speed) {
+        float lim = Float.MAX_VALUE;
+        if (Math.abs(fx) < 0.7f) return lim;
+        for (int k = 0; k < DRAW_J.length; k++) {
+            if (bars[k] <= 0f) continue;
+            float bz = DRAW_J[k] * City.CELL;
+            if (Math.abs(z - bz) > City.ROAD) continue;
+            float bx = X_W - Math.signum(fx) * BAR_X, along = (bx - x) * Math.signum(fx);
+            if (along < -0.5f || along > 45f) continue;
+            lim = Math.min(lim, Math.max(0f, (along - 3f) * 1.1f));
+        }
+        return lim;
+    }
+
+    /**
+     * The bridges for cars, as they stand this frame: each leaf hinged on its quay, its deck and
+     * its rails tilting up together; the barriers coming down across the street, red lamps on
+     * their posts, blinking while they are down. Only those near the eye.
+     */
+    static void lifts(DrawList d, float time, float ex, float ez) {
+        for (int k = 0; k < DRAW_J.length; k++) {
+            float bz = DRAW_J[k] * City.CELL;
+            float dx = X_W - ex, dz = bz - ez;
+            if (dx * dx + dz * dz > 420f * 420f) continue;
+            float u = up[k], a = u * u * (3f - 2f * u) * LEAF_UP, len = HALF + COPING;
+            float ca = (float) Math.cos(a), sa = (float) Math.sin(a);
+            for (int e = -1; e <= 1; e += 2) {
+                // hinged at x = X_W + e·len, reaching back over the water toward the middle
+                float hx = X_W + e * len, tx = hx - e * ca * len, ty = sa * len;
+                float mx = (hx + tx) * 0.5f, my = ty * 0.5f;
+                float[] t = along(tx - hx, ty, 0f);
+                // up along the leaf's own y: its deck's top this way
+                float nx = e * sa, ny = ca;
+                // (the leaf's own x runs across the street, its own z along the leaf)
+                d.box(mx - nx * 0.12f, my - ny * 0.12f, bz, City.ROAD, 0.12f, len * 0.5f, t, 0x5E4844, DrawList.ROAD);
+                d.box(mx - nx * 0.55f, my - ny * 0.55f, bz, City.ROAD - 0.3f, 0.3f, len * 0.5f, t, 0x4A5A60, DrawList.PAINT);
+                for (int q = -1; q <= 1; q += 2) {
+                    float rz = bz + q * (City.ROAD + 0.15f);
+                    d.box(mx + nx * 0.5f, my + ny * 0.5f, rz, 0.12f, 0.5f, len * 0.5f, t, 0x4A5A60, DrawList.PAINT);
+                    d.box(mx + nx * 1.02f, my + ny * 1.02f, rz, 0.16f, 0.04f, len * 0.5f, t, 0xD9DCDF, DrawList.POLISHED);
+                }
+            }
+            // the barriers: an arm across the street on either side, from its post on the south kerb
+            for (int e = -1; e <= 1; e += 2) {
+                float px = X_W + e * BAR_X, pz = bz - City.ROAD + 0.2f;
+                float b = bars[k], arm = 2f * City.ROAD - 0.6f, ang = Math.max(0.03f, b * b * (3f - 2f * b) * (float) Math.PI * 0.5f);
+                // up, it stands; down, it lies across, at a meter
+                float ay = 1f + (float) Math.cos(ang) * arm * 0.5f, az = pz + (float) Math.sin(ang) * arm * 0.5f;
+                float[] t = along(0f, (float) Math.cos(ang), (float) Math.sin(ang));
+                for (int s = 0; s < 6; s++) {
+                    float f = (s + 0.5f) / 6f - 0.5f;
+                    d.box(px, ay + (float) Math.cos(ang) * f * arm, az + (float) Math.sin(ang) * f * arm, 0.06f, 0.08f, arm / 12f, t,
+                            s % 2 == 0 ? 0xD8402E : 0xF2EEDF, DrawList.PAINT);
+                }
+                d.box(px, 0.6f, pz, 0.1f, 0.6f, 0.1f, null, 0x3A3D40, DrawList.PAINT);
+                boolean lit = b > 0f && ((int) (time * 2.4f) % 2 == 0);
+                d.box(px, 1.32f, pz, 0.12f, 0.12f, 0.12f, null, lit ? 0xFF4A30 : 0x5A2A24, lit ? DrawList.GLOW : DrawList.PAINT);
+            }
+        }
     }
 
     /** Whether a street from crossing (i, j) a step along di (east-west) crosses the canal. */
@@ -399,16 +521,16 @@ final class Canal {
     private static void street(City.Cell c, DrawList d, DrawList small, int j) {
         float z = j * City.CELL;
         if (drawRow(j)) {
+            // the leaves and barriers move (see lifts); here only the stone piers at the corners
+            // of the bridge, on the quays, where the leaves are hinged
             float hx = HALF + COPING;
-            d.box(X_W, -0.25f, z, hx, 0.25f, City.ROAD, null, 0x5E4844, DrawList.ROAD);
-            d.box(X_W, -0.7f, z, hx, 0.2f, City.ROAD + 0.4f, null, 0x7A6E62, DrawList.STONE);
-            c.wall(X_W - HALF, z - City.ROAD, X_W + HALF, z + City.ROAD, 0.02f, -0.9f);
-            for (int e = -1; e <= 1; e += 2) {
-                float sz = z + e * (City.ROAD + 0.25f);
-                d.box(X_W, 0.45f, sz, hx, 0.45f, 0.25f, null, STONE, DrawList.STONE);
-                d.box(X_W, 0.94f, sz, hx + 0.05f, 0.05f, 0.32f, null, CAP, DrawList.PLAIN);
-                c.wall(X_W - hx, sz - 0.25f, X_W + hx, sz + 0.25f, 0.99f, -0.9f);
-            }
+            for (int e = -1; e <= 1; e += 2)
+                for (int q = -1; q <= 1; q += 2) {
+                    float px = X_W + e * (hx + 0.5f), pz = z + q * (City.ROAD + 0.7f);
+                    d.box(px, 1f, pz, 0.6f, 1f, 0.6f, null, STONE, DrawList.STONE);
+                    d.box(px, 2.06f, pz, 0.68f, 0.06f, 0.68f, null, CAP, DrawList.PLAIN);
+                    c.wall(px - 0.6f, pz - 0.6f, px + 0.6f, pz + 0.6f, 2.1f);
+                }
             return;
         }
         for (int e = -1; e <= 1; e += 2) {

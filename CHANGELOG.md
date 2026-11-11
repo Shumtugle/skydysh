@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.15
+
+- The canal's two bridges for cars in the town lift for the yacht. As it comes up the canal
+  toward one (from 130 m off), its barriers come down across the street either side, red lamps
+  blinking on their posts; the cars stop at them; once none is left on the bridge its two leaves
+  go up off their quays, tilted back over them; the yacht goes under at full throttle, and once
+  it is past they come down and the barriers go up. The yacht goes the whole canal now, through
+  the town to the sea. A leaf not yet up stops it as a bank does.
+
 ## 1.4.14
 
 - The canal: a loop of water out of the sea and back into it. From the beach west of the town's

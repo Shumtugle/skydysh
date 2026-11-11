@@ -1,0 +1,33 @@
+# The canal's bridges for cars lifting for the yacht: down the canal's town arm at full throttle, the middle bridge from the quay as its barriers come down; its leaves up as the yacht goes under; the shore road's bridge from its quay; coming up to it, its leaves going up; under it and out between the piers to the sea; the shore road from above, the bridge down again behind. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+wait 0.3
+boatat -290 470 3.1416
+pedal 7 0 0 0
+eye -262 14 345 -2.6 -0.2
+wait 0.05
+shot l0
+eye off
+pedal 3 0 0 0
+shot l1
+pedal 8 0 0 0
+cars 60
+eye -262 14 25 -2.6 -0.2
+wait 0.05
+shot l2
+eye off
+pedal 7 0 0 0
+where
+shot l3
+pedal 4 0 0 0
+where
+shot l4
+pedal 12 0 0 0
+eye -300 20 -40 0.6 -0.3
+wait 0.05
+shot l5
