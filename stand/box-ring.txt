@@ -1,0 +1,23 @@
+# The ring over a light's box, no pickup near: the box of things over it; held, only her screwdriver in the ring; chosen, in her hand; at the box, it opens. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 32766
+keep where 0
+restart
+mission 14
+wait 1
+close
+wait 1
+at 519 234 0
+wait 0.8
+shot x0
+pie bed
+wait 0.4
+shot x1
+pie up 0 -48
+wait 0.3
+at 519 244 0
+wait 1.6
+fault
+shot x2

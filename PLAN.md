@@ -138,6 +138,7 @@ release, each seen on the stand before the phone.
 - 1.4.25 A bed's button seen from far off while the job wants its thing, a toolbox sign; she goes for the thing by herself.
 - 1.4.26 The dispatcher in and out as a cut; a light's wires done once all three are joined.
 - 1.4.27 A light's box drawn anew; mended or not, plain to see.
+- 1.4.28 The ring over the thing that wants it: the heap, the brum's pickup, a light's box; the torch a button in the dark.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.

@@ -23,8 +23,8 @@ wait 0.6
 pie bed
 wait 0.4
 shot w2a
-pie move 0 -48
-pie up 0 -48
+pie move 48 0
+pie up 48 0
 wait 0.3
 shot w2b
 at 134 1040.6 0

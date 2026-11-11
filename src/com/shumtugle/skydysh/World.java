@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.27";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.28";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1438,31 +1438,6 @@ final class World {
         }
     }
 
-    /** Whether the way to the charge in the bed is shown: the heap wedged fast and seen close, nothing set at it, no charge in her hands. */
-    private boolean chargeTaught() {
-        return rescue != null && rescue.heapSaid && rescue.wanting() && kit.held != Kit.CHARGE;
-    }
-
-    /** Whether the way to the torch is shown: in the dark, on foot, nothing else in her hands, the torch not taken up. */
-    private boolean torchTaught() {
-        return indoors != null && indoors.dark && toss.tool != Toss.TORCH && kit.held == Kit.NONE && torchShowT < 0f;
-    }
-
-    /** Her button pulsing; a finger down on it, the ring out faint, the finger slid onto the torch and lifted, round again. */
-    private void torchLesson(DrawList d) {
-        pieBed = false;
-        herRing();
-        ringLesson(d, pieX, pieY, PIE_HALF, handSign(), PIE_TORCH);
-    }
-
-    /** The bed's button pulsing, the finger showing the way to the charge in its ring. */
-    private void chargeLesson(DrawList d) {
-        pieBed = true;
-        bedRing(bedNow);
-        ringLesson(d, bedX, bedY, BED_HALF, Badges.BED, PIE_KIT + Kit.CHARGE);
-        pieBed = false;
-    }
-
     /**
      * A ring's way shown (its things laid as pieItems has them): its button at (bx, by) pulsing; a
      * finger down on it, the ring out faint, the finger slid onto the thing aimed at and lifted, round again.
@@ -1587,37 +1562,6 @@ final class World {
                 && !(concert != null && concert.panelOpen) && toss.state == Toss.HELD && torchShowT < 0f;
     }
 
-    /** The pickup she stands by the back of, on foot, standing, its bed's button to be up: null if none. */
-    private Pickup bedBy() {
-        if (indoors != null || duty == null) return null;
-        Pickup best = null;
-        // from far off too, while the job wants a thing out of a bed
-        float reach = bedWanted() ? BED_FAR : Kit.BED_NEAR, bd = reach * reach;
-        for (Pickup p : duty.all) {
-            if (p.boat || p.driven || Math.abs(p.speed) > 0.5f) continue;
-            float bx = p.x - (float) Math.sin(p.heading) * 2.4f, bz = p.z - (float) Math.cos(p.heading) * 2.4f;
-            float dd = (bx - runner.x) * (bx - runner.x) + (bz - runner.z) * (bz - runner.z);
-            if (dd < bd) {
-                bd = dd;
-                best = p;
-            }
-        }
-        return best;
-    }
-
-    /** How far off a bed's button shows while the job wants a thing out of it, meters. */
-    static final float BED_FAR = 32f;
-
-    /** Whether the job wants a thing out of a bed now: the charge at the heap, the rope at the quarry, neither in her hands yet. */
-    private boolean bedWanted() {
-        if (rescue != null && rescue.heapSaid && rescue.wanting() && kit.held != Kit.CHARGE) return true;
-        if (tow != null && tow.step == Tow.QUARRY && !kit.tied && kit.held != Kit.ROPE) {
-            float dx = runner.x - tow.stuck.x, dz = runner.z - tow.stuck.z;
-            return dx * dx + dz * dz < 40f * 40f;
-        }
-        return false;
-    }
-
     /** Whether she stands at the back of pickup p, near enough to take a thing out of its bed. */
     private boolean atBed(Pickup p) {
         float bx = p.x - (float) Math.sin(p.heading) * 2.4f, bz = p.z - (float) Math.cos(p.heading) * 2.4f;
@@ -1625,58 +1569,145 @@ final class World {
         return dx * dx + dz * dz < Kit.BED_NEAR * Kit.BED_NEAR;
     }
 
-    /** The two buttons, over her mallet and over the bed she stands by; the ring while one is held. */
+    // ---- the ring over a thing: where a job wants something used (the heap in the pass, the brum's
+    // pickup in the quarry, a light's box), a button over it; held, the ring of what may be used on
+    // it: her own things, and with a pickup near, what its bed holds. Chosen, a thing of a bed she goes
+    // to the bed for; a tool of her own is in her hand at once. In the dark, the torch's button by
+    // her, a touch: on ----
+    static final int OBJ_NONE = 0, OBJ_HEAP = 1, OBJ_STUCK = 2, OBJ_BOX = 3;
+    // how far off the button over a thing shows; how near her a pickup is for its bed to be offered
+    static final float OBJ_FAR = 36f, PICKUP_NEAR = 45f;
+    private int objKind;
+    private final float[] objAt = new float[3];
+
+    /** What wants a thing used on it now, near her, and where (into objAt): none, the heap, the brum's pickup, a light's box. */
+    private int objWanted() {
+        Runner r = runner;
+        if (rescue != null && rescue.heapSaid && rescue.wanting() && kit.held != Kit.CHARGE) {
+            rescue.face(r.x, r.z, objAt);
+            objAt[1] = Rockfall.WALL_HIGH + 0.6f;
+            return near(objAt) ? OBJ_HEAP : OBJ_NONE;
+        }
+        if (tow != null && tow.step == Tow.QUARRY && !kit.tied && kit.held != Kit.ROPE) {
+            objAt[0] = tow.stuck.x;
+            objAt[1] = tow.stuck.y + 2.6f;
+            objAt[2] = tow.stuck.z;
+            return near(objAt) ? OBJ_STUCK : OBJ_NONE;
+        }
+        Fault fl = fault != null ? fault : stray;
+        if (fl != null && fl.step == Fault.GO && toss.tool != Toss.SCREWDRIVER) {
+            objAt[0] = fl.boxX();
+            objAt[1] = 3.2f;
+            objAt[2] = fl.boxZ();
+            return near(objAt) ? OBJ_BOX : OBJ_NONE;
+        }
+        return OBJ_NONE;
+    }
+
+    private boolean near(float[] at) {
+        float dx = at[0] - runner.x, dz = at[2] - runner.z;
+        return dx * dx + dz * dz < OBJ_FAR * OBJ_FAR;
+    }
+
+    /** What the thing over which the button is wants: the one right for it. */
+    private int objRight(int kind) {
+        return kind == OBJ_HEAP ? PIE_KIT + Kit.CHARGE : kind == OBJ_STUCK ? PIE_KIT + Kit.ROPE : PIE_SCREWDRIVER;
+    }
+
+    /** The ring over a thing: with a pickup near, its bed's things; her own tools always. */
+    private void objRing() {
+        pieN = 0;
+        bedNow = nearestPickup(runner.x, runner.z);
+        if (bedNow != null && bedNow.apart(runner.x, runner.z) > PICKUP_NEAR) bedNow = null;
+        if (bedNow != null) {
+            pieItems[pieN++] = PIE_KIT + Kit.CHARGE;
+            pieItems[pieN++] = PIE_KIT + Kit.ROPE;
+            pieItems[pieN++] = PIE_KIT + Kit.LADDER;
+        }
+        pieItems[pieN++] = PIE_SCREWDRIVER;
+    }
+
+    /** Whether the torch's button is up: in the dark, on foot, the torch not in her hand. */
+    private boolean torchWanted() {
+        return indoors != null && indoors.dark && toss.tool != Toss.TORCH && kit.held == Kit.NONE && torchShowT < 0f;
+    }
+
+    /** The torch in her hand, its light on (seen close, the first time in the dark). */
+    private void takeTorch() {
+        toss.tool = Toss.TORCH;
+        host.saveInt(SAVE_TOOL, Toss.TORCH);
+        host.sound(Synth.LATCH, 0.4f, 1.6f);
+        host.buzz(15);
+        if (host.loadInt(SAVE_TORCH) == 0) torchShow();
+    }
+
+    /** Her own tools back to the mallet once nothing about her wants them: the screwdriver past the box, the torch out of the dark. */
+    private void toolsBack() {
+        boolean dark = indoors != null && indoors.dark;
+        Fault fl = fault != null ? fault : stray;
+        boolean box = fl != null && (fl.step == Fault.GO || fl.step == Fault.OPEN);
+        if (toss.tool == Toss.TORCH && !dark || toss.tool == Toss.SCREWDRIVER && !box) {
+            toss.tool = Toss.MALLET;
+            host.saveInt(SAVE_TOOL, Toss.MALLET);
+        }
+    }
+
+    /** The torch's button by her in the dark, and the button over a thing that wants something; the ring while it is held. */
     private void pieButton(DrawList d) {
         pieSeen = false;
         bedSeen = false;
         if (!pieOffered() && pieFinger < 0) return;
         Runner r = runner;
-        float rx = (float) Math.cos(r.heading), rz = -(float) Math.sin(r.heading);
-        // beside her right hip, where the mallet hangs, and up over it
-        if (d.project(r.x + rx * 0.75f, r.y + 1.85f, r.z + rz * 0.75f, pieAnchor)) {
-            float tx = Math.max(PIE_HALF + 4f, Math.min(W - PIE_HALF - 4f, pieAnchor[0]));
-            float ty = Math.max(pauseY() + PAUSE_HALF + PIE_HALF + 8f, Math.min(h - PIE_HALF - 40f, pieAnchor[1]));
-            // eased after her, so that it does not shake with her stride
-            pieX += (tx - pieX) * 0.35f;
-            pieY += (ty - pieY) * 0.35f;
-            if (Math.abs(pieX - tx) > 80f || Math.abs(pieY - ty) > 80f) {
-                pieX = tx;
-                pieY = ty;
+        if (torchWanted()) {
+            float rx = (float) Math.cos(r.heading), rz = -(float) Math.sin(r.heading);
+            // beside her right hip, and up over it
+            if (d.project(r.x + rx * 0.75f, r.y + 1.85f, r.z + rz * 0.75f, pieAnchor)) {
+                float tx = Math.max(BED_HALF + 4f, Math.min(W - BED_HALF - 4f, pieAnchor[0]));
+                float ty = Math.max(pauseY() + PAUSE_HALF + BED_HALF + 8f, Math.min(h - BED_HALF - 40f, pieAnchor[1]));
+                // eased after her, so that it does not shake with her stride
+                pieX += (tx - pieX) * 0.35f;
+                pieY += (ty - pieY) * 0.35f;
+                if (Math.abs(pieX - tx) > 80f || Math.abs(pieY - ty) > 80f) {
+                    pieX = tx;
+                    pieY = ty;
+                }
+                pieSeen = true;
             }
-            pieSeen = true;
         }
-        // the bed she stands by: its button over the bed
-        bedNow = pieFinger >= 0 && pieBed ? bedNow : bedBy();
-        if (bedNow != null && pieFinger < 0) {
-            Pickup p = bedNow;
-            float bx = p.x - (float) Math.sin(p.heading) * 1.55f, bz = p.z - (float) Math.cos(p.heading) * 1.55f;
-            if (d.project(bx, p.y + 2.3f, bz, pieAnchor)) {
-                bedX = Math.max(BED_HALF + 4f, Math.min(W - BED_HALF - 4f, pieAnchor[0]));
-                bedY = Math.max(pauseY() + PAUSE_HALF + BED_HALF + 8f, Math.min(h - BED_HALF - 40f, pieAnchor[1]));
-                // not on top of hers
-                if (pieSeen && Math.abs(bedX - pieX) < BED_HALF * 2f && Math.abs(bedY - pieY) < BED_HALF * 2f) bedY = pieY - BED_HALF * 2.2f;
-                bedSeen = true;
-            }
+        if (pieFinger < 0) objKind = objWanted();
+        if (objKind != OBJ_NONE && pieFinger < 0 && d.project(objAt[0], objAt[1], objAt[2], pieAnchor) && pieAnchor[2] > 0.5f) {
+            bedX = Math.max(BED_HALF + 4f, Math.min(W - BED_HALF - 4f, pieAnchor[0]));
+            bedY = Math.max(pauseY() + PAUSE_HALF + BED_HALF + 8f, Math.min(h - BED_HALF - 40f, pieAnchor[1]));
+            bedSeen = true;
         }
         if (pieFinger < 0) {
-            if (pieSeen && torchTaught()) {
-                torchLesson(d);
-                return;
+            if (pieSeen) torchButton(d);
+            if (bedSeen) {
+                pieBed = true;
+                objRing();
+                ringLesson(d, bedX, bedY, BED_HALF, Badges.BED, objRight(objKind));
             }
-            if (pieSeen) d.badge(pieX, pieY, PIE_HALF, handSign(), 0.7f, 0f);
-            if (bedSeen && chargeTaught()) chargeLesson(d);
-            else if (bedSeen) d.badge(bedX, bedY, BED_HALF, Badges.BED, 0.8f, bedWanted() ? 0.3f + 0.3f * (float) Math.sin(time * 5f) : 0f);
             return;
         }
         // held: the ring, once the finger has stayed or gone out of the middle
         boolean shown = time - pieAt > PIE_REVEAL || pieHot >= 0;
-        d.badge(pieCx, pieCy, pieBed ? BED_HALF : PIE_HALF, pieBed ? Badges.BED : handSign(), 0.5f, 0f);
+        d.badge(pieCx, pieCy, BED_HALF, Badges.BED, 0.5f, 0f);
         if (!shown) return;
         for (int k = 0; k < pieN; k++) {
             float a = pieAngle(k);
             float sx = pieCx + (float) Math.sin(a) * PIE_R, sy = pieCy - (float) Math.cos(a) * PIE_R;
             boolean hot = k == pieHot, now = pieNow(pieItems[k]);
             d.badge(sx, sy, hot ? PIE_ITEM * 1.25f : PIE_ITEM, pieSign(pieItems[k]), hot ? 1f : 0.7f, hot ? 0.45f : now ? 0.15f : 0f);
+        }
+    }
+
+    /** The torch's button by her: pulsing, a finger coming down on it now and then. */
+    private void torchButton(DrawList d) {
+        d.badge(pieX, pieY, BED_HALF * 0.85f, Badges.TORCH, 0.9f, 0.4f + 0.4f * (float) Math.sin(time * 6f));
+        float t = time % LESSON;
+        if (t < LESSON_UP) {
+            float press = t < LESSON_DOWN ? 1f - t / LESSON_DOWN : t > LESSON_UP - 0.3f ? (t - (LESSON_UP - 0.3f)) / 0.3f : 0f;
+            d.badge(pieX + 5f, pieY + 12f + press * 10f, 15f, Badges.ONE_FINGER, 0.95f * Math.min(1f, t / 0.2f), press < 0.05f ? 0.35f : 0f);
         }
     }
 
@@ -1687,26 +1718,11 @@ final class World {
         return k == pieOf(toss.tool);
     }
 
-    /** What her ring holds now: her tools, and back to the bed while a thing of one is out. */
-    private void herRing() {
-        pieN = 0;
-        pieItems[pieN++] = PIE_MALLET;
-        pieItems[pieN++] = PIE_SCREWDRIVER;
-        pieItems[pieN++] = PIE_TORCH;
-        if (kit.held != Kit.NONE || kit.set) pieItems[pieN++] = PIE_BACK;
-    }
-
-    /** What the bed of pickup p holds, as the job has it. */
-    private void bedRing(Pickup p) {
-        int n = Kit.bed(tow != null, rescue != null && rescue.wanting(), bedThings);
-        pieN = 0;
-        for (int k = 0; k < n; k++) pieItems[pieN++] = PIE_KIT + bedThings[k];
-    }
-
     /** Ring thing k chosen. */
     private void pieChoose(int k) {
         if (k >= PIE_KIT) {
             int thing = k - PIE_KIT;
+            if (bedNow == null) return;
             if (kit.held == thing && kit.from == bedNow) return;
             // the ladder still up somewhere, of this bed: taken down first
             if (thing == Kit.LADDER && kit.set && kit.setFrom == bedNow) {
@@ -1715,6 +1731,10 @@ final class World {
                 kit.setFrom = null;
             }
             if (thing == Kit.ROPE && kit.tied) return;
+            if (toss.tool != Toss.MALLET) {
+                toss.tool = Toss.MALLET;
+                host.saveInt(SAVE_TOOL, Toss.MALLET);
+            }
             if (!atBed(bedNow)) {
                 // from far off: she goes to the bed's back by herself, and takes it there
                 Pickup p = bedNow;
@@ -1729,24 +1749,19 @@ final class World {
             }
             kit.take(thing, bedNow);
             host.sound(Synth.WOOD, 0.4f, thing == Kit.ROPE ? 0.8f : 1.2f);
-        } else if (k == PIE_BACK) {
-            kit.putBackHands(city);
-            host.sound(Synth.WOOD, 0.35f, 0.9f);
         } else {
             // a tool of her own: anything of a bed in her hands goes back of itself
             kit.held = Kit.NONE;
             kit.from = null;
-            int tool = k == PIE_SCREWDRIVER ? Toss.SCREWDRIVER : k == PIE_TORCH ? Toss.TORCH : Toss.MALLET;
+            int tool = k == PIE_SCREWDRIVER ? Toss.SCREWDRIVER : Toss.MALLET;
             toss.tool = tool;
             host.saveInt(SAVE_TOOL, tool);
-            host.sound(Synth.TOCK, 0.4f, tool == Toss.SCREWDRIVER ? 1.6f : tool == Toss.TORCH ? 1.35f : 1.1f);
-            // the torch first taken up in the dark: seen close, once
-            if (tool == Toss.TORCH && indoors != null && indoors.dark && host.loadInt(SAVE_TORCH) == 0) torchShow();
+            host.sound(Synth.TOCK, 0.4f, tool == Toss.SCREWDRIVER ? 1.6f : 1.1f);
         }
         host.buzz(15);
     }
 
-    /** A finger on a ring's button, or the finger holding a ring: true if it is a ring's. */
+    /** A finger on the torch's button or a ring's, or the finger holding a ring: true if it is theirs. */
     private boolean pieTouch(int type, int id, float x, float y) {
         if (pieFinger >= 0) {
             if (id != pieFinger) return false;
@@ -1772,19 +1787,20 @@ final class World {
             return true;
         }
         if (type != DOWN || !pieOffered()) return false;
-        boolean onHer = pieSeen && Math.abs(x - pieX) <= PIE_HALF + 7f && Math.abs(y - pieY) <= PIE_HALF + 7f;
-        boolean onBed = bedSeen && bedNow != null && Math.abs(x - bedX) <= BED_HALF + 7f && Math.abs(y - bedY) <= BED_HALF + 7f;
-        if (!onHer && !onBed) return false;
-        pieBed = onBed && !onHer;
-        if (pieBed) bedRing(bedNow);
-        else herRing();
+        if (pieSeen && Math.abs(x - pieX) <= BED_HALF + 7f && Math.abs(y - pieY) <= BED_HALF + 7f) {
+            takeTorch();
+            letGo();
+            return true;
+        }
+        if (!bedSeen || Math.abs(x - bedX) > BED_HALF + 7f || Math.abs(y - bedY) > BED_HALF + 7f) return false;
+        pieBed = true;
+        objRing();
         pieFinger = id;
         pieHot = -1;
         pieAt = time;
-        float bx = pieBed ? bedX : pieX, by = pieBed ? bedY : pieY;
         // the ring's middle where the button is, kept in from the frame's edges
-        pieCx = Math.max(PIE_R + PIE_ITEM + 4f, Math.min(W - PIE_R - PIE_ITEM - 4f, bx));
-        pieCy = Math.max(PIE_R + PIE_ITEM + 60f, Math.min(h - PIE_R - PIE_ITEM - 10f, by));
+        pieCx = Math.max(PIE_R + PIE_ITEM + 4f, Math.min(W - PIE_R - PIE_ITEM - 4f, bedX));
+        pieCy = Math.max(PIE_R + PIE_ITEM + 60f, Math.min(h - PIE_R - PIE_ITEM - 10f, bedY));
         letGo();
         host.buzz(10);
         return true;
@@ -2366,6 +2382,7 @@ final class World {
             chase = mission.target(chase);
         }
         points();
+        toolsBack();
         torchStep(dt);
         debrisStep(dt);
         // in the collider hall the mallet is swung at the magnets there, never thrown
@@ -2759,8 +2776,6 @@ final class World {
         for (int i = 0; i < duty.all.size() && k < 16; i++) {
             Pickup p = duty.all.get(i);
             if (Math.abs(r.y - p.y) > 2.6f) continue;
-            // the job wants a thing out of its bed: its bed's button over it, not the wheel
-            if (p == bedNow && bedWanted()) continue;
             float ox = r.eyeX - p.x, oz = r.eyeZ - p.z;
             float dist = (float) Math.sqrt(ox * ox + oz * oz);
             float shown = Math.min(1f, (SIGN_FAR - dist) / 10f) * Math.min(1f, Math.max(0f, (dist - 2.5f) / 3f));

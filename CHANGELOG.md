@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.28
+
+- The ring is over the thing now, not on her or on the pickup. Where a job wants something used
+  (the heap in the pass, the brum's pickup in the quarry, a light's box) a button floats over it,
+  the box of things; held, the ring of what may be used there: with a pickup near, what its bed
+  holds (charge, rope, ladder), and her own tools (the screwdriver). Only the right one does the
+  job. A thing of a bed she goes to the bed for by herself; the screwdriver is in her hand at once.
+- Her own button over her mallet is gone, and so is the bed's button and the way back to the bed:
+  things of a bed go back of themselves, as they did. The screwdriver goes back to the mallet once
+  no light's box about wants it.
+- The torch is out of the ring: in the dark a button with the torch on it comes up by her, a
+  finger tapping on it; touched, the torch is in her hand and lit (seen close the first time). Out
+  of the dark it goes back to the mallet.
+- The dispatcher at the heap and the stories' pages say it so.
+
 ## 1.4.27
 
 - A light's box drawn anew: a steel frame gone rusty at its edges with screws at its corners, a

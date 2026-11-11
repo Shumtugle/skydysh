@@ -309,6 +309,13 @@ hall's word and mark, then the secretariat's), and at the desk it goes from her 
 clerk's ("Found it! Thank you."), the eye on the two of them; the dispatcher again: the job
 done, home now. If a brum gets there first, the mission is played again.
 
+Where a job wants a thing used on something (the heap in the pass, a brum's pickup in a quarry, a
+light's box), a button floats over it, a box of things. Held, a ring opens round it of what may be
+used there: with a pickup near, what its bed holds (a charge, a rope, a ladder), and her own tools
+(a screwdriver). The wrong one may be tried; only the right one does the job. A thing of a bed she
+goes to the bed for by herself; a tool of her own is in her hand at once, and back to the mallet
+once nothing about her wants it.
+
 Likes, not money. Every job brings likes: a story the first time it is done, a game (the hunt,
 the folder, the containers, the panel on its own) every time it is won. They pour up the right
 side of the screen as a thin column of red hearts, spaced, swaying a little, fainter the higher
@@ -338,8 +345,9 @@ one she comes up to stops and turns to look at her. A duty pickup up the road (i
 the road's bends by itself). In the pass the slope has come down across the road: a heap of
 logs, stumps, fallen posts, planks, stones, slabs, lumps of clay and a boulder or two, lying
 every which way, wedged fast: it stands like a wall, the pickup stops at it, and neither the
-mallet nor her weight stirs it. The dispatcher comes on: out of the pickup, and the bed's button
-pulsing, a finger showing the way to the charge in its ring. The charge carried up to the heap
+mallet nor her weight stirs it. The dispatcher comes on: out of the pickup, and over the heap a
+button, a box of things, pulsing, a finger showing the way to the charge in its ring; chosen, she
+goes to the pickup's bed for it. The charge carried up to the heap
 and stood by a moment is set, its fuse lit; she stands clear; the blast, a flash, the frame
 shaking, what lay in the middle of the road gone to dust and the rest flung to the sides. Once a
 way through as wide as the pickup is open the road is open, and the job done there; at once the
@@ -364,8 +372,8 @@ The seventh, the lights in the hall: the concert hall north of the old town, a p
 columns on broad steps, three tall doors. In by any of them, up the steps anywhere along the
 portico: a long hall under a high ceiling,
 rows of red seats full of people in three blocks with two aisles between, a stage with red curtains and a black grand piano, a pianist at
-it; and wholly dark, not a lamp burning. Her torch goes ahead of her there: a cone of light from
-her hand, the way she looks. The door to the wings is in the right wall by the
+it; and wholly dark, not a lamp burning. By her a button with a torch on it: touched, her torch
+goes ahead of her, a cone of light from her hand, the way she looks. The door to the wings is in the right wall by the
 stage, and behind it the panel: a grid of wiring pieces, the feed in the middle. A touch turns a
 piece; the power runs from the feed wherever wires meet, and glows where it gets to. When it
 gets everywhere (and to the three lamps among the ends) the main switch goes green; thrown, it
