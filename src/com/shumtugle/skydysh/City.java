@@ -721,7 +721,7 @@ final class City implements Ground {
 
     /** What a cell's block is: houses, mostly; now and then a square. The one the runner starts by is houses. */
     boolean square(int i, int j) {
-        if (sea(j) || oldTown(i, j)) return false;
+        if (sea(j) || oldTown(i, j) || i == Canal.COLUMN) return false;
         // the park with the water tower, a landmark seen from far off
         if (i == TOWER_I && j == TOWER_J) return true;
         // across the street from the old house, a square with a fountain; the old house's own block, houses
@@ -1466,10 +1466,13 @@ final class City implements Ground {
      * water.
      */
     private void quays(Cell c, Random deco, float x0, float z0) {
+        int j = Math.round(z0 / CELL);
         for (int e = -1; e <= 1; e += 2) {
             float tx = Canal.X_W + e * (Canal.HALF + Canal.COPING + 4.2f);
-            for (float t = 12f; t < CELL - 8f; t += 14f) street(c, deco, tx, z0 + t);
+            // none where a footbridge's stair comes down the quay
+            for (float t = 12f; t < CELL - 8f; t += 14f) if (!Canal.stairs(j, t)) street(c, deco, tx, z0 + t);
             for (float t = 19f; t < CELL - 12f; t += 28f) {
+                if (Canal.stairs(j, t)) continue;
                 float bx = Canal.X_W + e * (Canal.HALF + Canal.COPING + 1.4f), bz = z0 + t;
                 c.detail.box(bx, WALK_TOP + 0.42f, bz, 0.28f, 0.05f, 0.9f, null, 0x7A5638, DrawList.PLAIN);
                 c.detail.box(bx + e * 0.26f, WALK_TOP + 0.72f, bz, 0.04f, 0.28f, 0.9f, null, 0x7A5638, DrawList.PLAIN);

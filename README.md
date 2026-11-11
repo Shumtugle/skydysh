@@ -9,7 +9,9 @@ and back (up a column of the town between its quays, behind the town through the
 high bridge on the road out, down through the east woods to the wild shore; the streets in the
 town cross it on two bridges for cars, which lift for the yacht coming up the canal: barriers
 down across the street, red lamps blinking, the cars stopped at them, the two leaves up off
-their quays, and down again once it is past; the rest stop at its quays at a barrier), cars going about them (stopping
+their quays, and down again once it is past; the rest stop at its quays at a barrier, and a
+steel footbridge goes over the water there, high enough for a yacht's mast, a stair up to it
+along each quay), cars going about them (stopping
 at the lights some crossings have, nimble out of a pickup's way, round what stands in theirs),
 people out on the pavements with their dogs and over the streets at the zebras, cats by the walls (who mind what she does: a mallet
 thrown near them and they are off); squares with fountains or

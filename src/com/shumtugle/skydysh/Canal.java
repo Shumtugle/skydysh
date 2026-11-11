@@ -544,6 +544,93 @@ final class Canal {
             }
             c.wall(bx - 0.15f, z - City.ROAD, bx + 0.15f, z + City.ROAD, 1f);
         }
+        footbridge(c, d, small, z);
+    }
+
+    // ---- the high footbridges, where a street stops at the canal ----
+    // the deck's top (a yacht's mast goes under), its half width; each stair's half width and its
+    // middle out from the canal's line; a step's rise and tread; the landing at the stair's top,
+    // how far it runs from the street's middle; the steel
+    static final float FOOT_TOP = Island.YACHT_DECK + Island.MAST + 1.45f, FOOT_HALF = 1.6f, STAIR_HALF = 1.2f;
+    static final float STAIR_OFF = HALF + COPING + 0.4f + STAIR_HALF, RISE = 0.3f, TREAD = 0.6f, LAND = 2.4f;
+    static final int STEPS = Math.round(FOOT_TOP / RISE);
+    static final int STEEL = 0x355F63, TREADS = 0x6E6A64;
+
+    /** Whether the stairs of a footbridge stand on the quay of the canal's cell in row j, so far along from its south street. */
+    static boolean stairs(int j, float t) {
+        return j > City.SHORE && !drawRow(j) && t < LAND + STEPS * TREAD + 3f;
+    }
+
+    /**
+     * A footbridge high over the canal where the street at z stops at it: a steel deck from quay
+     * to quay, trussed sides, its railing; on each quay a stair running up along the water, from
+     * the north, to a landing over the street's end. Walked on, the steps and the deck kept as
+     * walls she stands on; under them people and a yacht go by.
+     */
+    private static void footbridge(City.Cell c, DrawList d, DrawList small, float z) {
+        float top = STEPS * RISE, inner = HALF + COPING;
+        float x0 = X_W - inner, x1 = X_W + inner;
+        // the deck, and its walk kept, its railings
+        d.box(X_W, top - 0.08f, z, inner, 0.08f, FOOT_HALF, null, TREADS, DrawList.PLAIN);
+        c.wall(x0, z - FOOT_HALF, x1, z + FOOT_HALF, top, top - 0.4f);
+        for (int q = -1; q <= 1; q += 2) {
+            float rz = z + q * FOOT_HALF;
+            // the truss along this side: a chord under the deck, the rail over it, the posts and braces between
+            d.box(X_W, top - 0.5f, rz, inner, 0.12f, 0.1f, null, STEEL, DrawList.PAINT);
+            d.box(X_W, top + 1.05f, rz, inner + 0.1f, 0.06f, 0.08f, null, STEEL, DrawList.PAINT);
+            int bays = 10;
+            float bay = 2f * inner / bays;
+            for (int b = 0; b <= bays; b++) {
+                float bx = x0 + b * bay;
+                small.box(bx, top + 0.25f, rz, 0.06f, 0.8f, 0.06f, null, STEEL, DrawList.PAINT);
+                if (b < bays) {
+                    float[] t = along(bay, b % 2 == 0 ? 1.5f : -1.5f, 0f);
+                    small.box(bx + bay * 0.5f, top + 0.3f, rz, 0.04f, 0.04f, (float) Math.hypot(bay, 1.5f) * 0.5f, t, STEEL, DrawList.PAINT);
+                }
+            }
+            // the south one runs on along the landings, the north one stops at them (the stairs come in there)
+            float over = q < 0 ? STAIR_OFF + STAIR_HALF - inner : 0f;
+            c.wall(x0 - over, rz - 0.1f, x1 + over, rz + 0.1f, top + 1.1f, top - 0.2f);
+        }
+        for (int e = -1; e <= 1; e += 2) {
+            float cx = X_W + e * STAIR_OFF;
+            // the landing over the street's end, from the stair's outer side to the deck
+            float lx0 = Math.min(cx - STAIR_HALF, X_W + e * inner), lx1 = Math.max(cx + STAIR_HALF, X_W + e * inner);
+            float lz0 = z - FOOT_HALF, lz1 = z + LAND;
+            d.box((lx0 + lx1) * 0.5f, top - 0.08f, (lz0 + lz1) * 0.5f, (lx1 - lx0) * 0.5f, 0.08f, (lz1 - lz0) * 0.5f, null, TREADS, DrawList.PLAIN);
+            d.box((lx0 + lx1) * 0.5f, top - 0.32f, (lz0 + lz1) * 0.5f, (lx1 - lx0) * 0.5f, 0.16f, (lz1 - lz0) * 0.5f, null, STEEL, DrawList.PAINT);
+            c.wall(lx0, lz0, lx1, lz1, top, top - 0.4f);
+            float ox = cx + e * STAIR_HALF;
+            c.wall(ox - 0.1f, lz0, ox + 0.1f, lz1, top + 1.1f, top - 0.2f);
+            // the landing's north edge, between the stair's top and the deck
+            float ix = cx - e * STAIR_HALF, dx0 = Math.min(ix, X_W + e * inner), dx1 = Math.max(ix, X_W + e * inner);
+            c.wall(dx0 - 0.1f, lz1 - 0.1f, dx1 + 0.1f, lz1 + 0.1f, top + 1.1f, top - 0.2f);
+            d.box(ox, top + 1.05f, (lz0 + lz1) * 0.5f, 0.06f, 0.06f, (lz1 - lz0) * 0.5f, null, STEEL, DrawList.PAINT);
+            for (int q = 0; q < 2; q++) {
+                float pz = q == 0 ? lz0 + 0.3f : lz1 - 0.3f;
+                d.box(ox, top * 0.5f, pz, 0.14f, top * 0.5f, 0.14f, null, STEEL, DrawList.PAINT);
+            }
+            // the steps, from the top at the landing down to the north; each kept as a wall
+            for (int k = 1; k <= STEPS; k++) {
+                float h = k * RISE, sz = z + LAND + (STEPS - k) * TREAD;
+                small.box(cx, h - 0.04f, sz + TREAD * 0.5f, STAIR_HALF, 0.04f, TREAD * 0.5f, null, TREADS, DrawList.PLAIN);
+                c.wall(cx - STAIR_HALF, sz, cx + STAIR_HALF, sz + TREAD, h, h - 0.6f);
+            }
+            // its two stringers along the slope, the handrails over them, posts under it
+            float run = STEPS * TREAD, zb = z + LAND + run, zt = z + LAND;
+            float[] t = along(0f, top, zt - zb);
+            float len = (float) Math.hypot(run, top);
+            for (int q = -1; q <= 1; q += 2) {
+                float sx = cx + q * STAIR_HALF;
+                d.box(sx, top * 0.5f - 0.1f, (zb + zt) * 0.5f, 0.07f, 0.22f, len * 0.5f, t, STEEL, DrawList.PAINT);
+                small.box(sx, top * 0.5f + 1f, (zb + zt) * 0.5f, 0.04f, 0.04f, len * 0.5f, t, STEEL, DrawList.PAINT);
+            }
+            for (int k = STEPS / 3; k <= STEPS; k += STEPS / 3) {
+                float h = k * RISE, sz = z + LAND + (STEPS - k) * TREAD + TREAD * 0.5f;
+                for (int q = -1; q <= 1; q += 2)
+                    d.box(cx + q * (STAIR_HALF - 0.1f), h * 0.5f, sz, 0.1f, h * 0.5f, 0.1f, null, STEEL, DrawList.PAINT);
+            }
+        }
     }
 
     /** The road out's bridge over the canal: its deck, the girders under it, railings, its abutments on the banks. */

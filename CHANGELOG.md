@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.16
+
+- High footbridges over the canal in the town, where its streets stop at the quays: a steel deck
+  from quay to quay at 12.6 m, trussed sides and railings, a yacht's mast going under it; on each
+  quay a stair up along the water, from the north, to a landing over the street's end. Walked up
+  step by step and across; people, the yacht and she swimming go by under them. The plane trees
+  and benches on the quays make room for the stairs.
+- Nobody walks on the canal's water any more: a block of its column that had been a square kept
+  its paths for people, across the water.
+
 ## 1.4.15
 
 - The canal's two bridges for cars in the town lift for the yacht. As it comes up the canal

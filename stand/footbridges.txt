@@ -1,0 +1,40 @@
+# The canal's high footbridges: the quays from above, a footbridge over the water; up the stair along the quay to its landing, across the deck; a yacht under them, down the canal's town arm at full throttle. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+wait 0.3
+eye -330 30 140 0.75 -0.35
+wait 0.3
+shot f0
+eye off
+at -301 222 3.1416
+wait 0.5
+stick 0 -220
+wait 5
+where
+shot f1
+wait 12
+where
+stick 0 -220
+wait 1.2
+stick off
+face 1.5708
+wait 0.5
+stick 0 -220
+wait 3
+stick off
+where
+shot f2
+boatat -290 300 3.1416
+pedal 6 0 0 0
+eye -262 6 205 -2.4 0.15
+wait 0.05
+shot f3
+eye off
+pedal 2 0 0 0
+where
+shot f4
