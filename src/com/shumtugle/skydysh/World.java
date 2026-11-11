@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.24";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.25";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1452,14 +1452,14 @@ final class World {
     private void torchLesson(DrawList d) {
         pieBed = false;
         herRing();
-        ringLesson(d, pieX, pieY, handSign(), PIE_TORCH);
+        ringLesson(d, pieX, pieY, PIE_HALF, handSign(), PIE_TORCH);
     }
 
     /** The bed's button pulsing, the finger showing the way to the charge in its ring. */
     private void chargeLesson(DrawList d) {
         pieBed = true;
         bedRing(bedNow);
-        ringLesson(d, bedX, bedY, Badges.BED, PIE_KIT + Kit.CHARGE);
+        ringLesson(d, bedX, bedY, BED_HALF, Badges.BED, PIE_KIT + Kit.CHARGE);
         pieBed = false;
     }
 
@@ -1467,9 +1467,9 @@ final class World {
      * A ring's way shown (its things laid as pieItems has them): its button at (bx, by) pulsing; a
      * finger down on it, the ring out faint, the finger slid onto the thing aimed at and lifted, round again.
      */
-    private void ringLesson(DrawList d, float bx, float by, int sign, int thing) {
+    private void ringLesson(DrawList d, float bx, float by, float half, int sign, int thing) {
         float t = time % LESSON;
-        d.badge(bx, by, PIE_HALF, sign, 0.85f, 0.4f + 0.4f * (float) Math.sin(time * 6f));
+        d.badge(bx, by, half, sign, 0.85f, 0.4f + 0.4f * (float) Math.sin(time * 6f));
         float cx = Math.max(PIE_R + PIE_ITEM + 4f, Math.min(W - PIE_R - PIE_ITEM - 4f, bx));
         float cy = Math.max(PIE_R + PIE_ITEM + 60f, Math.min(h - PIE_R - PIE_ITEM - 10f, by));
         int aim = 0;
@@ -1537,7 +1537,7 @@ final class World {
     }
     // the buttons: half their size; the ring: how far out its things are, how big; the middle that
     // means no; how long the finger stays before the ring is drawn
-    static final float PIE_HALF = 13f, PIE_R = 48f, PIE_ITEM = 17f, PIE_DEAD = 16f, PIE_REVEAL = 0.26f;
+    static final float PIE_HALF = 11f, BED_HALF = 17f, PIE_R = 48f, PIE_ITEM = 17f, PIE_DEAD = 16f, PIE_REVEAL = 0.26f;
     // what a ring holds: her tools, back to the bed, a bed's things (KIT + the thing)
     static final int PIE_MALLET = 0, PIE_SCREWDRIVER = 1, PIE_BACK = 2, PIE_TORCH = 3, PIE_KIT = 10;
     private int pieFinger = -1, pieHot = -1, pieN;
@@ -1591,7 +1591,8 @@ final class World {
     private Pickup bedBy() {
         if (indoors != null || duty == null) return null;
         Pickup best = null;
-        float bd = Kit.BED_NEAR * Kit.BED_NEAR;
+        // from far off too, while the job wants a thing out of a bed
+        float reach = bedWanted() ? BED_FAR : Kit.BED_NEAR, bd = reach * reach;
         for (Pickup p : duty.all) {
             if (p.boat || p.driven || Math.abs(p.speed) > 0.5f) continue;
             float bx = p.x - (float) Math.sin(p.heading) * 2.4f, bz = p.z - (float) Math.cos(p.heading) * 2.4f;
@@ -1602,6 +1603,26 @@ final class World {
             }
         }
         return best;
+    }
+
+    /** How far off a bed's button shows while the job wants a thing out of it, meters. */
+    static final float BED_FAR = 32f;
+
+    /** Whether the job wants a thing out of a bed now: the charge at the heap, the rope at the quarry, neither in her hands yet. */
+    private boolean bedWanted() {
+        if (rescue != null && rescue.heapSaid && rescue.wanting() && kit.held != Kit.CHARGE) return true;
+        if (tow != null && tow.step == Tow.QUARRY && !kit.tied && kit.held != Kit.ROPE) {
+            float dx = runner.x - tow.stuck.x, dz = runner.z - tow.stuck.z;
+            return dx * dx + dz * dz < 40f * 40f;
+        }
+        return false;
+    }
+
+    /** Whether she stands at the back of pickup p, near enough to take a thing out of its bed. */
+    private boolean atBed(Pickup p) {
+        float bx = p.x - (float) Math.sin(p.heading) * 2.4f, bz = p.z - (float) Math.cos(p.heading) * 2.4f;
+        float dx = bx - runner.x, dz = bz - runner.z;
+        return dx * dx + dz * dz < Kit.BED_NEAR * Kit.BED_NEAR;
     }
 
     /** The two buttons, over her mallet and over the bed she stands by; the ring while one is held. */
@@ -1630,10 +1651,10 @@ final class World {
             Pickup p = bedNow;
             float bx = p.x - (float) Math.sin(p.heading) * 1.55f, bz = p.z - (float) Math.cos(p.heading) * 1.55f;
             if (d.project(bx, p.y + 2.3f, bz, pieAnchor)) {
-                bedX = Math.max(PIE_HALF + 4f, Math.min(W - PIE_HALF - 4f, pieAnchor[0]));
-                bedY = Math.max(pauseY() + PAUSE_HALF + PIE_HALF + 8f, Math.min(h - PIE_HALF - 40f, pieAnchor[1]));
+                bedX = Math.max(BED_HALF + 4f, Math.min(W - BED_HALF - 4f, pieAnchor[0]));
+                bedY = Math.max(pauseY() + PAUSE_HALF + BED_HALF + 8f, Math.min(h - BED_HALF - 40f, pieAnchor[1]));
                 // not on top of hers
-                if (pieSeen && Math.abs(bedX - pieX) < PIE_HALF * 2.4f && Math.abs(bedY - pieY) < PIE_HALF * 2.4f) bedY = pieY - PIE_HALF * 2.6f;
+                if (pieSeen && Math.abs(bedX - pieX) < BED_HALF * 2f && Math.abs(bedY - pieY) < BED_HALF * 2f) bedY = pieY - BED_HALF * 2.2f;
                 bedSeen = true;
             }
         }
@@ -1644,12 +1665,12 @@ final class World {
             }
             if (pieSeen) d.badge(pieX, pieY, PIE_HALF, handSign(), 0.7f, 0f);
             if (bedSeen && chargeTaught()) chargeLesson(d);
-            else if (bedSeen) d.badge(bedX, bedY, PIE_HALF, Badges.BED, 0.7f, 0f);
+            else if (bedSeen) d.badge(bedX, bedY, BED_HALF, Badges.BED, 0.8f, bedWanted() ? 0.3f + 0.3f * (float) Math.sin(time * 5f) : 0f);
             return;
         }
         // held: the ring, once the finger has stayed or gone out of the middle
         boolean shown = time - pieAt > PIE_REVEAL || pieHot >= 0;
-        d.badge(pieCx, pieCy, PIE_HALF, pieBed ? Badges.BED : handSign(), 0.5f, 0f);
+        d.badge(pieCx, pieCy, pieBed ? BED_HALF : PIE_HALF, pieBed ? Badges.BED : handSign(), 0.5f, 0f);
         if (!shown) return;
         for (int k = 0; k < pieN; k++) {
             float a = pieAngle(k);
@@ -1694,6 +1715,18 @@ final class World {
                 kit.setFrom = null;
             }
             if (thing == Kit.ROPE && kit.tied) return;
+            if (!atBed(bedNow)) {
+                // from far off: she goes to the bed's back by herself, and takes it there
+                Pickup p = bedNow;
+                float bx = p.x - (float) Math.sin(p.heading) * 2.4f, bz = p.z - (float) Math.cos(p.heading) * 2.4f;
+                errand = ERRAND_BED;
+                errandFor = 0f;
+                errandPickup = p;
+                errandThing = thing;
+                runner.lead(bx, bz, p.heading);
+                host.buzz(15);
+                return;
+            }
             kit.take(thing, bedNow);
             host.sound(Synth.WOOD, 0.4f, thing == Kit.ROPE ? 0.8f : 1.2f);
         } else if (k == PIE_BACK) {
@@ -1740,7 +1773,7 @@ final class World {
         }
         if (type != DOWN || !pieOffered()) return false;
         boolean onHer = pieSeen && Math.abs(x - pieX) <= PIE_HALF + 7f && Math.abs(y - pieY) <= PIE_HALF + 7f;
-        boolean onBed = bedSeen && bedNow != null && Math.abs(x - bedX) <= PIE_HALF + 7f && Math.abs(y - bedY) <= PIE_HALF + 7f;
+        boolean onBed = bedSeen && bedNow != null && Math.abs(x - bedX) <= BED_HALF + 7f && Math.abs(y - bedY) <= BED_HALF + 7f;
         if (!onHer && !onBed) return false;
         pieBed = onBed && !onHer;
         if (pieBed) bedRing(bedNow);
@@ -2726,6 +2759,8 @@ final class World {
         for (int i = 0; i < duty.all.size() && k < 16; i++) {
             Pickup p = duty.all.get(i);
             if (Math.abs(r.y - p.y) > 2.6f) continue;
+            // the job wants a thing out of its bed: its bed's button over it, not the wheel
+            if (p == bedNow && bedWanted()) continue;
             float ox = r.eyeX - p.x, oz = r.eyeZ - p.z;
             float dist = (float) Math.sqrt(ox * ox + oz * oz);
             float shown = Math.min(1f, (SIGN_FAR - dist) / 10f) * Math.min(1f, Math.max(0f, (dist - 2.5f) / 3f));
@@ -3197,7 +3232,9 @@ final class World {
     }
 
     // ---- errands: a sign touched, she goes where it says by herself ----
-    static final int NO_ERRAND = 0, ERRAND_CLIMB = 1, ERRAND_UP = 2, ERRAND_DOWN = 3, ERRAND_DRIVE = 4, ERRAND_THROUGH = 5, ERRAND_SOFA = 6;
+    static final int NO_ERRAND = 0, ERRAND_CLIMB = 1, ERRAND_UP = 2, ERRAND_DOWN = 3, ERRAND_DRIVE = 4, ERRAND_THROUGH = 5, ERRAND_SOFA = 6, ERRAND_BED = 7;
+    /** The thing of a bed she goes for (see ERRAND_BED). */
+    private int errandThing;
     private boolean errandIn;                  // through a house: she has been inside
     static final int MARK_PICKUP = 4;          // a sign's kind beside the town's (see City.marks)
     static final int MARK_SOFA = 7;            // the sign over home's sofa
@@ -3366,6 +3403,16 @@ final class World {
                     float[] l = errandLadder;
                     r.climb(l[0], l[1], l[2], l[3], l[4], l[5]);
                     host.sound(Synth.CLANG, 0.25f, 1.5f);
+                    errand = NO_ERRAND;
+                } else if (!r.led()) errand = NO_ERRAND;
+                break;
+            case ERRAND_BED:
+                // at the bed's back: the thing out of it into her hands
+                if (errandPickup != null && (arrived || atBed(errandPickup))) {
+                    r.stopLead();
+                    kit.take(errandThing, errandPickup);
+                    host.sound(Synth.WOOD, 0.4f, errandThing == Kit.ROPE ? 0.8f : 1.2f);
+                    host.buzz(15);
                     errand = NO_ERRAND;
                 } else if (!r.led()) errand = NO_ERRAND;
                 break;

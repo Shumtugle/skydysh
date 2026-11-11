@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.25
+
+- A bed's button shows from far off (some thirty meters) while the job wants a thing out of it:
+  the charge at the heap, the rope at the quarry. It is larger than her own (her own is a little
+  smaller now), pulses while it is wanted, and the wheel to get in is not over that pickup till the
+  thing is out.
+- Its sign is a box of things, a toolbox: the box, its lid's seam, the latch, the handle on top.
+- A thing chosen from the bed's ring from far off: she goes to the bed's back by herself and takes
+  it there.
+
 ## 1.4.24
 
 - The heap in the pass is wedged fast: it stands like a wall, the pickup stops at it (slowing

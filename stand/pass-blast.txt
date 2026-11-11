@@ -1,4 +1,4 @@
-# The call out with the charge: the dispatcher near the heap; at the wheel it stops at the heap, wedged fast; out, by the bed, the button pulsing and the finger showing the way to the charge; the bed's ring held, the charge in it lit; the charge in hand, set at the heap, its fuse burning, the word to stand clear; the blast: before it, the flash, the way open; the report and the tow's briefing on one screen; at the wheel past the pass, the quarry and the brum's pickup in it, then from above. In Russian.
+# The call out with the charge: the dispatcher near the heap; at the wheel it stops at the heap, wedged fast; out, from a way back, the bed's button large over it, pulsing, and the finger showing the way to the charge; the bed's ring held, the charge in it lit; she goes to the bed by herself and takes it; the charge in hand, set at the heap, its fuse burning, the word to stand clear; the blast: before it, the flash, the way open; the report and the tow's briefing on one screen; at the wheel past the pass, the quarry and the brum's pickup in it, then from above. In Russian.
 screen 1096 2560
 wait 0.4
 lang ru
@@ -24,8 +24,8 @@ wait 1
 where
 pickups
 shot b1
-at -14.2 918.4 0
-wait 0.6
+at -11 905 0
+wait 0.8
 shot b2
 pie bed
 wait 0.4
@@ -33,7 +33,9 @@ pie move 0 -48
 wait 0.3
 shot b2r
 pie up 0 -48
-wait 0.3
+wait 2.5
+where
+shot b2t
 at -11.5 922.4 0
 wait 0.9
 shot b3

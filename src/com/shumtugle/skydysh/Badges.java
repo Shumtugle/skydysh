@@ -25,7 +25,7 @@ final class Badges {
     static final int NEEDLE = 26;
     // a screwdriver: a fat handle low on the left, the shaft up to the right, its blade at the end
     static final int SCREWDRIVER = 27;
-    // a coil of rope, its end hanging; a pickup's bed seen from behind with an arrow down into it
+    // a coil of rope, its end hanging; what a pickup's bed holds: a box of things, as a toolbox
     static final int ROPE = 28, BED = 29;
     // the game kept: a disc in its square case, the corner cut, the shutter and the label
     static final int SAVE = 30;
@@ -198,11 +198,13 @@ final class Badges {
                 return Math.min(Math.max(body, -Math.min(shutter, label)), slot);
             }
             case BED: {
-                // the bed: a tray, open on top; the arrow down into it
-                float tray = Math.max(box(x, y, 0f, -0.42f, 0.78f, 0.36f), -box(x, y, 0f, -0.3f, 0.62f, 0.36f));
-                float shaft = box(x, y, 0f, 0.6f, 0.11f, 0.26f);
-                float head = poly(x, y, -0.42f, 0.36f, 0f, -0.06f, 0.42f, 0.36f);
-                return Math.min(tray, Math.min(shaft, head));
+                // a box of things, as a toolbox is: the box, its lid's seam across, the latch over the
+                // seam, the handle on top
+                float body = rbox(x, y, 0f, -0.2f, 0.8f, 0.46f, 0.08f);
+                body = Math.max(body, -box(x, y, 0f, 0.06f, 0.82f, 0.035f));
+                float latch = rbox(x, y, 0f, 0.04f, 0.12f, 0.13f, 0.03f);
+                float handle = Math.max(rbox(x, y, 0f, 0.42f, 0.34f, 0.2f, 0.08f), -rbox(x, y, 0f, 0.4f, 0.2f, 0.09f, 0.04f));
+                return min(body, latch, handle);
             }
             case CHARGE: {
                 // three sticks side by side, a band across them cut out; the fuse up to the right; its spark
