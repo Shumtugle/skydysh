@@ -1012,6 +1012,11 @@ public final class Stand implements World.Host {
         } else if (c.equals("tool")) {
             // tool N: in her hand the mallet (0) or the screwdriver (1)
             world.toss.tool = Math.round(f(p[1]));
+        } else if (c.equals("wiresome")) {
+            // wiresome K: the light's box open, its first K wires laid (all three: done)
+            Fault fl = world.fault != null ? world.fault : world.stray;
+            if (fl != null && fl.panel != null) fl.panel.standLay(Math.round(f(p[1])));
+            step();
         } else if (c.equals("wires")) {
             // wires: the light's box open, every wire in it laid
             Fault fl = world.fault != null ? world.fault : world.stray;

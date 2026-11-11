@@ -1,0 +1,30 @@
+# The light's box open (1.4.27): the board bare, the lenses dark; one wire joined, its lamp lit; two; all three: the plate says it works and the lamps go round as a set of lights does; shut of itself, the crossing's lights working again. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 32766
+keep where 0
+restart
+mission 14
+wait 1
+close
+wait 1
+tool 1
+at 519 246.5 3.1416
+wait 1.6
+fault
+shot q0
+wiresome 1
+wait 0.2
+shot q1
+wiresome 2
+wait 0.2
+shot q2
+wiresome 3
+wait 0.15
+shot q3
+wait 0.3
+shot q4
+wait 2.5
+fault
+shot q5

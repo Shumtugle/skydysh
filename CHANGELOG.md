@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.27
+
+- A light's box drawn anew: a steel frame gone rusty at its edges with screws at its corners, a
+  brass plate with its name, three lenses in bronze rings in a recess, a board of dark tiles, the
+  wires as rounded tubes, the terminals a ring of the colour round a brass knob.
+- Whether it is mended is plain now: a lens stays dark till its wire is joined, and lit it is
+  bright with a pale heart; all three joined, the plate turns green and says it works, the lamps go
+  round as a set of lights does, and the box shuts of itself a little after.
+
 ## 1.4.26
 
 - The dispatcher comes on and goes off as a cut: the room with its screen at once, the street at
