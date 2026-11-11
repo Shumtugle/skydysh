@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.4.24
+
+- The heap in the pass is wedged fast: it stands like a wall, the pickup stops at it (slowing
+  for it as for any wall), and the mallet and her weight do not stir it.
+- A charge in the pickup's bed on the call out. Near the heap the dispatcher says what it takes;
+  on foot by the bed its button pulses and a finger shows the way to the charge in its ring. The
+  charge in hand, the word at the top and the mark lead to the heap; brought up to it and stood
+  by a moment (or a tap) it is set, its fuse burning down with a tick; then the blast: a flash, the
+  frame shaking, what lay in the middle of the road gone to dust, the rest flung to the sides.
+- The call out is done once the way through is open: no more on to the village. At once the
+  tow comes on, its report and the next briefing on one screen; what the blast left lies in the
+  pass till she is far off.
+- The quarry has moved past the pass, into the fields east of the road to the village. The tow's
+  texts say so.
+- The best times of the call out, the tow and the navigator begin anew.
+
 ## 1.4.23
 
 - Home's list shows the stories won by name, in among the rest, while there is room for them

@@ -11,9 +11,11 @@ package com.shumtugle.skydysh;
  * the roof's edge, and she climbs it as any; put back, it is taken down.
  * The rope: carried coiled in her hand; a tap by the pickup to be towed ties it, from the pickup it
  * came out of to that one (see Tow).
+ * The charge: on a call out, for the heap in the pass; carried in her hand, set against the heap
+ * (see Rescue), it does not come back: the bed has another.
  */
 final class Kit {
-    static final int NONE = 0, LADDER = 1, ROPE = 2;
+    static final int NONE = 0, LADDER = 1, ROPE = 2, CHARGE = 3;
     /** The longest the ladder reaches up a wall; the nearest and farthest the wall may be before her. */
     static final float LADDER_LONG = 26f, WALL_FROM = 0.3f, WALL_TO = 2.2f;
     /** How near the back of a pickup's bed she stands for its ring of things. */
@@ -108,8 +110,9 @@ final class Kit {
     }
 
     /** The things of a bed, as the job has them: into out; how many. */
-    static int bed(boolean towing, int[] out) {
+    static int bed(boolean towing, boolean blasting, int[] out) {
         int n = 0;
+        if (blasting) out[n++] = CHARGE;
         if (towing) out[n++] = ROPE;
         out[n++] = LADDER;
         return n;
@@ -117,7 +120,7 @@ final class Kit {
 
     /** The sign of each thing in a ring. */
     static int sign(int k) {
-        return k == ROPE ? Badges.ROPE : Badges.LADDER;
+        return k == ROPE ? Badges.ROPE : k == CHARGE ? Badges.CHARGE : Badges.LADDER;
     }
 
     // ---- drawn ----
@@ -144,6 +147,9 @@ final class Kit {
         } else if (held == ROPE) {
             r.bone("hand_l", hand);
             coil(d, hand[0], hand[1] - 0.25f, hand[2], r.heading);
+        } else if (held == CHARGE) {
+            r.bone("hand_l", hand);
+            charge(d, hand[0], hand[1] - 0.2f, hand[2], r.heading, -1f);
         }
     }
 
@@ -154,6 +160,23 @@ final class Kit {
             d.box(x + sx * e * w, bottom + h, z + sz * e * w, 0.05f, h, 0.05f, null, RAIL, DrawList.POLISHED);
         for (float y = bottom + 0.35f; y < top - 0.1f; y += 0.42f)
             d.box(x, y, z, Math.abs(sx) * w + 0.03f, 0.03f, Math.abs(sz) * w + 0.03f, null, RUNG, DrawList.POLISHED);
+    }
+
+    // the charge: red sticks, a black band round them, the fuse
+    static final int STICK = 0xC8322A, BAND = 0x1B1B20, FUSE = 0xD9C9A6;
+
+    /**
+     * A charge at (x, y, z), upright, turned the way a: three red sticks bound with a black band, a
+     * pale fuse out of its top; lit, (0 to 1 the time left) a spark at the fuse's end.
+     */
+    static void charge(DrawList d, float x, float y, float z, float a, float lit) {
+        float sx = (float) Math.cos(a), sz = -(float) Math.sin(a), fx = (float) Math.sin(a), fz = (float) Math.cos(a);
+        for (int k = -1; k <= 1; k++)
+            d.box(x + sx * k * 0.11f, y, z + sz * k * 0.11f, 0.055f, 0.28f, 0.055f, null, STICK, DrawList.PAINT);
+        d.box(x, y + 0.1f, z, Math.abs(sx) * 0.18f + Math.abs(fx) * 0.07f, 0.04f, Math.abs(sz) * 0.18f + Math.abs(fz) * 0.07f, null, BAND, DrawList.PLAIN);
+        float fl = lit >= 0f ? 0.08f + 0.22f * lit : 0.3f;
+        d.box(x, y + 0.28f + fl * 0.5f, z, 0.015f, fl * 0.5f, 0.015f, null, FUSE, DrawList.PLAIN);
+        if (lit >= 0f) d.box(x, y + 0.28f + fl + 0.03f, z, 0.05f, 0.05f, 0.05f, null, 0xFFD45A, DrawList.GLOW);
     }
 
     /** A coil of rope hanging upright at (x, y, z), facing the way a. */
@@ -167,7 +190,7 @@ final class Kit {
     }
 
     /** The things in a pickup's bed: the ladder along it, the rope coiled at its back; what is out of it not there. */
-    void inBed(DrawList d, Pickup p, boolean towing) {
+    void inBed(DrawList d, Pickup p, boolean towing, boolean blasting) {
         float fx = (float) Math.sin(p.heading), fz = (float) Math.cos(p.heading), sx = fz, sz = -fx;
         float bx = p.x - fx * 1.55f, by = p.y + 0.95f, bz = p.z - fz * 1.55f;
         if (!outOf(p, LADDER)) {
@@ -175,6 +198,11 @@ final class Kit {
                 for (int e = -1; e <= 1; e += 2)
                     d.box(bx + fx * t + sx * (e * 0.28f + 0.25f), by, bz + fz * t + sz * (e * 0.28f + 0.25f), 0.045f, 0.045f, 0.045f, null, RAIL,
                             DrawList.POLISHED);
+        }
+        if (blasting && !outOf(p, CHARGE)) {
+            // lying in the bed by its front corner
+            float cx = bx + sx * 0.45f + fx * 0.6f, cz = bz + sz * 0.45f + fz * 0.6f;
+            charge(d, cx, by + 0.05f, cz, p.heading + 0.6f, -1f);
         }
         if (towing && !outOf(p, ROPE)) {
             // a ring lying flat at the bed's back corner

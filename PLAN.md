@@ -134,6 +134,7 @@ release, each seen on the stand before the phone.
 - 1.4.21 A torch in her ring; the concert hall wholly dark, the way to the torch shown by a finger, seen close once.
 - 1.4.22 The delivery's dispatcher: at the wheel the first time, near each gate, done at the store.
 - 1.4.23 Stories won by name in home's list while they fit; the likes over its head.
+- 1.4.24 The heap a wall till a charge from the bed blows it apart; the call out runs into the tow; the quarry past the pass.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
@@ -176,7 +177,7 @@ release, each seen on the stand before the phone.
 ## Next
 
 - Points for the other jobs, one a release: the black cherry (each magnet), the archive, the landing gear, the call out, the light in the hall, the navigator; the hot heads last.
-- More for the beds, each with its job: blasting charges (the heap in the pass, the quarry), a wrench and a battery (a car stalled in the street, a jam behind it); her ring as an arsenal: things kept, saved.
+- More for the beds, each with its job: a wrench and a battery (a car stalled in the street, a jam behind it); her ring as an arsenal: things kept, saved.
 - Past the woods, west and east, other country some day: a steppe; roads out to it when wanted.
 - The yacht where she left it kept with the game; the open sea wider for it.
 - The taxis' stand: a job of its own, some day.

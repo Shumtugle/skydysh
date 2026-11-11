@@ -392,7 +392,7 @@ final class Pickup {
         // own walls, not what lies loose in the way: that is shoved off)
         float[] p = new float[2];
         City.Extra loose = city.extra;
-        city.extra = null;
+        if (loose != null && !loose.wall()) city.extra = null;
         for (float d = 4f; d <= 16f; d += 3f) {
             p[0] = x + fx * d;
             p[1] = z + fz * d;

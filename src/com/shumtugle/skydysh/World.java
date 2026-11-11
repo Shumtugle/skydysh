@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.23";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.24";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -47,6 +47,10 @@ final class World {
     Folder folder;                           // the mission now, when it is the folder's
     Delivery delivery;                       // the mission now, when it is a delivery
     Rescue rescue;                           // the mission now, when it is a call out
+    /** A call out done with: what its blast left lies in the pass, till she is far off. */
+    private Rescue debris;
+    /** How far off she goes before what the blast left in the pass is cleared away, meters. */
+    static final float DEBRIS_GONE = 400f;
     Puppy puppy;                             // the mission now, when it is the puppy in the sea
     Tow tow;                                 // the mission now, when it is the tow out of the quarry
     Archive archive;                         // the mission now, when it is the papers to the archive
@@ -469,7 +473,7 @@ final class World {
      * when what one plays changes (its targets, its way, where it begins), so that a time kept
      * before is not set against one that is no longer the same task.
      */
-    static final int[] REVISION = {0, 4, 4, 3, 3, 2, 1, 4, 2, 2, 1, 2, 2, 1, 1};
+    static final int[] REVISION = {0, 4, 4, 3, 4, 2, 2, 4, 2, 2, 1, 3, 2, 1, 1};
     /** How many kinds of mission there are; they come in turn, round and round. */
     static final int KINDS = 14;
 
@@ -1434,6 +1438,11 @@ final class World {
         }
     }
 
+    /** Whether the way to the charge in the bed is shown: the heap wedged fast and seen close, nothing set at it, no charge in her hands. */
+    private boolean chargeTaught() {
+        return rescue != null && rescue.heapSaid && rescue.wanting() && kit.held != Kit.CHARGE;
+    }
+
     /** Whether the way to the torch is shown: in the dark, on foot, nothing else in her hands, the torch not taken up. */
     private boolean torchTaught() {
         return indoors != null && indoors.dark && toss.tool != Toss.TORCH && kit.held == Kit.NONE && torchShowT < 0f;
@@ -1441,31 +1450,47 @@ final class World {
 
     /** Her button pulsing; a finger down on it, the ring out faint, the finger slid onto the torch and lifted, round again. */
     private void torchLesson(DrawList d) {
-        float t = time % LESSON;
-        d.badge(pieX, pieY, PIE_HALF, handSign(), 0.85f, 0.4f + 0.4f * (float) Math.sin(time * 6f));
+        pieBed = false;
         herRing();
-        float cx = Math.max(PIE_R + PIE_ITEM + 4f, Math.min(W - PIE_R - PIE_ITEM - 4f, pieX));
-        float cy = Math.max(PIE_R + PIE_ITEM + 60f, Math.min(h - PIE_R - PIE_ITEM - 10f, pieY));
+        ringLesson(d, pieX, pieY, handSign(), PIE_TORCH);
+    }
+
+    /** The bed's button pulsing, the finger showing the way to the charge in its ring. */
+    private void chargeLesson(DrawList d) {
+        pieBed = true;
+        bedRing(bedNow);
+        ringLesson(d, bedX, bedY, Badges.BED, PIE_KIT + Kit.CHARGE);
+        pieBed = false;
+    }
+
+    /**
+     * A ring's way shown (its things laid as pieItems has them): its button at (bx, by) pulsing; a
+     * finger down on it, the ring out faint, the finger slid onto the thing aimed at and lifted, round again.
+     */
+    private void ringLesson(DrawList d, float bx, float by, int sign, int thing) {
+        float t = time % LESSON;
+        d.badge(bx, by, PIE_HALF, sign, 0.85f, 0.4f + 0.4f * (float) Math.sin(time * 6f));
+        float cx = Math.max(PIE_R + PIE_ITEM + 4f, Math.min(W - PIE_R - PIE_ITEM - 4f, bx));
+        float cy = Math.max(PIE_R + PIE_ITEM + 60f, Math.min(h - PIE_R - PIE_ITEM - 10f, by));
         int aim = 0;
-        for (int k = 0; k < pieN; k++) if (pieItems[k] == PIE_TORCH) aim = k;
+        for (int k = 0; k < pieN; k++) if (pieItems[k] == thing) aim = k;
         float ring = t < LESSON_DOWN ? 0f : t < LESSON_RING ? (t - LESSON_DOWN) / (LESSON_RING - LESSON_DOWN) : t < LESSON_UP ? 1f : Math.max(0f, 1f - (t - LESSON_UP) / 0.3f);
         boolean there = t >= LESSON_SLID && t < LESSON_UP + 0.3f;
-        pieBed = false;
         for (int k = 0; k < pieN && ring > 0f; k++) {
             float a = pieAngle(k);
             float sx = cx + (float) Math.sin(a) * PIE_R, sy = cy - (float) Math.cos(a) * PIE_R;
             boolean hot = k == aim && there;
             d.badge(sx, sy, hot ? PIE_ITEM * 1.25f : PIE_ITEM, pieSign(pieItems[k]), (hot ? 0.95f : 0.5f) * ring, hot ? 0.45f : 0f);
         }
-        // the finger: from the button to the torch, eased; there a moment, then gone
+        // the finger: from the button to the thing, eased; there a moment, then gone
         if (t >= LESSON_UP + 0.3f) return;
         float a = pieAngle(aim);
         float tx = cx + (float) Math.sin(a) * PIE_R, ty = cy - (float) Math.cos(a) * PIE_R;
         float go = t < LESSON_RING ? 0f : Math.min(1f, (t - LESSON_RING) / (LESSON_SLID - LESSON_RING));
         go = go * go * (3f - 2f * go);
         float shown = Math.min(1f, t / 0.2f) * (t < LESSON_UP ? 1f : Math.max(0f, 1f - (t - LESSON_UP) / 0.3f));
-        lessonAt[0] = pieX + (tx - pieX) * go;
-        lessonAt[1] = pieY + (ty - pieY) * go;
+        lessonAt[0] = bx + (tx - bx) * go;
+        lessonAt[1] = by + (ty - by) * go;
         d.badge(lessonAt[0] + 5f, lessonAt[1] + 12f, 15f, Badges.ONE_FINGER, 0.95f * shown, t >= LESSON_DOWN && t < LESSON_UP ? 0.35f : 0f);
     }
 
@@ -1618,7 +1643,8 @@ final class World {
                 return;
             }
             if (pieSeen) d.badge(pieX, pieY, PIE_HALF, handSign(), 0.7f, 0f);
-            if (bedSeen) d.badge(bedX, bedY, PIE_HALF, Badges.BED, 0.7f, 0f);
+            if (bedSeen && chargeTaught()) chargeLesson(d);
+            else if (bedSeen) d.badge(bedX, bedY, PIE_HALF, Badges.BED, 0.7f, 0f);
             return;
         }
         // held: the ring, once the finger has stayed or gone out of the middle
@@ -1651,7 +1677,7 @@ final class World {
 
     /** What the bed of pickup p holds, as the job has it. */
     private void bedRing(Pickup p) {
-        int n = Kit.bed(tow != null, bedThings);
+        int n = Kit.bed(tow != null, rescue != null && rescue.wanting(), bedThings);
         pieN = 0;
         for (int k = 0; k < n; k++) pieItems[pieN++] = PIE_KIT + bedThings[k];
     }
@@ -1739,15 +1765,38 @@ final class World {
     private boolean kitReady() {
         if (kit.held == Kit.LADDER) return kit.wallBefore(runner, city);
         if (kit.held == Kit.ROPE) return tow != null && tow.nearTie(runner);
+        if (kit.held == Kit.CHARGE) {
+            chargeAt();
+            return rescue != null && rescue.wanting() && rescue.fall.atFace(chargeAt[0], chargeAt[1]);
+        }
         return false;
     }
 
     /** A tap with a thing of a bed in her hands: the ladder set up against the wall before her, the rope tied on. */
+    /** Where a charge in her hands is set: a step before her, on the ground. */
+    private void chargeAt() {
+        chargeAt[0] = runner.x + (float) Math.sin(runner.heading) * CHARGE_AHEAD;
+        chargeAt[1] = runner.z + (float) Math.cos(runner.heading) * CHARGE_AHEAD;
+    }
+
+    static final float CHARGE_AHEAD = 1.1f;
+    private final float[] chargeAt = new float[2];
+
     private void kitUse() {
         if (kit.held == Kit.LADDER) {
             if (kit.setLadder(runner, city)) {
                 host.sound(Synth.CLANG, 0.45f, 1.2f);
                 host.buzz(30);
+            } else host.sound(Synth.TOCK, 0.3f, 0.6f);
+        } else if (kit.held == Kit.CHARGE) {
+            chargeAt();
+            if (rescue != null && rescue.setCharge(chargeAt[0], city.ground(chargeAt[0], chargeAt[1]), chargeAt[1], runner.heading)) {
+                // set against the heap, its fuse lit: it does not go back to the bed
+                kit.held = Kit.NONE;
+                kit.from = null;
+                host.sound(Synth.LATCH, 0.5f, 0.9f);
+                host.sound(Synth.WHOOSH, 0.3f, 2f);
+                host.buzz(40);
             } else host.sound(Synth.TOCK, 0.3f, 0.6f);
         } else if (kit.held == Kit.ROPE) {
             if (tow != null && tow.tie(kit.from, runner, host)) {
@@ -2040,6 +2089,10 @@ final class World {
             free = true;
             folder = null;
             delivery = null;
+            // the pass open, a pickup is down in the quarry past it: the tow at once, on one screen;
+            // what the blast left lies in the pass a while yet
+            boolean chainTow = rescue != null && !replay && !passed(6);
+            if (rescue != null) debris = rescue;
             rescue = null;
             puppy = null;
             crowd = null;
@@ -2074,6 +2127,13 @@ final class World {
                 waiting = null;
                 chooseMission(9);
                 dispatch = new Dispatch(host, said).then(briefing()).story(9);
+                return;
+            }
+            if (chainTow) {
+                waiting = null;
+                chooseMission(6);
+                city.extra = debris;
+                dispatch = new Dispatch(host, said).then(briefing()).story(6);
                 return;
             }
             if (chainLight) {
@@ -2274,6 +2334,7 @@ final class World {
         }
         points();
         torchStep(dt);
+        debrisStep(dt);
         // in the collider hall the mallet is swung at the magnets there, never thrown
         toss.lent = indoors != null && indoors.collider;
         // a thing out of a pickup's bed in her hands: the tap is its, not the mallet's
@@ -2869,6 +2930,7 @@ final class World {
             }
         }
         if (rescue != null) rescue.ram(p, dt);
+        else if (debris != null) debris.ram(p, dt);
         int ramsWere = cars.rams;
         // the skid being put in its bed at the workshop: it stands
         boolean kept = mend != null && mend.holdsVan();
@@ -6103,7 +6165,15 @@ final class World {
 
     /** The call out a step on: the heap, and the mallet in hand at what lies in the pass. */
     private void rescueStep(float dt) {
-        rescue.update(dt, duty, driving, runner, city, host);
+        int got = rescue.update(dt, duty, driving, runner, city, host);
+        if (got == Rescue.AT_HEAP) {
+            letGo();
+            dispatch = new Dispatch(host, Lang.lines("rescue.heap", mission.round, null));
+        } else if (got == Rescue.BLAST) {
+            shake = 1f;
+            whiteOut = Math.max(whiteOut, 0.25f);
+            host.buzz(220);
+        }
         if (rescue.openedAt >= 0f && rescue.openedAt == rescue.clock) {
             letGo();
             like(OPEN_LIKES, OPEN_HEARTS);
@@ -6119,6 +6189,20 @@ final class World {
         }
     }
 
+    /** What a blast left in the pass: still lying there, in the way, till she is far off or a call out begins anew. */
+    private void debrisStep(float dt) {
+        if (debris == null) return;
+        float x = driving != null ? driving.x : runner.x, z = driving != null ? driving.z : runner.z;
+        float dx = x - debris.fall.px, dz = z - debris.fall.pz;
+        if (rescue != null || dx * dx + dz * dz > DEBRIS_GONE * DEBRIS_GONE) {
+            if (city.extra == debris) city.extra = null;
+            debris = null;
+            return;
+        }
+        if (city.extra == null) city.extra = debris;
+        if (city.extra == debris) debris.fall.update(dt, driving, runner, host);
+    }
+
     /** Over the frame, a call out: the clock and the pay, how far off where the way goes is, and what it is. */
     private void rescueFlat(DrawList d, Px f) {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, gold = 0xFFFFD45A, green = 0xFF46D27E;
@@ -6126,14 +6210,51 @@ final class World {
         String clock = clock(rs.over() ? rs.doneAt : rs.clock);
         shadowed(f, clock, W - PixelFont.width(clock, 2) - 8, 14, 2, cream, ink);
         if (rs.over()) {
+            // the way through just opened: said while the job's last moments go
+            caption(f, "rescue.open", 0.3f);
             return;
+        }
+        // at the heap on foot, wedged fast: the charge out of the bed, to the heap, then away from it
+        if (rs.heapSaid && rs.fall.sealed && driving == null) {
+            if (rs.chargeSet) {
+                wordAtTop(f, Lang.lines("goal.away", mission.round, null)[0], green, ink);
+                return;
+            }
+            if (kit.held == Kit.CHARGE) {
+                rs.face(runner.x, runner.z, goal);
+                wordAtTop(f, Lang.lines("goal.heap", mission.round, null)[0], green, ink);
+                placeMark(d, f, goal[0], goal[1], goal[2], Marks.PASS, Marks.OPEN);
+                return;
+            }
+            Pickup p = nearestPickup(runner.x, runner.z);
+            if (p != null) {
+                goal[0] = p.x - (float) Math.sin(p.heading) * 2.4f;
+                goal[1] = p.y + 2.2f;
+                goal[2] = p.z - (float) Math.cos(p.heading) * 2.4f;
+                wordAtTop(f, Lang.lines("goal.charge", mission.round, null)[0], green, ink);
+                if (!bedSeen) placeMark(d, f, goal[0], goal[1], goal[2], Marks.TRUCK, Marks.OPEN);
+                return;
+            }
         }
         if (!rs.goal(duty, driving, runner, goal)) return;
         String w = Lang.lines(rs.goalWord(), mission.round, null)[0];
         wordAtTop(f, w, green, ink);
-        placeMark(d, f, goal[0], goal[1], goal[2], rs.step == Rescue.PICKUP ? Marks.TRUCK : rs.step == Rescue.PASS ? Marks.PASS : Marks.VILLAGE, Marks.OPEN);
-        // the way through just opened: said a moment
-        if (rs.openedAt >= 0f && rs.clock - rs.openedAt < 3f) caption(f, "rescue.open", 0.3f);
+        placeMark(d, f, goal[0], goal[1], goal[2], rs.step == Rescue.PICKUP ? Marks.TRUCK : Marks.PASS, Marks.OPEN);
+    }
+
+    /** The duty pickup on land nearest (x, z), or none. */
+    private Pickup nearestPickup(float x, float z) {
+        Pickup best = null;
+        float bd = 1e18f;
+        for (Pickup p : duty.all) {
+            if (p.boat) continue;
+            float dd = (p.x - x) * (p.x - x) + (p.z - z) * (p.z - z);
+            if (dd < bd) {
+                bd = dd;
+                best = p;
+            }
+        }
+        return best;
     }
 
     /** Where the way goes, in a word at the top: large, unless it is too long to clear the corners. */
@@ -6576,12 +6697,12 @@ final class World {
         villagers.draw(d, city, eyeX, eyeZ);
         if (rescue != null) {
             rescue.draw(d, r, eyeX, eyeZ);
-        }
+        } else if (debris != null) debris.draw(d, r, eyeX, eyeZ);
         if (tow != null) tow.draw(d, time);
         // what the beds of the pickups near her hold
         if (duty != null) for (Pickup p : duty.all) {
             float dx = p.x - runner.x, dz = p.z - runner.z;
-            if (!p.boat && dx * dx + dz * dz < 45f * 45f) kit.inBed(d, p, tow != null);
+            if (!p.boat && dx * dx + dz * dz < 45f * 45f) kit.inBed(d, p, tow != null, rescue != null && rescue.wanting());
         }
         shore.draw(d, city, eyeX, eyeZ, time);
         if (archive != null) archive.draw(d, r);

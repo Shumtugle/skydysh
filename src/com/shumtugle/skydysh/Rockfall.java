@@ -6,10 +6,12 @@ import java.util.Random;
 /**
  * The rockfall in the pass: after the rains the slopes came down across the road, and the pass
  * is blocked by a heap of what fell, logs, stumps, posts, stones, a boulder or two and lumps of
- * clay, lying every which way. She clears it as she likes: blows of the mallet (the big pieces
- * split under them, the rest fly off), shoving with her own weight (she is stone: what is not too
- * heavy goes before her), the pickup driven into it. Once a way through as wide as the pickup is
- * open from one side of the heap to the other, the road to the village is open.
+ * clay, lying every which way, wedged fast. It stands as a wall: the pickup stops at it, the
+ * mallet and her weight do not stir it. A charge out of the pickup's bed, set at it, blows it
+ * apart: what lay in the middle of the road goes to dust, the rest is flung off to the sides. Once
+ * a way through as wide as the pickup is open from one side of the heap to the other, the road to
+ * the village is open. After the blast what is left lies loose: the mallet, her weight and the
+ * pickup move it as they would.
  */
 final class Rockfall implements Physics.Listener {
     // the kinds of piece
@@ -26,6 +28,13 @@ final class Rockfall implements Physics.Listener {
     static final float BLOW_REACH = 2.4f, BLOW = 6.2f, BLOW_MASS = 3000f;
     // the way through: so wide at least, nothing in it taller than so much, across so deep a stretch
     static final float LANE = 2.8f, LOW = 0.55f, DEPTH = 9f;
+    // wedged fast till the blast: so deep along the road from its middle, so high, a wall
+    static final float WALL_DEEP = 3.6f, WALL_HIGH = 4.4f;
+    // the blast: what lies so near the road's middle goes to dust; the rest flung aside so fast, up so fast
+    static final float BLAST_CLEAR = 2.9f, BLAST_ASIDE = 11f, BLAST_UP = 5.5f;
+
+    /** Wedged fast: nothing stirs it but a charge. */
+    boolean sealed = true;
 
     /** Where the heap lies: its middle on the road in the pass. */
     final float px, pz;
@@ -184,7 +193,7 @@ final class Rockfall implements Physics.Listener {
     void update(float dt, Pickup driving, Runner r, World.Host h) {
         host = h;
         float x = driving != null ? driving.x : r.x, z = driving != null ? driving.z : r.z;
-        if (Math.abs(x - px) < 70f && Math.abs(z - pz) < 110f) {
+        if (!sealed && Math.abs(x - px) < 70f && Math.abs(z - pz) < 110f) {
             world.step(Math.min(dt, 1f / 30f));
             tame();
             afterStep();
@@ -250,7 +259,7 @@ final class Rockfall implements Physics.Listener {
 
     /** The pickup about to move on: what it is going into fast enough is shoved off ahead and aside. */
     void ram(Pickup pk, float dt) {
-        if (Math.abs(pk.speed) < 2.5f) return;
+        if (sealed || Math.abs(pk.speed) < 2.5f) return;
         float sg = Math.signum(pk.speed), fx = (float) Math.sin(pk.heading) * sg, fz = (float) Math.cos(pk.heading) * sg;
         float v = Math.abs(pk.speed), reach = Pickup.ENDS + v * dt;
         float cx = pk.x + fx * reach, cz = pk.z + fz * reach;
@@ -284,6 +293,24 @@ final class Rockfall implements Physics.Listener {
      * is knocked off, the heavier the slower; the long pieces split under it.
      */
     void strike(float bx, float bz, float fx, float fz) {
+        if (sealed) {
+            // wedged fast: the blow rings off it, a puff of dust and chips, nothing moves
+            Piece near = null;
+            float nd = 1e9f;
+            for (Piece p : pieces) {
+                Body b = p.b;
+                float dx = b.px - bx, dz = b.pz - bz, dd = (float) Math.sqrt(dx * dx + dz * dz) - Math.max(b.hx, b.hz);
+                if (dd < nd && dx * fx + dz * fz > -0.3f && b.minY < 3.2f) {
+                    nd = dd;
+                    near = p;
+                }
+            }
+            if (near != null && nd < BLOW_REACH) {
+                dust(near.b.px, near.b.py, near.b.pz, near.color, 4, true);
+                hit++;
+            }
+            return;
+        }
         Piece big = null;
         float bigD = 1e9f;
         for (int i = pieces.size() - 1; i >= 0; i--) {
@@ -315,6 +342,7 @@ final class Rockfall implements Physics.Listener {
      * round. Pressed against, a piece goes before what presses it: she is stone, and heavy.
      */
     public boolean push(float[] q, float rr, float feet) {
+        if (sealed) return wall(q, rr, feet);
         boolean any = false;
         for (Piece p : pieces) {
             Body b = p.b;
@@ -347,6 +375,54 @@ final class Rockfall implements Physics.Listener {
     }
 
     /** Which way across is off the road for a piece: toward the side of the road it lies on. */
+    /** Wedged fast: across the road through the pass, a wall as deep as the heap; true if (q) was in it. */
+    private boolean wall(float[] q, float rr, float feet) {
+        if (feet > WALL_HIGH) return false;
+        float dz = q[1] - pz, reach = WALL_DEEP + rr;
+        if (Math.abs(dz) >= reach || Math.abs(q[0] - City.routeX(q[1])) > City.CLIFF_FOOT + 1f) return false;
+        q[1] = pz + (dz < 0f ? -reach : reach);
+        return true;
+    }
+
+    /** Whether a charge set at (x, z) lies against it: before its face, on either side, on the road. */
+    boolean atFace(float x, float z) {
+        return Math.abs(Math.abs(z - pz) - WALL_DEEP) < 2.2f && Math.abs(x - City.routeX(z)) < City.CLIFF_FOOT + 0.5f;
+    }
+
+    /**
+     * A charge gone off at (bx, by, bz): loose from now on; what lies near the road's middle is
+     * dust, the rest flung off to the side of the road it lies on, and up, and away from the charge.
+     */
+    void blast(float bx, float by, float bz) {
+        sealed = false;
+        for (int i = pieces.size() - 1; i >= 0; i--) {
+            Piece p = pieces.get(i);
+            Body b = p.b;
+            float mid = City.routeX(b.pz);
+            if (Math.abs(b.px - mid) < BLAST_CLEAR) {
+                dust(b.px, b.py, b.pz, p.color, 6, true);
+                world.remove(b);
+                pieces.remove(i);
+                continue;
+            }
+            float dx = b.px - bx, dz = b.pz - bz, l = (float) Math.sqrt(dx * dx + dz * dz) + 1e-3f;
+            float k = Math.min(1f, (float) Math.sqrt(BLOW_MASS / b.mass));
+            world.wake(b);
+            free(p);
+            b.vx = aside(b) * BLAST_ASIDE * (0.6f + 0.4f * k) + dx / l * 2f;
+            b.vz = dz / l * 4f * k;
+            b.vy = BLAST_UP * (0.5f + 0.5f * k);
+            b.wx = dz / l * 2f;
+            b.wz = -dx / l * 2f;
+        }
+        // the cloud of it: dust all across the pass, and chips flung
+        for (int k = 0; k < 14; k++) {
+            float a = k * 0.45f;
+            dust(bx + (float) Math.cos(a) * 2.5f, by + 0.6f + (k % 3) * 0.8f, bz + (float) Math.sin(a) * 2.5f, 0x8F8576, 6, k % 2 == 0);
+        }
+        hit++;
+    }
+
     private static float aside(Body b) {
         float d = b.px - City.routeX(b.pz);
         return Math.abs(d) < 0.15f ? (b.id % 2 == 0 ? 1f : -1f) : Math.signum(d);

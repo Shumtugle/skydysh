@@ -362,6 +362,16 @@ public final class Stand implements World.Host {
             r.put(x, world.city.ground(x, z, 100f, 0f), z, p.length > 3 ? f(p[3]) : r.heading);
             r.recenter();
             step();
+        } else if (c.equals("carat")) {
+            // carat X Z RADIANS: the pickup she drives put down there, still, as it is (what it tows comes after it)
+            Pickup q = world.driving;
+            if (q != null) {
+                q.x = f(p[1]);
+                q.z = f(p[2]);
+                q.heading = f(p[3]);
+                q.speed = 0f;
+            }
+            step();
         } else if (c.equals("topass")) {
             // topass [METERS]: at the wheel on the road out, so far short of the heap in the pass
             float back = p.length > 1 ? f(p[1]) : 40f;

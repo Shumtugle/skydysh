@@ -253,10 +253,10 @@ final class City implements Ground {
     }
 
     /**
-     * The quarry: cut into the foot of the ridge west of the road to the pass, a floor of gravel
+     * The quarry: past the pass, in the fields east of the road to the village, a floor of gravel
      * open to the south and faces of rock stepped up round it on the other three sides.
      */
-    static final float QUARRY_X = -100f, QUARRY_Z = 866f, QUARRY_HX = 22f, QUARRY_HZ = 18f;
+    static final float QUARRY_X = 134f, QUARRY_Z = 1041f, QUARRY_HX = 22f, QUARRY_HZ = 18f;
 
     /** Whether (x, z) is in the quarry, or within so far of it. */
     static boolean inQuarry(float x, float z, float margin) {
@@ -672,6 +672,9 @@ final class City implements Ground {
     /** Something more in the way than the town's own walls (what blocks the pass on a call out); none, none. */
     interface Extra {
         boolean push(float[] p, float r, float feet);
+
+        /** Whether it stands fast as a wall (what drives at it slows for it), not loose to be shoved off. */
+        boolean wall();
     }
 
     Extra extra;

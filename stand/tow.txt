@@ -1,4 +1,4 @@
-# The tow: the quarry at the foot of the ridge, the brum's pickup sunk in its mud, the brum (slate
+# The tow: the quarry past the pass, east of the road to the village, the brum's pickup sunk in its mud, the brum (slate
 # grey) at its wheel; a pickup stopped by it; out of it, at its bed, the bed's ring held open (the
 # rope at the top, the ladder below), the rope taken, carried coiled to the brum's pickup and tied
 # on with a tap (1.4.9); back at the wheel, towed out, the brum's pickup following
@@ -11,14 +11,14 @@ dispatch
 wait 7
 shot w0
 close
-at -100 838 0
+at 134 1013 0
 wait 1
 shot w1
-drivein -100 860 3.1416
+drivein 134 1035 3.1416
 wait 1.5
 shot w2
 getout
-at -100 862.9 0
+at 134 1037.9 0
 wait 0.6
 pie bed
 wait 0.4
@@ -27,7 +27,7 @@ pie move 0 -48
 pie up 0 -48
 wait 0.3
 shot w2b
-at -100 865.6 0
+at 134 1040.6 0
 wait 0.3
 wait 0.2
 wait 0.4
@@ -35,15 +35,17 @@ where2
 pie down
 pie up
 shot w2c
-drivein -100 860 3.1416
+at 135.5 1035 -1.5708
+wait 1.6
 wait 0.5
 where2
 pedal 3 0 0 0.25 wa
 wait 0.3
 shot w3
-drivein -3.4 640 3.1416
+carat -3.4 640 3.1416
+wait 0.5
 pedal 2 0 0 0.25 wb
-drivein -3.4 610 3.1416
+carat -3.4 610 3.1416
 wait 0.6
 shot w4
 wait 4

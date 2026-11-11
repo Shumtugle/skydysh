@@ -337,11 +337,13 @@ well, its people about it: walking to and fro, talking in twos, at the well, on 
 one she comes up to stops and turns to look at her. A duty pickup up the road (it keeps along
 the road's bends by itself). In the pass the slope has come down across the road: a heap of
 logs, stumps, fallen posts, planks, stones, slabs, lumps of clay and a boulder or two, lying
-every which way. She clears it as she likes: blows of the mallet (what is within reach flies off
-to the road's side, a long piece splits under the blow), her own weight (she is stone: walking
-into it, what is not too heavy goes before her and aside), the pickup driven into it. Once a
-way through as wide as the pickup is open across the whole heap (or the pickup has got through)
-the road is open, and on to the village square, at the wheel or on foot.
+every which way, wedged fast: it stands like a wall, the pickup stops at it, and neither the
+mallet nor her weight stirs it. The dispatcher comes on: out of the pickup, and the bed's button
+pulsing, a finger showing the way to the charge in its ring. The charge carried up to the heap
+and stood by a moment is set, its fuse lit; she stands clear; the blast, a flash, the frame
+shaking, what lay in the middle of the road gone to dust and the rest flung to the sides. Once a
+way through as wide as the pickup is open the road is open, and the job done there; at once the
+tow comes on, the same screen. What the blast left lies in the pass till she is far off.
 
 The fifth, the puppy at sea: a call from the beach east of home, past the store, where a crowd
 stands at the water's edge looking out at a puppy too tired to swim back. No clock on
@@ -350,8 +352,8 @@ into the water, right up to it, and she takes it; back to the pickup and to the 
 house with a turquoise band and a paw over its door, three streets up and a block east of home,
 the bay painted on the street before it.
 
-The sixth, the tow: out of town at the foot of the ridge, west of the road to the pass, an old
-quarry cut into the hill, gravel at its bottom and steps of rock round it; a brum's pickup has
+The sixth, the tow, straight after the call out: past the pass, in the fields east of the road
+to the village, an old quarry, gravel at its bottom and steps of rock round it; a brum's pickup has
 gone down into it and sits sunk in the mud, the brum (slate grey) at its wheel. A duty pickup up
 the road out and to it; stopped by it a moment, nose or tail to it, and a rope goes on between
 them; then back, the brum's pickup following on the rope, to the brums' workshop at the town's

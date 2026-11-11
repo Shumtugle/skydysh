@@ -1,8 +1,9 @@
 package com.shumtugle.skydysh;
 
 /**
- * The tow: out past the town, at the foot of the ridge west of the road to the pass, a brum's
- * pickup has gone down into the quarry and sits in the mud at its bottom, and cannot get out.
+ * The tow: out past the town and through the pass, in the fields east of the road to the village,
+ * a brum's pickup has gone down into the quarry and sits in the mud at its bottom, and cannot get
+ * out. It comes straight after the call out, the pass just open.
  * She takes a duty pickup there and stops by it; a rope goes from one to the other; she tows it
  * out and back to the brums' workshop at the town's last street, by the road out, and leaves it in
  * the bay painted before the workshop's gate. Then home.

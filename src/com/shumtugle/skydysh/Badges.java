@@ -31,7 +31,9 @@ final class Badges {
     static final int SAVE = 30;
     // a torch: its body low on the left, the wider head up to the right, three rays out of it
     static final int TORCH = 31;
-    static final int COUNT = 32, CELLS = 6, SIZE = 160;
+    // a charge: three sticks bound with a band, the fuse curling up out of them, a spark at its end
+    static final int CHARGE = 32;
+    static final int COUNT = 33, CELLS = 6, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -201,6 +203,15 @@ final class Badges {
                 float shaft = box(x, y, 0f, 0.6f, 0.11f, 0.26f);
                 float head = poly(x, y, -0.42f, 0.36f, 0f, -0.06f, 0.42f, 0.36f);
                 return Math.min(tray, Math.min(shaft, head));
+            }
+            case CHARGE: {
+                // three sticks side by side, a band across them cut out; the fuse up to the right; its spark
+                float sticks = min(rbox(x, y, -0.3f, -0.12f, 0.12f, 0.5f, 0.06f), rbox(x, y, 0f, -0.12f, 0.12f, 0.5f, 0.06f),
+                        rbox(x, y, 0.3f, -0.12f, 0.12f, 0.5f, 0.06f));
+                sticks = Math.max(sticks, -box(x, y, 0f, 0.05f, 0.5f, 0.04f));
+                float fuse = Math.min(seg(x, y, 0f, 0.38f, 0.18f, 0.6f, 0.04f), seg(x, y, 0.18f, 0.6f, 0.42f, 0.66f, 0.04f));
+                float spark = circle(x, y, 0.55f, 0.7f, 0.12f);
+                return min(sticks, fuse, spark);
             }
             case TORCH: {
                 // along the diagonal: the body, ridged for the grip; the head wider; the light out of its glass
