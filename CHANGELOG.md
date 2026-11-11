@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.23
+
+- Home's list shows the stories won by name, in among the rest, while there is room for them
+  all (ten jobs); only past that do they go onto a screen of their own. One story won no longer
+  hides behind a line of its own.
+- The likes stand over the list's head, not between it and the list.
+
 ## 1.4.22
 
 - The delivery has the dispatcher on the way. At the wheel for the first time in a game, how a

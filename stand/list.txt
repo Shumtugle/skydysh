@@ -1,0 +1,26 @@
+# Home's list with few stories won (the hunt, the folder, the delivery): the next story at the top, the delivery by name in the list, the games under it, the likes over the head; the delivery picked from it, its briefing. Then every job won: the stories folded onto a line of their own, the list still on the screen. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 14
+keep paid 14
+keep likes 674000
+keep where 0
+restart
+free
+sofa
+wait 7
+listsign
+wait 3
+shot l0
+pick 3
+wait 3
+shot l1
+keep kinds 32766
+restart
+free
+sofa
+wait 7
+listsign
+wait 3
+shot l2

@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.22";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.23";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -4767,6 +4767,8 @@ final class World {
     private String[] balanced(String[] h) {
         if (likes <= 0 || h.length == 0) return h;
         String sum = Lang.lines("home.sum", 0, null)[0].replace("{sum}", grouped(likes));
+        // a head of one line (what the list is): the sum over it
+        if (h.length == 1) return new String[] {sum, h[0]};
         boolean gap = h.length > 1 && h[1].isEmpty();
         String[] out = new String[h.length + (gap ? 2 : 1)];
         int at = gap ? 2 : 1;
@@ -4817,13 +4819,23 @@ final class World {
             l.add(Lang.lines("list.undone", 0, null)[0].replace("{job}", Lang.lines("kind." + k, 0, null)[0]));
             p.add(k);
         }
-        // the stories won: on a screen of their own, each to be played again from its beginning
-        for (int k = 1; k <= KINDS; k++)
-            if (!game(k) && (kindsWon & (1 << k)) != 0) {
-                l.add(Lang.lines("list.stories", 0, null)[0]);
-                p.add(Dispatch.STORIES);
-                break;
-            }
+        // the stories won, each to be played again from its beginning: by name in the list while
+        // the list has room for them all, the newest at the top; past that, on a screen of their own
+        int won = 0, rest = (kindsWon & (1 << 7)) != 0 ? 1 : 0;
+        for (int k = 1; k <= KINDS; k++) {
+            if (!game(k) && (kindsWon & (1 << k)) != 0) won++;
+            if (game(k) && ((kindsWon & (1 << k)) != 0 || k == next || (kindsSkipped & (1 << k)) != 0)) rest++;
+        }
+        if (won > 0 && p.size() - h.length - 1 + won + rest <= LIST_ROOM) {
+            for (int k = KINDS; k >= 1; k--)
+                if (!game(k) && (kindsWon & (1 << k)) != 0) {
+                    l.add(Lang.lines("kind." + k, 0, null)[0]);
+                    p.add(k);
+                }
+        } else if (won > 0) {
+            l.add(Lang.lines("list.stories", 0, null)[0]);
+            p.add(Dispatch.STORIES);
+        }
         if ((kindsWon & (1 << 7)) != 0) {
             l.add(Lang.lines("kind.panel", 0, null)[0]);
             p.add(Dispatch.SOLO);
@@ -4841,6 +4853,9 @@ final class World {
         for (int k = 0; k < out.length; k++) out[k] = p.get(k);
         return out;
     }
+
+    /** How many jobs home's list shows by name before the stories won go onto a screen of their own. */
+    static final int LIST_ROOM = 10;
 
     /** What each line of the stories done picks, as the screen was last made. */
     private int[] storyPicks;
