@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.19
+
+- The folder handed over in the secretariat no longer leaves her standing there for good: she
+  was kept still for the handing and never let go, the eye with her.
+- A finger held down while a screen came on over the frame, and lifted under it, is let go all
+  the same: before, every touch after it was taken for a second finger, and she heard none.
+
 ## 1.4.18
 
 - Start over is gone from home's list, with its question; nothing played is let go any more.

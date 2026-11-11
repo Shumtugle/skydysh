@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.18";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.19";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -929,6 +929,20 @@ final class World {
     private float pressedAt = -9f;
 
     void touch(int type, int id, float x, float y) {
+        fingered(type, id, x, y);
+        // the leading finger lifted while something over the frame had it (a screen that came on
+        // under it): lifted all the same, or every finger after it would be taken for a second one
+        if (type == UP && id == leadFinger) {
+            leadFinger = -1;
+            buttonHeld = false;
+            if (classicDown) {
+                classicDown = false;
+                runner.touch(UP, x, y);
+            }
+        }
+    }
+
+    private void fingered(int type, int id, float x, float y) {
         // the ring of her tools, out of its button over her mallet: the finger is its own till lifted
         if (pieTouch(type, id, x, y)) return;
         // the navigator touched: folded or opened, wherever she is
@@ -2062,6 +2076,7 @@ final class World {
                 boolean wasHanding = folder.handing(), wasGiven = folder.delivered();
                 folder.back(dt, runner, indoors, host);
                 if (folder.handing()) handOver(wasHanding);
+                else if (wasHanding) runner.held = false;
                 // in the clerk's hands: the dispatcher comes on, the job done, and home now
                 if (folder.delivered() && !wasGiven) {
                     host.sound(Synth.CHIME, 0.6f, 1f);

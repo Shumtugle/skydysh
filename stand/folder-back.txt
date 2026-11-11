@@ -1,4 +1,4 @@
-# The folder's way back: taken on its roof, the dispatcher says it is safe and to take it to the town hall; on the roof with it, the town hall's word at the top; before the town hall, its mark; in its hall, the secretariat's word; at the desk the folder going from her hands into the clerk's, her words; the dispatcher again, the job done, home now; out of the room in her head. In Russian.
+# The folder's way back: taken on its roof, the dispatcher says it is safe and to take it to the town hall; on the roof with it, the town hall's word at the top; before the town hall, its mark; in its hall, the secretariat's word; at the desk the folder going from her hands into the clerk's, her words; the dispatcher again, the job done, home now; out of the room in her head; and she walks off again, the eye hers. In Russian.
 screen 1096 2560
 wait 0.4
 lang ru
@@ -33,4 +33,11 @@ wait 3
 shot r7
 close
 wait 1
+where
 shot r8
+wait 3
+finger down 0 137 450
+wait 1.5
+finger up 0 137 450
+where
+shot r9

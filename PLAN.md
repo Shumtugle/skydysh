@@ -129,6 +129,7 @@ release, each seen on the stand before the phone.
 - 1.4.16 High footbridges over the canal where its streets stop.
 - 1.4.17 The folder found taken back to the town hall's secretariat, the dispatcher before and after.
 - 1.4.18 Stories done played again from home's list; start over gone, nothing let go.
+- 1.4.19 Free again after handing the folder over; a finger lifted under a screen let go.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.
