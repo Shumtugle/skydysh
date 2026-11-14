@@ -10,7 +10,7 @@
   or drawn right, back. The cross at the top or the way back shuts it; it opens again where it
   was left.
 - The book is in English and in Russian, as the game is; its words are an asset of the language
-  (book/en.txt, book/ru.txt), kept up after every job and every large change. No author's name.
+  (lang/book-en.txt, lang/book-ru.txt), kept up after every job and every large change. No author's name.
 
 ## 1.4.31
 

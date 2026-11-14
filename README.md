@@ -27,7 +27,7 @@ book open in both hands; a sign floats over him, and touched, the book opens ove
 frame: "Freedie of Skydysh", the town, the workshop she was made in, her home, her work, the
 people she knows, and every one of her stories, those still to come as well. A leaf at a time,
 turned by a touch on its right (back, on its left) or by a finger drawn across; it opens again
-where it was left. Its words are kept as an asset in each language (`assets/book/`), brought up
+where it was left. Its words are kept as a module of each language (`assets/lang/book-*.txt`), brought up
 to date with every job and every large change.
 
 It opens, at every start, with a flight in from the sea over the beach and the square to the

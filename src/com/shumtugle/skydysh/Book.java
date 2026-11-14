@@ -9,7 +9,7 @@ package com.shumtugle.skydysh;
  * under it); on the left, or drawn to the right, back. The cross at the top closes it, as does
  * the way back.
  *
- * Its words are an asset of the language (book/xx.txt): a line "TITLE=..." for the cover, a line
+ * Its words are a module of the language (lang/book-xx.txt): a line "TITLE=..." for the cover, a line
  * begun with "# " for a chapter's heading, the rest paragraphs, an empty line between them.
  */
 final class Book {
@@ -77,8 +77,8 @@ final class Book {
 
     /** The book in the language now, from its asset (null: there is none). */
     static Book open(World.Host host, String lang) {
-        byte[] b = host.asset("book/" + lang + ".txt");
-        if (b == null) b = host.asset("book/en.txt");
+        byte[] b = host.asset("lang/book-" + lang + ".txt");
+        if (b == null) b = host.asset("lang/book-en.txt");
         if (b == null) return null;
         try {
             return new Book(new String(b, "UTF-8"));
