@@ -42,8 +42,11 @@ At home, on the sofa, the game is kept and the report read (its time against the
 kept on the phone); then the screen offers every kind of job, the newest at the top, none pushed
 on her: no next in turn, no round of them. A sign of the way back floats over the screen:
 touched, it lets the screen go and she gets up, the town hers as long as she likes. A job is
-called by its kind, not by a number.
-Some jobs have points on the way that need not be played again: the folder found, for one. Come to,
+called by its kind, not by a number. Some follow one another at once, the report and the next on
+one screen where the first ends: the glass, the port next door to the store, the concert hall
+(after which she wakes at home); the puppy, the archive, the landing gear.
+Some jobs have points on the way that need not be played again: the folder found, for one, and
+the start of a job begun at once where the one before it ended. Come to,
 a point is kept (a disk shows a moment by the pause); a game closed in the job opens there, and
 under the pause the job can be taken up there again, its clock as it was then.
 

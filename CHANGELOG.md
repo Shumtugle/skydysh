@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.4.31
+
+- The jobs come in a new order: the hunt, the folder; the glass, then the port, then the concert
+  hall; the pass, the quarry, the light; the puppy, then the archive, then the landing gear; the
+  navigator, the hot heads, the black cherry.
+- Two days with no way home between: the glass done at the store, the dispatcher's report and the
+  port next door on one screen; the containers put in order, the report and the concert hall on one
+  screen, she down at the foot of the crane's tower; the puppy with the vets, the report and the
+  archive on one screen. No "head home" where the next follows at once.
+- A job begun at once where the one before it ended keeps a point where it began: a game closed in
+  it opens there, not on the sofa, and under the pause it can be taken up there again. So for the
+  port, the concert hall, the archive, the landing gear and the light.
+
 ## 1.4.30
 
 - The helicopter has its sign, as a pickup has: it floats over it whenever she may get in;

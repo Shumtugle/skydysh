@@ -1,8 +1,8 @@
 # The puppy at sea (1.4.29): the crowd at the water's edge alive about it, shifting, walking,
 # talking in twos, calling out with cupped hands, wading in to the knee; seen a while. Then at the
 # vets' with the puppy: driven into the bay, out of the pickup, led to the door, the glass doors
-# sliding open, in through them, shut behind her; the dispatcher: done, home now. Out on the
-# pavement after, the way home hers. In Russian.
+# sliding open, in through them, shut behind her; out on the pavement; the report and, on the same
+# screen, the archive next (1.4.31). In Russian.
 screen 1096 2560
 wait 0.4
 lang ru

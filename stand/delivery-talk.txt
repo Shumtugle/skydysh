@@ -1,4 +1,4 @@
-# The delivery with the dispatcher on the way: at the wheel for the first time, how a pickup is driven; near the factory's gate, its bay to be stood in; the crates on; near the store's gate, its bay; the crates off, the job done, home now; out of the room in her head, the town hers. In Russian.
+# The delivery with the dispatcher on the way: at the wheel for the first time, how a pickup is driven; near the factory's gate, its bay to be stood in; the crates on; near the store's gate, its bay; the crates off, the job done; the report and, on the same screen, the port next door (1.4.31). In Russian.
 screen 1096 2560
 wait 0.4
 lang ru

@@ -1,0 +1,61 @@
+# One day without home between (1.4.31): the glass at the store, then at once on the same screen
+# the port next door; up the crane, the field put in order; the report and the concert hall on one
+# screen, down at the foot of the tower; the save disk by the pause at each start. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2
+restart
+mission 3
+close
+wait 0.5
+drivein -160 2.4 -1.5708
+wait 3.5
+shot d0
+close
+wait 0.3
+drivein -200 2.4 -1.5708
+wait 3.5
+shot d1
+close
+drivein -224 2.4 1.5708
+wait 3.4
+delivery
+drivein 300 2.4 1.5708
+wait 0.3
+drivein 330 2.4 1.5708
+wait 3.5
+shot d2
+close
+drivein 352 2.4 1.5708
+wait 3.4
+delivery
+wait 3.5
+wait 2
+shot c0
+wait 3
+shot c1
+where
+close
+wait 0.5
+shot c2
+at 392 2 0.6
+wait 1
+at 398.5 12 0
+ladder street 1
+wait 7
+crane
+nearly
+bay 6
+wait 0.3
+bay 5
+wait 3
+crane
+shot c3
+wait 3
+shot c4
+where
+close
+wait 1
+where
+shot c5

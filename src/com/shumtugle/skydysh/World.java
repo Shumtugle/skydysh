@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.30";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.31";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -184,6 +184,7 @@ final class World {
     private void begin(float x, float z) {
         if (driving != null) getOut();
         free = false;
+        chainPoint = false;
         lost = false;
         forgetPoint();
         // where it began, for a try again to begin there too
@@ -2137,6 +2138,8 @@ final class World {
             said = Dispatch.timed(said, record(mission.round, doneTime()), doneTime());
             // a story won before: played again, it leads on to nothing and leaves the world as it was
             boolean replay = replaying();
+            int chained = chainedAfter();
+            boolean fromCrane = port != null && craning;
             kindsWon |= 1 << kindOf(mission.round);
             host.saveInt(SAVE_KINDS, kindsWon);
             kindsSkipped &= ~(1 << kindOf(mission.round));
@@ -2182,7 +2185,17 @@ final class World {
             if (chain) {
                 waiting = null;
                 chooseMission(9);
+                chainPoint = true;
                 dispatch = new Dispatch(host, said).then(briefing()).story(9);
+                return;
+            }
+            if (chained != 0) {
+                // down from the crane first, to the foot of its tower: the hall is across the town
+                if (fromCrane) leaveCrane();
+                waiting = null;
+                chooseMission(chained);
+                chainPoint = true;
+                dispatch = new Dispatch(host, said).then(briefing()).story(chained);
                 return;
             }
             if (chainTow) {
@@ -2195,6 +2208,7 @@ final class World {
             if (chainLight) {
                 waiting = null;
                 chooseMission(14);
+                chainPoint = true;
                 dispatch = new Dispatch(host, said).then(briefing()).story(14);
                 return;
             }
@@ -3989,7 +4003,7 @@ final class World {
             r.put(doorX + home * 1.5f, city.ground(doorX, outZ), outZ, home * (float) Math.PI * 0.5f);
             r.recenter();
             host.sound(Synth.CHIME, 0.6f, 1f);
-            dispatch = new Dispatch(host, Lang.lines("puppy.done", mission.round, null));
+            if (chainedAfter() == 0) dispatch = new Dispatch(host, Lang.lines("puppy.done", mission.round, null));
         }
     }
 
@@ -4738,10 +4752,28 @@ final class World {
         return kind == 1 || kind == 2 || kind == 10;
     }
 
+    /**
+     * The kinds in the order they come: the hunt, the folder; the glass, then at once the port and
+     * the concert hall; the pass, the quarry, the light; the puppy, then at once the archive and the
+     * landing gear; the navigator, the hot heads, the black cherry.
+     */
+    static final int[] ORDER = {1, 2, 3, 10, 7, 4, 6, 14, 5, 8, 9, 11, 12, 13};
+
     /** The next job to come: the first kind, in order, not yet done (0: none left). */
     int nextKind() {
-        for (int k = 1; k <= KINDS; k++) if (open(k)) return k;
+        for (int k : ORDER) if (open(k)) return k;
         return 0;
+    }
+
+    /**
+     * The job that follows the one now at once, on the dispatcher's screen where it ends, with no
+     * way home between (0: none): the port after the glass, the concert hall after the port, the
+     * archive after the puppy. Not after one played again, nor to one done or put by.
+     */
+    private int chainedAfter() {
+        if (replaying()) return 0;
+        int next = delivery != null ? 10 : port != null ? 7 : puppy != null ? 8 : 0;
+        return next != 0 && !passed(next) ? next : 0;
     }
 
     /** Whether a kind is still to be played in its turn: neither won nor put by; the landing gear only after the archive. */
@@ -4775,8 +4807,15 @@ final class World {
     private int pointNow() {
         if (free || over()) return 0;
         if (folder != null) return folder.point();
-        return 0;
+        return chainPoint ? POINT_CHAINED : 0;
     }
+
+    /**
+     * A job begun at once where the one before it ended (no way home between) is taken up again
+     * from where it began: that is its point. Its own clock from nothing, the job as new.
+     */
+    static final int POINT_CHAINED = 1;
+    private boolean chainPoint;
 
     /** Where the job is taken up again from at its point now, into out (x, z, heading): the job's own place, or where she stands. */
     private void pointWhere(float[] out) {
@@ -4864,8 +4903,9 @@ final class World {
         nextSlot = 0;
         struckSeen = 0;
         host.saveInt(SAVE_MISSION, n);
-        boolean taken = folder != null && folder.fromPoint(p, clock);
+        boolean taken = folder != null ? folder.fromPoint(p, clock) : p == POINT_CHAINED;
         if (!taken) return;
+        chainPoint = folder == null;
         runner.put(x, Math.max(y, city.ground(x, z, y + 0.5f, 0f)), z, hd);
         runner.recenter();
         runner.update(0f, city, cars, walkers);
@@ -5514,7 +5554,7 @@ final class World {
             say = "delivery.car";
         } else if (got == Delivery.AT_FACTORY) say = "delivery.factory";
         else if (got == Delivery.AT_STORE) say = "delivery.store";
-        else if (got == Delivery.DELIVERED) say = "delivery.done";
+        else if (got == Delivery.DELIVERED && chainedAfter() == 0) say = "delivery.done";
         if (say == null) return;
         if (got == Delivery.DELIVERED) host.sound(Synth.CHIME, 0.6f, 1f);
         letGo();
