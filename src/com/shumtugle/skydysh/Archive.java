@@ -74,9 +74,19 @@ final class Archive {
         return Math.min(1f, (handT - PASS_FROM) / (PASS_TO - PASS_FROM));
     }
 
-    /** Whether the clerk holds it out still (her hands out till it has gone into the other's). */
+    /** Whether the clerk holds it out still (her hands out till the cut puts it in the other's). */
     boolean giverHolds() {
-        return step <= DESK || step == HAND && handT < GIVE_TO;
+        return step <= DESK || step == HAND && handT < GIVE_FROM + (GIVE_TO - GIVE_FROM) * World.HAND_CUT;
+    }
+
+    /**
+     * Whose hands the eye has cut to, the folders handed over: none yet (0), the desk's (the
+     * clerk on duty's, World.CUT_TO_DESK), hers (World.CUT_TO_HER).
+     */
+    int cutTo() {
+        if (step == HAND) return handT >= GIVE_FROM + (GIVE_TO - GIVE_FROM) * World.HAND_CUT ? World.CUT_TO_HER : 0;
+        if (step == GIVE) return passing() >= World.HAND_CUT ? World.CUT_TO_DESK : 0;
+        return 0;
     }
 
     /** The folder on its way from the clerk's hands to hers: so far (0 to 1), or -1 if not now. */

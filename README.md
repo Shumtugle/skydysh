@@ -394,9 +394,13 @@ the skid carried to the helicopter and put on; then she flies it herself, the pi
 to the pad on the town hall's roof. Two sticks under the thumbs: the left one up and down for
 height (let go, it holds it), aside to turn; the right one up and down to go ahead and back,
 aside to go sideways. It stands on whatever is level under it, a street or a roof, and is
-stopped by what is higher than it; it does not come down on the sea. After that it is hers:
-come to its door and stand a moment, and she is at the controls; set down, the button low on the
-right lets her out, and it stays where she left it, kept with the game.
+stopped by what is higher than it; it does not come down on the sea. Mended, she steps back
+from its side and it waits for her: a sign floats over it, as over a pickup; touched, she goes to its
+door and gets in (or come to the door and stand a moment). The first time at the controls the
+dispatcher says how the sticks go; each time a word or two shows over each stick for a moment.
+After that it is hers, with the same sign over it; set down, the button low on the right lets her
+out, and it stays where she left it, kept with the game. The eye behind it stays clear of houses
+and trees: with no room, it rises and looks down on it.
 
 The tenth, the containers: a game. In the port on the shore road, past the store, a yard of
 containers behind a fence and a gantry crane over it; up the ladder of the tower at the fence's

@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.4.30
+
+- The helicopter has its sign, as a pickup has: it floats over it whenever she may get in;
+  touched, she goes to its door and gets in.
+- Mended, she does not get in by herself any more: she steps back from its side, three meters past
+  its door and clear of the blades, and is seen from behind, she, the helicopter and the sign over
+  it all in the frame. In when the sign is touched.
+- The first time at the controls the dispatcher says how the two sticks go; every time, for a
+  moment, a word or two over each stick says what it does.
+- The eye behind the helicopter no longer goes into a house behind it (the frame was a wall, all
+  grey, the moment she got in at the archive): it keeps in front of whatever stands behind, and
+  with little room it rises and looks down on the helicopter.
+- Hand-overs are two shots now, not a flight: the folder (or the box) in the giver's hands, then,
+  from the next angle in nearer, in the taker's. At the town hall both ways, at the archive's
+  counter, at the laboratory's.
+- No lights at the last crossings by the woods: their posts were never there, and the lamps hung
+  in the air (and cars stopped for them).
+
 ## 1.4.29
 
 - The crowd at the water's edge for the puppy is bigger and alive: people shift where they stand

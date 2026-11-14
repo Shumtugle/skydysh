@@ -33,6 +33,10 @@ final class Lang {
                 + "|in the yellow bay at the gate,|and stand: the crates go on the bed.||Touch to go on");
         EN.put("delivery.store", "Dispatch \u2014 {kind}||The warehouse is near.|Put the pickup where it is unloaded,"
                 + "|in the bay at the gate,|and stand: the crates come off.||Touch to go on");
+        EN.put("heli.sticks", "Dispatch||You are at the controls.|Two rings, under your thumbs.||Left: up to climb, down to sink,"
+                + "|aside to turn.|Right: up to go ahead, down to back,|aside to slide.||Let go and it hovers.||Touch to go on");
+        EN.put("heli.left", "UP / DOWN|TURN");
+        EN.put("heli.right", "AHEAD / BACK|ASIDE");
         EN.put("delivery.done", "Dispatch \u2014 {kind}||The job is done.|The crates are at the warehouse.||Head home.||Touch to go on");
         EN.put("puppy.done", "Dispatch \u2014 {kind}||The job is done.|The puppy is with the vets.||Head home.||Touch to go on");
         EN.put("folder.done", "Dispatch \u2014 {kind}||The job is done.|What was lost is back at the town hall."

@@ -1,0 +1,44 @@
+# The helicopter mended (1.4.30): she steps back from its side, seen from behind, the sign over it;
+# the sign touched, she goes to its door and gets in; the first time, the dispatcher on the sticks;
+# a moment of words over each stick; up off the archive's garden, the eye clear of the house behind.
+# In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 9
+close
+drivein -3.4 608 0
+wait 9
+drivein 224 637.8 -1.5708
+wait 0.3
+getout
+at 216 601 0.9
+wait 1
+copter
+at 224.6 605.4 0
+wait 4.6
+where
+copter
+shot a0
+wait 2
+where
+copter
+shot a1
+tapsign copter
+wait 0.6
+shot a2
+wait 2
+where
+copter
+shot a3
+close
+wait 0.3
+shot a4
+wait 1.8
+shot a5
+finger down 0 68 540
+finger move 0 68 500
+wait 3
+copter
+shot a6
+finger up 0 68 500

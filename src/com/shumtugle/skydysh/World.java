@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.29";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.30";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -1161,6 +1161,7 @@ final class World {
             return;
         }
         errand = NO_ERRAND;
+        boardShow = false;
         if (liftOffer && onLiftButton(x, y)) {
             liftPressed = true;
             return;
@@ -2004,7 +2005,10 @@ final class World {
                 return;
             }
         }
-        if (type == DOWN) errand = NO_ERRAND;
+        if (type == DOWN) {
+            errand = NO_ERRAND;
+            boardShow = false;
+        }
         // the button down by the lift on a roof: pressed, the finger is the button's till it is lifted
         if (type == DOWN && liftOffer && onLiftButton(x, y)) {
             liftPressed = true;
@@ -2441,6 +2445,7 @@ final class World {
         reparkFar();
         // the mend's scenes are shown from an eye of their own, whatever else has set one
         if (mend != null && mend.scene()) mendEye();
+        else if (mend != null && boardShow && mend.step == Mend.BOARD) boardEye();
         if (puppy != null && puppy.entering()) clinicEye();
     }
 
@@ -2801,6 +2806,29 @@ final class World {
             signs[o + 8] = 0f;
             signs[o + 9] = MARK_PICKUP;
             k++;
+        }
+        // the helicopter she may get into: the same sign over it, from any side
+        Copter hc = heliOffered();
+        if (hc != null && k < 16 && Math.abs(r.y - hc.y) < 2.6f) {
+            float ox = r.eyeX - hc.x, oz = r.eyeZ - hc.z;
+            float dist = (float) Math.sqrt(ox * ox + oz * oz);
+            float shown = Math.min(1f, (SIGN_FAR - dist) / 10f) * Math.min(1f, Math.max(0f, (dist - 2.5f) / 3f));
+            float bob = 0.08f * (float) Math.sin(time * 2.2f + hc.x * 0.7f);
+            if (shown > 0.02f && d.project(hc.x, hc.y + Copter.ROOF + COPTER_SIGN_UP + bob, hc.z, markAt) && markAt[2] >= 1f
+                    && markAt[0] >= -20f && markAt[0] <= W + 20f && markAt[1] >= -20f && markAt[1] <= h + 20f) {
+                int o = k * 10;
+                signs[o] = markAt[0];
+                signs[o + 1] = markAt[1];
+                signs[o + 2] = Math.max(9f, Math.min(18f, W * 1.6f * 0.75f / markAt[2]));
+                signs[o + 3] = Badges.COPTER;
+                signs[o + 4] = shown;
+                signs[o + 5] = hc.x;
+                signs[o + 6] = hc.z;
+                signs[o + 7] = 0f;
+                signs[o + 8] = 0f;
+                signs[o + 9] = MARK_COPTER;
+                k++;
+            }
         }
         // the nearest first, as many as there is room for beside the buttons; kept for the finger
         shownN = 0;
@@ -3253,12 +3281,16 @@ final class World {
     }
 
     // ---- errands: a sign touched, she goes where it says by herself ----
-    static final int NO_ERRAND = 0, ERRAND_CLIMB = 1, ERRAND_UP = 2, ERRAND_DOWN = 3, ERRAND_DRIVE = 4, ERRAND_THROUGH = 5, ERRAND_SOFA = 6, ERRAND_BED = 7;
+    static final int NO_ERRAND = 0, ERRAND_CLIMB = 1, ERRAND_UP = 2, ERRAND_DOWN = 3, ERRAND_DRIVE = 4, ERRAND_THROUGH = 5, ERRAND_SOFA = 6, ERRAND_BED = 7,
+            ERRAND_FLY = 8;
     /** The thing of a bed she goes for (see ERRAND_BED). */
     private int errandThing;
     private boolean errandIn;                  // through a house: she has been inside
     static final int MARK_PICKUP = 4;          // a sign's kind beside the town's (see City.marks)
     static final int MARK_SOFA = 7;            // the sign over home's sofa
+    static final int MARK_COPTER = 8;          // the sign over a helicopter she may get into
+    /** The helicopter's sign hangs so high over its roof (over the blade's sweep). */
+    static final float COPTER_SIGN_UP = 1.4f;
     private Pickup errandPickup;
     private int errand;
     private float errandX, errandZ, errandFor;
@@ -3385,6 +3417,13 @@ final class World {
             r.lead(way[0], way[1], (float) Math.atan2(p.x - way[0], p.z - way[1]));
             errandPickup = p;
             errand = ERRAND_DRIVE;
+        } else if (kind == MARK_COPTER) {
+            Copter cp = heliOffered();
+            if (cp == null) return;
+            // to its door: she gets in there (see boarding)
+            cp.door(signDoor);
+            r.lead(signDoor[0], signDoor[1], (float) Math.atan2(cp.x - signDoor[0], cp.z - signDoor[1]));
+            errand = ERRAND_FLY;
         } else if (kind == City.MARK_ESCAPE || kind == City.MARK_ROOF_LADDER) {
             // the sign hangs 0.6 off the wall, the foot is 0.55 off it
             float fx = mx - nx * 0.05f, fz = mz - nz * 0.05f;
@@ -3443,6 +3482,18 @@ final class World {
                     r.stopLead();
                 } else if (!r.led() && !arrived) errand = NO_ERRAND;
                 break;
+            case ERRAND_FLY: {
+                // in at the door (see boarding); the helicopter no longer hers to get into, or she
+                // stopped short of it: given up
+                Copter cp = heliOffered();
+                if (cp == null) errand = NO_ERRAND;
+                else if (!r.led()) {
+                    cp.door(signDoor);
+                    float dx = r.x - signDoor[0], dz = r.z - signDoor[1];
+                    if (dx * dx + dz * dz > BOARD_NEAR * BOARD_NEAR) errand = NO_ERRAND;
+                }
+                break;
+            }
             case ERRAND_DRIVE:
                 if (arrived || errandPickup != null && errandPickup.apart(r.x, r.z) < errandPickup.reach(BY_IT) && !r.inAir()) {
                     getIn(errandPickup);
@@ -3760,9 +3811,36 @@ final class World {
             aside = 1.5f;
             up = FLY_UP + 1.5f;
         }
-        eyeNow[0] = cp.x - fx * back + rx * aside;
-        eyeNow[1] = cp.y + up;
-        eyeNow[2] = cp.z - fz * back + rz * aside;
+        // out from it toward where the eye would be, as far as nothing stands in the way at the
+        // eye's height: a wall, a roof, a slope, a tree's crown; with little room the eye rises
+        // over it and looks down on it instead, so that it is never lost behind a house
+        float wx = -fx * back + rx * aside, wz = -fz * back + rz * aside, ey = cp.y + up;
+        float len = (float) Math.sqrt(wx * wx + wz * wz), free = len;
+        float cy = cp.y + 1.5f;
+        if (len > 0.01f) {
+            free = 0f;
+            for (float t = FLY_STEP; ; t += FLY_STEP) {
+                float tt = Math.min(t, len), qx = cp.x + wx * tt / len, qz = cp.z + wz * tt / len;
+                if (city.ground(qx, qz, ey - EYE_CLEAR, EYE_CLEAR) > ey - EYE_CLEAR) break;
+                eyeTry[0] = qx;
+                eyeTry[1] = qz;
+                city.push(eyeTry, 0.5f, ey - EYE_CLEAR);
+                float mx = eyeTry[0] - qx, mz = eyeTry[1] - qz;
+                if (mx * mx + mz * mz > 0.04f * 0.04f) break;
+                free = tt;
+                if (tt >= len) break;
+            }
+            float leaves = city.leavesOn(cp.x, cy, cp.z, cp.x + wx, ey, cp.z + wz, leafLow);
+            if (leaves < 1f) free = Math.min(free, len * leaves * 0.85f);
+        }
+        float keep = len > 0.01f ? free / len : 1f;
+        if (Float.isNaN(flyKeep)) flyKeep = keep;
+        // in quickly when something comes between, back out slowly
+        flyKeep += (keep - flyKeep) * Math.min(1f, dt * (keep < flyKeep ? 12f : 1.2f));
+        float room = len * flyKeep, short_ = Math.max(0f, Math.min(len, FLY_ROOM) - room) / FLY_ROOM;
+        eyeNow[0] = cp.x + wx * flyKeep;
+        eyeNow[1] = ey + short_ * FLY_RISE;
+        eyeNow[2] = cp.z + wz * flyKeep;
         float ahead = hands ? 10f : 3f;
         float lx = cp.x + fx * ahead - eyeNow[0], lz = cp.z + fz * ahead - eyeNow[2];
         eyeNow[3] = (float) Math.atan2(lx, lz);
@@ -3772,6 +3850,11 @@ final class World {
 
     // the eye on the helicopter: so far behind it, so far to its right, so high over it
     static final float FLY_BACK = 12f, FLY_ASIDE = 8f, FLY_UP = 4.5f;
+    // kept clear of what stands round it: looked for every so far out from it, so high under the
+    // eye counting; with less room behind it than so much, the eye rises up to so much more
+    static final float FLY_STEP = 0.4f, EYE_CLEAR = 1.2f, FLY_ROOM = 9f, FLY_RISE = 9f;
+    private float flyKeep = Float.NaN;
+    private final float[] eyeTry = new float[2], leafLow = new float[1];
 
     // ---- the helicopter in her own hands: the mend's flight home, and after it whenever she likes ----
     static final String SAVE_COPTER = "copter";
@@ -3786,6 +3869,20 @@ final class World {
     private float copterWait;
     private boolean copterArmed = true;
     private final float[] copterDoor = new float[3];
+
+    /**
+     * The helicopter she may get into now, on foot: the mend's once it is mended, or her own,
+     * whole, set down; none while a job has it (the archive's) or she is at a wheel or indoors.
+     */
+    private Copter heliOffered() {
+        if (driving != null || indoors != null || swapT >= 0f || dispatch != null || piloting()) return null;
+        if (mend != null) return mend.step == Mend.BOARD ? mend.copter : null;
+        if (archive != null) return null;
+        Copter cp = parked;
+        return cp != null && !cp.broken && (kindsWon & (1 << 9)) != 0 ? cp : null;
+    }
+
+    private final float[] signDoor = new float[2];
 
     /** The helicopter she can be at the controls of now: the mend's, or her own. */
     private Copter heli() {
@@ -3953,6 +4050,38 @@ final class World {
         runner.eyeAt(sceneEyeNow);
     }
 
+    /**
+     * The helicopter mended, she by its side to get in: the eye behind her, a little off, so that
+     * she, it and the sign over it are all in the frame.
+     */
+    private void boardEye() {
+        Copter cp = mend.copter;
+        Runner r = runner;
+        float ox = boardSpot[0] - cp.x, oz = boardSpot[2] - cp.z, ol = (float) Math.sqrt(ox * ox + oz * oz);
+        if (ol < 0.01f) return;
+        ox /= ol;
+        oz /= ol;
+        // along her way out from it, and a little toward its tail, so that its length shows
+        float tx = -(float) Math.sin(cp.heading), tz = -(float) Math.cos(cp.heading);
+        float ex = r.x + ox * BOARD_EYE_BACK + tx * BOARD_EYE_ASIDE, ez = r.z + oz * BOARD_EYE_BACK + tz * BOARD_EYE_ASIDE;
+        float ey = cp.y + BOARD_EYE_UP;
+        float lx = r.x + (cp.x - r.x) * 0.45f, lz = r.z + (cp.z - r.z) * 0.45f, ly = cp.y + BOARD_LOOK_UP;
+        float dx = lx - ex, dz = lz - ez;
+        sceneEyeNow[0] = ex;
+        sceneEyeNow[1] = ey;
+        sceneEyeNow[2] = ez;
+        sceneEyeNow[3] = (float) Math.atan2(dx, dz);
+        sceneEyeNow[4] = (float) Math.atan2(ly - ey, Math.sqrt(dx * dx + dz * dz));
+        r.eyeAt(sceneEyeNow);
+    }
+
+    // mended: she steps so far out from its side (3 m past its door, clear of the blades); the eye so far behind her, so far toward its
+    // tail, so high; it looks so high, between her and it
+    static final float BOARD_STAND = 4.6f, BOARD_EYE_BACK = 6.5f, BOARD_EYE_ASIDE = 2.5f, BOARD_EYE_UP = 3.4f, BOARD_LOOK_UP = 2.1f;
+    /** Mended, the board eye on till she is touched off it. */
+    private boolean boardShow;
+    private final float[] boardSpot = new float[3];
+
     // the mend's scenes: the eye so far across, so far back, so high
     static final float MEND_EYE_ACROSS = 11f, MEND_EYE_BACK = 7f, MEND_EYE_UP = 4f;
 
@@ -3991,11 +4120,20 @@ final class World {
                 // in the bay: the workshop's brum comes out with the skid
                 host.sound(Synth.DOOR, 0.4f, 0.8f);
                 break;
-            case Mend.MENDED:
+            case Mend.MENDED: {
                 runner.held = false;
                 host.sound(Synth.CHIME, 0.5f, 1.2f);
                 host.buzz(60);
+                // not in by herself: she steps back from its side and faces it, seen from behind,
+                // it and the sign over it in sight; in when the sign is touched (or she comes back to
+                // its door from farther off)
+                copterArmed = false;
+                Copter cp = m.copter;
+                cp.point(Copter.HALF_W + BOARD_STAND, 0f, 0.6f, boardSpot);
+                runner.lead(boardSpot[0], boardSpot[2], (float) Math.atan2(cp.x - boardSpot[0], cp.z - boardSpot[2]));
+                boardShow = true;
                 break;
+            }
             case Mend.IN:
                 takeSeat();
                 break;
@@ -4019,6 +4157,8 @@ final class World {
         }
         cp.door(copterDoor);
         float dx = r.x - copterDoor[0], dz = r.z - copterDoor[1], dd = dx * dx + dz * dz;
+        // sent to it by its sign: in as soon as she is at its door
+        if (errand == ERRAND_FLY && dd < BOARD_NEAR * BOARD_NEAR && !r.inAir() && Math.abs(r.y - cp.y) < 1.6f) return true;
         if (dd > BOARD_AWAY * BOARD_AWAY) copterArmed = true;
         if (dd > BOARD_NEAR * BOARD_NEAR || r.inAir() || Math.abs(r.y - cp.y) > 1.6f || !copterArmed) {
             copterWait = 0f;
@@ -4039,13 +4179,23 @@ final class World {
         takeSeat();
     }
 
-    /** In at the controls: the blades run up. */
+    /**
+     * In at the controls: the blades run up. The first time in the game, the dispatcher says how
+     * the sticks go; every time, once nothing is over the glass, a moment of words by the sticks.
+     */
     private void takeSeat() {
+        boardShow = false;
+        heliHint = HELI_HINT;
+        if (host.loadInt(SAVE_TOLD_HELI) == 0) {
+            host.saveInt(SAVE_TOLD_HELI, 1);
+            dispatch = new Dispatch(host, Lang.lines("heli.sticks", mission != null ? mission.round : 0, null));
+        }
         errand = NO_ERRAND;
         runner.stopLead();
         letGo();
         copterWait = 0f;
         flyYaw = Float.NaN;
+        flyKeep = Float.NaN;
         host.sound(Synth.DOOR, 0.4f, 1.4f);
         host.sound(Synth.WHOOSH, 0.5f, 0.6f);
         host.buzz(30);
@@ -4328,6 +4478,7 @@ final class World {
 
     /** A frame at the controls: the sticks to the helicopter, she in the pilot's seat, the eye behind. */
     private void fly(float dt) {
+        if (dispatch == null && !paused) heliHint = Math.max(0f, heliHint - dt);
         Copter cp = heli();
         float turn = leftStick >= 0 ? stickAxis(lTX, lCX) : 0f, lift = leftStick >= 0 ? -stickAxis(lTY, lCY) : 0f;
         float aside = rightStick >= 0 ? stickAxis(rTX, rCX) : 0f, ahead = rightStick >= 0 ? -stickAxis(rTY, rCY) : 0f;
@@ -4383,6 +4534,27 @@ final class World {
         }
     }
 
+    static final String SAVE_TOLD_HELI = "told.heli";
+    /** At the controls: the words by the sticks so long, the last part of it fading. */
+    static final float HELI_HINT = 2.2f, HELI_HINT_FADE = 0.6f;
+    private float heliHint;
+
+    /** What each stick does, in a word or two over each, a moment after she takes the controls. */
+    private void stickHints(Px f) {
+        if (heliHint <= 0f) return;
+        float a = Math.min(1f, heliHint / HELI_HINT_FADE);
+        int ink = ((int) (a * 0xCC) << 24) | 0x232A4A, cream = ((int) (a * 255) << 24) | 0xF4E8D2;
+        for (int k = 0; k < 2; k++) {
+            String[] ls = Lang.lines(k == 0 ? "heli.left" : "heli.right", 0, null);
+            float cx = W * (k == 0 ? HELI_LEFT : HELI_RIGHT);
+            int y = (int) (h - HELI_UP - HELI_R - 12 - 11 * ls.length);
+            for (int l = 0; l < ls.length; l++) {
+                int w = PixelFont.width(ls[l], 1);
+                shadowed(f, ls[l], (int) (cx - w * 0.5f), y + 11 * l, 1, cream, ink);
+            }
+        }
+    }
+
     /** The two sticks: under the thumbs while they are down, faint where they would go; out, once it is down. */
     private void sticks(DrawList d) {
         for (int k = 0; k < 2; k++) {
@@ -4414,6 +4586,7 @@ final class World {
         c.vx = c.vz = c.vy = 0f;
         c.grounded = false;
         flyYaw = Float.NaN;
+        flyKeep = Float.NaN;
     }
 
     /** For the desktop stand: out of the pickup, or of her own helicopter once it is down. */
@@ -5523,7 +5696,53 @@ final class World {
         float tx = in.wx(mu, mv) - handEye[0], tz = in.wz(mu, mv) - handEye[2];
         handEye[3] = (float) Math.atan2(tx, tz);
         handEye[4] = (float) Math.atan2(Indoors.FLOOR + 1.6f - handEye[1], Math.sqrt(tx * tx + tz * tz));
+        // halfway through, a cut: the next angle in nearer on the hands that have it now
+        int cut = handCut();
+        if (cut != 0) {
+            float hx, hy, hz;
+            if (cut == CUT_TO_HER) {
+                r.bone("hand_l", handTo);
+                hx = handTo[0];
+                hy = handTo[1];
+                hz = handTo[2];
+            } else {
+                hx = handsAt[0];
+                hy = handsAt[1];
+                hz = handsAt[2];
+            }
+            // in on her less: she is big, and nearer the eye would be in her
+            float gain = cut == CUT_TO_HER ? HAND_CUT_IN_HER : HAND_CUT_IN;
+            handEye[0] += (hx - handEye[0]) * gain;
+            handEye[2] += (hz - handEye[2]) * gain;
+            handEye[1] = Math.max(hy + (cut == CUT_TO_HER ? 1.1f : 0.5f), Indoors.FLOOR + HAND_CUT_UP);
+            float cx = hx - handEye[0], cz = hz - handEye[2];
+            handEye[3] = (float) Math.atan2(cx, cz);
+            handEye[4] = (float) Math.atan2(hy - 0.15f - handEye[1], Math.sqrt(cx * cx + cz * cz));
+        }
         r.eyeAt(handEye);
+    }
+
+    /**
+     * A hand-over is shown as two shots, not a flight across: up to so far through it (0 to 1)
+     * the thing is in the giver's hands; from there, from the next angle, in the taker's.
+     */
+    static final float HAND_CUT = 0.5f;
+    // the second shot: so much of the way in from the first toward the hands, at least so high
+    static final float HAND_CUT_IN = 0.42f, HAND_CUT_IN_HER = 0.12f, HAND_CUT_UP = 1.9f;
+    static final int CUT_TO_DESK = 1, CUT_TO_HER = 2;
+
+    /** Whose hands the eye has cut to in the hand-over going on: none yet (0), the desk's, hers. */
+    private int handCut() {
+        if (folder != null && folder.handing()) return folder.passing() >= HAND_CUT ? CUT_TO_DESK : 0;
+        if (archive != null && archive.handing()) return archive.cutTo();
+        if (lab != null && lab.handing()) return lab.giving() >= HAND_CUT ? CUT_TO_HER : 0;
+        return 0;
+    }
+
+    /** The red folder held out in her hand, to be given or just taken. */
+    private void heldOut(DrawList d, Runner r) {
+        r.bone("hand_l", handTo);
+        Archive.folder(d, handTo[0], handTo[1] - 0.05f, handTo[2], r.heading + (float) Math.PI * 0.5f);
     }
 
     // the eye on the handing over: so far toward the hall's middle from the two, so far toward its front (less than none: its back, on the side of the hand she takes it in), so high
@@ -6588,19 +6807,14 @@ final class World {
                 float face = indoors.heading(indoors.side, 0f) + (float) Math.PI;
                 if (archive != null && archive.waiting()) Archive.folder(d, handsAt[0], handsAt[1], handsAt[2], face);
                 else if (folder != null && folder.passing() >= 0f) {
-                    // the folder found on the roofs: from her hands into the clerk's, up a little on the way
-                    float a = folder.passing(), e = a * a * (3f - 2f * a);
-                    r.bone("hand_l", handTo);
-                    float x = handTo[0] + (handsAt[0] - handTo[0]) * e, z = handTo[2] + (handsAt[2] - handTo[2]) * e;
-                    float y = handTo[1] - 0.05f + (handsAt[1] - handTo[1] + 0.05f) * e + 0.35f * (float) Math.sin(Math.PI * a);
-                    Archive.folder(d, x, y, z, r.heading + (float) Math.PI * 0.5f + (face - r.heading - (float) Math.PI * 0.5f) * e);
+                    // the folder found on the roofs: held out in her hand, then, from the next
+                    // angle, in the clerk's; it does not fly across between them
+                    if (folder.passing() < HAND_CUT) heldOut(d, r);
+                    else Archive.folder(d, handsAt[0], handsAt[1], handsAt[2], face);
                 }
                 else if (archive != null && archive.giving() >= 0f) {
-                    float a = archive.giving(), e = a * a * (3f - 2f * a);
-                    r.bone("hand_l", handTo);
-                    float x = handsAt[0] + (handTo[0] - handsAt[0]) * e, z = handsAt[2] + (handTo[2] - handsAt[2]) * e;
-                    float y = handsAt[1] + (handTo[1] - 0.05f - handsAt[1]) * e + 0.35f * (float) Math.sin(Math.PI * a);
-                    Archive.folder(d, x, y, z, face + (r.heading + (float) Math.PI * 0.5f - face) * e);
+                    if (archive.giving() < HAND_CUT) Archive.folder(d, handsAt[0], handsAt[1], handsAt[2], face);
+                    else heldOut(d, r);
                 }
             }
         }
@@ -6610,14 +6824,9 @@ final class World {
             float pass = archive != null ? archive.passing() : -1f;
             if (pass >= 0f) {
                 float face = indoors.heading(0f, -1f) + (float) Math.PI;
-                if (pass >= 1f) Archive.folder(d, handsAt[0], handsAt[1], handsAt[2], face);
-                else {
-                    float e = pass * pass * (3f - 2f * pass);
-                    r.bone("hand_l", handTo);
-                    float x = handTo[0] + (handsAt[0] - handTo[0]) * e, z = handTo[2] + (handsAt[2] - handTo[2]) * e;
-                    float y = handTo[1] - 0.05f + (handsAt[1] - handTo[1] + 0.05f) * e + 0.35f * (float) Math.sin(Math.PI * pass);
-                    Archive.folder(d, x, y, z, r.heading + (float) Math.PI * 0.5f + (face - r.heading - (float) Math.PI * 0.5f) * e);
-                }
+                // in her hand, then, cut to, in his
+                if (pass >= HAND_CUT) Archive.folder(d, handsAt[0], handsAt[1], handsAt[2], face);
+                else heldOut(d, r);
             }
         }
         // the switch in the secret hall: down once the island is shut, going down as she throws it
@@ -6635,15 +6844,13 @@ final class World {
             // the lobby's brums; the box in the counter's hands while it is for her, then on its
             // way from them to hers, up a little on the way
             boolean forHer = lab != null && lab.step <= Lab.HAND;
-            LabTop.lobby(d, indoors, time, forHer && lab.giving() < 1f, handsAt);
+            LabTop.lobby(d, indoors, time, forHer && lab.giving() < HAND_CUT, handsAt);
             float face = LabTop.clerkYaw(indoors);
-            if (forHer && lab.giving() <= 0f) LabTop.box(d, handsAt[0], handsAt[1], handsAt[2], face, 0f);
+            // in the counter's hands, then, cut to, in hers
+            if (forHer && lab.giving() < HAND_CUT) LabTop.box(d, handsAt[0], handsAt[1], handsAt[2], face, 0f);
             else if (forHer && lab.giving() < 1f) {
-                float a = lab.giving(), e = a * a * (3f - 2f * a);
                 r.bone("hand_l", handTo);
-                float x = handsAt[0] + (handTo[0] - handsAt[0]) * e, z = handsAt[2] + (handTo[2] - handsAt[2]) * e;
-                float y = handsAt[1] + (handTo[1] - LabTop.BOX_Y - 0.03f - handsAt[1]) * e + 0.3f * (float) Math.sin(Math.PI * a);
-                LabTop.box(d, x, y, z, face + (r.heading - face) * e, 0f);
+                LabTop.box(d, handTo[0], handTo[1] - LabTop.BOX_Y - 0.03f, handTo[2], r.heading, 0f);
             }
         }
         if (!r.hidden && !inChair() && (dispatch == null || dispatch.showsHer())) {
@@ -6919,6 +7126,7 @@ final class World {
         if (dispatch == null) {
             if (driving == null) signs(d);
             buttons(d);
+            if (!paused && piloting()) stickHints(f);
             if (paused && TWO_THUMBS_OFFERED) toggleFlat(f);
             if (paused) pauseFlat(f);
         }

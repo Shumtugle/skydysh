@@ -88,9 +88,13 @@ final class Crossings {
         return h;
     }
 
-    /** Whether the crossing at (i * CELL, j * CELL) has lights: about one in three, in the town's rows. */
+    /**
+     * Whether the crossing at (i * CELL, j * CELL) has lights: about one in three, and only where
+     * cell (i, j) is a block of the town, since that cell builds the posts. The last crossings
+     * east belong to the woods' cells, which build none: lamps there hung in the air.
+     */
     static boolean lit(int i, int j) {
-        if (j < City.SHORE || j >= City.EDGE_J || i < City.WEST_I || i > City.EAST_I + 1) return false;
+        if (City.sea(j) || City.country(j) || City.woods(i)) return false;
         return ((mix(i, j, 3) >>> 8) % 8) < 3;
     }
 
