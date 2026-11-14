@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.32
+
+- The book. In the old flat on the promenade the green brum reads on the sofa: a book open in both
+  hands, his head bent over it. A sign floats over him; touched, the book opens over the whole
+  frame: "Freedie of Skydysh", its cover, then the town, the workshop, home, work, the people she
+  knows, and every story, those to come too. A leaf at a time, cream on a dark ground; a touch on
+  the right of it or a finger drawn left turns it on, the leaf going over on its spine; the left,
+  or drawn right, back. The cross at the top or the way back shuts it; it opens again where it
+  was left.
+- The book is in English and in Russian, as the game is; its words are an asset of the language
+  (book/en.txt, book/ru.txt), kept up after every job and every large change. No author's name.
+
 ## 1.4.31
 
 - The jobs come in a new order: the hunt, the folder; the glass, then the port, then the concert

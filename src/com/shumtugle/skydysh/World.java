@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.31";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.32";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -689,6 +689,32 @@ final class World {
         host.sound(Synth.TOCK, 0.3f, 1.2f);
     }
 
+    /** The green brum's book, when it is open (null: shut). */
+    Book book;
+
+    /** The book opened over the frame, at the page it was left at. */
+    private void openBook() {
+        Book b = Book.open(host, langCode());
+        if (b == null) return;
+        b.turnTo(host.loadInt(SAVE_BOOK_PAGE));
+        book = b;
+        letGo();
+        host.buzz(20);
+        host.sound(Synth.TOCK, 0.3f, 1.2f);
+    }
+
+    /** The page of the book it was shut at, kept for the next time. */
+    static final String SAVE_BOOK_PAGE = "book.page";
+
+    /** The book over the frame, if it is open: nothing of the frame's own shows through. */
+    private void bookFlat(DrawList d, Px f) {
+        if (book == null) return;
+        book.draw(f, Dispatch.font(host));
+        if (host.loadInt(SAVE_BOOK_PAGE) != book.page()) host.saveInt(SAVE_BOOK_PAGE, book.page());
+        d.badgeN = 0;
+        d.tube[0] = d.tube[2] = 0f;
+    }
+
     /** The page over the frame, if one is open: nothing of the frame's own buttons shows through it. */
     private void storyFlat(DrawList d, Px f) {
         if (story == null) return;
@@ -969,6 +995,18 @@ final class World {
     }
 
     private void fingered(int type, int id, float x, float y) {
+        // the green brum's book open over everything: its leaves turned by the first finger;
+        // the way back, or its cross, shuts it
+        if (book != null) {
+            if (type == BACK) book.closed = true;
+            else if (id == 0 && (type == DOWN || type == UP)) book.touch(type, x, y, W, h);
+            if (book.closed) {
+                book = null;
+                letGo();
+                host.sound(Synth.TOCK, 0.25f, 0.9f);
+            }
+            return;
+        }
         // walked in at the vets' door with the puppy: hers again once the job is done
         if (puppy != null && puppy.entering() && type != LEFT && type != BACK) return;
         // the torch seen close: a touch lets it go
@@ -2033,6 +2071,11 @@ final class World {
         if (story != null) {
             // the town stands still while its page is read
             story.update(dt);
+            return;
+        }
+        if (book != null) {
+            // and while the book is
+            book.update(dt);
             return;
         }
         if (stray != null && stray.open()) {
@@ -3358,6 +3401,34 @@ final class World {
         shownN = 1;
     }
 
+    /** Over the green brum's book, in the old flat: its sign, after the sofa's (none there). */
+    private void bookSign(DrawList d) {
+        Indoors in = indoors;
+        if (in == null || !in.oldFlat || dispatch != null || swapT >= 0f || paused || book != null) return;
+        if (d.badgeN >= DrawList.BADGE_MAX - 3 || shownN >= 16) return;
+        float bob = 0.08f * (float) Math.sin(time * 2.2f + 1f);
+        if (!d.project(bookAt[0], bookAt[1] + BOOK_SIGN_UP + bob, bookAt[2], markAt) || markAt[2] < 0.5f) return;
+        if (markAt[0] < -20f || markAt[0] > W + 20f || markAt[1] < -20f || markAt[1] > h + 20f) return;
+        float size = Math.max(9f, Math.min(18f, W * 1.6f * 0.75f / markAt[2]));
+        d.badge(markAt[0], markAt[1], size, Badges.BOOK, 0.9f, 0f);
+        int o = shownN * 10;
+        shown[o] = markAt[0];
+        shown[o + 1] = markAt[1];
+        shown[o + 2] = size;
+        shown[o + 3] = Badges.BOOK;
+        shown[o + 4] = 1f;
+        shown[o + 5] = bookAt[0];
+        shown[o + 6] = bookAt[2];
+        shown[o + 7] = 0f;
+        shown[o + 8] = 0f;
+        shown[o + 9] = MARK_BOOK;
+        shownN++;
+    }
+
+    static final int MARK_BOOK = 9;            // the sign over the green brum's book
+    /** The book's sign floats so high over it: over his head. */
+    static final float BOOK_SIGN_UP = 2.1f;
+
     /** Whether the sign over home's sofa is shown: at home, up, no mission on, nothing on the screen. */
     private boolean sofaOffered() {
         Indoors in = indoors;
@@ -3368,7 +3439,8 @@ final class World {
     private int signHere(float x, float y) {
         int sgn = signAt(x, y);
         if (sgn < 0 || indoors == null) return sgn;
-        return (int) shown[sgn * 10 + 9] == MARK_SOFA ? sgn : -1;
+        int kind = (int) shown[sgn * 10 + 9];
+        return kind == MARK_SOFA || kind == MARK_BOOK ? sgn : -1;
     }
 
     /** For the desktop stand: a touch on the sign over home's sofa, if it is there. */
@@ -3411,6 +3483,11 @@ final class World {
         errandX = mx;
         errandZ = mz;
         errandFor = 0f;
+        if (kind == MARK_BOOK) {
+            // opened where it is: she need not go to it
+            openBook();
+            return;
+        }
         if (kind == MARK_SOFA) {
             if (indoors == null || !indoors.home) return;
             // up to it, as from the door: she sits once she is there
@@ -6093,7 +6170,7 @@ final class World {
     static final float START_BACK = 4.5f;
 
     /** Where the old flat's sofa seats its brum (x, y, z). */
-    private final float[] lodger = new float[3];
+    private final float[] lodger = new float[3], bookAt = new float[3];
     static final float LODGER_LATE = 3.7f;   // his breath out of step with hers
 
     /** The magnet a blow is on its way to (of Cherry.KNOCKED), or -1. */
@@ -6874,9 +6951,13 @@ final class World {
         // the old flat: the brum who lives there, on the sofa, looking at the room
         if (indoors.oldFlat) {
             indoors.seat(lodger);
+            float yaw = indoors.seatHeading() + (float) Math.PI, ly = lodger[1] - Runner.SEAT_DROP;
             Frida.green = true;
-            Frida.draw(d, lodger[0], lodger[1] - Runner.SEAT_DROP, lodger[2], indoors.seatHeading() + (float) Math.PI, Runner.SIZE, Frida.LOUNGE, time + LODGER_LATE);
+            Frida.draw(d, lodger[0], ly, lodger[2], yaw, Runner.SIZE, Frida.READ, time + LODGER_LATE);
             Frida.green = false;
+            // the book he reads, open in his hands
+            Frida.book(lodger[0], ly, lodger[2], yaw, Runner.SIZE, time + LODGER_LATE, bookAt);
+            Book.held(d, bookAt[0], bookAt[1], bookAt[2], yaw);
         }
         // the collider hall: its ring, the hole and its jet, the chargers
         if (indoors.collider) Collider.live(d, Indoors.FLOOR, time, cherry, false, indoors.shiftBack);
@@ -6945,6 +7026,7 @@ final class World {
         hearts.draw(f, W, h, free && dispatch == null);
         if (dispatch == null) {
             sofaSign(d);
+            bookSign(d);
             buttons(d);
         }
         if (dispatch == null && paused) pauseFlat(f);
@@ -6952,6 +7034,7 @@ final class World {
         nightFlat(f);
         panelFlat(d, f);
         storyFlat(d, f);
+        bookFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         // the white of the hall's flash, going off
         if (indoors.collider && whiteOut > 0f) Opening.wash(f, whiteOut / WHITE_OUT);
@@ -7174,6 +7257,7 @@ final class World {
         nightFlat(f);
         panelFlat(d, f);
         storyFlat(d, f);
+        bookFlat(d, f);
         PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
         // the white the opening ended on, going off
         if (whiteOut > 0f) Opening.wash(f, whiteOut / WHITE_OUT);

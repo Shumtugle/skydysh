@@ -1089,9 +1089,9 @@ public final class Stand implements World.Host {
                         time, q.speed, most, (float) Math.sqrt(sum / n), side));
             }
         } else if (c.equals("tapsign")) {
-            // tapsign lift|ladder|up|wheel|copter|enter|home: a tap on the nearest sign of the kind on the glass, told
+            // tapsign lift|ladder|up|wheel|copter|book|enter|home: a tap on the nearest sign of the kind on the glass, told
             int which = p[1].equals("ladder") ? Badges.LADDER : p[1].equals("up") ? Badges.UP : p[1].equals("wheel") ? Badges.WHEEL
-                    : p[1].equals("copter") ? Badges.COPTER : p[1].equals("enter") ? Badges.ENTER : p[1].equals("home") ? Badges.HOME : Badges.LIFT;
+                    : p[1].equals("copter") ? Badges.COPTER : p[1].equals("book") ? Badges.BOOK : p[1].equals("enter") ? Badges.ENTER : p[1].equals("home") ? Badges.HOME : Badges.LIFT;
             float[] at = new float[2];
             if (world.signOnGlass(which, at)) {
                 System.out.println(String.format("%7.2fs  tap on the %s sign at %.0f %.0f", time, p[1], at[0], at[1]));

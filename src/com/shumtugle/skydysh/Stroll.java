@@ -426,6 +426,50 @@ final class Stroll {
         }
     }
 
+    // reading, lounging: the book so far below the shoulders and before them, the hands so far
+    // either side of its middle; the head bent so much over it
+    static final float READ_LOW = 0.34f, READ_FORE = 0.36f, READ_APART = 0.13f, READ_BEND = 0.42f;
+
+    /**
+     * On a sofa as lounge() has it, the legs as there, but upright enough to read: a book held
+     * open in both hands before the chest, the head bent over it, breathing (t, seconds).
+     */
+    static void read(Moves mv, float t, float[] q, float[] p) {
+        int n = mv.bone.length;
+        if (turn == null || turn.length != n * 4) {
+            turn = new float[n * 4];
+            g = new float[n * 4];
+            pos = new float[n * 3];
+        }
+        for (int b = 0; b < n; b++) set(b, 0f, 0f, 0f, 1f);
+        float breath = 0.02f * (float) Math.sin(t * 1.3f);
+        axis(THIGH_L, 1f, 0f, 0f, 1.25f);
+        then(THIGH_L, 0f, 0f, 1f, -0.3f);
+        axis(CALF_L, 1f, 0f, 0f, -0.75f);
+        axis(FOOT_L, 1f, 0f, 0f, 0.25f);
+        axis(THIGH_R, 1f, 0f, 0f, 1.5f);
+        then(THIGH_R, 0f, 0f, 1f, 0.22f);
+        axis(CALF_R, 1f, 0f, 0f, -1.5f);
+        axis(SPINE1, 1f, 0f, 0f, -0.18f - breath);
+        axis(HEAD, 1f, 0f, 0f, READ_BEND);
+        chain(mv, 0f);
+        float ty = pos[ARM_L * 3 + 1] - READ_LOW, tz = pos[ARM_L * 3 + 2] - READ_FORE;
+        reach(mv, ARM_L, FORE_L, HAND_L, -1f, -READ_APART, ty, tz);
+        reach(mv, ARM_R, FORE_R, HAND_R, 1f, READ_APART, ty, tz);
+        readAt[0] = 0f;
+        readAt[1] = ty;
+        readAt[2] = tz;
+        for (int b = 0; b < n; b++) {
+            mul(g, b, mv.restQ, b, q, b);
+            p[b * 3] = pos[b * 3];
+            p[b * 3 + 1] = pos[b * 3 + 1];
+            p[b * 3 + 2] = pos[b * 3 + 2];
+        }
+    }
+
+    /** Where read() put the book's spine, in the figure. */
+    static final float[] readAt = new float[3];
+
     private static final float[] dir = new float[3], pole = new float[3], elbow = new float[3], hand = new float[3];
 
     /**

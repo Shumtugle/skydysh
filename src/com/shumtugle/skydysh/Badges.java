@@ -36,7 +36,9 @@ final class Badges {
     // a helicopter from the side: the body, its window cut out, the tail boom and its fin, the
     // blade over it on its mast, the skids under it
     static final int COPTER = 33;
-    static final int COUNT = 34, CELLS = 6, SIZE = 160;
+    // a book lying open: two leaves either side of the spine, lines of words on them, the cover's edge under
+    static final int BOOK = 34;
+    static final int COUNT = 35, CELLS = 6, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -208,6 +210,16 @@ final class Badges {
                 float latch = rbox(x, y, 0f, 0.04f, 0.12f, 0.13f, 0.03f);
                 float handle = Math.max(rbox(x, y, 0f, 0.42f, 0.34f, 0.2f, 0.08f), -rbox(x, y, 0f, 0.4f, 0.2f, 0.09f, 0.04f));
                 return min(body, latch, handle);
+            }
+            case BOOK: {
+                float leaves = Math.min(rbox(x, y, -0.31f, 0.04f, 0.26f, 0.34f, 0.04f), rbox(x, y, 0.31f, 0.04f, 0.26f, 0.34f, 0.04f));
+                float words = 9f;
+                for (int row = 0; row < 4; row++) {
+                    float ly = 0.22f - row * 0.13f;
+                    words = Math.min(words, Math.min(seg(x, y, -0.48f, ly, -0.14f, ly, 0.022f), seg(x, y, 0.14f, ly, 0.48f, ly, 0.022f)));
+                }
+                float cover = rbox(x, y, 0f, -0.36f, 0.62f, 0.045f, 0.03f);
+                return Math.min(Math.max(leaves, -words), cover);
             }
             case COPTER: {
                 float body = rbox(x, y, -0.18f, -0.06f, 0.4f, 0.27f, 0.2f);

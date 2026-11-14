@@ -142,6 +142,7 @@ release, each seen on the stand before the phone.
 - 1.4.29 The puppy's crowd alive on the sand; at the vets' she goes in at the door with it; done there, home her own way.
 - 1.4.30 A sign to get into the helicopter; mended, she waits by it; the sticks taught; its eye clear of houses; hand-overs cut, not flown; no lamps without posts.
 - 1.4.31 The jobs in a new order; the glass, the port and the concert hall in one day, the puppy, the archive and the landing gear in another; a point where each begins.
+- 1.4.32 The green brum reads the book of the town, opened over the frame from the sign over him.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.

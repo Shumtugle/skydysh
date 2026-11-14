@@ -22,6 +22,14 @@ a plane are to come.
 The town is lived in by humans and brums. A brum is a shell of brick and stone made to stand
 and walk; she is one, and so are the ones she hunts.
 
+In her old flat in the old house on the promenade lives the green brum. He reads on the sofa, a
+book open in both hands; a sign floats over him, and touched, the book opens over the whole
+frame: "Freedie of Skydysh", the town, the workshop she was made in, her home, her work, the
+people she knows, and every one of her stories, those still to come as well. A leaf at a time,
+turned by a touch on its right (back, on its left) or by a finger drawn across; it opens again
+where it was left. Its words are kept as an asset in each language (`assets/book/`), brought up
+to date with every job and every large change.
+
 It opens, at every start, with a flight in from the sea over the beach and the square to the
 old house, where the green brum who lives there stands in the shore road with a golden mallet;
 the town goes dark but for him, the name is typed in the letters of the dispatcher's tube, and an

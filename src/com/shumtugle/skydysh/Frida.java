@@ -319,6 +319,19 @@ final class Frida {
     static final String LOUNGE = "lounge";
     /** Another: standing, a thing held in both hands before the chest (see Stroll.hold). */
     static final String HOLD = "hold";
+    /** Another: on a sofa, a book open in both hands, the head bent over it (see Stroll.read). */
+    static final String READ = "read";
+
+    /** Where the book is, sitting at (x, y, z) turned by yaw, size times, reading (see READ), at a time: into out. */
+    static void book(float x, float y, float z, float yaw, float size, float t, float[] out) {
+        if (moves == null) return;
+        Stroll.read(moves, t, pq, pp);
+        float cy = (float) Math.cos(yaw), sy = (float) Math.sin(yaw);
+        float px = Stroll.readAt[0] * size, py = Stroll.readAt[1] * size, pz = Stroll.readAt[2] * size;
+        out[0] = x + cy * px + sy * pz;
+        out[1] = y + py;
+        out[2] = z - sy * px + cy * pz;
+    }
 
     /**
      * Where the hands are, standing at (x, y, z) turned by yaw, size times, holding a thing before
@@ -355,6 +368,10 @@ final class Frida {
         }
         if (motion.equals(LOUNGE)) {
             Stroll.lounge(moves, t, pq, pp);
+            return true;
+        }
+        if (motion.equals(READ)) {
+            Stroll.read(moves, t, pq, pp);
             return true;
         }
         int c = moves.motion(motion);

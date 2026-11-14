@@ -1,0 +1,58 @@
+# The green brum's book (1.4.32): in the old flat he reads on the sofa, a book open in both hands,
+# the head bent over it, its sign floating over it; touched, the book over the whole frame: the
+# cover, a page turned by a touch on the right (the leaf going over on its spine), another, one
+# back; shut by the way back. Then the same in English. In Russian first.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 14
+keep where 0
+keep book.page 0
+restart
+free
+at 32 7.2 0
+wait 1.5
+inroom -3.8 1.2
+face -1.5708
+wait 0.6
+shot b0
+eye 35 2.2 13.25 -1.5708 -0.15
+wait 0.1
+shot b1
+tapsign book
+wait 0.4
+shot b2
+tap 230 300
+wait 0.2
+shot b3
+wait 0.4
+shot b4
+tap 230 300
+wait 0.6
+shot b5
+tap 230 300
+wait 0.6
+tap 230 300
+wait 0.6
+tap 230 300
+wait 0.6
+tap 230 300
+wait 0.6
+tap 230 300
+wait 0.6
+tap 230 300
+wait 0.6
+shot b6
+tap 40 300
+wait 0.2
+shot b7
+wait 0.5
+back
+wait 0.3
+shot b8
+lang en
+tapsign book
+wait 0.6
+tap 40 300
+wait 0.6
+shot b9
