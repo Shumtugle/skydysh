@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.4.33
+
+- The concert hall: its eight columns stand between the three doors, not before them; each door is
+  seen whole from the street and walked into straight. No lamp post on the walk before them.
+- The town hall: its street door is only a door, its sign the way in, not a lift's; a touch on it
+  takes her in and leaves her in the hall. The lift's sign hangs inside, over its doors; a touch on
+  it, across the hall, in and up to the roof.
+- A sign for a seat taken (an armchair): over the helicopter on the town hall's roof with its
+  pilot in it ("Take a seat" over the frame), touched, she goes to its door and sits in beside
+  him; over her chair in the concert hall while it waits for her, touched, she goes to it and sits.
+- The eye in flight no longer leaps: it keeps clear of the walls only below the roofs, eases in
+  after them; the helicopter gathers its climb and goes up and along the arc smoothly.
+- The drive up and down the mountain: the eye goes up from the one she had at the wheel and comes
+  down into it again, eased at both ends, turning after the pickup slowly; the pickup turns with
+  the road's bends eased, from where it is, no step back; at the end no jolt.
+- At the wheel the eye stands back with the speed eased: a stop against a wall no longer pulls it
+  in at once. Anything coming between the eye and her moves it in at once, as before; it goes back
+  out unhurried, and rises over her eased.
+
 ## 1.4.32
 
 - The book. In the old flat on the promenade the green brum reads on the sofa: a book open in both

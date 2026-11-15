@@ -38,7 +38,9 @@ final class Badges {
     static final int COPTER = 33;
     // a book lying open: two leaves either side of the spine, lines of words on them, the cover's edge under
     static final int BOOK = 34;
-    static final int COUNT = 35, CELLS = 6, SIZE = 160;
+    /** A seat taken (an armchair, from the front): beside the pilot, or one's chair in the hall. */
+    static final int SEAT = 35;
+    static final int COUNT = 36, CELLS = 6, SIZE = 160;
     // the pane's edge, and how much of it the sign takes up, as parts of half a cell
     private static final float PANE = 0.8f, SIGN = 0.45f;
 
@@ -220,6 +222,15 @@ final class Badges {
                 }
                 float cover = rbox(x, y, 0f, -0.36f, 0.62f, 0.045f, 0.03f);
                 return Math.min(Math.max(leaves, -words), cover);
+            }
+            case SEAT: {
+                // an armchair from the front: its back, the two arms, the cushion between them, short legs
+                float back = rbox(x, y, 0f, 0.3f, 0.44f, 0.36f, 0.12f);
+                float arms = Math.min(rbox(x, y, -0.6f, -0.06f, 0.16f, 0.32f, 0.08f), rbox(x, y, 0.6f, -0.06f, 0.16f, 0.32f, 0.08f));
+                float seat = rbox(x, y, 0f, -0.2f, 0.4f, 0.14f, 0.06f);
+                float legs = Math.min(box(x, y, -0.6f, -0.5f, 0.07f, 0.12f), box(x, y, 0.6f, -0.5f, 0.07f, 0.12f));
+                float gap = box(x, y, 0f, -0.04f, 0.46f, 0.035f);
+                return Math.min(Math.max(min(back, arms, seat), -gap), legs);
             }
             case COPTER: {
                 float body = rbox(x, y, -0.18f, -0.06f, 0.4f, 0.27f, 0.2f);

@@ -237,11 +237,9 @@ final class Archive {
                 out[2] = in.wz(in.side * in.half, in.liftV);
                 return true;
             case ROOF:
+                // up on the roof the seat's sign over the helicopter is the mark (see World.seatOffered)
                 if (in != null || r.y < City.townRoof() - 1f) return door(out);
-                out[0] = copter.x;
-                out[1] = copter.y + Copter.ROOF + 1.6f;
-                out[2] = copter.z;
-                return true;
+                return false;
             case CARRY:
                 out[0] = City.archiveDoorX();
                 out[1] = City.WALK_TOP + 3.6f;
@@ -278,7 +276,7 @@ final class Archive {
             case GO: return "goal.townhall";
             case DESK: return in != null && in.townHall ? "goal.desk" : "goal.townhall";
             case LIFT: return in != null && in.townHall ? "goal.lift" : "goal.townhall";
-            case ROOF: return in == null && r.y > City.townRoof() - 1f ? "goal.copter" : "goal.townhall";
+            case ROOF: return in == null && r.y > City.townRoof() - 1f ? "goal.seat" : "goal.townhall";
             case CARRY: return "goal.archive";
             case INSIDE:
             case GIVE: return "goal.duty";

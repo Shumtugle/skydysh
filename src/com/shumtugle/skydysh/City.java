@@ -202,6 +202,8 @@ final class City implements Ground {
             if (Math.abs(x - gateX(k == 0)) < 7f && z > SHORE * CELL - 0.5f && z < SHORE * CELL + FRONT) return true;
         if (Math.abs(x - clinicDoorX()) < 7f && z > CLINIC_J * CELL - 0.5f && z < CLINIC_J * CELL + FRONT) return true;
         if (Math.abs(z - workshopZ()) < 9f && x < 0.5f && x > -FRONT) return true;
+        // the concert hall's portico, from the curb: nothing on the walk before its doors
+        if (Math.abs(x - concertDoorX()) < 7f && z > CONCERT_J * CELL - 0.5f && z < CONCERT_J * CELL + FRONT) return true;
         // the town hall's steps and door, from the curb
         if (Math.abs(x - (TOWNHALL_I * CELL + CELL * 0.5f)) < 6f && z > TOWNHALL_J * CELL - 0.5f && z < TOWNHALL_J * CELL + FRONT) return true;
         return false;
@@ -2420,7 +2422,7 @@ final class City implements Ground {
 
     /**
      * The concert hall: pale stone, high, its cornice and a pediment over the middle; before it a
-     * portico of eight columns on three broad steps; three tall doors of dark wood and glass, gilt
+     * portico of eight columns on three broad steps, between the doors; three tall doors of dark wood and glass, gilt
      * framed; boards with notes on them either side; its name over the doors in gilt letters, a
      * lyre on the pediment.
      */
@@ -2435,8 +2437,12 @@ final class City implements Ground {
         float pf = fz + 3f, half = hx * 0.55f;
         for (int k = 0; k < 3; k++)
             d.box(cx, WALK_TOP + 0.12f * (k + 0.5f), fz + 0.4f + k * 0.5f + 1f, half + 0.6f - k * 0.2f, 0.12f * (k + 0.5f), 1.4f - k * 0.45f, null, shade, DrawList.STONE);
+        // the columns stand between the doors, not before them: each door seen whole from the street
+        // and walked into straight, the middle gap the widest
+        float outer = half - 1f;
+        float[] at = {2f, 6f, 6f + (outer - 6f) * 0.5f, outer};
         for (int k = 0; k < 8; k++) {
-            float u = cx - half + 1f + k * (2f * half - 2f) / 7f;
+            float u = cx + (k < 4 ? -1f : 1f) * at[k < 4 ? 3 - k : k - 4];
             d.box(u, 0.6f + 5.2f, fz + 0.9f, 0.45f, 5.2f, 0.45f, null, stone, DrawList.STONE);
             d.box(u, 11.2f, fz + 0.9f, 0.6f, 0.2f, 0.6f, null, shade, DrawList.STONE);
             c.wall(u - 0.45f, fz + 0.45f, u + 0.45f, fz + 1.35f, 11.4f);
@@ -3404,7 +3410,8 @@ final class City implements Ground {
                     int o = k * Cell.HOUSE;
                     float kind = c.houses[o + 7];
                     if (kind != LIFT && kind != DOOR) continue;
-                    int sign = kind == LIFT ? MARK_STREET_LIFT : MARK_DOOR;
+                    // the town hall's lift is inside its hall: from the street its door is only a door
+                    int sign = kind == LIFT && !townHall(c.houses[o], c.houses[o + 1]) ? MARK_STREET_LIFT : MARK_DOOR;
                     boolean mine = home(c.houses[o], c.houses[o + 1]);
                     float nx = c.houses[o + 5], nz = c.houses[o + 6], top = c.houses[o + 4];
                     float half = Math.abs(nx) * c.houses[o + 2] + Math.abs(nz) * c.houses[o + 3];

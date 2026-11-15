@@ -31,7 +31,9 @@ final class Copter {
     float rotor, spin;
     /** A skid given way: it stands leaning on the other side. */
     boolean broken;
-    private float speed, breakT = -1f, hop;
+    private float speed, climb, breakT = -1f, hop;
+    /** How fast the climb is gathered, and given up (m/s each second). */
+    static final float CLIMB_GATHER = 4f;
 
     // the way it is sent: from (sx, sz) to (tx, tz) by (cx, cz), the ground at the end; so far along it (0 to 1)
     private float sx, sz, cx, cz, tx, tz, groundTo, along, length;
@@ -71,6 +73,7 @@ final class Copter {
             pz = qz;
         }
         along = 0f;
+        climb = 0f;
         phase = SPIN;
         breakOnLanding = breaks;
     }
@@ -124,8 +127,11 @@ final class Copter {
                 if (spin >= 1f) phase = RISE;
                 break;
             case RISE: {
-                // straight up over the roofs, turning to the arc's first way as it goes
-                y = Math.min(CRUISE, y + CLIMB * dt);
+                // straight up over the roofs, turning to the arc's first way as it goes; the climb
+                // gathered and eased off, not begun and stopped at once
+                float want = Math.min(CLIMB, Math.max(0f, CRUISE - y) * 0.8f + 0.3f);
+                climb += Math.max(-CLIMB_GATHER * dt, Math.min(CLIMB_GATHER * dt, want - climb));
+                y = Math.min(CRUISE, y + climb * dt);
                 float d = wrap(way(0f) - heading), step = TURN * dt;
                 heading += Math.max(-step, Math.min(step, d));
                 if (y >= CRUISE - 0.5f && Math.abs(d) < 0.1f) phase = CROSS;
@@ -147,8 +153,9 @@ final class Copter {
                 roll += (bank - roll) * Math.min(1f, dt * 2f);
                 float lean = speed / VMAX * 0.16f - Math.max(0f, speed - want) * 0.03f;
                 pitch += (lean - pitch) * Math.min(1f, dt * 2f);
-                // higher over the arc's middle
-                y = CRUISE + ARC_UP * (float) Math.sin(Math.PI * along);
+                // higher over the arc's middle, followed smoothly from wherever the climb left it
+                float high = CRUISE + ARC_UP * (float) Math.sin(Math.PI * along);
+                y += (high - y) * Math.min(1f, dt * 1.5f);
                 if (along >= 0.999f || left < 2f && speed < 2f) {
                     speed = 0f;
                     phase = DESCEND;

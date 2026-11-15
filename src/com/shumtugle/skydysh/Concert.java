@@ -173,7 +173,12 @@ final class Concert {
         return near && chairArmed && !r.inAir();
     }
 
-    /** Down in her chair (the music plays on, as it did). */
+    /** Her chair hers to sit in again, as if she had stepped away from it (a touch on its sign). */
+    void arm() {
+        chairArmed = true;
+    }
+
+        /** Down in her chair (the music plays on, as it did). */
     void sit() {
         seated = true;
         chairArmed = false;

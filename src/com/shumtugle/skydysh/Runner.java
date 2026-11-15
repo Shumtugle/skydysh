@@ -890,10 +890,16 @@ final class Runner {
     }
 
     /** The eye: behind her, a little above, turning after her a moment late, kept out of walls. */
+    /** How far up to the top the eye at the wheel stands back (eased); how fast it follows. */
+    private float rideFast;
+    static final float RIDE_EASE = 2f;
+
     private void eye(float dt, Ground g) {
         if (!placed) {
             eyeYaw = heading;
             placed = true;
+            keptBack = 1e3f;
+            keptShort = -1f;
         }
         float d = heading - eyeYaw;
         while (d > Math.PI) d -= 2f * (float) Math.PI;
@@ -925,7 +931,10 @@ final class Runner {
         }
         if (riding) {
             // farther back and higher the faster it goes, so what comes is seen in time
-            float fast = Math.min(1f, Math.abs(speed) / (aboard ? Pickup.SEA_TOP : Pickup.VMAX));
+            // eased: a stop against a wall does not pull the eye in with a jolt
+            float want = Math.min(1f, Math.abs(speed) / (aboard ? Pickup.SEA_TOP : Pickup.VMAX));
+            rideFast += (want - rideFast) * Math.min(1f, dt * RIDE_EASE);
+            float fast = rideFast;
             back = aboard ? BOAT_BACK + 3f * fast : RIDE_BACK + 5f * fast;
             high = aboard ? BOAT_HIGH + 1f * fast : RIDE_HIGH + 1.5f * fast;
         }
@@ -957,8 +966,10 @@ final class Runner {
         float r = in ? 0.3f : 0.4f, feet = y + high - (in ? 1f : City.HEADROOM - 0.3f);
         float[] p = {x, z};
         float free = 0f;
+        // in at once when something comes between, but back out again unhurried
+        float reach = Math.min(back, keptBack + dt * EYE_OUT);
         for (float t = EYE_STEP; ; t += EYE_STEP) {
-            float tt = Math.min(t, back), qx = x - fx * tt, qz = z - fz * tt;
+            float tt = Math.min(t, reach), qx = x - fx * tt, qz = z - fz * tt;
             // a slope rising behind her (a cliff, a hill's side) as high as the eye: no farther back
             // (up for a chase it goes on back over the slope, and up over it, below)
             if (!in && chase < 0.5f && tt > EYE_STEP && ((City) g).ground(qx, qz) > y + high - EYE_OVER_GROUND) break;
@@ -970,14 +981,19 @@ final class Runner {
             p[0] = eyeTry[0];
             p[1] = eyeTry[1];
             free = tt;
-            if (tt >= back) break;
+            if (tt >= reach) break;
         }
+        keptBack = free;
         g.keepEye(p);
         eyeX = p[0];
         eyeZ = p[1];
         // with her back to a wall the eye has no room behind her: it rises and looks down on her
         // instead, as far as a ceiling lets it
-        float short_ = Math.max(0f, Math.min(back, NEAR_BACK) - free) / NEAR_BACK;
+        float shortNow = Math.max(0f, Math.min(back, NEAR_BACK) - free) / NEAR_BACK;
+        // and rises so, eased, not in one frame
+        if (keptShort < 0f) keptShort = shortNow;
+        keptShort += (shortNow - keptShort) * Math.min(1f, dt * (shortNow > keptShort ? SHORT_IN : SHORT_OUT));
+        float short_ = keptShort;
         eyeY = Math.min(y + high + short_ * RISE, g.ceiling(eyeX, eyeZ, y + 0.5f) - 0.25f);
         // up for a chase, over a hill or a cliff behind her: higher still, over it
         if (chase > 0.01f && !in && g instanceof City) eyeY = Math.max(eyeY, ((City) g).ground(eyeX, eyeZ) + CHASE_OVER * chase);
@@ -996,6 +1012,10 @@ final class Runner {
     }
 
     private static final float EYE_STEP = 0.3f;
+    /** How far back the eye found room last frame, and how high it rose for want of it (eased). */
+    private float keptBack = 1e3f, keptShort = -1f;
+    /** Back out so many meters a second at most; up and down again so fast. */
+    static final float EYE_OUT = 6f, SHORT_IN = 6f, SHORT_OUT = 2.5f;
     /** The eye keeps at least so far over the ground behind her, meters. */
     static final float EYE_OVER_GROUND = 0.6f;
     // the eye with less room behind her than this rises so much higher at most (none at all)

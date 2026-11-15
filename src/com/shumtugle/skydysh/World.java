@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.32";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.33";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -2304,6 +2304,7 @@ final class World {
         if (driving != null && roadT < 0f) roadCue();
         if (roadT >= 0f) roadStep(dt);
         else if (driving != null) drive(dt);
+        if (roadT < 0f && roadAfter > 0f) roadAfter = Math.max(0f, roadAfter - dt);
         // the way out waiting: she gets out once the pickup stands
         if (exitWaiting && (driving == null || Math.abs(driving.speed) <= STOPPED)) {
             if (driving != null) getOut(false);
@@ -2813,7 +2814,7 @@ final class World {
             int o = i * 6;
             float x = marks[o], y = marks[o + 1], z = marks[o + 2], nx = marks[o + 3], nz = marks[o + 4];
             int kind = (int) marks[o + 5];
-            if (!liftsOpen() && (kind == City.MARK_STREET_LIFT || kind == City.MARK_HUT)) continue;
+            if (!liftsOpen() && (kind == City.MARK_STREET_LIFT || kind == City.MARK_HUT || kind == City.MARK_DOOR && City.townHall(x, z))) continue;
             // on her level: a lift's or a fire escape's in the street while she is in the street; a
             // ladder's up, or a hut's, while she is up there near its foot
             float level = kind == City.MARK_STREET_LIFT || kind == City.MARK_ESCAPE || kind == City.MARK_DOOR || kind == City.MARK_HOME ? City.WALK_TOP : marks[o + 1] - (kind == City.MARK_ROOF_LADDER ? 1.9f : City.HUT_HIGH + 0.8f);
@@ -2884,6 +2885,29 @@ final class World {
                 signs[o + 7] = 0f;
                 signs[o + 8] = 0f;
                 signs[o + 9] = MARK_COPTER;
+                k++;
+            }
+        }
+        // the helicopter with the pilot in it, on the town hall's roof: a seat beside him
+        Copter sc = seatOffered();
+        if (sc != null && k < 16 && Math.abs(r.y - sc.y) < 2.6f) {
+            float ox = r.eyeX - sc.x, oz = r.eyeZ - sc.z;
+            float dist = (float) Math.sqrt(ox * ox + oz * oz);
+            float shown = Math.min(1f, (SIGN_FAR - dist) / 10f) * Math.min(1f, Math.max(0f, (dist - 2.5f) / 3f));
+            float bob = 0.08f * (float) Math.sin(time * 2.2f + sc.x * 0.7f);
+            if (shown > 0.02f && d.project(sc.x, sc.y + Copter.ROOF + COPTER_SIGN_UP + bob, sc.z, markAt) && markAt[2] >= 1f
+                    && markAt[0] >= -20f && markAt[0] <= W + 20f && markAt[1] >= -20f && markAt[1] <= h + 20f) {
+                int o = k * 10;
+                signs[o] = markAt[0];
+                signs[o + 1] = markAt[1];
+                signs[o + 2] = Math.max(9f, Math.min(18f, W * 1.6f * 0.75f / markAt[2]));
+                signs[o + 3] = Badges.SEAT;
+                signs[o + 4] = shown;
+                signs[o + 5] = sc.x;
+                signs[o + 6] = sc.z;
+                signs[o + 7] = 0f;
+                signs[o + 8] = 0f;
+                signs[o + 9] = MARK_PASSENGER;
                 k++;
             }
         }
@@ -3115,12 +3139,30 @@ final class World {
     // ---- the mountain road by car, shown as a scene: so long, seconds; the eye over it at its
     // highest so high, so far behind; it starts and ends this high behind the pickup, so far back;
     // the pickup rolls on out of it so fast ----
-    static final float ROAD_S = 6.5f, ROAD_EYE_HIGH = 180f, ROAD_EYE_BACK = 30f, ROAD_EYE_LOW = 6f, ROAD_EYE_NEAR = 12f, ROAD_ROLL = 8f;
+    static final float ROAD_S = 6.5f, ROAD_EYE_HIGH = 180f, ROAD_EYE_BACK = 30f, ROAD_ROLL = 8f;
+    /** The share of the drive the eye takes going up (and coming down); how fast it turns after the pickup. */
+    static final float ROAD_EYE_EASE = 0.3f, ROAD_LOOK = 1.2f, ROAD_HEAD = 10f;
+    /** Past the road's end at the start no further than so much (meters). */
+    static final float ROAD_FROM = 20f;
+
+    /** The way round from one heading to another, the short way: -pi to pi. */
+    static float turnTo(float from, float to) {
+        float d = to - from;
+        while (d > Math.PI) d -= 2f * (float) Math.PI;
+        while (d < -Math.PI) d += 2f * (float) Math.PI;
+        return d;
+    }
     /** The scene: seconds into it (less than nothing: none); up the mountain or down it. */
     float roadT = -1f;
     private boolean roadUp;
-    private float roadWasX, roadWasZ;
+    private float roadWasX, roadWasZ, roadLook, roadHead, roadBack, roadUpBy, roadPitch, roadFrom, roadW;
     private final float[] roadAt = new float[4], roadEye = new float[5];
+    /** The eye the last frame was shot from: x, y, z, yaw, pitch. */
+    final float[] eyeShot = new float[5];
+    /** The scene's last eye, as it stood off the pickup (x, y, z, yaw, pitch), and how long yet it gives way to hers. */
+    private final float[] roadOff = new float[5];
+    private float roadAfter;
+    static final float ROAD_AFTER = 0.7f;
 
     /**
      * At the wheel: through the arch at the road's foot, going up it, or off the deck into the
@@ -3150,45 +3192,80 @@ final class World {
             roadT = -1f;
             return;
         }
+        boolean first = roadT <= 0f;
+        float len = Mountain.wayLength();
+        if (first) {
+            // already a little way past the road's end: from there on, no step back to it
+            Mountain.wayAt(roadUp ? 0f : len, roadAt);
+            float dx = p.x - roadAt[0], dz = p.z - roadAt[2];
+            roadFrom = Math.min(ROAD_FROM, (float) Math.sqrt(dx * dx + dz * dz));
+        }
         roadT += dt;
-        float u = Math.min(1f, roadT / ROAD_S), e = u * u * (3f - 2f * u), len = Mountain.wayLength();
-        float sNow = roadUp ? e * len : (1f - e) * len;
+        float u = Math.min(1f, roadT / ROAD_S), e = u * u * (3f - 2f * u), on = roadFrom + e * (len - roadFrom);
+        float a = Math.min(1f, Math.min(u, 1f - u) / ROAD_EYE_EASE);
+        roadW = a * a * (3f - 2f * a);
+        float sNow = roadUp ? on : len - on;
         Mountain.wayAt(sNow, roadAt);
         p.x = roadAt[0];
         p.y = roadAt[1];
         p.z = roadAt[2];
-        p.heading = roadUp ? roadAt[3] : roadAt[3] + (float) Math.PI;
+        float along = roadUp ? roadAt[3] : roadAt[3] + (float) Math.PI;
+        if (first) {
+            // the eye at the wheel as it was, kept on the pickup for the way up
+            Runner r = runner;
+            float bx = p.x - r.eyeX, bz = p.z - r.eyeZ;
+            roadBack = (float) Math.sqrt(bx * bx + bz * bz);
+            roadUpBy = r.eyeY - p.y;
+            roadPitch = r.eyePitch;
+            roadLook = r.eyeYaw;
+            roadHead = p.heading;
+        }
+        // the pickup turns with the road's bends eased, and the eye after it slower still
+        roadHead += turnTo(roadHead, along) * Math.min(1f, dt * ROAD_HEAD);
+        roadHead = turnTo(0f, roadHead);
+        float look = ROAD_LOOK + (ROAD_HEAD - ROAD_LOOK) * (1f - roadW) * (u > 0.5f ? 1f : 0f);
+        roadLook += turnTo(roadLook, roadHead) * Math.min(1f, dt * look);
+        roadLook = turnTo(0f, roadLook);
+        p.heading = roadHead;
         p.speed = ROAD_ROLL;
         p.steer = 0f;
         p.seat(seatAt);
         runner.ride(dt, city, p.x, p.y, p.z, p.heading, p.speed, seatAt[0], seatAt[1], seatAt[2], 0f);
         if (u >= 1f) {
+            // the last of the scene's eye handed to her own, so the next frame goes on from it
+            roadEye(runner);
+            runner.eyeYaw = roadEye[3];
+            roadOff[0] = roadEye[0] - p.x;
+            roadOff[1] = roadEye[1] - p.y;
+            roadOff[2] = roadEye[2] - p.z;
+            roadOff[3] = roadEye[3];
+            roadOff[4] = roadEye[4];
+            roadAfter = ROAD_AFTER;
             roadT = -1f;
             roadWasX = p.x;
             roadWasZ = p.z;
-            runner.recenter();
         }
     }
 
     /**
-     * The eye on the drive: behind the pickup at first, then up and up over the mountain, looking
-     * nearly straight down on it going round, the way it went lit; at the end down again behind
-     * it, where it comes out.
+     * The eye on the drive: the one at the wheel at first, then up and up over the mountain,
+     * looking nearly straight down on the pickup going round, turning after it slowly; at the end
+     * down again into the one at the wheel, so it comes out of the scene without a cut.
      */
-    private void roadEye() {
+    private void roadEye(Runner r) {
         Pickup p = driving;
-        float u = Math.min(1f, roadT / ROAD_S), w = (float) Math.pow(Math.sin(Math.PI * u), 0.6);
-        float high = ROAD_EYE_LOW + (ROAD_EYE_HIGH - ROAD_EYE_LOW) * w, back = ROAD_EYE_NEAR + (ROAD_EYE_BACK - ROAD_EYE_NEAR) * w;
-        // up high the eye looks north, the map's way; low, the pickup's
-        float d = 0f - p.heading;
-        while (d > Math.PI) d -= 2f * (float) Math.PI;
-        while (d < -Math.PI) d += 2f * (float) Math.PI;
-        float yaw = p.heading + d * w;
-        roadEye[0] = p.x - (float) Math.sin(yaw) * back;
-        roadEye[1] = p.y + high;
-        roadEye[2] = p.z - (float) Math.cos(yaw) * back;
-        roadEye[3] = yaw;
-        roadEye[4] = -(float) Math.atan2(high - 1.5f, back + 6f);
+        float w = roadW;
+        float hx = p.x - (float) Math.sin(roadLook) * ROAD_EYE_BACK, hy = p.y + ROAD_EYE_HIGH;
+        float hz = p.z - (float) Math.cos(roadLook) * ROAD_EYE_BACK;
+        float hp = -(float) Math.atan2(ROAD_EYE_HIGH - 1.5f, ROAD_EYE_BACK + 6f);
+        // low: the eye she had at the wheel, carried on the pickup; at the end it turns with it again
+        float lx = p.x - (float) Math.sin(roadLook) * roadBack, ly = p.y + roadUpBy, lz = p.z - (float) Math.cos(roadLook) * roadBack;
+        float lyaw = roadLook, lp = roadPitch;
+        roadEye[0] = lx + (hx - lx) * w;
+        roadEye[1] = ly + (hy - ly) * w;
+        roadEye[2] = lz + (hz - lz) * w;
+        roadEye[3] = lyaw + turnTo(lyaw, roadLook) * w;
+        roadEye[4] = lp + (hp - lp) * w;
     }
 
     /** The ring at the wheel, coloured for what she is about: the hunt coral, the folder turquoise, a delivery amber, free cream. */
@@ -3339,7 +3416,7 @@ final class World {
 
     // ---- errands: a sign touched, she goes where it says by herself ----
     static final int NO_ERRAND = 0, ERRAND_CLIMB = 1, ERRAND_UP = 2, ERRAND_DOWN = 3, ERRAND_DRIVE = 4, ERRAND_THROUGH = 5, ERRAND_SOFA = 6, ERRAND_BED = 7,
-            ERRAND_FLY = 8;
+            ERRAND_FLY = 8, ERRAND_SEAT = 9, ERRAND_PASSENGER = 10;
     /** The thing of a bed she goes for (see ERRAND_BED). */
     private int errandThing;
     private boolean errandIn;                  // through a house: she has been inside
@@ -3426,6 +3503,61 @@ final class World {
     }
 
     static final int MARK_BOOK = 9;            // the sign over the green brum's book
+    static final int MARK_CHAIR = 10;          // the sign over her chair in the concert hall
+    static final int MARK_HALL_LIFT = 11;      // the sign over the lift's doors in the town hall's hall
+    static final int MARK_PASSENGER = 12;      // the sign over a helicopter someone else flies: a seat beside him
+    /** Those two indoor signs hang so high over the floor. */
+    static final float ROOM_SIGN_Y = 2.6f;
+
+    /**
+     * The one more sign a room may have, after the sofa's and the book's: over her chair in the
+     * concert hall while it waits for her, lit; over the lift's doors in the town hall's hall (the
+     * street door there is only a door: the lift is inside).
+     */
+    private void roomSign(DrawList d) {
+        Indoors in = indoors;
+        if (in == null || swapT >= 0f || paused || d.badgeN >= DrawList.BADGE_MAX - 3 || shownN >= 16) return;
+        float sx, sz;
+        int pic, kind;
+        if (in.concert) {
+            Concert co = hall();
+            if (co == null || co.seated || !co.lit() || co.step == Concert.DONE) return;
+            sx = in.wx(Concert.CHAIR_U, Concert.CHAIR_V);
+            sz = in.wz(Concert.CHAIR_U, Concert.CHAIR_V);
+            pic = Badges.SEAT;
+            kind = MARK_CHAIR;
+        } else if (in.townHall && in.hasLift) {
+            float u = in.side * (in.half - 0.6f);
+            sx = in.wx(u, in.liftV);
+            sz = in.wz(u, in.liftV);
+            pic = Badges.LIFT;
+            kind = MARK_HALL_LIFT;
+        } else return;
+        float bob = 0.08f * (float) Math.sin(time * 2.2f + 2f);
+        if (!d.project(sx, Indoors.FLOOR + ROOM_SIGN_Y + bob, sz, markAt) || markAt[2] < 0.5f) return;
+        if (markAt[0] < -20f || markAt[0] > W + 20f || markAt[1] < -20f || markAt[1] > h + 20f) return;
+        float size = Math.max(9f, Math.min(18f, W * 1.6f * 0.75f / markAt[2]));
+        boolean mine = errand != NO_ERRAND && Math.abs(errandX - sx) < 0.1f && Math.abs(errandZ - sz) < 0.1f;
+        d.badge(markAt[0], markAt[1], size, pic, 0.9f, mine ? 0.6f + 0.4f * (float) Math.sin(time * 8f) : 0f);
+        int o = shownN * 10;
+        shown[o] = markAt[0];
+        shown[o + 1] = markAt[1];
+        shown[o + 2] = size;
+        shown[o + 3] = pic;
+        shown[o + 4] = 1f;
+        shown[o + 5] = sx;
+        shown[o + 6] = sz;
+        shown[o + 7] = 0f;
+        shown[o + 8] = 0f;
+        shown[o + 9] = kind;
+        shownN++;
+    }
+
+    /** The helicopter with someone else at its controls she may take the seat beside him in: the archive's, on the roof. */
+    private Copter seatOffered() {
+        if (driving != null || indoors != null || swapT >= 0f || dispatch != null || piloting()) return null;
+        return archive != null && archive.step == Archive.ROOF ? archive.copter : null;
+    }
     /** The book's sign floats so high over it: over his head. */
     static final float BOOK_SIGN_UP = 2.1f;
 
@@ -3440,7 +3572,7 @@ final class World {
         int sgn = signAt(x, y);
         if (sgn < 0 || indoors == null) return sgn;
         int kind = (int) shown[sgn * 10 + 9];
-        return kind == MARK_SOFA || kind == MARK_BOOK ? sgn : -1;
+        return kind == MARK_SOFA || kind == MARK_BOOK || kind == MARK_CHAIR || kind == MARK_HALL_LIFT ? sgn : -1;
     }
 
     /** For the desktop stand: a touch on the sign over home's sofa, if it is there. */
@@ -3495,6 +3627,27 @@ final class World {
             indoors.goal(r, way);
             r.lead(way[0], way[1], (float) Math.atan2(mx - way[0], mz - way[1]));
             errand = ERRAND_SOFA;
+        } else if (kind == MARK_CHAIR) {
+            Concert co = hall();
+            if (co == null || indoors == null || !indoors.concert) return;
+            // to behind it, where she gets up to: she sits once she is there
+            co.offChair(indoors, way);
+            co.arm();
+            r.lead(way[0], way[1], indoors.heading(0f, 1f));
+            errand = ERRAND_SEAT;
+        } else if (kind == MARK_HALL_LIFT) {
+            if (indoors == null || !indoors.townHall) return;
+            // across the hall into the cabin, and up to the roof
+            indoors.goal(r, way);
+            r.lead(way[0], way[1], (float) Math.atan2(way[0] - r.x, way[1] - r.z));
+            errand = ERRAND_UP;
+        } else if (kind == MARK_PASSENGER) {
+            Copter cp = seatOffered();
+            if (cp == null) return;
+            // to its door: the pilot lets her in there
+            cp.door(signDoor);
+            r.lead(signDoor[0], signDoor[1], (float) Math.atan2(cp.x - signDoor[0], cp.z - signDoor[1]));
+            errand = ERRAND_PASSENGER;
         } else if (kind == MARK_PICKUP) {
             Pickup p = pickupAt(mx, mz);
             if (p == null) return;
@@ -3567,6 +3720,20 @@ final class World {
                     errand = NO_ERRAND;
                 } else if (!r.led()) errand = NO_ERRAND;
                 break;
+            case ERRAND_SEAT: {
+                Concert co = hall();
+                if (co == null || co.seated || indoors == null || !indoors.concert) {
+                    errand = NO_ERRAND;
+                    r.stopLead();
+                } else if (!r.led() && !arrived) errand = NO_ERRAND;
+                break;
+            }
+            case ERRAND_PASSENGER:
+                if (seatOffered() == null || !r.led()) {
+                    errand = NO_ERRAND;
+                    r.stopLead();
+                }
+                break;
             case ERRAND_SOFA:
                 if (indoors == null || !indoors.home || indoors.seated) {
                     errand = NO_ERRAND;
@@ -3592,7 +3759,11 @@ final class World {
                 } else if (!r.led()) errand = NO_ERRAND;
                 break;
             case ERRAND_THROUGH:
-                if (indoors != null) {
+                if (indoors != null && indoors.townHall) {
+                    // the town hall's door: only in, to its hall; the lift and the counter are hers to choose
+                    errand = NO_ERRAND;
+                    r.stopLead();
+                } else if (indoors != null) {
                     errandIn = true;
                     indoors.goal(r, way);
                     r.lead(way[0], way[1], (float) Math.atan2(way[0] - r.x, way[1] - r.z));
@@ -3912,12 +4083,17 @@ final class World {
             free = 0f;
             for (float t = FLY_STEP; ; t += FLY_STEP) {
                 float tt = Math.min(t, len), qx = cp.x + wx * tt / len, qz = cp.z + wz * tt / len;
+                // the roofs and slopes as they stand; the walls only below the highest roof in
+                // town (a house's walls block a body however high, though the house ends at its
+                // roof: higher up they would stop the eye in the open air, and shake it so)
                 if (city.ground(qx, qz, ey - EYE_CLEAR, EYE_CLEAR) > ey - EYE_CLEAR) break;
-                eyeTry[0] = qx;
-                eyeTry[1] = qz;
-                city.push(eyeTry, 0.5f, ey - EYE_CLEAR);
-                float mx = eyeTry[0] - qx, mz = eyeTry[1] - qz;
-                if (mx * mx + mz * mz > 0.04f * 0.04f) break;
+                if (ey - EYE_CLEAR < WALLS_UP) {
+                    eyeTry[0] = qx;
+                    eyeTry[1] = qz;
+                    city.push(eyeTry, 0.5f, ey - EYE_CLEAR);
+                    float mx = eyeTry[0] - qx, mz = eyeTry[1] - qz;
+                    if (mx * mx + mz * mz > 0.04f * 0.04f) break;
+                }
                 free = tt;
                 if (tt >= len) break;
             }
@@ -3927,7 +4103,7 @@ final class World {
         float keep = len > 0.01f ? free / len : 1f;
         if (Float.isNaN(flyKeep)) flyKeep = keep;
         // in quickly when something comes between, back out slowly
-        flyKeep += (keep - flyKeep) * Math.min(1f, dt * (keep < flyKeep ? 12f : 1.2f));
+        flyKeep += (keep - flyKeep) * Math.min(1f, dt * (keep < flyKeep ? 6f : 1.2f));
         float room = len * flyKeep, short_ = Math.max(0f, Math.min(len, FLY_ROOM) - room) / FLY_ROOM;
         eyeNow[0] = cp.x + wx * flyKeep;
         eyeNow[1] = ey + short_ * FLY_RISE;
@@ -3944,6 +4120,8 @@ final class World {
     // kept clear of what stands round it: looked for every so far out from it, so high under the
     // eye counting; with less room behind it than so much, the eye rises up to so much more
     static final float FLY_STEP = 0.4f, EYE_CLEAR = 1.2f, FLY_ROOM = 9f, FLY_RISE = 9f;
+    /** No roof in town is higher than so much: the walls count for the eye below it only. */
+    static final float WALLS_UP = 34f;
     private float flyKeep = Float.NaN;
     private final float[] eyeTry = new float[2], leafLow = new float[1];
 
@@ -3976,6 +4154,11 @@ final class World {
     private final float[] signDoor = new float[2];
 
     /** The helicopter she can be at the controls of now: the mend's, or her own. */
+    /** For the stand: the helicopter there is now (see heli). */
+    Copter heliForStand() {
+        return archive != null ? archive.copter : heli();
+    }
+
     private Copter heli() {
         return mend != null ? mend.copter : parked;
     }
@@ -5776,9 +5959,12 @@ final class World {
             return;
         }
         String w = ar.goalWord(indoors, runner);
-        if (w == null || !ar.goal(indoors, runner, goal)) return;
+        if (w == null) return;
+        boolean at = ar.goal(indoors, runner, goal);
+        // up on the roof no mark: the seat's sign over the helicopter is it
+        if (!at && ar.step != Archive.ROOF) return;
         wordAtTop(f, Lang.lines(w, mission.round, null)[0], green, ink);
-        placeMark(d, f, goal[0], goal[1], goal[2], ar.mark(indoors, runner), Marks.OPEN);
+        if (at) placeMark(d, f, goal[0], goal[1], goal[2], ar.mark(indoors, runner), Marks.OPEN);
     }
 
     /**
@@ -7027,6 +7213,7 @@ final class World {
         if (dispatch == null) {
             sofaSign(d);
             bookSign(d);
+            roomSign(d);
             buttons(d);
         }
         if (dispatch == null && paused) pauseFlat(f);
@@ -7117,12 +7304,21 @@ final class World {
         }
         // the drive up or down the mountain: the eye over it
         if (roadT >= 0f && driving != null) {
-            roadEye();
+            roadEye(r);
             eyeX = roadEye[0];
             eyeY = roadEye[1];
             eyeZ = roadEye[2];
             eyeYaw = roadEye[3];
             eyePitch = roadEye[4];
+        } else if (roadAfter > 0f && driving != null) {
+            float k = 1f - roadAfter / ROAD_AFTER;
+            k = k * k * (3f - 2f * k);
+            Pickup p = driving;
+            eyeX = p.x + roadOff[0] + (eyeX - p.x - roadOff[0]) * k;
+            eyeY = p.y + roadOff[1] + (eyeY - p.y - roadOff[1]) * k;
+            eyeZ = p.z + roadOff[2] + (eyeZ - p.z - roadOff[2]) * k;
+            eyeYaw = roadOff[3] + turnTo(roadOff[3], eyeYaw) * k;
+            eyePitch = roadOff[4] + (eyePitch - roadOff[4]) * k;
         }
         // shaken by a blast
         if (shake > 0f) {
@@ -7143,6 +7339,7 @@ final class World {
         // at the crane, a long lens from far off: the field nearly as drawn on a plan, the stacks' sides showing
         float focal = craning && dispatch == null ? W * CRANE_LENS : W * 1.6f;
         // far enough for the mountain over the town
+        eyeShot[0] = eyeX; eyeShot[1] = eyeY; eyeShot[2] = eyeZ; eyeShot[3] = eyeYaw; eyeShot[4] = eyePitch;
         d.camera(eyeX, eyeY, eyeZ, eyeYaw, eyePitch, dispatch != null ? dispatch.focal(W * 1.6f, W) : focal, 0.05f, 1600f);
         fliers.strokes(d);
         float ex = (float) Math.sin(eyeYaw), ez = (float) Math.cos(eyeYaw);

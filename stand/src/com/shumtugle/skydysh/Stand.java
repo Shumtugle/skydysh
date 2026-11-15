@@ -189,6 +189,37 @@ public final class Stand implements World.Host {
                 if (q == null) System.out.println(String.format("%7.2fs  not at the wheel", time));
                 else System.out.println(String.format("%7.2fs  at %.1f %.1f heading %.2f, %.1f m/s, wheel %.2f", time, q.x, q.z, q.heading, q.speed, q.steer));
             }
+        } else if (c.equals("ftrace")) {
+            // ftrace SECONDS EVERY: time run on, the helicopter flown and the eye told so often
+            float secs = f(p[1]), every = f(p[2]);
+            for (float t = 0f; t < secs - 1e-4f; t += every) {
+                run(every);
+                Copter q = world.heliForStand();
+                Runner r = world.runner;
+                if (q == null) System.out.println(String.format("%7.3fs  no helicopter", time));
+                else System.out.println(String.format("%7.3fs  copter %.3f %.3f %.3f h %.4f roll %.4f pitch %.4f  eye %.3f %.3f %.3f yaw %.4f pitch %.4f",
+                        time, q.x, q.y, q.z, q.heading, q.roll, q.pitch, world.eyeShot[0], world.eyeShot[1], world.eyeShot[2], world.eyeShot[3], world.eyeShot[4]));
+            }
+        } else if (c.equals("etrace")) {
+            // etrace SECONDS EVERY: time run on (no finger), the pickup she drives (or she) and the eye told so often
+            float secs = f(p[1]), every = f(p[2]);
+            // with SIDEWAYS after: the throttle held up full, the wheel held so far aside, as pedal
+            boolean gas = p.length > 3;
+            float wx = World.W * 0.4f, wy = 520f;
+            if (gas) {
+                world.touch(World.DOWN, 0, wx, wy);
+                step();
+                world.touch(World.MOVE, 0, wx + f(p[3]), wy - World.CAR_R);
+            }
+            for (float t = 0f; t < secs - 1e-4f; t += every) {
+                run(every);
+                Pickup q = world.driving;
+                Runner r = world.runner;
+                float bx = q != null ? q.x : r.x, by = q != null ? q.y : r.y, bz = q != null ? q.z : r.z, bh = q != null ? q.heading : r.heading;
+                System.out.println(String.format("%7.3fs  body %.3f %.3f %.3f h %.4f  eye %.3f %.3f %.3f yaw %.4f pitch %.4f",
+                        time, bx, by, bz, bh, world.eyeShot[0], world.eyeShot[1], world.eyeShot[2], world.eyeShot[3], world.eyeShot[4]));
+            }
+            if (gas) world.touch(World.UP, 0, wx, wy);
         } else if (c.equals("down")) {
             world.touch(World.DOWN, f(p[1]), f(p[2]));
             step();
@@ -311,6 +342,7 @@ public final class Stand implements World.Host {
             // face RADIANS: her turned so
             Runner r = world.runner;
             r.put(r.x, r.y, r.z, f(p[1]));
+            r.recenter();
             step();
         } else if (c.equals("finger")) {
             // finger down|move|up ID X Y: one finger of several, by its number
@@ -1089,9 +1121,9 @@ public final class Stand implements World.Host {
                         time, q.speed, most, (float) Math.sqrt(sum / n), side));
             }
         } else if (c.equals("tapsign")) {
-            // tapsign lift|ladder|up|wheel|copter|book|enter|home: a tap on the nearest sign of the kind on the glass, told
+            // tapsign lift|ladder|up|wheel|copter|book|enter|home|seat: a tap on the nearest sign of the kind on the glass, told
             int which = p[1].equals("ladder") ? Badges.LADDER : p[1].equals("up") ? Badges.UP : p[1].equals("wheel") ? Badges.WHEEL
-                    : p[1].equals("copter") ? Badges.COPTER : p[1].equals("book") ? Badges.BOOK : p[1].equals("enter") ? Badges.ENTER : p[1].equals("home") ? Badges.HOME : Badges.LIFT;
+                    : p[1].equals("copter") ? Badges.COPTER : p[1].equals("book") ? Badges.BOOK : p[1].equals("enter") ? Badges.ENTER : p[1].equals("home") ? Badges.HOME : p[1].equals("seat") ? Badges.SEAT : Badges.LIFT;
             float[] at = new float[2];
             if (world.signOnGlass(which, at)) {
                 System.out.println(String.format("%7.2fs  tap on the %s sign at %.0f %.0f", time, p[1], at[0], at[1]));

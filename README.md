@@ -92,7 +92,9 @@ takes her up and lets her out on the roof by itself. On the roof, by the hut's d
 shows; pressed, the lift takes her down and the cabin opens onto the hall again. Signs of glass
 hang over the ways in and up near her: the lifts' doors, the fire escapes, the ladders from roof
 to roof; touched, a sign sends her there by herself, up the ladder, or in and up (or down and
-out) by the lift. A button high on the left pauses the game; under the pause, the language (the
+out) by the lift. The town hall's street door is only a door (its lift's sign hangs inside, in
+its hall). A sign of an armchair is a seat to take: beside the pilot in a helicopter someone
+else flies, or her own chair in the concert hall. A button high on the left pauses the game; under the pause, the language (the
 phone's own, Russian or English, kept as chosen) and the results: the best time of every job
 played, on the screen in her head. The eye behind her keeps out of
 the leaves: when a tree's crown or a palm's comes between, it drops under it, or comes in nearer.

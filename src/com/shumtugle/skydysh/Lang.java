@@ -81,6 +81,7 @@ final class Lang {
         EN.put("archive.hand", "Papers for the archive.|Carefully. The helicopter|is waiting on the roof.");
         EN.put("goal.lift", "TO THE LIFT");
         EN.put("goal.copter", "TO THE HELICOPTER");
+        EN.put("goal.seat", "TAKE A SEAT");
         EN.put("goal.archive", "ARCHIVE");
         EN.put("goal.duty", "DUTY DESK");
         EN.put("goal.light", "LIGHTS");
