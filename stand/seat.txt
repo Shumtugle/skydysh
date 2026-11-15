@@ -1,0 +1,36 @@
+# The town hall from the street: the sign over its door the way in, not a lift's; touched, in and
+# stopped in the hall. The folder from the clerk; the lift's sign inside over its doors, touched,
+# across, in and up. On the roof the seat's sign over the helicopter with its pilot; touched, in
+# beside him and away. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+mission 8
+close
+at 32 124 0
+wait 1
+shot s0
+tapsign lift
+tapsign enter
+errand 8 0 x
+where
+shot s1
+inroom 3.5 6.4
+face -1.57
+wait 8
+inroom 0 8.5
+face 1.57
+wait 1.5
+where
+shot s2
+tapsign lift
+errand 25 0 x
+where
+face 1.83
+wait 1.5
+shot s3
+tapsign seat
+errand 8 0 x
+wait 2
+where
+shot s4

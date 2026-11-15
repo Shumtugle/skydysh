@@ -1,0 +1,24 @@
+# The concert hall after the job, lit and full: the seat's sign over her chair at the end of the back
+# row; touched, she goes to it and sits, the stage before her. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 254
+restart
+free
+at -96 245 0
+wait 1
+at -96 265.6 0
+wait 2
+inroom 0 6
+face 0
+wait 1
+face -1.57
+wait 1.5
+where
+shot c0
+tapsign seat
+errand 12 0 x
+wait 2
+where
+shot c1
