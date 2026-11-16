@@ -1,0 +1,39 @@
+# The trials: seven touches on the version in the corner open their screen over the game. The
+# puppy picked there: a new world in a sandbox, on home's sofa, the puppy next as if all before
+# it were done. Under the pause, the way out of the trial; out of it, the real game as it was:
+# what was won and the likes untouched. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 30
+keep likes 12345
+restart
+wait 1
+kept kinds likes
+tap 260 634
+tap 260 634
+tap 260 634
+tap 260 634
+tap 260 634
+tap 260 634
+tap 260 634
+wait 0.5
+shot t0
+trial 5
+wait 8
+kept kinds likes
+shot t1
+pick 5
+wait 1
+shot t2
+tap 137 320
+wait 0.5
+tap 137 320
+wait 3
+tap 24 67
+wait 0.5
+shot t3
+tap 137 462
+wait 1
+kept kinds likes
+shot t4

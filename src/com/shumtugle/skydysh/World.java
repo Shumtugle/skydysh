@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.33";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.34";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -36,6 +36,21 @@ final class World {
     }
 
     private final Host host;
+    /** The sandbox this world is played in, for testing; null when it is the real game. */
+    final Trial trial;
+    /** The trials' screen, while it is open over the frame. */
+    private Trials trials;
+    /**
+     * Asked of the shell that holds this world: a new one, in a trial of this kind (1 and up),
+     * or the real game again (-1); 0, nothing asked.
+     */
+    int trialWanted;
+    /** Touches in a row on the version in the corner, and when the last came (seconds of the wall clock). */
+    private int cornerTaps;
+    private float cornerLast, wall;
+    /** So many touches on the version, none further apart than so long, open the trials' screen. */
+    static final int CORNER_TAPS = 7;
+    static final float CORNER_GAP = 0.8f;
     int h = 640;
     float time;
     float frameMs;                           // how long the last frame took, set by the shell
@@ -133,6 +148,7 @@ final class World {
 
     World(Host host) {
         this.host = host;
+        trial = host instanceof Trial ? (Trial) host : null;
         cars.duty = duty;
         cars.city = city;
         cars.walkers = walkers;
@@ -178,6 +194,12 @@ final class World {
             resume();
         }
         opening = new Opening(host, city);
+        // a trial of any job but the first: straight onto home's sofa, its screen to come on with
+        // that job next, as if every one before had just been done
+        if (trial != null && passed(1)) {
+            skipOpening();
+            standSofa();
+        }
     }
 
     /** The next mission, round (x, z): in turn five brums loose, the folder, a delivery, a call out. */
@@ -520,6 +542,17 @@ final class World {
         return canSkip() ? skipRowY() + 26f : skipRowY();
     }
 
+    /** The last row under the pause, of those shown now. */
+    float lastRowY() {
+        if (free) return resultsRowY();
+        return canGoBack() ? pointRowY() : canSkip() ? skipRowY() : storyRowY();
+    }
+
+    /** In a trial, the row under all the others: out of it, back to the game as it was. */
+    float trialRowY() {
+        return lastRowY() + 26f;
+    }
+
     /** Whether the job now may be taken up again at its last point from under the pause. */
     boolean canGoBack() {
         return !free && !over() && pointSeen > 0 && !aboard() && !piloting() && pointKept();
@@ -560,6 +593,11 @@ final class World {
             host.buzz(20);
             return true;
         }
+        if (trial != null && Math.abs(y - trialRowY()) < 11f) {
+            trialWanted = -1;
+            host.buzz(20);
+            return true;
+        }
         return false;
     }
 
@@ -571,6 +609,10 @@ final class World {
         int ink = 0xFF232A4A, cream = 0xFFF4E8D2, teal = 0xFF7FE6D2;
         shadowed(f, l, Math.round(W * 0.5f - PixelFont.width(l, 1) * 0.5f), Math.round(langRowY() - 4f), 1, teal, ink);
         shadowed(f, r, Math.round(W * 0.5f - PixelFont.width(r, 1) * 0.5f), Math.round(resultsRowY() - 4f), 1, cream, ink);
+        if (trial != null) {
+            String tr = Lang.lines("trials.leave", 0, null)[0];
+            shadowed(f, tr, Math.round(W * 0.5f - PixelFont.width(tr, 1) * 0.5f), Math.round(trialRowY() - 4f), 1, 0xFFFFD27F, ink);
+        }
         if (free) return;
         String st = Lang.lines("pause.story", 0, null)[0];
         shadowed(f, st, Math.round(W * 0.5f - PixelFont.width(st, 1) * 0.5f), Math.round(storyRowY() - 4f), 1, cream, ink);
@@ -757,6 +799,14 @@ final class World {
         if (folder == null) return Dispatch.report(mission.round, clock(mission.doneAt));
         if (folder.hers) return Dispatch.paid(mission.round, clock(folder.doneAt), likes, paidNow);
         return Dispatch.lost(mission.round, clock(folder.doneAt));
+    }
+
+    /** The version in the corner; in a trial, the word for it over the version. */
+    private void cornerFlat(Px f) {
+        PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
+        if (trial == null) return;
+        String w = Lang.lines("trials.mark", 0, null)[0];
+        shadowed(f, w, W - PixelFont.width(w, 1) - 3, h - 20, 1, 0xFFFFD27F, 0xFF232A4A);
     }
 
     /** A count with its thousands set apart: 100 000. */
@@ -981,6 +1031,33 @@ final class World {
     private float pressedAt = -9f;
 
     void touch(int type, int id, float x, float y) {
+        if (trials != null) {
+            // the trials' screen over everything: a row picked, or shut with the way back
+            if (type == BACK) trials.closed = true;
+            else if (type == DOWN) {
+                int p = trials.touch(x, y);
+                if (p > 0) trialWanted = p;
+                else if (p == Trials.LEAVE) trialWanted = -1;
+                else if (p == Trials.SHUT) trials.closed = true;
+            }
+            if (trials.closed) {
+                trials = null;
+                host.sound(Synth.TOCK, 0.25f, 0.9f);
+            }
+            return;
+        }
+        if (type == DOWN && x > W - 46 && y > h - 26) {
+            // the version in the corner: a run of touches on it opens the trials (the touches
+            // before the last go on to whatever is under them)
+            if (wall - cornerLast > CORNER_GAP) cornerTaps = 0;
+            cornerTaps++;
+            cornerLast = wall;
+            if (cornerTaps >= CORNER_TAPS) {
+                cornerTaps = 0;
+                openTrials();
+                return;
+            }
+        }
         fingered(type, id, x, y);
         // the leading finger lifted while something over the frame had it (a screen that came on
         // under it): lifted all the same, or every finger after it would be taken for a second one
@@ -2065,6 +2142,11 @@ final class World {
     boolean paused;
 
     void update(float dt) {
+        wall += dt;
+        if (trials != null) {
+            trials.update(dt);
+            return;
+        }
         hearts.update(dt, W, h);
         if (opening == null && (whereKeptAgo += dt) > WHERE_KEPT_EVERY) keepWhere();
         if (likesDirty && (likesKeptAgo += dt) > LIKES_KEPT_EVERY) saveLikes();
@@ -5305,6 +5387,7 @@ final class World {
 
     /** Likes come in: so many more, and so many hearts poured up the side for them. */
     void like(int n, int pour) {
+        if (trial != null) return;
         if (n <= 0 && pour <= 0) return;
         likes += Math.max(0, n);
         hearts.add(Math.max(0, n), pour);
@@ -5638,7 +5721,23 @@ final class World {
 
     /** Whether the back key means something here, rather than leaving the game. */
     boolean wantsBack() {
-        return false;
+        return trials != null;
+    }
+
+    /** The trials' screen over the frame; every finger let go under it. */
+    void openTrials() {
+        trials = new Trials(trial != null ? trial.kind : 0);
+        letGo();
+        host.buzz(30);
+    }
+
+    /** For the desktop stand: a row of the trials' screen picked as if touched (a kind, Trials.LEAVE or SHUT). */
+    void standTrialPick(int p) {
+        if (trials == null) openTrials();
+        trials.update(1f);
+        if (p > 0) trialWanted = p;
+        else if (p == Trials.LEAVE) trialWanted = -1;
+        else trials = null;
     }
 
     /** For the desktop stand: a flock in the sky now (1), or a plane that has flown so many seconds. */
@@ -7222,10 +7321,15 @@ final class World {
         panelFlat(d, f);
         storyFlat(d, f);
         bookFlat(d, f);
-        PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
+        cornerFlat(f);
         // the white of the hall's flash, going off
         if (indoors.collider && whiteOut > 0f) Opening.wash(f, whiteOut / WHITE_OUT);
         meter(f);
+        if (trials != null) {
+            // nothing of the game's buttons and signs over the trials' screen
+            d.badgeN = 0;
+            trials.draw(f, Dispatch.font(host));
+        }
     }
 
     private final float[] eyeHere = new float[5], camAt = new float[5], mirrorAt = new float[2];
@@ -7455,9 +7559,14 @@ final class World {
         panelFlat(d, f);
         storyFlat(d, f);
         bookFlat(d, f);
-        PixelFont.draw(f, VERSION, W - PixelFont.width(VERSION, 1) - 3, h - 10, 1, 0x88FFFFFF);
+        cornerFlat(f);
         // the white the opening ended on, going off
         if (whiteOut > 0f) Opening.wash(f, whiteOut / WHITE_OUT);
         meter(f);
+        if (trials != null) {
+            // nothing of the game's buttons and signs over the trials' screen
+            d.badgeN = 0;
+            trials.draw(f, Dispatch.font(host));
+        }
     }
 }

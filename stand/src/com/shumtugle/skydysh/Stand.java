@@ -160,6 +160,15 @@ public final class Stand implements World.Host {
 
     private void step() {
         world.update(DT);
+        // a trial asked for, as the phone's shell does it: a new world in a sandbox, or the real one again
+        if (world.trialWanted != 0) {
+            int k = world.trialWanted;
+            world = k > 0 ? new World(new Trial(this, k)) : new World(this);
+            // back in the real game: where she was, no opening again
+            if (k < 0) world.skipOpening();
+            world.resize(1096, 2560);
+            System.out.println(String.format("%7.2fs  %s", time, k > 0 ? "trial of kind " + k + ", won before it " + Integer.toBinaryString(Trial.before(k)) : "out of the trial"));
+        }
         // drawn every step, as the phone does: the world learns from it where things are on screen
         world.draw(list);
         time += DT;
@@ -298,6 +307,12 @@ public final class Stand implements World.Host {
             StringBuilder b = new StringBuilder();
             for (int k = 1; k < p.length; k++) b.append(' ').append(p[k]).append('=').append(loadInt(p[k]));
             System.out.println(String.format("%7.2fs  kept%s", time, b));
+        } else if (c.equals("trial")) {
+            // trial K: the trials' screen, the job K picked there (0: the screen only; -1: out of the trial)
+            int k = Integer.parseInt(p[1]);
+            if (k == 0) world.openTrials();
+            else world.standTrialPick(k);
+            step();
         } else if (c.equals("restart")) {
             // the game started again, with what it kept
             world = new World(this);

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.34
+
+- Trials, for testing: seven quick touches on the version in the corner open a screen of every job
+  in the game's order. One picked begins in a sandbox as the first time: on home's sofa with it
+  next, every job before it taken as done, the dispatcher's first words and lessons as new; a job
+  that leads straight on to the next leads on there too. Nothing of the sandbox is kept: what was
+  won, the likes, where she was and the best times stay as they were. No likes in a trial. The
+  word for it over the version while in one; the way out under the pause and on the trials'
+  screen, back to the game where it was left.
+
 ## 1.4.33
 
 - The concert hall: its eight columns stand between the three doors, not before them; each door is

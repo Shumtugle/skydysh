@@ -96,7 +96,9 @@ out) by the lift. The town hall's street door is only a door (its lift's sign ha
 its hall). A sign of an armchair is a seat to take: beside the pilot in a helicopter someone
 else flies, or her own chair in the concert hall. A button high on the left pauses the game; under the pause, the language (the
 phone's own, Russian or English, kept as chosen) and the results: the best time of every job
-played, on the screen in her head. The eye behind her keeps out of
+played, on the screen in her head. For testing, seven quick touches on the version in the
+corner open the trials: any job begun as the first time in a sandbox, everything before it taken
+as done, nothing of it kept and no likes; the way out under the pause. The eye behind her keeps out of
 the leaves: when a tree's crown or a palm's comes between, it drops under it, or comes in nearer.
 
 North-west of the town, past its last street, the mountain: a cone as even as a volcano's, grass
