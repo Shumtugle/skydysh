@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.35
+
+- At the wheel of a pickup the eye is hers, always: where her head is in the seat, out over the
+  frame of the screen and the bonnet down the street. She is not drawn; her stone fists are, on a
+  round wheel at the foot of the frame that turns as she turns it, her forearms going down out of
+  it. The head leads into a turn and nods to the brake and the pull. The pickup she sits in shows
+  no glass and no flat wheel of its own. The helicopter and the yacht keep the eye behind her.
+- The drive up and down the mountain is seen from the seat too: the road round, its rail, the
+  sea below; out at the arch the eye is where it was, no leap to the pickup.
+
 ## 1.4.34
 
 - Trials, for testing: seven quick touches on the version in the corner open a screen of every job

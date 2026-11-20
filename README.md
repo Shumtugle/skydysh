@@ -153,10 +153,9 @@ road comes in and toward the tower. On the slope toward the
 town the laboratory's name stands in great white letters.
 
 At the wheel (any but the helicopter's) the drive up and down is shown, not driven: through the
-arch going up, or off the deck into the road's top end going down, the eye rises high over the
-mountain, the pickup goes round on its own, a beacon over it, the way it went lit warm on the road,
-and in some six seconds the eye comes down behind it on the deck, or at the arch; then it is hers
-again, rolling on. No wheel and no way out meanwhile. On foot the road is run.
+arch going up, or off the deck into the road's top end going down, the pickup goes round on its
+own, seen from her seat, the rail and the sea going by, and in some six seconds it is on the deck,
+or at the arch; then it is hers again, rolling on. No wheel and no way out meanwhile. On foot the road is run.
 
 Hotheads (the twelfth job, a story, after the navigator; once called Brums to the island). At
 night up at LAB Inc. a trial of the collider gave birth to a black hole the size of a cherry; its
@@ -246,7 +245,9 @@ she goes, the farther the map shows. Under it, the next turn and how far it is; 
 the way goes off behind her; the place itself, if there is no turn before it. A touch folds it
 to a small square, and opens it again; it stays as it was left.
 
-At the wheel, one thumb on a steering wheel, drawn under it where it comes down (anywhere but a
+At the wheel of a pickup the eye is hers, in the seat: the frame of the screen, the bonnet, the
+street ahead; her fists on a round wheel at the foot of the frame, turning it. (The helicopter and
+the yacht keep the eye behind her.) One thumb on a steering wheel, drawn under it where it comes down (anywhere but a
 button) and turned as the pickup's wheel is, a knob where the thumb is. Aside, the wheel turns,
 gently near the middle, full over at the edge, the less the faster the pickup goes. Up, the
 throttle, the higher the faster, from a crawl to the top (in the town no faster than its streets

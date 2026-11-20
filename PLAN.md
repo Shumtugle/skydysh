@@ -145,6 +145,7 @@ release, each seen on the stand before the phone.
 - 1.4.32 The green brum reads the book of the town, opened over the frame from the sign over him.
 - 1.4.33 Columns between the concert hall's doors; the town hall's lift sign inside; a seat's sign in the helicopter and at her chair; the eye in flight and on the mountain road eased.
 - 1.4.34 Trials: any job begun as the first time in a sandbox, from a hidden screen; the game itself untouched.
+- 1.4.35 At the wheel of a pickup the eye is hers: the cab, the bonnet, her fists on a round wheel; the mountain road from the seat.
 - 0.95 The opening: nothing waits for the count down, laid over the last three seconds.
 - 0.94 The opening: the count down small in the corner, the stand a speaker's, the button bigger.
 - 0.93 The opening: the pedestal, the old film's count down, the mallet on the button at nought.

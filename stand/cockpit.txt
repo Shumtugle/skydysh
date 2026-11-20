@@ -1,0 +1,13 @@
+# At the wheel of a pickup the eye is hers: in the delivery, out over the frame of the screen and
+# the bonnet down the street, the round wheel at the foot of the frame with her fists on it, the
+# factory's mark up on the right. In Russian.
+screen 1096 2560
+lang ru
+close
+mission 3
+wait 0.3
+drivein 66.2 14 0
+close
+wait 0.3
+pedal 2 0 0 0 x
+shot c0
