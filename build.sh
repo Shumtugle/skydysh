@@ -6,7 +6,7 @@
 #
 # The last line printed is the path of the signed APK.
 set -e
-NAME=skydysh
+NAME=skydysh-seat
 cd "$(dirname "$0")"
 AJ=${ANDROID_JAR:?set ANDROID_JAR to a platform jar}
 : "${KEYSTORE:?set KEYSTORE}" "${KEY_ALIAS:?set KEY_ALIAS}" "${KS_PASS:?set KS_PASS}"
@@ -17,7 +17,9 @@ mkdir -p out/gen out/classes out/dex
 # resources and manifest; R.java goes to out/gen
 ASSETS=""
 [ -d assets ] && ASSETS="-A assets"
-aapt package -f -M AndroidManifest.xml -S res $ASSETS -I "$AJ" -J out/gen -F out/base.apk
+# the experiment that drives from her eyes installs beside the game, under its own name
+aapt package -f -M AndroidManifest.xml -S res $ASSETS -I "$AJ" -J out/gen -F out/base.apk \
+    --rename-manifest-package com.shumtugle.skydysh.seat
 
 # Java 8 language level: the platform jar has no lambda factory
 javac -nowarn -encoding UTF-8 -source 8 -target 8 -Xlint:-options -bootclasspath "$AJ" \

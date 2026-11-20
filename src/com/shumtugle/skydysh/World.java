@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.34";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.34-seat";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -194,6 +194,13 @@ final class World {
             resume();
         }
         opening = new Opening(host, city);
+        // this build: straight in at the wheel, the town hers, no opening; where she was left at it, there
+        if (Cockpit.ON && trial == null) {
+            standFree();
+            if (host.loadInt(SAVE_WHERE) == WHERE_WHEEL) resume();
+            if (driving == null) standDrive(SEAT_START_X, SEAT_START_Z, SEAT_START_H);
+            skipOpening();
+        }
         // a trial of any job but the first: straight onto home's sofa, its screen to come on with
         // that job next, as if every one before had just been done
         if (trial != null && passed(1)) {
@@ -3035,6 +3042,8 @@ final class World {
      */
     boolean dutyOut() {
         if (hunt()) return false;
+        // the build that drives from her eyes: the town has its pickups from the first, hers among them
+        if (Cockpit.ON) return true;
         return passed(3) || !free && folder == null;
     }
 
@@ -3216,6 +3225,17 @@ final class World {
         }
         p.seat(seatAt);
         runner.ride(dt, city, p.x, p.y, p.z, p.heading, p.speed, seatAt[0], seatAt[1], seatAt[2], p.steer);
+        if (Cockpit.ON) cockpit.follow(dt, p);
+    }
+
+    /** Her own eyes at the wheel (see Cockpit). */
+    final Cockpit cockpit = new Cockpit();
+    /** Where this build puts her the first time: at the wheel on the street by the shore, headed inland. */
+    static final float SEAT_START_X = 66.2f, SEAT_START_Z = 14f, SEAT_START_H = 0f;
+
+    /** The eye is in her head at the wheel now: a pickup, not the yacht, and no dispatch's screen over it. */
+    boolean fromSeat() {
+        return Cockpit.ON && dispatch == null && driving != null && !driving.boat && standEye == null;
     }
 
     // ---- the mountain road by car, shown as a scene: so long, seconds; the eye over it at its
@@ -7424,6 +7444,17 @@ final class World {
             eyeYaw = roadOff[3] + turnTo(roadOff[3], eyeYaw) * k;
             eyePitch = roadOff[4] + (eyePitch - roadOff[4]) * k;
         }
+        // at the wheel, from her own eyes
+        boolean seat = fromSeat();
+        if (seat) {
+            cockpit.place(driving);
+            eyeX = cockpit.eye[0];
+            eyeY = cockpit.eye[1];
+            eyeZ = cockpit.eye[2];
+            eyeYaw = cockpit.eye[3];
+            eyePitch = cockpit.eye[4];
+        } else if (driving == null) cockpit.reset();
+        Pickup.inside = seat ? driving : null;
         // shaken by a blast
         if (shake > 0f) {
             float a = shake * shake * SHAKE_FAR;
@@ -7441,7 +7472,7 @@ final class World {
             eyePitch = standEye[4];
         }
         // at the crane, a long lens from far off: the field nearly as drawn on a plan, the stacks' sides showing
-        float focal = craning && dispatch == null ? W * CRANE_LENS : W * 1.6f;
+        float focal = craning && dispatch == null ? W * CRANE_LENS : seat ? W * Cockpit.LENS : W * 1.6f;
         // far enough for the mountain over the town
         eyeShot[0] = eyeX; eyeShot[1] = eyeY; eyeShot[2] = eyeZ; eyeShot[3] = eyeYaw; eyeShot[4] = eyePitch;
         d.camera(eyeX, eyeY, eyeZ, eyeYaw, eyePitch, dispatch != null ? dispatch.focal(W * 1.6f, W) : focal, 0.05f, 1600f);
@@ -7511,7 +7542,8 @@ final class World {
         duty.draw(d, eyeX, eyeZ, ex, ez, time, dispatch != null && !dispatch.showsHer() ? driving : null);
         walkers.draw(d, eyeX, eyeZ, ex, ez);
         pets.draw(d, eyeX, eyeZ, ex, ez, walkers);
-        if ((dispatch == null || dispatch.showsHer()) && !r.hidden) {
+        if (seat) Cockpit.draw(d, driving);
+        else if ((dispatch == null || dispatch.showsHer()) && !r.hidden) {
             r.draw(d);
             toss.draw(d, r);
             kit.draw(d, r);

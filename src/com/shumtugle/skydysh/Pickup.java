@@ -478,6 +478,8 @@ final class Pickup {
 
     private static float px, py, pz;
     private static final float[] frame = new float[9], t = new float[9];
+    /** The one she sits in, seen from her eyes: drawn as from its seat (none: every one from outside). */
+    static Pickup inside;
 
     void draw(DrawList d, float time) {
         if (boat) {
@@ -507,11 +509,16 @@ final class Pickup {
         }
         part(d, 0f, 1.24f, -0.12f, 0.95f, 0.34f, 0.05f, 0f, CREAM, plain);
         part(d, 0f, 1.08f, 0.98f, 0.9f, 0.1f, 0.1f, 0f, 0x3A3B40, plain);
-        part(d, 0f, 1.5f, 1.05f, 0.84f, 0.3f, 0.015f, -0.35f, 0x33414E, glass);
-        // the seat, and the wheel before the driver's place
+        if (this != inside) part(d, 0f, 1.5f, 1.05f, 0.84f, 0.3f, 0.015f, -0.35f, 0x33414E, glass);
+        else {
+            // seen from the seat the screen is clear: only its frame, top and bottom
+            part(d, 0f, 1.78f, 0.95f, 0.86f, 0.02f, 0.02f, -0.35f, 0x3A3B40, plain);
+            part(d, 0f, 1.22f, 1.15f, 0.86f, 0.02f, 0.02f, -0.35f, 0x3A3B40, plain);
+        }
+        // the seat, and the wheel before the driver's place (from the seat, the round one turning: Cockpit)
         part(d, 0f, 0.96f, 0.22f, 0.8f, 0.07f, 0.3f, 0f, 0x4A3A32, plain);
         part(d, 0f, 1.2f, -0.04f, 0.8f, 0.24f, 0.05f, 0f, 0x4A3A32, plain);
-        part(d, SEAT_X, 1.28f, 0.74f, 0.2f, 0.2f, 0.025f, 0.45f, 0x1C1B1D, plain);
+        if (this != inside) part(d, SEAT_X, 1.28f, 0.74f, 0.2f, 0.2f, 0.025f, 0.45f, 0x1C1B1D, plain);
         // the amber lamp on the back of the cab, turning
         float beam = 0.6f + 0.4f * (float) Math.sin(time * 9f);
         part(d, 0f, 1.66f, -0.12f, 0.16f, 0.07f, 0.08f, 0f, Street.mix(0xB86A20, AMBER, beam), DrawList.GLOW);

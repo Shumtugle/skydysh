@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.34-seat (an experiment, its own branch)
+
+- From her own eyes at the wheel. The game starts in the pickup on the street by the shore, the town
+  hers, no opening; left where she was at the wheel, it starts there again. The eye is in her head:
+  over the frame of the screen and the bonnet, down the street; it leads a little into a turn and
+  nods as the pickup pulls away or brakes. Seen from the seat the screen is clear, its frame only;
+  the wheel is round and turns as hers does, her stone fists on it, her brick forearms going down
+  out of the frame. She is not drawn otherwise. The town has its duty pickups from the first.
+- Installs beside the game, under its own name (Skydysh Seat), with its own saves.
+
 ## 1.4.34
 
 - Trials, for testing: seven quick touches on the version in the corner open a screen of every job
