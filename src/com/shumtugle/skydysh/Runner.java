@@ -937,6 +937,11 @@ final class Runner {
             float fast = rideFast;
             back = aboard ? BOAT_BACK + 3f * fast : RIDE_BACK + 5f * fast;
             high = aboard ? BOAT_HIGH + 1f * fast : RIDE_HIGH + 1.5f * fast;
+            if (aboard && boatLow > 0f) {
+                // its mast down in the town's canal: the eye low and near, under the bridges' arches
+                back += (BOAT_LOW_BACK - back) * boatLow;
+                high += (BOAT_LOW_HIGH - high) * boatLow;
+            }
         }
         // on a chase, out of doors: up high over her
         chase += ((in ? 0f : chaseWant) - chase) * Math.min(1f, dt * (in ? CHASE_DOWN_IN : CHASE_RATE));
@@ -972,7 +977,9 @@ final class Runner {
             float tt = Math.min(t, reach), qx = x - fx * tt, qz = z - fz * tt;
             // a slope rising behind her (a cliff, a hill's side) as high as the eye: no farther back
             // (up for a chase it goes on back over the slope, and up over it, below)
-            if (!in && chase < 0.5f && tt > EYE_STEP && ((City) g).ground(qx, qz) > y + high - EYE_OVER_GROUND) break;
+            // (afloat, the water behind is no slope: a bridge over it is passed under, not climbed)
+            if (!in && chase < 0.5f && tt > EYE_STEP && !(aboard && Canal.water(qx, qz))
+                    && ((City) g).ground(qx, qz) > y + high - EYE_OVER_GROUND) break;
             eyeTry[0] = qx;
             eyeTry[1] = qz;
             g.push(eyeTry, r, feet);
@@ -984,6 +991,8 @@ final class Runner {
             if (tt >= reach) break;
         }
         keptBack = free;
+        // low in the canal with the yacht, between walls higher than the eye: kept over the water
+        if (aboard && boatLow > 0.5f && Canal.water(x, z)) Canal.keepIn(p, 1f);
         g.keepEye(p);
         eyeX = p[0];
         eyeZ = p[1];
@@ -1035,6 +1044,10 @@ final class Runner {
     /** At the helm of the yacht, not the wheel of a pickup: the eye farther back and higher, over its wake. */
     boolean aboard;
     static final float BOAT_BACK = 12f, BOAT_HIGH = 6f;
+    /** With the yacht's mast down (see Pickup.mast), the eye so far back and so high: under an arch's crown. */
+    static final float BOAT_LOW_BACK = 9f, BOAT_LOW_HIGH = 2.4f;
+    /** How far the yacht ridden has its mast down: 0 up, 1 down. */
+    float boatLow;
     // the eye kept out of the leaves: how much of its height and of its way back it keeps now; never nearer than this
     private float dodgeHigh = 1f, dodgeBack = 1f;
     private final float[] leafLow = new float[1];

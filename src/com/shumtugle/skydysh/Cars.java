@@ -257,14 +257,6 @@ final class Cars {
                     whyNow = WAIT;
                 }
             }
-            // a bridge over the canal lifting, or up: it stops before the barrier
-            {
-                float lim = Canal.barrierAhead(x[c], z[c], fx, fz, speed[c]);
-                if (lim < want) {
-                    want = lim;
-                    whyNow = WAIT;
-                }
-            }
             // someone in the road ahead: stop short of them (the runner, a brum down, a pickup left)
             float others = r.y > OVER_ROAD ? CRUISE : clear(c, fx, fz, r.x, r.z);
             if (others < hold) {

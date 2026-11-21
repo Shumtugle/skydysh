@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.4.37
+
+- The sea lies three metres lower under the town, the canal with it: its quays stand high over
+  the water. The beach is lower under the parapet, a longer flight of steps down to it; the
+  island's shore and the spit go down with the water.
+- Every street in the town crosses the canal on a stone bridge at its own level: the road, a
+  pavement either side, parapets with pale caps, a lamp at the middle of each, an arch under it
+  from quay to quay. The two bridges that lifted are such bridges now; one street keeps its high
+  steel footbridge, the street stopping at the quays.
+- The yacht lays its mast down along it, onto a crutch on the bow, coming into the town's canal,
+  and raises it past the town; the eye goes low behind it, under the arches.
+- The canal's two mouths run far out into the sea between stone piers; their tops are walked on.
+
 ## 1.4.36
 
 - The streets by the canal painted right again: where the water cuts a street back, it was cut

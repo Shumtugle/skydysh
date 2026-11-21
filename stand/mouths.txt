@@ -1,0 +1,30 @@
+# The canal's mouths far out in the sea between their stone piers: the west mouth from over the
+# town, from the sea, the east one from the sea; on the beach by the west pier; the yacht coming in
+# from the sea between them, its mast laid down. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+at -250 4 3.1416
+wait 0.5
+eye -200 45 60 -2.4 -0.45
+wait 0.1
+shot m0
+eye -288 25 -200 0 -0.2
+wait 0.1
+shot m1
+eye 700 40 -230 0.3 -0.3
+wait 0.1
+shot m2
+eye -270 3 -60 3.1416 -0.15
+wait 0.1
+shot m3
+eye off
+boatat -288 -170 0
+pedal 6 0 0 0
+shot m4
+pedal 3 0 0 0
+shot m5

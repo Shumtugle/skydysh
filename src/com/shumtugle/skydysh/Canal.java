@@ -5,17 +5,21 @@ package com.shumtugle.skydysh;
  * middle it goes up a column of the town in place of its blocks, between the two streets either
  * side, its quays paved along them; past the town's last street it turns east through the fields
  * behind the town, under a high bridge on the road out, and at the east woods turns down through
- * them to the wild shore and the sea. Stone quays the whole way, a coping along their top, a
- * railing. Cars cross it in the town only on two bridges (see DRAW_J), which will lift for a yacht;
- * the other streets come to the quay and stop at a barrier.
+ * them to the wild shore and the sea. Stone quays the whole way, high over the water, a coping
+ * along their top, a railing. In the town every street crosses it on a stone bridge at the
+ * street's own level, its pavements on it, an arch under it a yacht goes through with its mast
+ * laid down; all but one, which stops at the quay either side, a high footbridge over the water
+ * between (see FOOT_J).
  *
  * Its line is a few straight pieces; the water is whatever lies within HALF of it.
  */
 final class Canal {
     // its line, from the west mouth round to the east mouth: these corners, each bend rounded on
-    // an arc so wide, in so many pieces
+    // an arc so wide, in so many pieces. Its mouths run far out into the sea, its quays going on
+    // out as two stone piers either side of the water
+    static final float MOUTH_Z = City.SHORE * City.CELL + City.WATERLINE - 105f;
     static final float[] CX = {-288f, -288f, -226f, 690f, 736f, 736f};
-    static final float[] CZ = {-52f, 700f, 770f, 770f, 724f, -52f};
+    static final float[] CZ = {MOUTH_Z, 700f, 770f, 770f, 724f, MOUTH_Z};
     static final float ROUND = 34f;
     static final int ARC = 4;
     static final float[] PX, PZ;
@@ -58,8 +62,25 @@ final class Canal {
     /** The town's column it runs up in place of the blocks, and its middle there. */
     static final int COLUMN = -5;
     static final float X_W = CX[0];
-    /** The rows whose streets cross it on a bridge for cars (the shore road, and one in the middle). */
-    static final int[] DRAW_J = {City.SHORE, City.SHORE + 5};
+    /** The one row whose street stops at the canal, the footbridge high over it. */
+    static final int FOOT_J = City.SHORE + 3;
+    /** The rows whose streets cross it on a bridge for cars: all the town's but the footbridge's. */
+    static final int[] DRAW_J = bridgeRows();
+
+    private static int[] bridgeRows() {
+        int[] r = new int[City.EDGE_J - City.SHORE];
+        int n = 0;
+        for (int j = City.SHORE; j <= City.EDGE_J; j++) if (j != FOOT_J) r[n++] = j;
+        return r;
+    }
+
+    // a bridge's pavements either side of the road, how wide; its parapets, how thick and how
+    // high over the pavement; under it the arch: its crown so far under the street, its feet so
+    // far over the water at the quays; how many strips it is drawn in
+    static final float BRIDGE_WALK = 2.4f, PARAPET_HALF = 0.25f, PARAPET_HIGH = 0.95f, CROWN = -1.1f, SPRING = 0.4f;
+    static final int ARCH_STRIPS = 16;
+    /** Half the width of a bridge for cars, from its middle to the outside of a parapet. */
+    static final float BRIDGE_HALF = City.ROAD + BRIDGE_WALK + 2f * PARAPET_HALF;
     // how far round the water what was built there is taken away: whole, small things; ground cut back to
     static final float CUT_SMALL = HALF + COPING + 1.2f, CUT_GROUND = HALF + 0.7f;
 
@@ -82,6 +103,33 @@ final class Canal {
             if (d < best) best = d;
         }
         return (float) Math.sqrt(best);
+    }
+
+    /** (x, z) in p kept within the water, so far in from its walls: moved straight back toward the line if past. */
+    static void keepIn(float[] p, float margin) {
+        float x = p[0], z = p[1], best = Float.MAX_VALUE, bx = x, bz = z;
+        for (int k = 0; k + 1 < N; k++) {
+            float ax = PX[k], az = PZ[k], dx = PX[k + 1] - ax, dz = PZ[k + 1] - az;
+            float l2 = dx * dx + dz * dz;
+            float t = Math.max(0f, Math.min(1f, ((x - ax) * dx + (z - az) * dz) / l2));
+            float qx = ax + dx * t, qz = az + dz * t, d = (qx - x) * (qx - x) + (qz - z) * (qz - z);
+            if (d < best) {
+                best = d;
+                bx = qx;
+                bz = qz;
+            }
+        }
+        float d = (float) Math.sqrt(best), lim = HALF - margin;
+        if (d <= lim || d < 1e-4f) return;
+        p[0] = bx + (x - bx) * lim / d;
+        p[1] = bz + (z - bz) * lim / d;
+    }
+
+    /** Whether (x, z) is on the top of one of the mouths' piers, out past the shore road: its coping, walked on. */
+    static boolean pier(float x, float z) {
+        if (z > City.SHORE * City.CELL - City.CURB || z < PZ[0]) return false;
+        if (!near(x, z, COPING)) return false;
+        return dist(x, z) >= HALF;
     }
 
     /** Whether (x, z) is over the canal's water. */
@@ -109,7 +157,7 @@ final class Canal {
         return false;
     }
 
-    /** Whether (x, z) is where a bridge for cars over the canal in the town lies, down or not. */
+    /** Whether (x, z) is on a bridge for cars over the canal in the town, its road or its pavements. */
     static boolean deck(float x, float z) {
         return lift(x, z) >= 0;
     }
@@ -118,125 +166,32 @@ final class Canal {
     static int lift(float x, float z) {
         if (Math.abs(x - X_W) > HALF + COPING) return -1;
         int j = Math.round(z / City.CELL);
-        if (Math.abs(z - j * City.CELL) >= City.ROAD + 0.5f) return -1;
+        if (Math.abs(z - j * City.CELL) >= City.ROAD + BRIDGE_WALK) return -1;
         for (int k = 0; k < DRAW_J.length; k++) if (DRAW_J[k] == j) return k;
         return -1;
     }
 
-    /** Whether the bridge for cars over (x, z) is there and down: a road to drive and walk on. */
+    /** Whether a bridge for cars is over (x, z): a road to drive and walk on (they stand for good now). */
     static boolean down(float x, float z) {
-        int k = lift(x, z);
-        return k >= 0 && up[k] == 0f;
+        return lift(x, z) >= 0;
     }
 
-    // ---- the two bridges for cars: they lift for the yacht ----
-    // each bridge's two leaves, how far up (0 down, 1 up), its barriers, how far down (0 up, 1
-    // across the road); a little while the barriers are down before the leaves go
-    static final float[] up = new float[DRAW_J.length], bars = new float[DRAW_J.length], held = new float[DRAW_J.length];
-    // how long the leaves take, the barriers; how near the yacht comes along the canal before it
-    // lifts, and how far past it is let down again; how far up the leaves go; the wait
-    static final float LIFT_S = 5f, BARS_S = 1.2f, OPEN_NEAR = 130f, CLOSE_PAST = 30f, LEAF_UP = 1.36f, CLEAR_S = 1.5f;
-    /** Where the barriers stand across the street, either side of the bridge. */
-    static final float BAR_X = HALF + COPING + 1.6f;
-
-    /**
-     * A step of the bridges: one lifts as the yacht comes up the canal toward it (barriers down
-     * first, the cars stopped at them, and none left on it), and is let down once it has gone past.
-     */
-    static void step(float dt, Pickup boat, Cars cars) {
-        for (int k = 0; k < DRAW_J.length; k++) {
-            float bz = DRAW_J[k] * City.CELL;
-            boolean want = false;
-            if (boat != null && Math.abs(boat.x - X_W) < HALF + 3f) {
-                float off = boat.z - bz, fz = (float) Math.cos(boat.course());
-                // coming toward it, or under it, or not yet far enough past
-                if (Math.abs(off) < City.ROAD + Island.HULL_HALF + 2f) want = true;
-                else if (Math.abs(off) < OPEN_NEAR && off * fz < 0f) want = true;
-                else if (Math.abs(off) < CLOSE_PAST && up[k] > 0f) want = true;
-            }
-            if (want) {
-                bars[k] = Math.min(1f, bars[k] + dt / BARS_S);
-                if (bars[k] >= 1f) held[k] += dt;
-                boolean clear = cars == null || !cars.anyWithin(X_W - BAR_X, bz - City.ROAD, X_W + BAR_X, bz + City.ROAD);
-                if (held[k] >= CLEAR_S && (clear || up[k] > 0f)) up[k] = Math.min(1f, up[k] + dt / LIFT_S);
-            } else {
-                held[k] = 0f;
-                if (up[k] > 0f) up[k] = Math.max(0f, up[k] - dt / LIFT_S);
-                else bars[k] = Math.max(0f, bars[k] - dt / BARS_S);
-            }
-        }
+    /** How high a bridge's top is at (x, z): its road, or its pavements a step up. */
+    static float deckTop(float x, float z) {
+        int j = Math.round(z / City.CELL);
+        return Math.abs(z - j * City.CELL) > City.ROAD ? City.WALK_TOP : 0f;
     }
 
-    /** Whether the bridge over (x, z) stands in a yacht's way: there and not all the way up. */
-    static boolean blocks(float x, float z) {
-        int k = lift(x, z);
-        return k >= 0 && up[k] < 0.92f;
+    // ---- a yacht in the town lays its mast down for the bridges: from so far out at sea before
+    // the mouth, up to so far past the town's last street; how long the mast takes to go down or up ----
+    static final float MAST_FROM = 70f, MAST_PAST = 40f, MAST_S = 3f;
+
+    /** Whether a yacht at (x, z) goes with its mast down: in the town's stretch of the canal, or coming up to its mouth. */
+    static boolean mastDown(float x, float z) {
+        if (Math.abs(x - X_W) > HALF + 6f) return false;
+        return z > PZ[0] - MAST_FROM && z < City.EDGE_J * City.CELL + MAST_PAST;
     }
 
-    /**
-     * For a car at (x, z) going along (fx, fz) at speed: how fast it may go, to stop before a
-     * barrier down ahead of it (none if it is already past one, on the bridge, going off it).
-     */
-    static float barrierAhead(float x, float z, float fx, float fz, float speed) {
-        float lim = Float.MAX_VALUE;
-        if (Math.abs(fx) < 0.7f) return lim;
-        for (int k = 0; k < DRAW_J.length; k++) {
-            if (bars[k] <= 0f) continue;
-            float bz = DRAW_J[k] * City.CELL;
-            if (Math.abs(z - bz) > City.ROAD) continue;
-            float bx = X_W - Math.signum(fx) * BAR_X, along = (bx - x) * Math.signum(fx);
-            if (along < -0.5f || along > 45f) continue;
-            lim = Math.min(lim, Math.max(0f, (along - 3f) * 1.1f));
-        }
-        return lim;
-    }
-
-    /**
-     * The bridges for cars, as they stand this frame: each leaf hinged on its quay, its deck and
-     * its rails tilting up together; the barriers coming down across the street, red lamps on
-     * their posts, blinking while they are down. Only those near the eye.
-     */
-    static void lifts(DrawList d, float time, float ex, float ez) {
-        for (int k = 0; k < DRAW_J.length; k++) {
-            float bz = DRAW_J[k] * City.CELL;
-            float dx = X_W - ex, dz = bz - ez;
-            if (dx * dx + dz * dz > 420f * 420f) continue;
-            float u = up[k], a = u * u * (3f - 2f * u) * LEAF_UP, len = HALF + COPING;
-            float ca = (float) Math.cos(a), sa = (float) Math.sin(a);
-            for (int e = -1; e <= 1; e += 2) {
-                // hinged at x = X_W + e·len, reaching back over the water toward the middle
-                float hx = X_W + e * len, tx = hx - e * ca * len, ty = sa * len;
-                float mx = (hx + tx) * 0.5f, my = ty * 0.5f;
-                float[] t = along(tx - hx, ty, 0f);
-                // up along the leaf's own y: its deck's top this way
-                float nx = e * sa, ny = ca;
-                // (the leaf's own x runs across the street, its own z along the leaf)
-                d.box(mx - nx * 0.12f, my - ny * 0.12f, bz, City.ROAD, 0.12f, len * 0.5f, t, 0x5E4844, DrawList.ROAD);
-                d.box(mx - nx * 0.55f, my - ny * 0.55f, bz, City.ROAD - 0.3f, 0.3f, len * 0.5f, t, 0x4A5A60, DrawList.PAINT);
-                for (int q = -1; q <= 1; q += 2) {
-                    float rz = bz + q * (City.ROAD + 0.15f);
-                    d.box(mx + nx * 0.5f, my + ny * 0.5f, rz, 0.12f, 0.5f, len * 0.5f, t, 0x4A5A60, DrawList.PAINT);
-                    d.box(mx + nx * 1.02f, my + ny * 1.02f, rz, 0.16f, 0.04f, len * 0.5f, t, 0xD9DCDF, DrawList.POLISHED);
-                }
-            }
-            // the barriers: an arm across the street on either side, from its post on the south kerb
-            for (int e = -1; e <= 1; e += 2) {
-                float px = X_W + e * BAR_X, pz = bz - City.ROAD + 0.2f;
-                float b = bars[k], arm = 2f * City.ROAD - 0.6f, ang = Math.max(0.03f, b * b * (3f - 2f * b) * (float) Math.PI * 0.5f);
-                // up, it stands; down, it lies across, at a meter
-                float ay = 1f + (float) Math.cos(ang) * arm * 0.5f, az = pz + (float) Math.sin(ang) * arm * 0.5f;
-                float[] t = along(0f, (float) Math.cos(ang), (float) Math.sin(ang));
-                for (int s = 0; s < 6; s++) {
-                    float f = (s + 0.5f) / 6f - 0.5f;
-                    d.box(px, ay + (float) Math.cos(ang) * f * arm, az + (float) Math.sin(ang) * f * arm, 0.06f, 0.08f, arm / 12f, t,
-                            s % 2 == 0 ? 0xD8402E : 0xF2EEDF, DrawList.PAINT);
-                }
-                d.box(px, 0.6f, pz, 0.1f, 0.6f, 0.1f, null, 0x3A3D40, DrawList.PAINT);
-                boolean lit = b > 0f && ((int) (time * 2.4f) % 2 == 0);
-                d.box(px, 1.32f, pz, 0.12f, 0.12f, 0.12f, null, lit ? 0xFF4A30 : 0x5A2A24, lit ? DrawList.GLOW : DrawList.PAINT);
-            }
-        }
-    }
 
     /** Whether a street from crossing (i, j) a step along di (east-west) crosses the canal. */
     static boolean over(int i, int di) {
@@ -577,23 +532,14 @@ final class Canal {
     }
 
     /**
-     * Where the street of row j meets the canal in the town: on the two rows that cross, the
-     * bridge for cars (its deck, its stone sides, its lamps); on the others, the street stopping
-     * at the quay on either side, a red and white barrier across it.
+     * Where the street of row j meets the canal in the town: on all rows but one, the bridge for
+     * cars (see bridge); on that one, the street stopping at the quay on either side, a red and
+     * white barrier across it, and the footbridge high over the water.
      */
     private static void street(City.Cell c, DrawList d, DrawList small, int j) {
         float z = j * City.CELL;
         if (drawRow(j)) {
-            // the leaves and barriers move (see lifts); here only the stone piers at the corners
-            // of the bridge, on the quays, where the leaves are hinged
-            float hx = HALF + COPING;
-            for (int e = -1; e <= 1; e += 2)
-                for (int q = -1; q <= 1; q += 2) {
-                    float px = X_W + e * (hx + 0.5f), pz = z + q * (City.ROAD + 0.7f);
-                    d.box(px, 1f, pz, 0.6f, 1f, 0.6f, null, STONE, DrawList.STONE);
-                    d.box(px, 2.06f, pz, 0.68f, 0.06f, 0.68f, null, CAP, DrawList.PLAIN);
-                    c.wall(px - 0.6f, pz - 0.6f, px + 0.6f, pz + 0.6f, 2.1f);
-                }
+            bridge(c, d, small, z);
             return;
         }
         for (int e = -1; e <= 1; e += 2) {
@@ -608,6 +554,56 @@ final class Canal {
             c.wall(bx - 0.15f, z - City.ROAD, bx + 0.15f, z + City.ROAD, 1f);
         }
         footbridge(c, d, small, z);
+    }
+
+    /** How high the underside of a bridge's arch is so far across the water from the canal's line. */
+    static float archUnder(float off) {
+        float u = Math.min(1f, Math.abs(off) / HALF), foot = City.WATER + SPRING;
+        return foot + (CROWN - foot) * (float) Math.sqrt(1f - u * u);
+    }
+
+    /**
+     * A bridge for cars where the street at z crosses: at the street's own level, quay to quay;
+     * its road painted as the street's, a curb and a pavement either side, a stone parapet with a
+     * pale cap along each, a lamp on each at the middle. Under it a stone arch from quay to quay,
+     * its face and its underside drawn in strips; a yacht goes through under it with its mast down.
+     */
+    private static void bridge(City.Cell c, DrawList d, DrawList small, float z) {
+        float inner = HALF + COPING, span = inner + 0.3f;
+        int asphalt = 0x5E4844, curb = 0xC9BFAE, walk = 0xCDBFA6, face = 0xC7B79A;
+        // the road, the curbs, the pavements
+        d.box(X_W, -0.25f, z, span, 0.25f, City.ROAD, null, asphalt, DrawList.ROAD);
+        for (int q = -1; q <= 1; q += 2) {
+            float cz = z + q * (City.ROAD + 0.125f);
+            d.box(X_W, (City.CURB_TOP - 0.25f) * 0.5f, cz, span, (City.CURB_TOP + 0.25f) * 0.5f, 0.125f, null, curb, DrawList.STONE);
+            float w0 = City.ROAD + 0.25f, w1 = City.ROAD + BRIDGE_WALK, wz = z + q * (w0 + w1) * 0.5f;
+            d.box(X_W, (City.WALK_TOP - 0.25f) * 0.5f, wz, span, (City.WALK_TOP + 0.25f) * 0.5f, (w1 - w0) * 0.5f, null, walk, DrawList.PAVING);
+            // the parapet and its cap; kept as a wall from its foot over the arch up past its cap (a
+            // yacht goes under it)
+            float pz = z + q * (City.ROAD + BRIDGE_WALK + PARAPET_HALF), high = City.WALK_TOP + PARAPET_HIGH;
+            d.box(X_W, (high + CROWN) * 0.5f, pz, span + 0.4f, (high - CROWN) * 0.5f, PARAPET_HALF, null, face, DrawList.STONE);
+            d.box(X_W, high + 0.06f, pz, span + 0.5f, 0.06f, PARAPET_HALF + 0.07f, null, CAP, DrawList.PLAIN);
+            c.wall(X_W - span - 0.5f, pz - PARAPET_HALF, X_W + span + 0.5f, pz + PARAPET_HALF, high + 0.12f, CROWN - 0.4f);
+            // a lamp on the pavement by the parapet, at the middle
+            Garden.lamp(small, X_W, City.WALK_TOP, pz - q * (PARAPET_HALF + 0.35f), 0f);
+        }
+        // the slab under the road, from parapet to parapet
+        float out = City.ROAD + BRIDGE_WALK + 2f * PARAPET_HALF;
+        d.box(X_W, (-0.25f + CROWN) * 0.5f, z, span, (-0.25f - CROWN) * 0.5f, out, null, face, DrawList.STONE);
+        // the arch: in strips across the water, each its face either side down to the arch's line,
+        // and its underside, the barrel, across the bridge's width
+        float sw = HALF / ARCH_STRIPS;
+        for (int k = 0; k < 2 * ARCH_STRIPS; k++) {
+            float a = -HALF + k * sw, b = a + sw, m = (a + b) * 0.5f;
+            float under = archUnder(m);
+            for (int q = -1; q <= 1; q += 2) {
+                float fz = z + q * (out - PARAPET_HALF);
+                d.box(X_W + m, (CROWN + under) * 0.5f, fz, sw * 0.5f, (CROWN - under) * 0.5f, PARAPET_HALF, null, face, DrawList.STONE);
+                // the ring of the arch, a paler stone along its line
+                d.box(X_W + m, under + 0.18f, fz + q * 0.02f, sw * 0.5f + 0.02f, 0.2f, PARAPET_HALF, null, CAP, DrawList.PLAIN);
+            }
+            d.box(X_W + m, under + 0.1f, z, sw * 0.5f, 0.1f, out - 2f * PARAPET_HALF, null, 0xA89A82, DrawList.STONE);
+        }
     }
 
     // ---- the high footbridges, where a street stops at the canal ----

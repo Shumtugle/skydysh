@@ -32,16 +32,20 @@ final class City implements Ground {
 
     /** The row of crossings the shore road runs through; the town north of it, the sea south. */
     static final int SHORE = 0;
+    /** How far the sea lies under the town: so much lower than it once was, the canal's banks high over its water. */
+    static final float DROP = 3f;
     // the parapet along the promenade (where its middle is, half its thickness, how high over the
     // pavement), the water's top, and how deep under it one who falls in goes
-    static final float PARAPET = -18f, PARAPET_HALF = 0.3f, PARAPET_HIGH = 0.95f, WATER = -1.7f, DEEP = 1.4f;
+    static final float PARAPET = -18f, PARAPET_HALF = 0.3f, PARAPET_HIGH = 0.95f, WATER = -1.7f - DROP, DEEP = 1.4f;
     // the beach under the quay: its sand, the wet sand by the sea, where the wet begins and where the
     // water does (from the shore road's middle); a flight of steps down from the promenade in every cell
-    static final float SAND = -1.15f, WET = -1.5f, WET_FROM = -30f, WATERLINE = -35f;
+    static final float SAND = -1.15f - DROP, WET = -1.5f - DROP, WET_FROM = -30f, WATERLINE = -35f;
     // the bed of the sea: shelving from the water's edge down to so deep (under the water's top) so
     // far out; and how far out one may swim
     static final float BED = 4f, SHELF = 16f, OPEN_SEA = -220f;
-    static final float STAIRS_AT = 28f, STAIRS_HALF = 1.4f, STAIR = 1f;
+    static final float STAIRS_AT = 28f, STAIRS_HALF = 1.4f, STAIR = 0.65f;
+    /** The steps down to the beach: so many, each no higher than she takes in her stride. */
+    static final int BEACH_STEPS = (int) Math.ceil((0.14f - (-1.15f - DROP)) / 0.3f);
 
     /** Whether cell row j is out of the town: the promenade (the row next to the shore) and the sea. */
     static boolean sea(int j) {
@@ -539,8 +543,10 @@ final class City implements Ground {
         float up = Canal.onRoad(x, z);
         if (!Float.isNaN(up)) return up;
         // the canal: its bed, but for the decks of the bridges for cars over it
-        if (Canal.water(x, z)) return Canal.down(x, z) ? 0f : bed(x, z);
+        if (Canal.water(x, z)) return Canal.down(x, z) ? Canal.deckTop(x, z) : bed(x, z);
         if (z < SHORE * CELL - CURB) {
+            // the mouths' piers, out over the beach and the sea: their coping is walked on
+            if (Canal.pier(x, z)) return Canal.TOP;
             if (z < SHORE * CELL + WATERLINE) {
                 // the sea's bed, shelving from the wet sand down; the spit and the island over it
                 float out = Math.min(1f, (SHORE * CELL + WATERLINE - z) / SHELF);
@@ -1761,8 +1767,8 @@ final class City implements Ground {
         }
         d.box(x0 + STAIRS_AT, (low + WALK_TOP) * 0.5f, pz, STAIRS_HALF, (WALK_TOP - low) * 0.5f, PARAPET_HALF, null, 0xDCCDB2, DrawList.STONE);
         // the steps down, away from the quay, each a stride deep
-        float face = pz - PARAPET_HALF, rise = (WALK_TOP - SAND) / 5f;
-        for (int k = 0; k < 4; k++) {
+        float face = pz - PARAPET_HALF, rise = (WALK_TOP - SAND) / BEACH_STEPS;
+        for (int k = 0; k < BEACH_STEPS - 1; k++) {
             float st = WALK_TOP - (k + 1) * rise, s0 = face - (k + 1) * STAIR, s1 = face - k * STAIR;
             d.box(x0 + STAIRS_AT, (st + low) * 0.5f, (s0 + s1) * 0.5f, STAIRS_HALF, (st - low) * 0.5f, STAIR * 0.5f,
                     null, 0xD6C7AA, DrawList.STONE);

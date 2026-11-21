@@ -5,13 +5,14 @@ seen as town games were drawn early in the century,
 its streets grown from a seed as they are come to, along the shore from x = -512 to 640, and
 past its ends, west and east, woods of firs and broad trees down to a wild shore (the world goes
 on, by water, through the woods; the town does not), a canal looping through it from the sea
-and back (up a column of the town between its quays, behind the town through the fields under a
-high bridge on the road out, down through the east woods to the wild shore; the streets in the
-town cross it on two bridges for cars, which lift for the yacht coming up the canal: barriers
-down across the street, red lamps blinking, the cars stopped at them, the two leaves up off
-their quays, and down again once it is past; the rest stop at its quays at a barrier, and a
-steel footbridge goes over the water there, high enough for a yacht's mast, a stair up to it
-along each quay), cars going about them (stopping
+and back (its mouths far out into the sea between two stone piers, walked on; up a column of
+the town between quays high over its water, behind the town through the fields under a high
+bridge on the road out, down through the east woods to the wild shore; the streets in the town
+cross it on stone bridges at their own level, pavements, parapets and lamps on them, an arch
+under each that the yacht goes through with its mast laid down along it, the eye low behind it;
+but for one street, which stops at its quays at a barrier, and a steel footbridge goes over the
+water there, high enough for a yacht's mast, a stair up to it along each quay), cars going
+about them (stopping
 at the lights some crossings have, nimble out of a pickup's way, round what stands in theirs),
 people out on the pavements with their dogs and over the streets at the zebras, cats by the walls (who mind what she does: a mallet
 thrown near them and they are off); squares with fountains or
@@ -265,8 +266,8 @@ She gets in where she comes up to a pickup, any side or end, the nose as well as
 walked against it, at once; stood by it, in a moment; its sign touched, she goes to the nearest of
 it.
 
-The town ends at the sea: along its southmost street a promenade with palms and a parapet, steps
-down to a beach with sunshades, people lying on the loungers and strolling the sand, and the
+The town ends at the sea, which lies well under it: along its southmost street a promenade with
+palms and a parapet high over the sand, a long flight of steps down to a beach with sunshades, people lying on the loungers and strolling the sand, and the
 water. Into the sea she wades, slowly, and where it is
 deep enough she swims high in the water, upright, her head and shoulders out, a slow breast
 stroke at the water's top (still, she settles slowly a little lower, never under), as far out

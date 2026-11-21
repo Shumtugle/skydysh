@@ -116,7 +116,12 @@ final class Pickup {
     static final float HELM_Y = 1.25f, HELM_Z = -3.2f;
 
     /** A frame of a boat on the water: the throttle, the wheel, the brake (astern, held). */
+    /** A yacht's mast: 0 up, 1 laid down along it (in the town's canal, for the bridges). */
+    float mast;
+
     private void sail(float dt, boolean throttle, float wheel, float brake, City city) {
+        float mastTo = Canal.mastDown(x, z) ? 1f : 0f;
+        mast += Math.max(-dt / Canal.MAST_S, Math.min(dt / Canal.MAST_S, mastTo - mast));
         bumped = false;
         steer += (wheel - steer) * Math.min(1f, dt * SEA_STEER_RATE);
         swell += dt;
@@ -239,8 +244,6 @@ final class Pickup {
             sum += over;
             // by the canal, how far past its edge as well: a slope to feel the way off it by
             if (over > 0f && Canal.near(px, pz, Canal.COPING + 3f)) sum += Canal.dist(px, pz) - Canal.HALF;
-            // a bridge over the canal not yet lifted out of its way
-            if (Canal.blocks(px, pz)) sum += 1f;
         }
         return sum;
     }
@@ -553,7 +556,7 @@ final class Pickup {
 
     /** A boat: the yacht, and its wake on the water as it goes; the foam at its bow. */
     private void sea(DrawList d, float time) {
-        Island.yacht(d, x, z, heading, y - City.WATER, Island.freeStripe());
+        Island.yacht(d, x, z, heading, y - City.WATER, Island.freeStripe(), mast);
         float v = Math.abs(speed);
         if (v < WAKE_FROM) return;
         float k = Math.min(1f, (v - WAKE_FROM) / 8f);

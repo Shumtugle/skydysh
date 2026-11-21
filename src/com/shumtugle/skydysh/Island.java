@@ -20,13 +20,13 @@ final class Island {
     // grass three times over, the top
     static final float IX = 10f, IZ = -365f;
     private static final float[] PR = {140f, 125f, 118f, 108f, 102f, 96f, 84f, 78f, 64f, 58f, 44f, 38f, 24f, 0f};
-    private static final float[] PH = {-7f, -2.1f, -1.15f, 0.4f, 3f, 16f, 18f, 36f, 38f, 56f, 58f, 76f, 80f, 84f};
+    private static final float[] PH = {-7f - City.DROP, -2.1f - City.DROP, -1.15f - City.DROP, 0.4f - City.DROP, 3f, 16f, 18f, 36f, 38f, 56f, 58f, 76f, 80f, 84f};
     static final float REACH = PR[0];
 
     // the spit: from the water's edge out to the island's shore; its crest, half its width there,
     // how far its sides run down to the bed
     static final float SPIT_FROM = City.SHORE * City.CELL + City.WATERLINE, SPIT_TO = IZ + 112f;
-    static final float CREST = -1.05f, CREST_HALF = 3.5f, SIDE = 3.5f, FOOT = 8f;
+    static final float CREST = City.WATER + 0.65f, CREST_HALF = 3.5f, SIDE = 3.5f, FOOT = 8f;
 
     /** The spit's middle across, along it at z: out from the beach, winding twice, to the island. */
     static float spitX(float z) {
@@ -952,6 +952,17 @@ final class Island {
      * One yacht, its middle at (x, z), headed so; risen so far by the swell; its band of colour so.
      */
     static void yacht(DrawList d, float x, float z, float h, float bob, int stripe) {
+        yacht(d, x, z, h, bob, stripe, 0f);
+    }
+
+    /** How far down the mast goes when laid: forward over the bow, onto a crutch so high over the deck. */
+    static final float MAST_LAID = 1.42f, CRUTCH = 0.65f;
+
+    /**
+     * One yacht, as above, its mast so far laid down (0 up, 1 down): hinged at its foot, it
+     * goes forward onto a crutch on the bow and out past it (behind it the eye follows, low).
+     */
+    static void yacht(DrawList d, float x, float z, float h, float bob, int stripe, float laid) {
         {
             float fx = (float) Math.sin(h), fz = (float) Math.cos(h);
             float[] t = yaw(h);
@@ -967,7 +978,17 @@ final class Island {
             d.box(x - fx * 0.4f, deck + 0.45f, z - fz * 0.4f, BEAM * 0.65f, 0.42f, 1.6f, t, 0xF7F5F0, DrawList.PAINT);
             d.box(x - fx * 0.4f, deck + 0.55f, z - fz * 0.4f, BEAM * 0.66f, 0.12f, 1.4f, t, 0x1D2730, DrawList.GLASS);
             float mx = x + fx * 1.4f, mz = z + fz * 1.4f;
-            d.box(mx, deck + MAST * 0.5f, mz, 0.08f, MAST * 0.5f, 0.08f, null, 0xD9DCDF, DrawList.POLISHED);
+            if (laid <= 0f) d.box(mx, deck + MAST * 0.5f, mz, 0.08f, MAST * 0.5f, 0.08f, null, 0xD9DCDF, DrawList.POLISHED);
+            else {
+                float e = laid * laid * (3f - 2f * laid), a = e * MAST_LAID, ca = (float) Math.cos(a), sa = (float) Math.sin(a);
+                // up, and forward over the bow as it goes down
+                float ux = fx * sa, uy = ca, uz = fz * sa, foot = deck + 0.25f;
+                d.box(mx + ux * MAST * 0.5f, foot + uy * MAST * 0.5f, mz + uz * MAST * 0.5f, 0.08f, 0.08f, MAST * 0.5f,
+                        Canal.along(ux, uy, uz), 0xD9DCDF, DrawList.POLISHED);
+                // the crutch it rests on at the bow
+                float cx = x + fx * (HULL_HALF - 1f), cz = z + fz * (HULL_HALF - 1f);
+                d.box(cx, deck + CRUTCH * 0.5f, cz, 0.05f, CRUTCH * 0.5f, 0.05f, null, 0x8A6A4A, DrawList.WOOD);
+            }
             d.box(mx - fx * 1.8f, deck + 1.5f, mz - fz * 1.8f, 0.07f, 0.07f, 1.8f, t, 0xD9DCDF, DrawList.POLISHED);
             // the sail furled on the boom, under its cover
             d.box(mx - fx * 1.8f, deck + 1.7f, mz - fz * 1.8f, 0.16f, 0.14f, 1.7f, t, stripe, DrawList.MATTE);
