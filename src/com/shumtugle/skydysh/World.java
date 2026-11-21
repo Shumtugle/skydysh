@@ -13,7 +13,7 @@ package com.shumtugle.skydysh;
  */
 final class World {
     static final int W = 274;                // frame units across; the height follows the screen
-    static final String VERSION = "1.4.35";    // shown on screen; keep in step with versionName
+    static final String VERSION = "1.4.36";    // shown on screen; keep in step with versionName
     static final int DOWN = 0, MOVE = 1, UP = 2, BACK = 3, LEFT = 4;
 
     /** What the world may ask of the phone. */
@@ -2386,7 +2386,6 @@ final class World {
         if (driving != null && roadT < 0f) roadCue();
         if (roadT >= 0f) roadStep(dt);
         else if (driving != null) drive(dt);
-        if (roadT < 0f && roadAfter > 0f) roadAfter = Math.max(0f, roadAfter - dt);
         // the way out waiting: she gets out once the pickup stands
         if (exitWaiting && (driving == null || Math.abs(driving.speed) <= STOPPED)) {
             if (driving != null) getOut(false);
@@ -3224,15 +3223,14 @@ final class World {
 
     /** The eye is in her head at the wheel now: a pickup, not the yacht, and no dispatch's screen over it. */
     boolean fromSeat() {
-        return Cockpit.ON && dispatch == null && driving != null && !driving.boat && standEye == null;
+        return Cockpit.ON && dispatch == null && driving != null && !driving.boat && standEye == null && roadT < 0f;
     }
 
-    // ---- the mountain road by car, shown as a scene: so long, seconds; the eye over it at its
-    // highest so high, so far behind; it starts and ends this high behind the pickup, so far back;
-    // the pickup rolls on out of it so fast ----
-    static final float ROAD_S = 6.5f, ROAD_EYE_HIGH = 180f, ROAD_EYE_BACK = 30f, ROAD_ROLL = 8f;
-    /** The share of the drive the eye takes going up (and coming down); how fast it turns after the pickup. */
-    static final float ROAD_EYE_EASE = 0.3f, ROAD_LOOK = 1.2f, ROAD_HEAD = 10f;
+    // ---- the mountain road by car, shown as a scene: the road so long, seconds; the pickup rolls
+    // on out of it so fast ----
+    static final float ROAD_S = 6.5f, ROAD_ROLL = 8f;
+    /** The share of the road's time the eye takes going out of the cab (and back into it); how fast the pickup turns with the bends. */
+    static final float ROAD_EYE_EASE = 0.3f, ROAD_HEAD = 10f;
     /** Past the road's end at the start no further than so much (meters). */
     static final float ROAD_FROM = 20f;
 
@@ -3246,14 +3244,10 @@ final class World {
     /** The scene: seconds into it (less than nothing: none); up the mountain or down it. */
     float roadT = -1f;
     private boolean roadUp;
-    private float roadWasX, roadWasZ, roadLook, roadHead, roadBack, roadUpBy, roadPitch, roadFrom, roadW;
+    private float roadWasX, roadWasZ, roadHead, roadFrom, roadW;
     private final float[] roadAt = new float[4], roadEye = new float[5];
     /** The eye the last frame was shot from: x, y, z, yaw, pitch. */
     final float[] eyeShot = new float[5];
-    /** The scene's last eye, as it stood off the pickup (x, y, z, yaw, pitch), and how long yet it gives way to hers. */
-    private final float[] roadOff = new float[5];
-    private float roadAfter;
-    static final float ROAD_AFTER = 0.7f;
 
     /**
      * At the wheel: through the arch at the road's foot, going up it, or off the deck into the
@@ -3276,7 +3270,45 @@ final class World {
         if (roadT >= 0f) host.sound(Synth.CHIME, 0.25f, 0.7f);
     }
 
-    /** The scene on: the pickup carried along the road, up or down, eased in and out; then on its own again. */
+    // the eye on the drive, from the side: so far out from the mountain past the pickup, so high
+    // over it; up on the deck, where it watches the pickup backed into its space from (across from
+    // the space, up, back along the aisle toward the road)
+    static final float ARC_OUT = 42f, ARC_UP = 22f, PARK_EYE_X = 7f, PARK_EYE_Y = 7.5f, PARK_EYE_Z = -10.5f;
+    /** On the deck, a breath standing, then so long backing into the space; so fast at most (m/s). */
+    static final float PARK_WAIT = 0.4f, PARK_S = 3.4f, PARK_ROLL = 4.5f;
+    /** Parked, so long seen standing before the eye goes back; how long it takes going back into her head. */
+    static final float PARK_HOLD = 0.7f, ROAD_BACK = 1.3f;
+    /** Before the road's end, so long for the eye to come round onto the deck. */
+    static final float PARK_EYE_IN = 1.4f;
+    /** The space she backs into at the top (-1: none free, the drive ends in the aisle), and where she backs from. */
+    private int roadSpace = -1;
+    private float parkX0, parkZ0;
+
+    /** How long the scene is, all of it: the road, and up on the deck the parking. */
+    private float roadLength() {
+        return ROAD_S + (roadUp && roadSpace >= 0 ? PARK_WAIT + PARK_S + PARK_HOLD + ROAD_BACK : 0f);
+    }
+
+    /** A free space on the deck with no pickup standing in it, or -1. */
+    private int parkSpace() {
+        for (int k = 0; k < Mountain.SPACES; k++) {
+            if (Mountain.taken(k)) continue;
+            float x = Mountain.spaceX(k), z = Mountain.spaceZ(k);
+            boolean clear = true;
+            for (Pickup q : duty.all) {
+                if (q == driving) continue;
+                float dx = q.x - x, dz = q.z - z;
+                if (dx * dx + dz * dz < 3.5f * 3.5f) clear = false;
+            }
+            if (clear) return k;
+        }
+        return -1;
+    }
+
+    /**
+     * The scene on: the pickup carried along the road, up or down, eased in and out; going up, on
+     * the deck it stops, then backs round into a free space, nose to the aisle; then it is hers.
+     */
     private void roadStep(float dt) {
         Pickup p = driving;
         if (p == null) {
@@ -3290,73 +3322,123 @@ final class World {
             Mountain.wayAt(roadUp ? 0f : len, roadAt);
             float dx = p.x - roadAt[0], dz = p.z - roadAt[2];
             roadFrom = Math.min(ROAD_FROM, (float) Math.sqrt(dx * dx + dz * dz));
+            roadHead = p.heading;
+            roadSpace = roadUp ? parkSpace() : -1;
         }
         roadT += dt;
-        float u = Math.min(1f, roadT / ROAD_S), e = u * u * (3f - 2f * u), on = roadFrom + e * (len - roadFrom);
-        float a = Math.min(1f, Math.min(u, 1f - u) / ROAD_EYE_EASE);
+        float total = roadLength(), ease = ROAD_EYE_EASE * ROAD_S;
+        // the eye: out of the cab and round to the side at first, back into it at the very end
+        float a = Math.min(1f, Math.min(roadT / ease, (total - roadT) / (roadUp && roadSpace >= 0 ? ROAD_BACK : ease)));
+        a = Math.max(0f, a);
         roadW = a * a * (3f - 2f * a);
-        float sNow = roadUp ? on : len - on;
-        Mountain.wayAt(sNow, roadAt);
-        p.x = roadAt[0];
-        p.y = roadAt[1];
-        p.z = roadAt[2];
-        float along = roadUp ? roadAt[3] : roadAt[3] + (float) Math.PI;
-        if (first) {
-            // the eye at the wheel as it was, kept on the pickup for the way up
-            Runner r = runner;
-            float bx = p.x - r.eyeX, bz = p.z - r.eyeZ;
-            roadBack = (float) Math.sqrt(bx * bx + bz * bz);
-            roadUpBy = r.eyeY - p.y;
-            roadPitch = r.eyePitch;
-            roadLook = r.eyeYaw;
-            roadHead = p.heading;
+        if (roadT <= ROAD_S) {
+            float u = Math.min(1f, roadT / ROAD_S), e = u * u * (3f - 2f * u), on = roadFrom + e * (len - roadFrom);
+            Mountain.wayAt(roadUp ? on : len - on, roadAt);
+            p.x = roadAt[0];
+            p.y = roadAt[1];
+            p.z = roadAt[2];
+            float along = roadUp ? roadAt[3] : roadAt[3] + (float) Math.PI;
+            // the pickup turns with the road's bends, eased
+            roadHead += turnTo(roadHead, along) * Math.min(1f, dt * ROAD_HEAD);
+            roadHead = turnTo(0f, roadHead);
+            p.heading = roadHead;
+            p.speed = ROAD_ROLL;
+            parkX0 = p.x;
+            parkZ0 = p.z;
+        } else {
+            // on the deck: a breath standing, then back round into the space
+            float pt = roadT - ROAD_S, sx = Mountain.spaceX(roadSpace), sz = Mountain.spaceZ(roadSpace);
+            float side = sz > Mountain.AISLE_Z ? 1f : -1f;
+            p.y = Mountain.TOP;
+            if (pt < PARK_WAIT) {
+                p.speed = 0f;
+            } else {
+                float v = Math.min(1f, (pt - PARK_WAIT) / PARK_S), e = v * v * (3f - 2f * v);
+                // a curve from where it stopped to the space: first along the aisle, last straight into it
+                float x0 = parkX0, z0 = parkZ0, x1 = parkX0 + 6f, z1 = parkZ0;
+                float x2 = sx, z2 = sz - side * 4.5f, x3 = sx, z3 = sz;
+                float m = 1f - e;
+                p.x = m * m * m * x0 + 3f * m * m * e * x1 + 3f * m * e * e * x2 + e * e * e * x3;
+                p.z = m * m * m * z0 + 3f * m * m * e * z1 + 3f * m * e * e * z2 + e * e * e * z3;
+                float tx = 3f * m * m * (x1 - x0) + 6f * m * e * (x2 - x1) + 3f * e * e * (x3 - x2);
+                float tz = 3f * m * m * (z1 - z0) + 6f * m * e * (z2 - z1) + 3f * e * e * (z3 - z2);
+                // backing: the nose the other way from where it goes
+                if (tx * tx + tz * tz > 1e-6f) p.heading = (float) Math.atan2(-tx, -tz);
+                p.speed = -PARK_ROLL * (float) Math.sin(Math.PI * v);
+            }
         }
-        // the pickup turns with the road's bends eased, and the eye after it slower still
-        roadHead += turnTo(roadHead, along) * Math.min(1f, dt * ROAD_HEAD);
-        roadHead = turnTo(0f, roadHead);
-        float look = ROAD_LOOK + (ROAD_HEAD - ROAD_LOOK) * (1f - roadW) * (u > 0.5f ? 1f : 0f);
-        roadLook += turnTo(roadLook, roadHead) * Math.min(1f, dt * look);
-        roadLook = turnTo(0f, roadLook);
-        p.heading = roadHead;
-        p.speed = ROAD_ROLL;
         p.steer = 0f;
         p.seat(seatAt);
         runner.ride(dt, city, p.x, p.y, p.z, p.heading, p.speed, seatAt[0], seatAt[1], seatAt[2], 0f);
-        if (u >= 1f) {
-            // the last of the scene's eye handed to her own, so the next frame goes on from it
-            roadEye(runner);
-            runner.eyeYaw = roadEye[3];
-            roadOff[0] = roadEye[0] - p.x;
-            roadOff[1] = roadEye[1] - p.y;
-            roadOff[2] = roadEye[2] - p.z;
-            roadOff[3] = roadEye[3];
-            roadOff[4] = roadEye[4];
-            roadAfter = ROAD_AFTER;
+        if (roadT >= total) {
+            // hers again, the eye back in her head; standing, if it was parked
+            if (roadSpace >= 0 && roadUp) p.speed = 0f;
             roadT = -1f;
             roadWasX = p.x;
             roadWasZ = p.z;
+            cockpit.reset();
         }
     }
 
     /**
-     * The eye on the drive: the one at the wheel at first, then up and up over the mountain,
-     * looking nearly straight down on the pickup going round, turning after it slowly; at the end
-     * down again into the one at the wheel, so it comes out of the scene without a cut.
+     * The eye on the drive: hers at the wheel at first, then out and up to the side of the pickup,
+     * out from the mountain over the slope, so the road is seen going round with the pickup on it,
+     * the eye swinging round the mountain after it; on the deck round to where the space is seen,
+     * the pickup backing into it; at the end into her head again, so it comes out of the scene
+     * without a cut.
      */
     private void roadEye(Runner r) {
         Pickup p = driving;
         float w = roadW;
-        float hx = p.x - (float) Math.sin(roadLook) * ROAD_EYE_BACK, hy = p.y + ROAD_EYE_HIGH;
-        float hz = p.z - (float) Math.cos(roadLook) * ROAD_EYE_BACK;
-        float hp = -(float) Math.atan2(ROAD_EYE_HIGH - 1.5f, ROAD_EYE_BACK + 6f);
-        // low: the eye she had at the wheel, carried on the pickup; at the end it turns with it again
-        float lx = p.x - (float) Math.sin(roadLook) * roadBack, ly = p.y + roadUpBy, lz = p.z - (float) Math.cos(roadLook) * roadBack;
-        float lyaw = roadLook, lp = roadPitch;
-        roadEye[0] = lx + (hx - lx) * w;
-        roadEye[1] = ly + (hy - ly) * w;
-        roadEye[2] = lz + (hz - lz) * w;
-        roadEye[3] = lyaw + turnTo(lyaw, roadLook) * w;
-        roadEye[4] = lp + (hp - lp) * w;
+        // from the side: out from the mountain's middle past the pickup
+        float ox = p.x - Mountain.MX, oz = p.z - Mountain.MZ, ol = (float) Math.sqrt(ox * ox + oz * oz);
+        if (ol < 1f) {
+            ox = 0f;
+            oz = -1f;
+        } else {
+            ox /= ol;
+            oz /= ol;
+        }
+        float hx = p.x + ox * ARC_OUT, hy = p.y + ARC_UP, hz = p.z + oz * ARC_OUT;
+        if (roadUp && roadSpace >= 0) {
+            // round onto the deck, the space before the eye
+            float k = Math.max(0f, Math.min(1f, (roadT - (ROAD_S - PARK_EYE_IN)) / (PARK_EYE_IN + PARK_WAIT + PARK_S * 0.3f)));
+            k = k * k * (3f - 2f * k);
+            float sx = Mountain.spaceX(roadSpace), sz = Mountain.spaceZ(roadSpace);
+            float side = sz > Mountain.AISLE_Z ? 1f : -1f;
+            float px = sx + PARK_EYE_X, py = Mountain.TOP + PARK_EYE_Y, pz = Mountain.AISLE_Z + side * PARK_EYE_Z;
+            hx += (px - hx) * k;
+            hy += (py - hy) * k;
+            hz += (pz - hz) * k;
+        }
+        // low: her own eyes in the cab
+        cockpit.place(p);
+        float[] c = cockpit.eye;
+        // up out of the cab first, then out to the side (and the other way round coming back), so
+        // the eye goes over the pickup, not through it
+        float wy = roadRise(), wh = w * w;
+        float ex = c[0] + (hx - c[0]) * wh, ey = c[1] + (hy - c[1]) * wy, ez = c[2] + (hz - c[2]) * wh;
+        // what it looks at: the pickup, out of the cab; in it, the way ahead as she sees it
+        float cp = (float) Math.cos(c[4]);
+        float ax = c[0] + (float) Math.sin(c[3]) * cp * 30f, ay = c[1] + (float) Math.sin(c[4]) * 30f, az = c[2] + (float) Math.cos(c[3]) * cp * 30f;
+        float tx = ax + (p.x - ax) * w, ty = ay + (p.y + 1.2f - ay) * w, tz = az + (p.z - az) * w;
+        float lx = tx - ex, ly = ty - ey, lz = tz - ez;
+        roadEye[0] = ex;
+        roadEye[1] = ey;
+        roadEye[2] = ez;
+        roadEye[3] = (float) Math.atan2(lx, lz);
+        roadEye[4] = (float) Math.atan2(ly, Math.sqrt(lx * lx + lz * lz));
+    }
+
+    /** How far up out of the cab the drive's eye is: ahead of the rest of its way out. */
+    private float roadRise() {
+        float k = Math.min(1f, roadW * 2.5f);
+        return k * k * (3f - 2f * k);
+    }
+
+    /** Whether the eye of the drive's scene is still in her head (the pickup drawn as from inside). */
+    private boolean roadInCab() {
+        return roadT >= 0f && roadRise() < 0.03f;
     }
 
     /** The ring at the wheel, coloured for what she is about: the hunt coral, the folder turquoise, a delivery amber, free cream. */
@@ -7423,18 +7505,10 @@ final class World {
             eyeZ = roadEye[2];
             eyeYaw = roadEye[3];
             eyePitch = roadEye[4];
-        } else if (roadAfter > 0f && driving != null) {
-            float k = 1f - roadAfter / ROAD_AFTER;
-            k = k * k * (3f - 2f * k);
-            Pickup p = driving;
-            eyeX = p.x + roadOff[0] + (eyeX - p.x - roadOff[0]) * k;
-            eyeY = p.y + roadOff[1] + (eyeY - p.y - roadOff[1]) * k;
-            eyeZ = p.z + roadOff[2] + (eyeZ - p.z - roadOff[2]) * k;
-            eyeYaw = roadOff[3] + turnTo(roadOff[3], eyeYaw) * k;
-            eyePitch = roadOff[4] + (eyePitch - roadOff[4]) * k;
         }
         // at the wheel, from her own eyes
         boolean seat = fromSeat();
+        boolean cab = seat || Cockpit.ON && driving != null && !driving.boat && roadInCab();
         if (seat) {
             cockpit.place(driving);
             eyeX = cockpit.eye[0];
@@ -7443,7 +7517,7 @@ final class World {
             eyeYaw = cockpit.eye[3];
             eyePitch = cockpit.eye[4];
         } else if (driving == null) cockpit.reset();
-        Pickup.inside = seat ? driving : null;
+        Pickup.inside = cab ? driving : null;
         // shaken by a blast
         if (shake > 0f) {
             float a = shake * shake * SHAKE_FAR;
@@ -7462,6 +7536,8 @@ final class World {
         }
         // at the crane, a long lens from far off: the field nearly as drawn on a plan, the stacks' sides showing
         float focal = craning && dispatch == null ? W * CRANE_LENS : seat ? W * Cockpit.LENS : W * 1.6f;
+        // the drive's scene: her lens in the cab, the wider one out of it, eased between
+        if (Cockpit.ON && roadT >= 0f && driving != null && !driving.boat) focal = W * (Cockpit.LENS + (1.6f - Cockpit.LENS) * roadW);
         // far enough for the mountain over the town
         eyeShot[0] = eyeX; eyeShot[1] = eyeY; eyeShot[2] = eyeZ; eyeShot[3] = eyeYaw; eyeShot[4] = eyePitch;
         d.camera(eyeX, eyeY, eyeZ, eyeYaw, eyePitch, dispatch != null ? dispatch.focal(W * 1.6f, W) : focal, 0.05f, 1600f);
@@ -7484,9 +7560,6 @@ final class World {
             float ru = Math.min(1f, roadT / ROAD_S), re = ru * ru * (3f - 2f * ru), len = Mountain.wayLength();
             if (roadUp) Mountain.wayLit(d, 0f, re * len);
             else Mountain.wayLit(d, (1f - re) * len, len);
-            // over the pickup a beacon, to be seen from on high: the higher the eye, the bigger
-            float big = 0.6f + 2.4f * (float) Math.pow(Math.sin(Math.PI * ru), 0.6);
-            d.box(driving.x, driving.y + 3.5f + big, driving.z, big, big, big, null, 0xFFF1B0, DrawList.GLOW);
         }
         Island.kept(d, time, eyeX, eyeZ);
         scars.draw(d, city, eyeX, eyeZ);
@@ -7531,7 +7604,7 @@ final class World {
         duty.draw(d, eyeX, eyeZ, ex, ez, time, dispatch != null && !dispatch.showsHer() ? driving : null);
         walkers.draw(d, eyeX, eyeZ, ex, ez);
         pets.draw(d, eyeX, eyeZ, ex, ez, walkers);
-        if (seat) Cockpit.draw(d, driving);
+        if (cab) Cockpit.draw(d, driving);
         else if ((dispatch == null || dispatch.showsHer()) && !r.hidden) {
             r.draw(d);
             toss.draw(d, r);

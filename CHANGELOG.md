@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.36
+
+- The streets by the canal painted right again: where the water cuts a street back, it was cut
+  in strips a metre wide, and each strip painted lines of its own, a middle and two edges, so the
+  street came out striped all over. Now it stays whole along its length; only the bitten edge is
+  kept in strips, bare.
+- The drive up and down the mountain shown from the side: the eye goes up out of the cab and out
+  over the slope, and swings round the mountain after the pickup, the way it went lit. Going up,
+  on the deck the pickup stops and backs round into a free space, nose to the aisle; the eye
+  watches from across it, then goes back into her head. No beacon over the pickup now.
+
 ## 1.4.35
 
 - At the wheel of a pickup the eye is hers, always: where her head is in the seat, out over the

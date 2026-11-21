@@ -153,9 +153,11 @@ road comes in and toward the tower. On the slope toward the
 town the laboratory's name stands in great white letters.
 
 At the wheel (any but the helicopter's) the drive up and down is shown, not driven: through the
-arch going up, or off the deck into the road's top end going down, the pickup goes round on its
-own, seen from her seat, the rail and the sea going by, and in some six seconds it is on the deck,
-or at the arch; then it is hers again, rolling on. No wheel and no way out meanwhile. On foot the road is run.
+arch going up, or off the deck into the road's top end going down, the eye goes up out of the
+cab and out over the slope, and swings round the mountain after the pickup going round on its
+own, the way it went lit on the road; in some six seconds it is on the deck, or at the arch.
+Going up, on the deck it stops and backs round into a free space, nose to the aisle, the eye
+watching from across it; then the eye is in her head again and the pickup hers. No wheel and no way out meanwhile. On foot the road is run.
 
 Hotheads (the twelfth job, a story, after the navigator; once called Brums to the island). At
 night up at LAB Inc. a trial of the collider gave birth to a black hole the size of a cherry; its

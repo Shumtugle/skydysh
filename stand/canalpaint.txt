@@ -1,0 +1,34 @@
+# The streets by the canal, from the cab: the shore road up to its lifting bridge, the street on
+# the canal's west, the quay streets either side going north. Painted as any street, one middle
+# line, its edges; not striped. In Russian.
+screen 1096 2560
+wait 0.4
+lang ru
+keep kinds 2046
+keep where 0
+restart
+free
+drivein -150 3 -1.5708
+wait 0.3
+pedal 2 0 0 0 x
+shot a0
+drivein -240 3 -1.5708
+wait 0.3
+pedal 2 0 0 0 x
+shot a1
+drivein -340 3 -1.5708
+wait 0.3
+pedal 2 0 0 0 x
+shot a2
+drivein -258 40 0
+wait 0.3
+pedal 2 0 0 0 x
+shot a3
+drivein -318 40 0
+wait 0.3
+pedal 2 0 0 0 x
+shot a4
+drivein -258 300 3.1416
+wait 0.3
+pedal 2 0 0 0 x
+shot a5

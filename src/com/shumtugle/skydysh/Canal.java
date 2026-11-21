@@ -314,6 +314,65 @@ final class Canal {
 
     private static final DrawList KEEP = new DrawList();
 
+    /**
+     * A stretch of street by the water, cut back from it. Its paint is worked out from where a
+     * pixel lies in its box (the middle line, the edge lines), so it is not cut in strips across
+     * its width as other ground is: each strip would paint a street of its own, a line down each.
+     * Along its length, where all of its width is out of the water, it stays whole; only where the
+     * water takes a bite of its side is it kept in strips, plain asphalt there.
+     */
+    private static void road(float[] b, int o) {
+        float x = b[o], y = b[o + 1], z = b[o + 2], hx = b[o + 3], hy = b[o + 4], hz = b[o + 5];
+        boolean alongX = hx >= hz;
+        float len = alongX ? hx : hz, wide = alongX ? hz : hx;
+        int strips = Math.max(1, (int) Math.ceil(wide * 2f / 1f));
+        float sw = wide / strips;
+        int steps = Math.max(2, (int) Math.ceil(len * 2f / 0.5f));
+        float step = len * 2f / steps;
+        boolean[][] out = new boolean[strips][steps + 1];
+        boolean[] whole = new boolean[steps + 1];
+        for (int q = 0; q <= steps; q++) {
+            float t = -len + q * step;
+            boolean all = q < steps;
+            for (int s = 0; s < strips; s++) {
+                float mid = -wide + (s * 2 + 1) * sw;
+                float px = alongX ? x + t : x + mid, pz = alongX ? z + mid : z + t;
+                out[s][q] = q < steps && !near(px, pz, CUT_GROUND - HALF);
+                all &= out[s][q];
+            }
+            whole[q] = all;
+        }
+        int color = rgb(b, o);
+        // the whole width, painted as one street
+        float from = Float.NaN;
+        for (int q = 0; q <= steps; q++) {
+            float t = -len + q * step;
+            if (whole[q] && Float.isNaN(from)) from = t;
+            if (!whole[q] && !Float.isNaN(from)) {
+                float cx = (from + t) * 0.5f, ch = (t - from) * 0.5f;
+                if (alongX) KEEP.box(x + cx, y, z, ch, hy, wide, null, color, DrawList.ROAD);
+                else KEEP.box(x, y, z + cx, wide, hy, ch, null, color, DrawList.ROAD);
+                from = Float.NaN;
+            }
+        }
+        // the bitten edge, in strips of bare asphalt
+        for (int s = 0; s < strips; s++) {
+            float mid = -wide + (s * 2 + 1) * sw;
+            from = Float.NaN;
+            for (int q = 0; q <= steps; q++) {
+                float t = -len + q * step;
+                boolean keep = out[s][q] && !whole[q];
+                if (keep && Float.isNaN(from)) from = t;
+                if (!keep && !Float.isNaN(from)) {
+                    float cx = (from + t) * 0.5f, ch = (t - from) * 0.5f;
+                    if (alongX) KEEP.box(x + cx, y, z + mid, ch, hy, sw, null, color, DrawList.ASPHALT);
+                    else KEEP.box(x + mid, y, z + cx, sw, hy, ch, null, color, DrawList.ASPHALT);
+                    from = Float.NaN;
+                }
+            }
+        }
+    }
+
     private static void carve(DrawList d) {
         int n = d.count;
         float[] b = d.boxes;
@@ -334,6 +393,10 @@ final class Canal {
                 continue;
             }
             boolean plain = b[o + 6] == 1f && b[o + 10] == 1f && b[o + 14] == 1f;
+            if (plain && b[o + 18] == DrawList.ROAD && (hx > 1.6f || hz > 1.6f)) {
+                road(b, o);
+                continue;
+            }
             if (plain && (hx > 1.6f || hz > 1.6f)) {
                 // ground or a long thing on it: cut back from the water in strips, along its length
                 boolean alongX = hx >= hz;

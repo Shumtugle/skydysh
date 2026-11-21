@@ -1,7 +1,8 @@
 # The mountain road by car, shown as a scene. At the wheel below the arch, up through it: the eye
-# rises over the mountain, the pickup goes round and up, the way lit, the eye comes down behind it
-# on the deck. Then from the deck east into the road's top end: down the same way, out at the arch.
-# In Russian.
+# goes out of the cab and up to the side, out from the mountain, and swings round it after the
+# pickup going up, the way lit; on the deck it comes round to the free space, the pickup stops and
+# backs into it, nose to the aisle, and the eye goes back into her head. Then from the deck east
+# into the road's top end: down the same way, out at the arch. In Russian.
 screen 1096 2560
 wait 0.4
 lang ru
@@ -22,8 +23,21 @@ wait 1.4
 shot u2
 wait 1.4
 shot u3
-wait 2.4
+wait 1.6
 shot u4
+wait 1.4
+shot u5
+wait 1.4
+shot u6
+wait 1
+shot u7
+wait 0.8
+shot u8
+wait 0.7
+shot u9
+wait 2
+where
+shot u10
 wheel
 drivein -494 895.5 1.5708
 wait 0.3
